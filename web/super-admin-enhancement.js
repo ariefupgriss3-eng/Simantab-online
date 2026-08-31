@@ -2,6 +2,13 @@
 (async()=>{
 const w=ms=>new Promise(r=>setTimeout(r,ms));for(let i=0;i<100&&(!window.__simantabSb||!window.showTab);i++)await w(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id),sa=()=>window.__simantabProfile?.role==='SUPER_ADMIN'&&window.__simantabProfile?.is_admin===true;if(!sb)return;
+function installRegistrationUi(){
+ const apply=()=>{const nameWrap=$('nameWrap'),signup=!!nameWrap&&!nameWrap.classList.contains('hidden'),d=$('tabDinas'),g=$('tabGtk'),hint=document.querySelector('.loginbox .hint'),head=document.querySelector('.loginbox h2');if(!d||!g)return;if(signup){d.textContent='🏢 Daftar Akun Dinas';g.textContent='🏫 Daftar Akun Sekolah / GTK';if(head)head.textContent='Daftar Akun SIMANTAB';if(hint)hint.innerHTML='<b>Pendaftaran dipisah:</b> pegawai Dinas memilih <b>Daftar Akun Dinas</b>; Kepala Sekolah/GTK memilih <b>Daftar Akun Sekolah / GTK</b>. Akun Dinas baru belum memiliki role operasional sampai ditetapkan oleh <b>Super Admin</b> melalui Kelola Pengguna.';}else{d.textContent='🏢 Login Dinas';g.textContent='🏫 Login Sekolah / GTK';if(head)head.textContent='Masuk SIMANTAB Online';if(hint)hint.innerHTML='<b>Jalur akun:</b> pegawai Dinas menggunakan Login Dinas; Kepala Sekolah/GTK menggunakan Login Sekolah / GTK. Untuk akun Dinas baru, daftar terlebih dahulu lalu Super Admin menetapkan role melalui Kelola Pengguna.';}};
+ const oldToggle=window.toggleAuthMode;if(oldToggle&&!window.__simantabRegToggleWrapped){window.__simantabRegToggleWrapped=true;window.toggleAuthMode=()=>{oldToggle();setTimeout(apply,0)}}
+ const oldChannel=window.setChannel;if(oldChannel&&!window.__simantabRegChannelWrapped){window.__simantabRegChannelWrapped=true;window.setChannel=c=>{oldChannel(c);setTimeout(apply,0)}}
+ apply();
+}
+installRegistrationUi();
 async function c(t,f){let q=sb.from(t).select('*',{count:'exact',head:true});if(f)q=f(q);let{count,error}=await q;if(error)throw error;return count||0}
 async function m(){
   let [a,g]=await Promise.all([
