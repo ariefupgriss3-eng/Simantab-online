@@ -14,9 +14,19 @@ android {
         versionName '1.0.0'
     }
 
+    signingConfigs {
+        release {
+            storeFile file('simantab-upload-key.jks')
+            storePassword System.getenv('SIMANTAB_KEYSTORE_PASSWORD') ?: ''
+            keyAlias System.getenv('SIMANTAB_KEY_ALIAS') ?: 'simantab'
+            keyPassword System.getenv('SIMANTAB_KEY_PASSWORD') ?: ''
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
