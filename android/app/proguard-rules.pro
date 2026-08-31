@@ -1,0 +1,1 @@
+# SIMANTAB release rules
