@@ -1,0 +1,14 @@
+import fs from 'node:fs/promises';
+await import('./build.mjs');
+const path='.vercel/output/static/index.html';
+let html=await fs.readFile(path,'utf8');
+const roleOld="const ROLE_LABEL={SUPER_ADMIN:'Super Admin SIMANTAB',KABID:'Kabid Ketenagaan',KASI_SD:'Kasi PPTK SD',KASI_SMP:'Kasi PPTK SMP',SUBKOOR_TK:'Subkoor PPTK TK/PAUD',STAFF_TPG:'Staff TPG/Tamsil',PENGAWAS:'Pengawas',KEPALA_SEKOLAH:'Kepala Sekolah',GTK:'GTK'};";
+const roleNew="const ROLE_LABEL={SUPER_ADMIN:'Super Admin SIMANTAB',KEPALA_DINAS:'Kepala Disdikbud',KABID:'Kabid Ketenagaan',KASI_SD:'Kasi PPTK SD',KASI_SMP:'Kasi PPTK SMP',SUBKOOR_TK:'Subkoor PPTK TK/PAUD',STAFF_TPG:'Staff TPG/Tamsil',PENGAWAS:'Pengawas',KEPALA_SEKOLAH:'Kepala Sekolah',GTK:'GTK'};";
+const dinasOld="const DINAS_ROLES=['SUPER_ADMIN','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','STAFF_TPG','PENGAWAS'];";
+const dinasNew="const DINAS_ROLES=['SUPER_ADMIN','KEPALA_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','STAFF_TPG','PENGAWAS'];";
+if(!html.includes(roleOld)&&!html.includes("KEPALA_DINAS:'Kepala Disdikbud'")) throw new Error('ROLE_LABEL anchor not found');
+if(!html.includes(dinasOld)&&!html.includes("'KEPALA_DINAS','KABID'")) throw new Error('DINAS_ROLES anchor not found');
+html=html.replace(roleOld,roleNew).replace(dinasOld,dinasNew);
+html=html.replace("$('dashTitle').textContent='Dashboard Dinas';$('dashDesc').textContent='Monitoring layanan dan manajemen ketenagaan sesuai role.';","$('dashTitle').textContent=profile.role==='KEPALA_DINAS'?'Dashboard Kepala Disdikbud':'Dashboard Dinas';$('dashDesc').textContent=profile.role==='KEPALA_DINAS'?'Monitoring strategis seluruh layanan dan data ketenagaan di bawah Kabid.':'Monitoring layanan dan manajemen ketenagaan sesuai role.';");
+await fs.writeFile(path,html);
+console.log(JSON.stringify({ok:true,kepalaDinas:true,roleOrder:'SUPER_ADMIN > KEPALA_DINAS > KABID'}));
