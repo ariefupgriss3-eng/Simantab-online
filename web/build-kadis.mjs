@@ -25,5 +25,38 @@ const oldServiceButton="<button class=\"btn soft\" onclick=\"openSubmission('${s
 const newServiceButton="<button class=\"btn soft\" onclick=\"openSubmission('${s.t}','${s.n}')\">Ajukan</button>${s.url?` <a class=\"btn soft\" href=\"${s.url}\" target=\"_blank\" rel=\"noopener\" style=\"display:inline-block;text-decoration:none\">Buka Link</a>`:''}";
 if(html.includes(oldServiceButton)&&!html.includes('target=\"_blank\" rel=\"noopener\" style=\"display:inline-block;text-decoration:none\">Buka Link</a>')) html=html.replaceAll(oldServiceButton,newServiceButton);
 if(!html.includes("t:'KLARIFIKASI_PAK'")||!html.includes("t:'E_JABFUNG'")||!html.includes("t:'SKP_KS_PENGAWAS'")||!html.includes("t:'PAK_KS_PENGAWAS'")) throw new Error('Empat layanan baru belum terpasang.');
+
+// Peserta Kegiatan Bidang dapat ditentukan dengan nama personal maupun jabatan.
+const oldParticipantsField='<div class="field s6"><label>4. Peserta (satu nama/unit per baris)</label><textarea id="actParticipants"></textarea></div><div class="field s6"><label>5. Pejabat yang Diundang (satu per baris)</label>';
+const newParticipantsField='<div class="field s6"><label>4A. Peserta — Nama Personal</label><textarea id="actParticipantsPersonal" placeholder="Contoh:\\nBudi Santoso\\nSiti Aminah"></textarea><div class="small">Isi bila peserta ditentukan berdasarkan nama orang. Satu nama per baris.</div></div><div class="field s6"><label>4B. Peserta — Jabatan</label><textarea id="actParticipantPositions" placeholder="Contoh:\\nKepala SD se-Kecamatan Batang\\nPengawas Sekolah"></textarea><div class="small">Isi bila sasaran peserta ditentukan berdasarkan jabatan. Peserta yang hadir tetap mengisi nama personal pada daftar hadir.</div></div><div class="field s6"><label>5. Pejabat yang Diundang (satu per baris)</label>';
+if(html.includes(oldParticipantsField)) html=html.replace(oldParticipantsField,newParticipantsField);
+
+const oldParticipantSave="participants:lineList($('actParticipants').value),invited_officials:lineList($('actOfficials').value)";
+const newParticipantSave="participant_personal:lineList($('actParticipantsPersonal').value),participant_positions:lineList($('actParticipantPositions').value),participants:[...lineList($('actParticipantsPersonal').value),...lineList($('actParticipantPositions').value)],invited_officials:lineList($('actOfficials').value)";
+if(html.includes(oldParticipantSave)) html=html.replace(oldParticipantSave,newParticipantSave);
+
+const oldParticipantEdit="$('actParticipants').value=(a.participants||[]).join('\\n');$('actOfficials').value=(a.invited_officials||[]).join('\\n');";
+const newParticipantEdit="$('actParticipantsPersonal').value=(a.participant_personal?.length?a.participant_personal:(a.participants||[])).join('\\n');$('actParticipantPositions').value=(a.participant_positions||[]).join('\\n');$('actOfficials').value=(a.invited_officials||[]).join('\\n');";
+if(html.includes(oldParticipantEdit)) html=html.replace(oldParticipantEdit,newParticipantEdit);
+
+html=html.replace("participants=lineList($('actParticipants').value),place=","participantPersonal=lineList($('actParticipantsPersonal').value),participantPositions=lineList($('actParticipantPositions').value),participants=[...participantPersonal,...participantPositions],place=");
+const oldAudience="audience=participants.length?`${participants.length} peserta yang berasal dari unsur ${participants.slice(0,4).join(', ')}${participants.length>4?', dan unsur terkait lainnya':''}`:'peserta dari unsur terkait';";
+const newAudience="audience=[participantPersonal.length?`${participantPersonal.length} peserta personal: ${participantPersonal.slice(0,4).join(', ')}${participantPersonal.length>4?', dan lainnya':''}`:'',participantPositions.length?`peserta berdasarkan jabatan: ${participantPositions.join(', ')}`:''].filter(Boolean).join('; ')||'peserta dari unsur terkait';";
+if(html.includes(oldAudience)) html=html.replace(oldAudience,newAudience);
+
+html=html.replace("manual=(a.participants||[]).filter(name=>!gtk.some(x=>x.full_name.toLowerCase()===name.toLowerCase()))","manual=(a.participant_personal?.length?a.participant_personal:(a.participants||[])).filter(name=>!gtk.some(x=>x.full_name.toLowerCase()===name.toLowerCase()))");
+html=html.replace("rows(a.participants||[],'participant',a.participant_signatures||[])","rows(a.participant_personal?.length?a.participant_personal:(a.participants||[]),'participant',a.participant_signatures||[])");
+html=html.replace("(group==='official'?a.invited_officials:a.participants)[index]","(group==='official'?a.invited_officials:(a.participant_personal?.length?a.participant_personal:(a.participants||[])))[index]");
+html=html.replace("names=group==='official'?a.invited_officials:a.participants","names=group==='official'?a.invited_officials:(a.participant_personal?.length?a.participant_personal:(a.participants||[]))");
+
+const oldParticipantPrint="if(type==='PARTICIPANTS')return `<h2>DAFTAR HADIR PESERTA</h2>${detail}<table class=\"att\">";
+const newParticipantPrint="if(type==='PARTICIPANTS')return `<h2>DAFTAR HADIR PESERTA</h2>${detail}${(a.participant_positions||[]).length?`<p><b>Sasaran peserta berdasarkan jabatan:</b> ${esc((a.participant_positions||[]).join(', '))}</p>`:''}<table class=\"att\">";
+if(html.includes(oldParticipantPrint)) html=html.replace(oldParticipantPrint,newParticipantPrint);
+
+const oldReportParticipants="${section('IV. Pelaksanaan dan Peserta',`Kegiatan diikuti oleh ${(a.participants||[]).join(', ')||'peserta dari unsur terkait'}. Pejabat yang diundang: ${(a.invited_officials||[]).join(', ')||'-'}. Narasumber: ${(a.speakers||[]).join(', ')||'-'}.`)}";
+const newReportParticipants="${section('IV. Pelaksanaan dan Peserta',`Peserta personal yang ditetapkan: ${(a.participant_personal?.length?a.participant_personal:[]).join(', ')||'diisi melalui daftar hadir'}. Sasaran peserta berdasarkan jabatan: ${(a.participant_positions||[]).join(', ')||'-'}. Pejabat yang diundang: ${(a.invited_officials||[]).join(', ')||'-'}. Narasumber: ${(a.speakers||[]).join(', ')||'-'}.`)}";
+if(html.includes(oldReportParticipants)) html=html.replace(oldReportParticipants,newReportParticipants);
+
+if(!html.includes('actParticipantsPersonal')||!html.includes('actParticipantPositions')) throw new Error('Form peserta personal/jabatan belum terpasang.');
 await fs.writeFile(path,html);
-console.log(JSON.stringify({ok:true,kepalaDinas:true,roleOrder:'SUPER_ADMIN > KEPALA_DINAS > KABID',condroTop:'TK/PAUD/Kesetaraan',condroBottom:'Usul Tugas Belajar',newPersonnelServices:['KLARIFIKASI_PAK','E_JABFUNG','SKP_KS_PENGAWAS','PAK_KS_PENGAWAS']}));
+console.log(JSON.stringify({ok:true,kepalaDinas:true,roleOrder:'SUPER_ADMIN > KEPALA_DINAS > KABID',condroTop:'TK/PAUD/Kesetaraan',condroBottom:'Usul Tugas Belajar',newPersonnelServices:['KLARIFIKASI_PAK','E_JABFUNG','SKP_KS_PENGAWAS','PAK_KS_PENGAWAS'],activityParticipants:['PERSONAL','JABATAN']}));
