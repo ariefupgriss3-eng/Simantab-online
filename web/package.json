@@ -2,6 +2,6 @@
   "name": "simantab-online",
   "private": true,
   "scripts": {
-    "build": "node build-kadis.mjs"
+    "build": "node build-workflow.mjs"
   }
 }
