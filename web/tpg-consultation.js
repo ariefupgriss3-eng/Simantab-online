@@ -12,13 +12,13 @@ function infoHtml(){return `<div class="card" id="tpgConsultInfo" style="margin-
   <div class="card s6" style="box-shadow:none"><div class="label">Pengelolaan Data</div><p class="small">Informasi input dan pembaruan data guru/tenaga kependidikan pada sistem pendataan, termasuk keterkaitan Dapodik dan SIMTUN.</p></div>
   <div class="card s6" style="box-shadow:none"><div class="label">Verifikasi & Validasi</div><p class="small">Konsultasi kevalidan beban kerja, kualifikasi, status kepegawaian, nomor rekening, dan unsur data lain yang memengaruhi kelayakan penyaluran.</p></div>
   <div class="card s6" style="box-shadow:none"><div class="label">Sinkronisasi Sistem</div><p class="small">Informasi penyelarasan data satuan pendidikan dengan server pusat agar data siap ditarik dan diproses oleh kementerian terkait.</p></div>
-  <div class="card s6" style="box-shadow:none"><div class="label">Penanganan Kendala</div><p class="small">Konsultasi data invalid pada Info GTK serta kendala administrasi/teknis pencairan TPG, Tamsil, THR, dan Gaji ke-13.</p></div>
+  <div class="card s6" style="box-shadow:none"><div class="label">Penanganan Kendala</div><p class="small">Konsultasi data invalid pada Info GTK serta kendala administrasi/teknis pencairan TPG, Tamsil, TPG THR, dan TPG Gaji ke-13.</p></div>
  </div>
  ${isApplicant()?`<div class="info" style="margin-top:10px"><b>Pilih topik konsultasi.</b> Pertanyaan akan masuk ke antrean TPG/Tamsil dan dapat dipantau melalui Status Usulan.</div><div class="quick" style="margin-top:10px">
   <button onclick="openTpgConsultation('TPG')">🎓<b>Konsultasi TPG</b><span>Validasi, Info GTK, rekening, pencairan.</span></button>
   <button onclick="openTpgConsultation('Tamsil')">💳<b>Konsultasi Tamsil</b><span>Status data dan penyaluran tambahan penghasilan.</span></button>
-  <button onclick="openTpgConsultation('THR')">🎁<b>Konsultasi THR</b><span>Informasi kelayakan dan proses penyaluran.</span></button>
-  <button onclick="openTpgConsultation('Gaji ke-13')">📅<b>Konsultasi Gaji ke-13</b><span>Informasi data dan proses pembayaran.</span></button>
+  <button onclick="openTpgConsultation('TPG THR')">🎁<b>Konsultasi TPG THR</b><span>Informasi kelayakan dan proses penyaluran TPG THR.</span></button>
+  <button onclick="openTpgConsultation('TPG Gaji ke-13')">📅<b>Konsultasi TPG Gaji ke-13</b><span>Informasi data dan proses pembayaran TPG Gaji ke-13.</span></button>
  </div>`:`<div class="info" style="margin-top:10px"><b>Ruang layanan Dinas.</b> Konsultasi dari GTK/sekolah tampil pada antrean TPG/Tamsil di bawah. Petugas dapat memverifikasi dan memperbarui status sesuai kewenangan.${p().role==='STAFF_TPG'?'<br><b>Petugas utama:</b> layanan TPG/Tamsil.':''}</div>`}
  </div>`}
 function decorateTpg(){const body=$('tpgBody');if(!body||$('tpgConsultInfo'))return;body.insertAdjacentHTML('afterbegin',infoHtml())}
