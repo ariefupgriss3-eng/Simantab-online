@@ -11,7 +11,7 @@ const MODS=[
  ['activity-schedule-committee.js','SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V1',1],
  ['activity-responsible-signatory-fix.js','SIMANTAB_ACTIVITY_RESPONSIBLE_SIGNATORY_V1',1],
  ['activity-report-signatory-fix.js','SIMANTAB_ACTIVITY_REPORT_SIGNATORY_FIX_V1',1],
- ['discipline-evidence.js','SIMANTAB_DISCIPLINE_EVIDENCE_V1',1]
+ ['discipline-evidence.js','SIMANTAB_DISCIPLINE_EVIDENCE_V2',2]
 ];
 for(const [file,marker,version] of MODS){
  const url=`https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/${file}`;
@@ -23,4 +23,4 @@ for(const [file,marker,version] of MODS){
  const body=html.lastIndexOf('</body>');if(body<0)throw new Error('Tag body penutup tidak ditemukan.');html=html.slice(0,body)+`<script type="module" src="./${file}?v=${version}"></script>\n`+html.slice(body);await fs.writeFile(`.vercel/output/static/${file}`,code);
 }
 await fs.writeFile(path,html);
-console.log(JSON.stringify({ok:true,activityInput:['KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','IKA_CAPABILITY'],otherDinas:'READ_ONLY',delete:'KABID_ONLY',multiCapability:true,tpgConsultation:true,tpgTopics:['TPG','Tamsil','TPG THR','TPG Gaji ke-13'],skPltKs:true,skPltLevels:['TK','SD','SMP'],skPltRequirements:4,activitySchedule:{start:true,end:true},committeeAssignmentLetter:true,responsibleRoles:['KABID_DIRECT','SUBKOOR_TK','KASI_SD','KASI_SMP'],signatoryRank:true,signatoryUnitField:false,activityReportSignatory:{unit:false,rankAboveNip:true},disciplineEvidence:{kepalaSekolah:['BAP','UNDANGAN','DAFTAR_HADIR','REKOMENDASI_KORWIL'],pengawasKorwil:['BAP','UNDANGAN','DAFTAR_HADIR'],uploader:'PENGAWAS'}}));
+console.log(JSON.stringify({ok:true,activityInput:['KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','IKA_CAPABILITY'],otherDinas:'READ_ONLY',delete:'KABID_ONLY',multiCapability:true,tpgConsultation:true,tpgTopics:['TPG','Tamsil','TPG THR','TPG Gaji ke-13'],skPltKs:true,skPltLevels:['TK','SD','SMP'],skPltRequirements:4,activitySchedule:{start:true,end:true},committeeAssignmentLetter:true,responsibleRoles:['KABID_DIRECT','SUBKOOR_TK','KASI_SD','KASI_SMP'],signatoryRank:true,signatoryUnitField:false,activityReportSignatory:{unit:false,rankAboveNip:true},disciplineEvidence:{totalSlots:7,schoolLevel:4,korwilLevel:3,requiredForClose:'7/7',uploader:'PENGAWAS_WITH_KORWIL_ASSIGNMENT'}}));
