@@ -14,7 +14,7 @@ const MODS=[
  ['discipline-evidence.js','SIMANTAB_DISCIPLINE_EVIDENCE_V4',4],
  ['pengawas-nip-tcs-link.js','SIMANTAB_PENGAWAS_NIP_TCS_LINK_V1',1],
  ['simanteb-branding.js','SIMANTEB_BRANDING_V1',1],
- ['pengawas-menu-scope.js','SIMANTEB_PENGAWAS_MENU_SCOPE_V1',2],
+ ['pengawas-menu-scope.js','SIMANTEB_PENGAWAS_MENU_SCOPE_V2',2],
  ['pengawas-login-channel.js','SIMANTEB_PENGAWAS_LOGIN_CHANNEL_V1',1]
 ];
 for(const [file,marker,version] of MODS){
