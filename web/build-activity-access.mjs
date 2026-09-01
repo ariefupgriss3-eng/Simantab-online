@@ -7,7 +7,8 @@ const MODS=[
  ['team-multi-capability.js','SIMANTAB_TEAM_MULTI_CAPABILITY_V1',1],
  ['activity-input-access.js','SIMANTAB_ACTIVITY_INPUT_ACCESS_V1',1],
  ['tpg-consultation.js','SIMANTAB_TPG_CONSULTATION_INFO_V1',1],
- ['sk-plt-enhancement.js','SIMANTAB_SK_PLT_KS_V1',1]
+ ['sk-plt-enhancement.js','SIMANTAB_SK_PLT_KS_V1',1],
+ ['activity-schedule-committee.js','SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V1',1]
 ];
 for(const [file,marker,version] of MODS){
  const url=`https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/${file}`;
@@ -19,4 +20,4 @@ for(const [file,marker,version] of MODS){
  const body=html.lastIndexOf('</body>');if(body<0)throw new Error('Tag body penutup tidak ditemukan.');html=html.slice(0,body)+`<script type="module" src="./${file}?v=${version}"></script>\n`+html.slice(body);await fs.writeFile(`.vercel/output/static/${file}`,code);
 }
 await fs.writeFile(path,html);
-console.log(JSON.stringify({ok:true,activityInput:['KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','IKA_CAPABILITY'],otherDinas:'READ_ONLY',delete:'KABID_ONLY',multiCapability:true,tpgConsultation:true,tpgTopics:['TPG','Tamsil','TPG THR','TPG Gaji ke-13'],skPltKs:true,skPltLevels:['TK','SD','SMP'],skPltRequirements:4}));
+console.log(JSON.stringify({ok:true,activityInput:['KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','IKA_CAPABILITY'],otherDinas:'READ_ONLY',delete:'KABID_ONLY',multiCapability:true,tpgConsultation:true,tpgTopics:['TPG','Tamsil','TPG THR','TPG Gaji ke-13'],skPltKs:true,skPltLevels:['TK','SD','SMP'],skPltRequirements:4,activitySchedule:{start:true,end:true},committeeAssignmentLetter:true}));
