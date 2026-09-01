@@ -10,7 +10,9 @@ if(!html.includes(roleOld)&&!html.includes("KEPALA_DINAS:'Kepala Disdikbud'")) t
 if(!html.includes(dinasOld)&&!html.includes("'KEPALA_DINAS','KABID'")) throw new Error('DINAS_ROLES anchor not found');
 html=html.replace(roleOld,roleNew).replace(dinasOld,dinasNew);
 html=html.replace("$('dashTitle').textContent='Dashboard Dinas';$('dashDesc').textContent='Monitoring layanan dan manajemen ketenagaan sesuai role.';","$('dashTitle').textContent=profile.role==='KEPALA_DINAS'?'Dashboard Kepala Disdikbud':'Dashboard Dinas';$('dashDesc').textContent=profile.role==='KEPALA_DINAS'?'Monitoring strategis seluruh layanan dan data ketenagaan di bawah Kabid.':'Monitoring layanan dan manajemen ketenagaan sesuai role.';");
-html=html.replaceAll("{jabatan:'Subkoor PPTK TK/PAUD',nama:'Condro',tugas:'PPTK TK/PAUD • Tugas Belajar'}","{jabatan:'Subkoor PPTK TK/PAUD',nama:'Condro',tugas:'Layanan dan pembinaan PTK TK/PAUD'}");
-if(!html.includes("nama:'Condro',tugas:'Layanan dan pembinaan PTK TK/PAUD'")) throw new Error('Perubahan tugas Condro belum terpasang.');
+html=html.replaceAll("{jabatan:'Subkoor PPTK TK/PAUD',nama:'Condro',tugas:'PPTK TK/PAUD • Tugas Belajar'}","{jabatan:'Subkoor PPTK TK/PAUD',nama:'Condro',tugas:'TK/PAUD/Kesetaraan\\nUsul Tugas Belajar'}");
+html=html.replaceAll("{jabatan:'Subkoor PPTK TK/PAUD',nama:'Condro',tugas:'Layanan dan pembinaan PTK TK/PAUD'}","{jabatan:'Subkoor PPTK TK/PAUD',nama:'Condro',tugas:'TK/PAUD/Kesetaraan\\nUsul Tugas Belajar'}");
+html=html.replace("<p>${esc(x.tugas)}</p>","<p style=\"white-space:pre-line\">${esc(x.tugas)}</p>");
+if(!html.includes("nama:'Condro',tugas:'TK/PAUD/Kesetaraan\\nUsul Tugas Belajar'")) throw new Error('Revisi tugas Condro belum terpasang.');
 await fs.writeFile(path,html);
-console.log(JSON.stringify({ok:true,kepalaDinas:true,roleOrder:'SUPER_ADMIN > KEPALA_DINAS > KABID',condroTask:'Layanan dan pembinaan PTK TK/PAUD'}));
+console.log(JSON.stringify({ok:true,kepalaDinas:true,roleOrder:'SUPER_ADMIN > KEPALA_DINAS > KABID',condroTop:'TK/PAUD/Kesetaraan',condroBottom:'Usul Tugas Belajar'}));
