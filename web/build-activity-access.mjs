@@ -17,7 +17,7 @@ const MODS=[
  ['pengawas-menu-scope.js','SIMANTEB_PENGAWAS_MENU_SCOPE_V2',2],
  ['pengawas-login-channel.js','SIMANTEB_PENGAWAS_LOGIN_CHANNEL_V1',1],
  ['pengawas-dashboard-kadin.js','SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V1',1],
- ['korwil-scope-dashboard.js','SIMANTEB_KORWIL_SCOPE_DASHBOARD_V1',1],
+ ['korwil-scope-dashboard.js','SIMANTEB_KORWIL_SCOPE_DASHBOARD_V2',2],
  ['super-admin-merge-pengawas.js','SIMANTEB_SUPER_ADMIN_MERGE_PENGAWAS_V1',1]
 ];
 for(const [file,marker,version] of MODS){
@@ -42,4 +42,4 @@ try{
  manifest.name='SIMANTEB Online';manifest.short_name='SIMANTEB';
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest branding dilewati:',e?.message||e)}
-console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,profileDistrict:true,tcsFallback:true},korwilScope:{levels:['TK','SD','PNF'],exclude:['SMP'],backendRls:true},superAdminMergePengawas:true}));
+console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,profileDistrict:true,tcsFallback:true},korwilScope:{version:2,levels:['TK','SD','PNF'],exclude:['SMP'],backendRls:true,directSchoolMasterMetrics:true},superAdminMergePengawas:true}));
