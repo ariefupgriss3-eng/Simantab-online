@@ -14,13 +14,15 @@ const MODS=[
  ['discipline-evidence.js','SIMANTAB_DISCIPLINE_EVIDENCE_V4',4],
  ['pengawas-nip-tcs-link.js','SIMANTAB_PENGAWAS_NIP_TCS_LINK_V1',1],
  ['simanteb-branding.js','SIMANTEB_BRANDING_V1',1],
- ['pengawas-menu-scope.js','SIMANTEB_PENGAWAS_MENU_SCOPE_',2],
+ ['pengawas-menu-scope.js','SIMANTEB_PENGAWAS_MENU_SCOPE_V2',2],
  ['pengawas-login-channel.js','SIMANTEB_PENGAWAS_LOGIN_CHANNEL_V1',1]
 ];
 for(const [file,marker,version] of MODS){
  let code='';
- try{code=await fs.readFile(file,'utf8')}catch(_){
-  const url=`https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/${file}?cb=${Date.now()}`;
+ const forceRemote=file==='pengawas-menu-scope.js';
+ if(!forceRemote){try{code=await fs.readFile(file,'utf8')}catch(_){}}
+ if(!code){
+  const url=`https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/${file}?cb=${Date.now()}-${Math.random()}`;
   const r=await fetch(url,{headers:{'user-agent':'SIMANTAB-Activity-Access-Build/1.0','cache-control':'no-cache'},cache:'no-store'});
   if(!r.ok)throw new Error(`Gagal mengambil ${file}: ${r.status}`);
   code=await r.text();
@@ -37,4 +39,4 @@ try{
  manifest.name='SIMANTEB Online';manifest.short_name='SIMANTEB';
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest branding dilewati:',e?.message||e)}
-console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',activityInput:['KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','IKA_CAPABILITY'],otherDinas:'READ_ONLY',delete:'KABID_ONLY',multiCapability:true,tpgConsultation:true,tpgTopics:['TPG','Tamsil','TPG THR','TPG Gaji ke-13'],skPltKs:true,skPltLevels:['TK','SD','SMP'],skPltRequirements:4,activitySchedule:{start:true,end:true},committeeAssignmentLetter:true,responsibleRoles:['KABID_DIRECT','SUBKOOR_TK','KASI_SD','KASI_SMP'],signatoryRank:true,signatoryUnitField:false,activityReportSignatory:{unit:false,rankAboveNip:true},disciplineEvidence:{totalSlots:7,schoolLevel:4,korwilLevel:3,requiredForClose:'7/7',proposal:{TK_SD:'KORWIL_KECAMATAN',SMP:'PENGAWAS_DABIN'},visibility:['KEPALA_DINAS','KABID','KASI_SUBKOOR_SCOPE','PROPOSER','TARGET_DABIN'],tcsSdDabinSync:true,tcsAutoRouteByNpsn:true},pengawasAccount:{nipRequired:true,tcsPreview:true,autoLinkByNip:true},pengawasMenu:['dashboard','profile','services','monitoring','notifications','needs','promotion','discipline'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true}}));
+console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true}));
