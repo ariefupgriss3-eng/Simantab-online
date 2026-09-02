@@ -19,11 +19,12 @@ const MODS=[
  ['pengawas-dashboard-kadin.js','SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V1',2],
  ['korwil-scope-dashboard.js','SIMANTEB_KORWIL_SCOPE_DASHBOARD_V3',3],
  ['korwil-dashboard-title.js','SIMANTEB_KORWIL_DASHBOARD_TITLE_V1',1],
+ ['cuti-requirements.js','SIMANTEB_CUTI_REQUIREMENTS_V1',1],
  ['super-admin-merge-pengawas.js','SIMANTEB_SUPER_ADMIN_MERGE_PENGAWAS_V1',1]
 ];
 for(const [file,marker,version] of MODS){
  let code='';
- const forceRemote=['pengawas-menu-scope.js','pengawas-dashboard-kadin.js','korwil-scope-dashboard.js','korwil-dashboard-title.js','super-admin-merge-pengawas.js'].includes(file);
+ const forceRemote=['pengawas-menu-scope.js','pengawas-dashboard-kadin.js','korwil-scope-dashboard.js','korwil-dashboard-title.js','cuti-requirements.js','super-admin-merge-pengawas.js'].includes(file);
  if(!forceRemote){try{code=await fs.readFile(file,'utf8')}catch(_){}}
  if(!code){
   const url=`https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/${file}?cb=${Date.now()}-${Math.random()}`;
@@ -46,4 +47,4 @@ try{
  manifest.name='SIMANTEB Online';manifest.short_name='SIMANTEB';
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest branding dilewati:',e?.message||e)}
-console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},superAdminMergePengawas:true}));
+console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true}));
