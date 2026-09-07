@@ -1,0 +1,13 @@
+# Android signing material - never commit
+*.jks
+*.keystore
+android/app/UPLOAD-KEY-README.txt
+
+# Local secrets / environment files
+.env
+.env.*
+!.env.example
+
+# Build outputs
+android/.gradle/
+android/app/build/
