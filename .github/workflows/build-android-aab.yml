@@ -1,11 +1,6 @@
 name: Build SIMANTAB Android AAB
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'android/**'
-      - '.github/workflows/build-android-aab.yml'
   workflow_dispatch:
 
 jobs:
@@ -13,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,39 +24,47 @@ jobs:
         with:
           gradle-version: '8.9'
 
-      - name: Create permanent upload key for this build
-        working-directory: android/app
+      - name: Validate signing secrets
+        env:
+          SIMANTAB_KEYSTORE_B64: ${{ secrets.SIMANTAB_KEYSTORE_B64 }}
+          SIMANTAB_KEYSTORE_PASSWORD: ${{ secrets.SIMANTAB_KEYSTORE_PASSWORD }}
+          SIMANTAB_KEY_ALIAS: ${{ secrets.SIMANTAB_KEY_ALIAS }}
+          SIMANTAB_KEY_PASSWORD: ${{ secrets.SIMANTAB_KEY_PASSWORD }}
         run: |
-          keytool -genkeypair -v \
-            -keystore simantab-upload-key.jks \
-            -storepass 'Simantab2026!' \
-            -keypass 'Simantab2026!' \
-            -alias simantab \
-            -keyalg RSA -keysize 2048 -validity 10000 \
-            -dname 'CN=SIMANTAB, OU=Disdikbud Batang, O=Disdikbud Kabupaten Batang, L=Batang, ST=Jawa Tengah, C=ID'
-          cat > UPLOAD-KEY-README.txt <<'EOF'
-          SIMANTAB Android Upload Key
-          Alias: simantab
-          Keystore password: Simantab2026!
-          Key password: Simantab2026!
-          PENTING: Simpan file simantab-upload-key.jks secara aman. Gunakan key yang sama untuk update aplikasi berikutnya di Google Play Console.
-          EOF
+          set -euo pipefail
+          for name in SIMANTAB_KEYSTORE_B64 SIMANTAB_KEYSTORE_PASSWORD SIMANTAB_KEY_ALIAS SIMANTAB_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "Required GitHub Actions secret $name is not configured."
+              exit 1
+            fi
+          done
+
+      - name: Restore upload keystore securely
+        working-directory: android/app
+        env:
+          SIMANTAB_KEYSTORE_B64: ${{ secrets.SIMANTAB_KEYSTORE_B64 }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$SIMANTAB_KEYSTORE_B64" | base64 --decode > simantab-upload-key.jks
+          chmod 600 simantab-upload-key.jks
 
       - name: Build signed release AAB
         working-directory: android
         env:
-          SIMANTAB_KEYSTORE_PASSWORD: 'Simantab2026!'
-          SIMANTAB_KEY_ALIAS: simantab
-          SIMANTAB_KEY_PASSWORD: 'Simantab2026!'
+          SIMANTAB_KEYSTORE_PASSWORD: ${{ secrets.SIMANTAB_KEYSTORE_PASSWORD }}
+          SIMANTAB_KEY_ALIAS: ${{ secrets.SIMANTAB_KEY_ALIAS }}
+          SIMANTAB_KEY_PASSWORD: ${{ secrets.SIMANTAB_KEY_PASSWORD }}
         run: gradle bundleRelease --stacktrace
 
-      - name: Upload AAB and upload key
+      - name: Remove keystore from runner
+        if: always()
+        working-directory: android/app
+        run: rm -f simantab-upload-key.jks
+
+      - name: Upload AAB only
         uses: actions/upload-artifact@v4
         with:
           name: SIMANTAB-Android-Release
           if-no-files-found: error
-          retention-days: 30
-          path: |
-            android/app/build/outputs/bundle/release/app-release.aab
-            android/app/simantab-upload-key.jks
-            android/app/UPLOAD-KEY-README.txt
+          retention-days: 7
+          path: android/app/build/outputs/bundle/release/app-release.aab
