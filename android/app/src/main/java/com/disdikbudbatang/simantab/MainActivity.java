@@ -14,6 +14,8 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity {
     private static final String HOME = "https://simantab-online.vercel.app/";
+    private static final String APP_HOST = "simantab-online.vercel.app";
+    private static final String SUPABASE_HOST = "mgwztjflpnvrapfyjvmi.supabase.co";
     private static final int FILE_CHOOSER = 1001;
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
@@ -29,8 +31,11 @@ public class MainActivity extends Activity {
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
         s.setDatabaseEnabled(true);
-        s.setAllowFileAccess(true);
-        s.setMediaPlaybackRequiresUserGesture(false);
+        s.setAllowFileAccess(false);
+        s.setAllowFileAccessFromFileURLs(false);
+        s.setAllowUniversalAccessFromFileURLs(false);
+        s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        s.setMediaPlaybackRequiresUserGesture(true);
         s.setLoadWithOverviewMode(true);
         s.setUseWideViewPort(true);
         s.setBuiltInZoomControls(false);
@@ -39,11 +44,19 @@ public class MainActivity extends Activity {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
                 Uri uri = request.getUrl();
-                String host = uri.getHost() == null ? "" : uri.getHost();
-                if (host.equals("simantab-online.vercel.app") || host.endsWith("supabase.co")) {
+                String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase();
+                String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
+
+                if ("https".equals(scheme) && (APP_HOST.equals(host) || SUPABASE_HOST.equals(host))) {
                     return false;
                 }
-                startActivity(new Intent(Intent.ACTION_VIEW, uri));
+
+                if ("https".equals(scheme) || "http".equals(scheme) || "mailto".equals(scheme) || "tel".equals(scheme)) {
+                    try {
+                        startActivity(new Intent(Intent.ACTION_VIEW, uri));
+                    } catch (Exception ignored) {
+                    }
+                }
                 return true;
             }
         });
