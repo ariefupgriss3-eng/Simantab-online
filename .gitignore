@@ -1,0 +1,33 @@
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+*.secret
+secrets/
+
+# Android signing and local configuration
+*.jks
+*.keystore
+*.p12
+*.pfx
+android/local.properties
+local.properties
+
+# Build outputs
+build/
+**/build/
+dist/
+out/
+
+# Dependencies and caches
+node_modules/
+.gradle/
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
