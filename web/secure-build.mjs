@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises';
 
-// Security wrapper for the legacy SIMANTAB build chain.
-// 1) Never bootstrap a release from the mutable production alias.
-// 2) Never download build modules from the mutable GitHub `main` branch.
-//    Use files from the exact checkout/commit being built instead.
+// Preview-only reconstruction wrapper for the pre-restoration SIMANTAB structure.
+// The historical build chain is kept intact, but its base HTML is sourced from
+// the current public production alias and normalized only enough to satisfy the
+// anchors expected by the 11 Sep 2026 builder. All GitHub modules are read from
+// this exact branch checkout, never from mutable remote main.
 
 const PROD_PREFIX = 'https://simantab-online.vercel.app/';
-const IMMUTABLE_PREFIX = 'https://simantab-online-k28yzpg2k-mariefrohman-6773.vercel.app/';
 const RAW_PREFIX = 'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/';
 const nativeFetch = globalThis.fetch.bind(globalThis);
 
@@ -27,6 +27,20 @@ function localPatchName(urlText) {
   return rel;
 }
 
+function normalizeBaseHtml(html) {
+  if (!html.includes('SIMANTAB Online')) throw new Error('Base frontend SIMANTAB tidak valid.');
+
+  // The restored UI no longer declares DINAS_ROLES, while the historical
+  // builder expects that anchor before replacing it with the final hierarchy.
+  if (!/const DINAS_ROLES=\[[^;]+\];/.test(html)) {
+    const roleMatch = html.match(/const ROLE_LABEL=\{[^;]+\};/);
+    if (!roleMatch) throw new Error('ROLE_LABEL base tidak ditemukan.');
+    const compatibilityRoles = "const DINAS_ROLES=['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','STAFF_DINAS','STAFF_TPG','STAFF_KGB','STAFF_KP_EKIN','STAFF_PROMOSI','STAFF_ARSIP','STAFF_SKP','STAFF_PENSIUN','STAFF_CUTI','STAFF_SPJ_SIMTENDIK','STAFF_USUL_SK','PENGAWAS'];";
+    html = html.replace(roleMatch[0], roleMatch[0] + '\n' + compatibilityRoles);
+  }
+  return html;
+}
+
 globalThis.fetch = async (input, init = {}) => {
   const url = requestUrl(input);
 
@@ -40,7 +54,7 @@ globalThis.fetch = async (input, init = {}) => {
           'content-type': localName.endsWith('.js') || localName.endsWith('.mjs')
             ? 'text/javascript; charset=utf-8'
             : 'application/octet-stream',
-          'x-simantab-build-source': 'local-checkout'
+          'x-simantab-build-source': 'branch-checkout'
         }
       });
     } catch (error) {
@@ -49,18 +63,28 @@ globalThis.fetch = async (input, init = {}) => {
   }
 
   if (url.startsWith(PROD_PREFIX)) {
+    const response = await nativeFetch(input, { ...init, cache: 'no-store', redirect: 'follow' });
+    if (!response.ok) return response;
     const suffix = url.slice(PROD_PREFIX.length);
-    const pinnedUrl = IMMUTABLE_PREFIX + suffix;
-    return nativeFetch(pinnedUrl, { ...init, redirect: 'follow' });
+    const type = response.headers.get('content-type') || '';
+    if ((suffix === '' || suffix.startsWith('?')) && type.includes('text/html')) {
+      const html = normalizeBaseHtml(await response.text());
+      return new Response(html, {
+        status: response.status,
+        headers: { 'content-type': 'text/html; charset=utf-8', 'x-simantab-base': 'current-production-normalized' }
+      });
+    }
+    return response;
   }
 
   return nativeFetch(input, init);
 };
 
 console.log(JSON.stringify({
-  securityBuild: true,
-  productionBootstrap: 'pinned-immutable-deployment',
-  githubBuildModules: 'local-checkout'
+  reconstructionPreview: true,
+  sourceSnapshot: '754730b-2026-09-11',
+  productionBootstrap: 'current-production-normalized',
+  githubBuildModules: 'branch-checkout'
 }));
 
 await import('./build-activity-access.mjs');
