@@ -44,7 +44,7 @@ await fs.writeFile(path,html);
 try{
  const manifestPath='.vercel/output/static/manifest.json';
  const manifest=JSON.parse(await fs.readFile(manifestPath,'utf8'));
- manifest.name='SIMANTEB Online';manifest.short_name='SIMANTEB';
+ manifest.name='SIMANTAB Online';manifest.short_name='SIMANTAB';
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest branding dilewati:',e?.message||e)}
-console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true}));
+console.log(JSON.stringify({ok:true,displayBrand:'SIMANTAB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true}));
