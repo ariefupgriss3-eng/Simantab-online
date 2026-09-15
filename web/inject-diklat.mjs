@@ -34,16 +34,16 @@ const replacements=[
     "d.sertifikat_status==='TERCATAT'?`<div class=\"small\">Penerbit: ${esc(d.sertifikat_penerbit||'-')} • Nomor: ${esc(d.sertifikat_nomor)} • ${fmtDate(d.sertifikat_tanggal)}</div>`:''"
   ],
   [
-    "d.sertifikat_status!=='TERBIT'",
-    "d.sertifikat_status!=='TERCATAT'"
+    "d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status!=='TERBIT'",
+    "d.workflow_stage==='SERTIFIKAT'"
   ],
   [
     '<div class=\"grid\"><label class=\"s6\">Nomor Sertifikat<input id=\"certno-${d.submission_id}\"></label><label class=\"s6\">Tanggal Sertifikat<input id=\"certdate-${d.submission_id}\" type=\"date\"></label></div>',
-    '<div class=\"grid\"><label class=\"s12\">Lembaga/Pihak Penerbit<input id=\"certissuer-${d.submission_id}\" placeholder=\"Nama lembaga/pihak yang berwenang\"></label><label class=\"s6\">Nomor Sertifikat<input id=\"certno-${d.submission_id}\"></label><label class=\"s6\">Tanggal Sertifikat<input id=\"certdate-${d.submission_id}\" type=\"date\"></label></div>'
+    '<div class=\"grid\"><label class=\"s12\">Lembaga/Pihak Penerbit<input id=\"certissuer-${d.submission_id}\" value=\"${esc(d.sertifikat_penerbit||\'\')}\" placeholder=\"Nama lembaga/pihak yang berwenang\"></label><label class=\"s6\">Nomor Sertifikat<input id=\"certno-${d.submission_id}\" value=\"${esc(d.sertifikat_nomor||\'\')}\"></label><label class=\"s6\">Tanggal Sertifikat<input id=\"certdate-${d.submission_id}\" type=\"date\" value=\"${esc(d.sertifikat_tanggal||\'\')}\"></label></div>'
   ],
   [
     '>Terbitkan Sertifikat</button>',
-    '>Catat Sertifikat</button>'
+    ">${d.sertifikat_status==='TERCATAT'?'Perbarui Pencatatan':'Catat Sertifikat'}</button>"
   ],
   [
     'Administrasi → Substansi → Diklat → Penerbitan Sertifikat.',
@@ -61,9 +61,9 @@ for(const [from,to] of replacements){
 
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=3"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=4"></script>\n`;
 html=html.replace(/<script type="module" src="\.\/diklat-ks-bcks\.js\?v=\d+"><\/script>\s*/g,'');
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({diklatKsBcks:true,levels:4,level4:'PENCATATAN_SERTIFIKAT',fileLimitBytes:512000,adminKsps:'kasim',productionUntouched:true}));
+console.log(JSON.stringify({diklatKsBcks:true,levels:4,level4:'PENCATATAN_SERTIFIKAT',certificateFormAlwaysVisibleAtLevel4:true,fileLimitBytes:512000,adminKsps:'kasim',productionUntouched:true}));
