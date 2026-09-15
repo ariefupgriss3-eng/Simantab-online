@@ -4,6 +4,7 @@ await import('./build-workflow.mjs');
 const path='.vercel/output/static/index.html';
 let html=await fs.readFile(path,'utf8');
 const MODS=[
+ ['legacy-shell-restore.js','SIMANTAB_LEGACY_SHELL_RESTORE_V1',1],
  ['team-multi-capability.js','SIMANTAB_TEAM_MULTI_CAPABILITY_V1',1],
  ['activity-input-access.js','SIMANTAB_ACTIVITY_INPUT_ACCESS_V1',1],
  ['tpg-consultation.js','SIMANTAB_TPG_CONSULTATION_INFO_V1',1],
@@ -47,4 +48,4 @@ try{
  manifest.name='SIMANTAB Online';manifest.short_name='SIMANTAB';
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest branding dilewati:',e?.message||e)}
-console.log(JSON.stringify({ok:true,displayBrand:'SIMANTAB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true}));
+console.log(JSON.stringify({ok:true,displayBrand:'SIMANTAB',technicalBrand:'SIMANTAB',legacyShell:['activities','attendance','schoolMaster','team','adminData'],legacyShellPreviewReadOnly:true,pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true}));
