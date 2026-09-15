@@ -3,18 +3,11 @@ import { spawnSync } from 'node:child_process';
 await import('./build-workflow.mjs');
 const path='.vercel/output/static/index.html';
 let html=await fs.readFile(path,'utf8');
-
-// Prevent Kelola Pengguna from freezing the browser.
-// The legacy observer rewrites the heading on every observed mutation, which
-// creates another mutation and can loop indefinitely once usersBody renders.
-const badUsersHeading="const heading=$('usersBody')?.querySelector('h3');if(heading)heading.textContent='Buat Akun Dinas/Sekolah';";
-const safeUsersHeading="const heading=$('usersBody')?.querySelector('h3');if(heading&&heading.textContent!=='Buat Akun Dinas/Sekolah')heading.textContent='Buat Akun Dinas/Sekolah';";
-const badUsersObserver="new MutationObserver(enhanceAccountForm).observe($('usersBody'),{childList:true,subtree:true});";
-const safeUsersObserver="new MutationObserver(enhanceAccountForm).observe($('usersBody'),{childList:true});";
-if(!html.includes(badUsersHeading)||!html.includes(badUsersObserver))throw new Error('Anchor Kelola Pengguna/MutationObserver tidak ditemukan.');
-html=html.replace(badUsersHeading,safeUsersHeading).replace(badUsersObserver,safeUsersObserver);
-
 const MODS=[
+ ['legacy-shell-restore.js','SIMANTAB_LEGACY_SHELL_RESTORE_V1',2],
+ ['school-master-restore-fix.js','SIMANTAB_SCHOOL_MASTER_RESTORE_FIX_V2',2],
+ ['team-display-fix.js','SIMANTAB_TEAM_DISPLAY_FIX_V1',1],
+ ['admin-data-summary-fix.js','SIMANTAB_ADMIN_DATA_SUMMARY_FIX_V1',1],
  ['team-multi-capability.js','SIMANTAB_TEAM_MULTI_CAPABILITY_V1',1],
  ['activity-input-access.js','SIMANTAB_ACTIVITY_INPUT_ACCESS_V1',1],
  ['tpg-consultation.js','SIMANTAB_TPG_CONSULTATION_INFO_V1',1],
@@ -44,6 +37,11 @@ for(const [file,marker,version] of MODS){
   code=await r.text();
  }
  if(marker&&!code.includes(marker))throw new Error(`Marker ${file} tidak ditemukan.`);
+ if(file==='legacy-shell-restore.js'){
+   const before=code;
+   code=code.replace(/async function loadSchoolMaster\(\)\{[\s\S]*?\n\}\nasync function loadAdminData/,"async function loadSchoolMaster(){return;}\nasync function loadAdminData");
+   if(code===before)throw new Error('Legacy loadSchoolMaster tidak berhasil dinonaktifkan.');
+ }
  if(file==='pengawas-dashboard-kadin.js'){
    code=code.replace("async function render(force=false){if(profile().role!=='PENGAWAS')return;","async function render(force=false){if(profile().role!=='PENGAWAS'||/korwil/i.test(String(profile().position||'')))return;");
  }
@@ -55,7 +53,7 @@ await fs.writeFile(path,html);
 try{
  const manifestPath='.vercel/output/static/manifest.json';
  const manifest=JSON.parse(await fs.readFile(manifestPath,'utf8'));
- manifest.name='SIMANTEB Online';manifest.short_name='SIMANTEB';
+ manifest.name='SIMANTAB Online';manifest.short_name='SIMANTAB';
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest branding dilewati:',e?.message||e)}
-console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true,usersObserverFix:true}));
+console.log(JSON.stringify({ok:true,displayBrand:'SIMANTAB',technicalBrand:'SIMANTAB',legacyShell:['activities','attendance','schoolMaster','team','adminData'],legacySchoolMasterLoaderDisabled:true,legacyShellPreviewReadOnly:true,schoolMasterRestoreFix:{version:2,bypassLegacy:true,schemaAgnostic:true},teamDisplayFix:true,adminDataSummaryFix:{version:1,rpc:'super_admin_data_summary_restore'},pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true}));
