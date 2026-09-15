@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises';
 
 // Security wrapper for the legacy SIMANTAB build chain.
-// 1) Never bootstrap a release from the mutable production alias.
+// 1) Bootstrap the next release from the current public production alias.
+//    The legacy build chain patches the previous known-good frontend forward.
 // 2) Never download build modules from the mutable GitHub `main` branch.
 //    Use files from the exact checkout/commit being built instead.
 
 const PROD_PREFIX = 'https://simantab-online.vercel.app/';
-const IMMUTABLE_PREFIX = 'https://simantab-online-k28yzpg2k-mariefrohman-6773.vercel.app/';
 const RAW_PREFIX = 'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/';
 const nativeFetch = globalThis.fetch.bind(globalThis);
 
@@ -49,9 +49,7 @@ globalThis.fetch = async (input, init = {}) => {
   }
 
   if (url.startsWith(PROD_PREFIX)) {
-    const suffix = url.slice(PROD_PREFIX.length);
-    const pinnedUrl = IMMUTABLE_PREFIX + suffix;
-    return nativeFetch(pinnedUrl, { ...init, redirect: 'follow' });
+    return nativeFetch(input, { ...init, redirect: 'follow' });
   }
 
   return nativeFetch(input, init);
@@ -59,7 +57,7 @@ globalThis.fetch = async (input, init = {}) => {
 
 console.log(JSON.stringify({
   securityBuild: true,
-  productionBootstrap: 'pinned-immutable-deployment',
+  productionBootstrap: 'current-production-alias',
   githubBuildModules: 'local-checkout'
 }));
 
