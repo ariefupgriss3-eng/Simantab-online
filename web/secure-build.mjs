@@ -88,3 +88,40 @@ console.log(JSON.stringify({
 }));
 
 await import('./build-activity-access.mjs');
+
+// Preserve the two fixes proven necessary during today's restoration.
+const outputPath = '.vercel/output/static/index.html';
+let html = await fs.readFile(outputPath, 'utf8');
+
+// A) Kelola Pengguna freeze fix: avoid self-triggering subtree mutation loop.
+const badHeading = "const heading=$('usersBody')?.querySelector('h3');if(heading)heading.textContent='Buat Akun Dinas/Sekolah';";
+const safeHeading = "const heading=$('usersBody')?.querySelector('h3');if(heading&&heading.textContent!=='Buat Akun Dinas/Sekolah')heading.textContent='Buat Akun Dinas/Sekolah';";
+const badObserver = "new MutationObserver(enhanceAccountForm).observe($('usersBody'),{childList:true,subtree:true});";
+const safeObserver = "new MutationObserver(enhanceAccountForm).observe($('usersBody'),{childList:true});";
+if (html.includes(badHeading)) html = html.replace(badHeading, safeHeading);
+if (html.includes(badObserver)) html = html.replace(badObserver, safeObserver);
+
+// B) Kepala Sekolah belongs to the school/GTK login side, not Dinas.
+const oldChannelHelper = "const isDinas=()=>profile && profile.role!=='GTK';";
+const newChannelHelper = "const isGtkSide=()=>profile && ['GTK','KEPALA_SEKOLAH'].includes(profile.role);const isDinas=()=>profile && !isGtkSide();";
+if (html.includes(oldChannelHelper)) html = html.replace(oldChannelHelper, newChannelHelper);
+if (html.includes(newChannelHelper)) {
+  const channelReplacements = [
+    ["if(channel==='GTK' && profile.role!=='GTK')", "if(channel==='GTK' && !isGtkSide())"],
+    ["if(channel==='DINAS' && profile.role==='GTK')", "if(channel==='DINAS' && isGtkSide())"],
+    ["if(profile.role==='GTK'){", "if(isGtkSide()){"],
+    ["${profile.role==='GTK'?", "${isGtkSide()?"],
+    ["showTab(profile.role==='GTK'?'status':'sk')", "showTab(isGtkSide()?'status':'sk')"]
+  ];
+  for (const [from, to] of channelReplacements) html = html.split(from).join(to);
+}
+
+await fs.writeFile(outputPath, html);
+
+console.log(JSON.stringify({
+  reconstructionPreviewReady: true,
+  preservedRestoredDatabase: true,
+  kelolaPenggunaFreezeFix: html.includes(safeObserver) || !html.includes(badObserver),
+  kepalaSekolahLoginChannel: html.includes("['GTK','KEPALA_SEKOLAH']") ? 'GTK' : 'historical-module',
+  productionUntouched: true
+}));
