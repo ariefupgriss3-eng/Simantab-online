@@ -3,6 +3,17 @@ import { spawnSync } from 'node:child_process';
 await import('./build-workflow.mjs');
 const path='.vercel/output/static/index.html';
 let html=await fs.readFile(path,'utf8');
+
+// Prevent Kelola Pengguna from freezing the browser.
+// The legacy observer rewrites the heading on every observed mutation, which
+// creates another mutation and can loop indefinitely once usersBody renders.
+const badUsersHeading="const heading=$('usersBody')?.querySelector('h3');if(heading)heading.textContent='Buat Akun Dinas/Sekolah';";
+const safeUsersHeading="const heading=$('usersBody')?.querySelector('h3');if(heading&&heading.textContent!=='Buat Akun Dinas/Sekolah')heading.textContent='Buat Akun Dinas/Sekolah';";
+const badUsersObserver="new MutationObserver(enhanceAccountForm).observe($('usersBody'),{childList:true,subtree:true});";
+const safeUsersObserver="new MutationObserver(enhanceAccountForm).observe($('usersBody'),{childList:true});";
+if(!html.includes(badUsersHeading)||!html.includes(badUsersObserver))throw new Error('Anchor Kelola Pengguna/MutationObserver tidak ditemukan.');
+html=html.replace(badUsersHeading,safeUsersHeading).replace(badUsersObserver,safeUsersObserver);
+
 const MODS=[
  ['team-multi-capability.js','SIMANTAB_TEAM_MULTI_CAPABILITY_V1',1],
  ['activity-input-access.js','SIMANTAB_ACTIVITY_INPUT_ACCESS_V1',1],
@@ -47,4 +58,4 @@ try{
  manifest.name='SIMANTEB Online';manifest.short_name='SIMANTEB';
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest branding dilewati:',e?.message||e)}
-console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true}));
+console.log(JSON.stringify({ok:true,displayBrand:'SIMANTEB',technicalBrand:'SIMANTAB',pengawasMenu:['dashboard','attendance','profile','services','monitoring','notifications','needs','promotion','discipline','tpg','status','docs'],pengawasLogin:{channel:'GTK',username:true,dinasBlocked:true},pengawasMenuV2:true,pengawasDashboard:{kadinStyle:true,districtScoped:true,baseDisabledForKorwil:true},korwilScope:{version:3,levels:['TK','SD','PNF'],exclude:['SMP'],serverSummaryRpc:true,cacheBust:true,title:'Dashboard Biddik Kecamatan'},cutiRequirements:{structured:true,types:6,maxBytes:512000,completeBeforeClose:true},superAdminMergePengawas:true,usersObserverFix:true}));
