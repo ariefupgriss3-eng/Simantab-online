@@ -1,15 +1,25 @@
-/* SIMANTAB_LOGIN_CLICK_RESCUE_V1 */
+/* SIMANTAB_LOGIN_CLICK_RESCUE_V2 */
 (()=>{
 const $=id=>document.getElementById(id);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const SUPABASE_URL='https://tizxfzvgglkokzvsiwkg.supabase.co';
 const SUPABASE_KEY='sb_publishable_EfCKPSelNMo1X3whBFszJw_Ui6SuRIB';
-const GTK_FALLBACK=new Set(['GTK','KEPALA_SEKOLAH','PENGAWAS']);
+const GTK_ROLES=new Set(['GTK','KEPALA_SEKOLAH','PENGAWAS']);
 let busy=false;
 const show=(text,type='ok')=>{const m=$('authMsg');if(!m)return;m.className=type==='err'?'err':'okmsg';m.textContent=text};
 const isSignup=()=>!($('nameWrap')?.classList.contains('hidden'));
-const selectedChannel=()=>$('tabGtk')?.classList.contains('active')?'GTK':'DINAS';
-const effectiveChannel=p=>{const c=String(p?.account_channel||'').toUpperCase();if(c==='GTK'||c==='DINAS')return c;return GTK_FALLBACK.has(String(p?.role||'').toUpperCase())?'GTK':'DINAS'};
+const selectedChannel=()=>{
+ if($('tabDinas')?.classList.contains('active'))return 'DINAS';
+ if($('tabGtk')?.classList.contains('active'))return 'GTK';
+ return window.__simantabSelectedLoginChannel==='GTK'?'GTK':'DINAS';
+};
+const effectiveChannel=p=>{
+ const role=String(p?.role||'').toUpperCase(),position=String(p?.position||'').toUpperCase();
+ if(GTK_ROLES.has(role)||/KEPALA\s*SEKOLAH|KEPALA\s*SATUAN\s*PENDIDIKAN/.test(position))return 'GTK';
+ const c=String(p?.account_channel||'').toUpperCase();
+ if(c==='GTK'||c==='DINAS')return c;
+ return 'DINAS';
+};
 async function getClient(){
  for(let i=0;i<40;i++){if(window.__simantabSb)return window.__simantabSb;await wait(50)}
  show('Menyiapkan koneksi login…','ok');
@@ -50,7 +60,7 @@ async function runLogin(){
   const sb=await getClient();
   const uid=await Promise.race([authenticate(sb,login,password),wait(15000).then(()=>{throw new Error('Koneksi login terlalu lama. Silakan coba lagi.')})]);
   if(!uid)throw new Error('Sesi login tidak ditemukan.');
-  const {data:prof,error}=await sb.from('profiles').select('role,is_active,approval_status,account_channel,full_name').eq('id',uid).maybeSingle();
+  const {data:prof,error}=await sb.from('profiles').select('role,is_active,approval_status,account_channel,full_name,position,school_npsn').eq('id',uid).maybeSingle();
   if(error)throw error;
   if(!prof){await sb.auth.signOut();throw new Error('Profil akun SIMANTAB tidak ditemukan. Hubungi Super Admin.');}
   if(!prof.is_active){await sb.auth.signOut();throw new Error('Akun dinonaktifkan. Hubungi Super Admin.');}
@@ -67,13 +77,17 @@ async function runLogin(){
  }
 }
 function bind(){
- const btn=$('authBtn');if(!btn||btn.dataset.loginRescue==='1')return;
- btn.dataset.loginRescue='1';
- btn.removeAttribute('onclick');
- btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();void runLogin()},true);
- const pw=$('password');if(pw&&!pw.dataset.loginRescueEnter){pw.dataset.loginRescueEnter='1';pw.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void runLogin()}})}
+ const btn=$('authBtn');if(btn&&btn.dataset.loginRescue!=='2'){
+  btn.dataset.loginRescue='2';
+  btn.removeAttribute('onclick');
+  btn.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();void runLogin()},true);
+ }
+ const pw=$('password');if(pw&&!pw.dataset.loginRescueEnter){pw.dataset.loginRescueEnter='2';pw.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();void runLogin()}})}
+ const d=$('tabDinas'),g=$('tabGtk');
+ if(d&&!d.dataset.channelTrack){d.dataset.channelTrack='2';d.addEventListener('click',()=>{window.__simantabSelectedLoginChannel='DINAS'},true)}
+ if(g&&!g.dataset.channelTrack){g.dataset.channelTrack='2';g.addEventListener('click',()=>{window.__simantabSelectedLoginChannel='GTK'},true)}
 }
 bind();
 new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});
-window.__simantabLoginRescue={version:1,enabled:true};
+window.__simantabLoginRescue={version:2,enabled:true};
 })();
