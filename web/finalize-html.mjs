@@ -55,8 +55,10 @@ const modules=[
  ['activity-participant-import.js',1],
  ['activity-participant-import-save.js',1],
  ['activity-digital-invite.js',1],
- ['activity-attendance-success-ux.js',2],
- ['login-channel-hardening.js',2]
+ ['activity-attendance-success-ux.js',3],
+ ['activity-attendance-recap.js',1],
+ ['login-channel-hardening.js',2],
+ ['login-click-rescue.js',1]
 ];
 
 for(const [file] of modules){
@@ -86,5 +88,7 @@ console.log(JSON.stringify({
  canonicalModuleCount:modules.length,
  removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),
  scriptTags:openScripts,
+ attendanceRecap:true,
+ loginRescue:true,
  validClosingTags:true
 }));
