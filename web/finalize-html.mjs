@@ -57,8 +57,8 @@ const modules=[
  ['activity-digital-invite.js',1],
  ['activity-attendance-success-ux.js',3],
  ['activity-attendance-recap.js',2],
- ['login-channel-hardening.js',2],
- ['login-click-rescue.js',1]
+ ['login-channel-hardening.js',3],
+ ['login-click-rescue.js',2]
 ];
 
 for(const [file] of modules){
@@ -72,11 +72,11 @@ for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){
 
 const classicFile='login-classic-rescue.js';
 const classicCode=await fs.readFile(new URL(`./${classicFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V1/.test(classicCode))throw new Error('Classic login rescue tidak valid.');
+if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V2/.test(classicCode))throw new Error('Classic login rescue v2 tidak valid.');
 await fs.writeFile(path.join(staticDir,classicFile),classicCode);
 
 const pdfTags='<script src="./jspdf.umd.min.js?v=1"></script>\n<script src="./jspdf.plugin.autotable.min.js?v=1"></script>';
-const classicTag=`<script src="./${classicFile}?v=1"></script>`;
+const classicTag=`<script src="./${classicFile}?v=2"></script>`;
 const moduleTags=modules.map(([file,v])=>`<script type="module" src="./${file}?v=${v}"></script>`).join('\n');
 html=`${headAndBody.trimEnd()}\n${pdfTags}\n${classicTag}\n${moduleTags}\n</body>\n</html>\n`;
 
@@ -95,8 +95,8 @@ for(const [file,v] of modules){
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1']){
  if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`)
 }
-const classicRef=`./${classicFile}?v=1`;
-if(html.split(classicRef).length-1!==1)throw new Error('Classic login rescue harus tepat 1 kali.');
+const classicRef=`./${classicFile}?v=2`;
+if(html.split(classicRef).length-1!==1)throw new Error('Classic login rescue v2 harus tepat 1 kali.');
 
 await fs.writeFile(outputPath,html);
 console.log(JSON.stringify({
@@ -109,5 +109,6 @@ console.log(JSON.stringify({
  localPdfLibraries:true,
  loginRescue:true,
  classicLoginRescue:true,
+ roleFirstLoginChannelGuard:true,
  validClosingTags:true
 }));
