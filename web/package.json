@@ -2,6 +2,10 @@
   "name": "simantab-online",
   "private": true,
   "scripts": {
-    "build": "node secure-build.mjs && node vendor-supabase-local.mjs && node inject-diklat.mjs && node inject-branding-icons.mjs && node inject-password-toggle.mjs && node inject-gtk-needs-progress.mjs && node inject-activity-participant-import.mjs && node inject-activity-digital-invite.mjs && node inject-activity-attendance-success-ux.mjs && node inject-activity-attendance-recap.mjs && node inject-login-channel-hardening.mjs && node inject-login-click-rescue.mjs && node finalize-html.mjs"
+    "build": "node secure-build.mjs && node vendor-supabase-local.mjs && node vendor-pdf-libs.mjs && node inject-diklat.mjs && node inject-branding-icons.mjs && node inject-password-toggle.mjs && node inject-gtk-needs-progress.mjs && node inject-activity-participant-import.mjs && node inject-activity-digital-invite.mjs && node inject-activity-attendance-success-ux.mjs && node inject-activity-attendance-recap.mjs && node inject-login-channel-hardening.mjs && node inject-login-click-rescue.mjs && node finalize-html.mjs"
+  },
+  "dependencies": {
+    "jspdf": "2.5.2",
+    "jspdf-autotable": "3.8.4"
   }
 }
