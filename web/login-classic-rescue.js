@@ -1,4 +1,4 @@
-/* SIMANTAB_LOGIN_CLASSIC_RESCUE_V1 */
+/* SIMANTAB_LOGIN_CLASSIC_RESCUE_V2 */
 (function(){
   'use strict';
   var SUPABASE_URL='https://tizxfzvgglkokzvsiwkg.supabase.co';
@@ -8,13 +8,25 @@
   function $(id){return document.getElementById(id)}
   function show(text,type){var m=$('authMsg');if(!m)return;m.className=type==='err'?'err':'okmsg';m.textContent=text}
   function isSignup(){var n=$('nameWrap');return n && !n.classList.contains('hidden')}
-  function selectedChannel(){var t=$('tabGtk');return t&&t.classList.contains('active')?'GTK':'DINAS'}
-  function effectiveChannel(p){var c=String((p&&p.account_channel)||'').toUpperCase();if(c==='GTK'||c==='DINAS')return c;var r=String((p&&p.role)||'').toUpperCase();return (r==='GTK'||r==='KEPALA_SEKOLAH'||r==='PENGAWAS')?'GTK':'DINAS'}
+  function selectedChannel(){
+    var d=$('tabDinas'),g=$('tabGtk');
+    if(d&&d.classList.contains('active'))return 'DINAS';
+    if(g&&g.classList.contains('active'))return 'GTK';
+    return window.__simantabSelectedLoginChannel==='GTK'?'GTK':'DINAS';
+  }
+  function effectiveChannel(p){
+    var r=String((p&&p.role)||'').toUpperCase();
+    var pos=String((p&&p.position)||'').toUpperCase();
+    if(r==='GTK'||r==='KEPALA_SEKOLAH'||r==='PENGAWAS'||/KEPALA\s*SEKOLAH|KEPALA\s*SATUAN\s*PENDIDIKAN/.test(pos))return 'GTK';
+    var c=String((p&&p.account_channel)||'').toUpperCase();
+    if(c==='GTK'||c==='DINAS')return c;
+    return 'DINAS';
+  }
   function headers(token){var h={'apikey':SUPABASE_KEY,'Content-Type':'application/json'};if(token)h.Authorization='Bearer '+token;return h}
   function parseResponse(r){return r.text().then(function(t){var j={};try{j=t?JSON.parse(t):{}}catch(_){j={message:t}}if(!r.ok){var e=new Error(j.error_description||j.msg||j.message||j.error||('HTTP '+r.status));e.status=r.status;throw e}return j})}
   function authEmail(email,password){return fetch(SUPABASE_URL+'/auth/v1/token?grant_type=password',{method:'POST',headers:headers(),body:JSON.stringify({email:email,password:password})}).then(parseResponse)}
   function authUsername(username,password){return fetch(SUPABASE_URL+'/functions/v1/simantab-username-login',{method:'POST',headers:headers(),body:JSON.stringify({username:username,password:password})}).then(parseResponse)}
-  function profileFor(uid,token){var q='/rest/v1/profiles?id=eq.'+encodeURIComponent(uid)+'&select=role,is_active,approval_status,account_channel,full_name';return fetch(SUPABASE_URL+q,{method:'GET',headers:headers(token)}).then(parseResponse).then(function(rows){return rows&&rows[0]})}
+  function profileFor(uid,token){var q='/rest/v1/profiles?id=eq.'+encodeURIComponent(uid)+'&select=role,is_active,approval_status,account_channel,full_name,position,school_npsn';return fetch(SUPABASE_URL+q,{method:'GET',headers:headers(token)}).then(parseResponse).then(function(rows){return rows&&rows[0]})}
   function persistSession(session){
     var now=Math.floor(Date.now()/1000);
     if(!session.expires_at&&session.expires_in)session.expires_at=now+Number(session.expires_in||3600);
@@ -55,11 +67,14 @@
     }).catch(function(e){show((e&&e.message)||'Username/email atau password tidak sesuai.','err');busy=false;if(btn)btn.disabled=false})
   }
   function bind(){
-    var btn=$('authBtn');if(!btn||btn.getAttribute('data-classic-rescue')==='1')return;
-    btn.setAttribute('data-classic-rescue','1');
+    var btn=$('authBtn');if(!btn||btn.getAttribute('data-classic-rescue')==='2')return;
+    btn.setAttribute('data-classic-rescue','2');
     btn.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();if(e.stopImmediatePropagation)e.stopImmediatePropagation();run()},true);
-    var pw=$('password');if(pw&&pw.getAttribute('data-classic-enter')!=='1'){pw.setAttribute('data-classic-enter','1');pw.addEventListener('keydown',function(e){if(e.key==='Enter'||e.keyCode===13){e.preventDefault();run()}})}
+    var pw=$('password');if(pw&&pw.getAttribute('data-classic-enter')!=='2'){pw.setAttribute('data-classic-enter','2');pw.addEventListener('keydown',function(e){if(e.key==='Enter'||e.keyCode===13){e.preventDefault();run()}})}
+    var d=$('tabDinas'),g=$('tabGtk');
+    if(d&&d.getAttribute('data-channel-track')!=='2'){d.setAttribute('data-channel-track','2');d.addEventListener('click',function(){window.__simantabSelectedLoginChannel='DINAS'},true)}
+    if(g&&g.getAttribute('data-channel-track')!=='2'){g.setAttribute('data-channel-track','2');g.addEventListener('click',function(){window.__simantabSelectedLoginChannel='GTK'},true)}
   }
-  function ready(){bind();try{new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true})}catch(_){setInterval(bind,1000)}window.__simantabClassicLoginRescue={version:1,enabled:true}}
+  function ready(){bind();try{new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true})}catch(_){setInterval(bind,1000)}window.__simantabClassicLoginRescue={version:2,enabled:true}}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready);else ready();
 })();
