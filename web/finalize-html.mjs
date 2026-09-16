@@ -10,11 +10,9 @@ const bodyClose=html.indexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
 
 let headAndBody=html.slice(0,bodyClose);
-// Hapus seluruh tag script module eksternal yang sudah tersusun/terduplikasi,
-// tetapi pertahankan script inline utama aplikasi.
 headAndBody=headAndBody.replace(/<script\s+type="module"\s+src="\.\/[^\"]+"\s*><\/script>\s*/g,'');
-// Hapus rescue klasik lama agar tidak terduplikasi pada build berikutnya.
 headAndBody=headAndBody.replace(/<script\s+src="\.\/login-classic-rescue\.js\?v=\d+"\s*><\/script>\s*/g,'');
+headAndBody=headAndBody.replace(/<script\s+src="\.\/(?:jspdf\.umd\.min\.js|jspdf\.plugin\.autotable\.min\.js)\?v=\d+"\s*><\/script>\s*/g,'');
 
 const modules=[
  ['kp-enhancement.js',4],
@@ -58,7 +56,7 @@ const modules=[
  ['activity-participant-import-save.js',1],
  ['activity-digital-invite.js',1],
  ['activity-attendance-success-ux.js',3],
- ['activity-attendance-recap.js',1],
+ ['activity-attendance-recap.js',2],
  ['login-channel-hardening.js',2],
  ['login-click-rescue.js',1]
 ];
@@ -67,16 +65,20 @@ for(const [file] of modules){
  try{await fs.access(path.join(staticDir,file));}
  catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}
 }
+for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){
+ try{await fs.access(path.join(staticDir,file));}
+ catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}
+}
 
 const classicFile='login-classic-rescue.js';
 const classicCode=await fs.readFile(new URL(`./${classicFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V1/.test(classicCode))throw new Error('Classic login rescue tidak valid.');
 await fs.writeFile(path.join(staticDir,classicFile),classicCode);
 
+const pdfTags='<script src="./jspdf.umd.min.js?v=1"></script>\n<script src="./jspdf.plugin.autotable.min.js?v=1"></script>';
 const classicTag=`<script src="./${classicFile}?v=1"></script>`;
 const moduleTags=modules.map(([file,v])=>`<script type="module" src="./${file}?v=${v}"></script>`).join('\n');
-// Rescue klasik dipasang lebih dulu agar tombol login hidup walau module/ESM gagal dimuat.
-html=`${headAndBody.trimEnd()}\n${classicTag}\n${moduleTags}\n</body>\n</html>\n`;
+html=`${headAndBody.trimEnd()}\n${pdfTags}\n${classicTag}\n${moduleTags}\n</body>\n</html>\n`;
 
 const bodyMatches=html.match(/<\/body>/g)||[];
 const htmlMatches=html.match(/<\/html>/g)||[];
@@ -90,6 +92,9 @@ for(const [file,v] of modules){
  const count=html.split(ref).length-1;
  if(count!==1)throw new Error(`Referensi ${ref} harus tepat 1, ditemukan ${count}`);
 }
+for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1']){
+ if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`)
+}
 const classicRef=`./${classicFile}?v=1`;
 if(html.split(classicRef).length-1!==1)throw new Error('Classic login rescue harus tepat 1 kali.');
 
@@ -100,6 +105,8 @@ console.log(JSON.stringify({
  removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),
  scriptTags:openScripts,
  attendanceRecap:true,
+ directPdfDownload:true,
+ localPdfLibraries:true,
  loginRescue:true,
  classicLoginRescue:true,
  validClosingTags:true
