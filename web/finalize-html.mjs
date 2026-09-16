@@ -13,6 +13,8 @@ let headAndBody=html.slice(0,bodyClose);
 // Hapus seluruh tag script module eksternal yang sudah tersusun/terduplikasi,
 // tetapi pertahankan script inline utama aplikasi.
 headAndBody=headAndBody.replace(/<script\s+type="module"\s+src="\.\/[^\"]+"\s*><\/script>\s*/g,'');
+// Hapus rescue klasik lama agar tidak terduplikasi pada build berikutnya.
+headAndBody=headAndBody.replace(/<script\s+src="\.\/login-classic-rescue\.js\?v=\d+"\s*><\/script>\s*/g,'');
 
 const modules=[
  ['kp-enhancement.js',4],
@@ -66,8 +68,15 @@ for(const [file] of modules){
  catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}
 }
 
+const classicFile='login-classic-rescue.js';
+const classicCode=await fs.readFile(new URL(`./${classicFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V1/.test(classicCode))throw new Error('Classic login rescue tidak valid.');
+await fs.writeFile(path.join(staticDir,classicFile),classicCode);
+
+const classicTag=`<script src="./${classicFile}?v=1"></script>`;
 const moduleTags=modules.map(([file,v])=>`<script type="module" src="./${file}?v=${v}"></script>`).join('\n');
-html=`${headAndBody.trimEnd()}\n${moduleTags}\n</body>\n</html>\n`;
+// Rescue klasik dipasang lebih dulu agar tombol login hidup walau module/ESM gagal dimuat.
+html=`${headAndBody.trimEnd()}\n${classicTag}\n${moduleTags}\n</body>\n</html>\n`;
 
 const bodyMatches=html.match(/<\/body>/g)||[];
 const htmlMatches=html.match(/<\/html>/g)||[];
@@ -81,6 +90,8 @@ for(const [file,v] of modules){
  const count=html.split(ref).length-1;
  if(count!==1)throw new Error(`Referensi ${ref} harus tepat 1, ditemukan ${count}`);
 }
+const classicRef=`./${classicFile}?v=1`;
+if(html.split(classicRef).length-1!==1)throw new Error('Classic login rescue harus tepat 1 kali.');
 
 await fs.writeFile(outputPath,html);
 console.log(JSON.stringify({
@@ -90,5 +101,6 @@ console.log(JSON.stringify({
  scriptTags:openScripts,
  attendanceRecap:true,
  loginRescue:true,
+ classicLoginRescue:true,
  validClosingTags:true
 }));
