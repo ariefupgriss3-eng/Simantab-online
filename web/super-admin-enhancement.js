@@ -1,4 +1,4 @@
-/* SIMANTAB_SUPER_ADMIN_COMMAND_CENTER_V2 */
+/* SIMANTAB_SUPER_ADMIN_COMMAND_CENTER_V1 */
 (async()=>{
 const w=ms=>new Promise(r=>setTimeout(r,ms));for(let i=0;i<100&&(!window.__simantabSb||!window.showTab);i++)await w(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id),sa=()=>window.__simantabProfile?.role==='SUPER_ADMIN';if(!sb)return;
