@@ -1,4 +1,4 @@
-/* SIMANTAB_ACTIVITY_ATTENDANCE_SUCCESS_UX_V2 */
+/* SIMANTAB_ACTIVITY_ATTENDANCE_SUCCESS_UX_V1 */
 (()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const $=id=>document.getElementById(id);
