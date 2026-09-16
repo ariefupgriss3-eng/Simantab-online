@@ -70,10 +70,10 @@ for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{awai
 
 const classicFile='login-classic-rescue.js';
 const classicCode=await fs.readFile(new URL(`./${classicFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V4/.test(classicCode))throw new Error('Classic login rescue v4 tidak valid.');
+if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V5/.test(classicCode))throw new Error('Classic login rescue v5 tidak valid.');
 await fs.writeFile(path.join(staticDir,classicFile),classicCode);
 const pdfTags='<script src="./jspdf.umd.min.js?v=1"></script>\n<script src="./jspdf.plugin.autotable.min.js?v=1"></script>';
-const classicTag=`<script src="./${classicFile}?v=4"></script>`;
+const classicTag=`<script src="./${classicFile}?v=5"></script>`;
 const moduleTags=modules.map(([file,v])=>`<script type="module" src="./${file}?v=${v}"></script>`).join('\n');
 html=`${headAndBody.trimEnd()}\n${pdfTags}\n${classicTag}\n${moduleTags}\n</body>\n</html>\n`;
 const bodyMatches=html.match(/<\/body>/g)||[],htmlMatches=html.match(/<\/html>/g)||[],openScripts=(html.match(/<script\b/g)||[]).length,closeScripts=(html.match(/<\/script>/g)||[]).length;
@@ -82,6 +82,6 @@ if(htmlMatches.length!==1)throw new Error(`Struktur HTML tidak valid: </html> = 
 if(openScripts!==closeScripts)throw new Error(`Tag script tidak seimbang: buka=${openScripts}, tutup=${closeScripts}`);
 for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).length-1!==1)throw new Error(`Referensi ${ref} harus tepat 1 kali.`)}
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
-if(html.split(`./${classicFile}?v=4`).length-1!==1)throw new Error('Classic login rescue v4 harus tepat 1 kali.');
+if(html.split(`./${classicFile}?v=5`).length-1!==1)throw new Error('Classic login rescue v5 harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV2:true,negeriNeedsOnly:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV4:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApproval:true,roleFirstLoginChannelGuard:true,validClosingTags:true}));
+console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV2:true,negeriNeedsOnly:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApproval:true,roleFirstLoginChannelGuard:true,validClosingTags:true}));
