@@ -17,6 +17,11 @@ const approvalCode=await fs.readFile(new URL(`./${approvalFile}`,import.meta.url
 if(!/SIMANTAB_REGISTRATION_APPROVAL_V1/.test(approvalCode))throw new Error('Registration approval v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,approvalFile),approvalCode);
 
+const registrationUiFile='registration-ui-final.js';
+const registrationUiCode=await fs.readFile(new URL(`./${registrationUiFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_REGISTRATION_UI_FINAL_V1/.test(registrationUiCode))throw new Error('Registration UI final v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,registrationUiFile),registrationUiCode);
+
 const modules=[
  ['kp-enhancement.js',4],
  ['ptk-swasta-enhancement.js',1],
@@ -63,7 +68,8 @@ const modules=[
  ['activity-attendance-success-ux.js',3],
  ['activity-attendance-recap.js',2],
  ['login-channel-hardening.js',3],
- ['login-click-rescue.js',2]
+ ['login-click-rescue.js',2],
+ ['registration-ui-final.js',1]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
@@ -84,4 +90,4 @@ for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).l
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
 if(html.split(`./${classicFile}?v=5`).length-1!==1)throw new Error('Classic login rescue v5 harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV2:true,negeriNeedsOnly:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApproval:true,roleFirstLoginChannelGuard:true,validClosingTags:true}));
+console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV2:true,negeriNeedsOnly:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApproval:true,registrationUiFinal:true,roleFirstLoginChannelGuard:true,validClosingTags:true}));
