@@ -5,19 +5,23 @@ const outputPath='.vercel/output/static/index.html';
 const staticDir='.vercel/output/static';
 let html=await fs.readFile(outputPath,'utf8');
 const originalLength=html.length;
-
 const bodyClose=html.indexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-
 let headAndBody=html.slice(0,bodyClose);
 headAndBody=headAndBody.replace(/<script\s+type="module"\s+src="\.\/[^\"]+"\s*><\/script>\s*/g,'');
 headAndBody=headAndBody.replace(/<script\s+src="\.\/login-classic-rescue\.js\?v=\d+"\s*><\/script>\s*/g,'');
 headAndBody=headAndBody.replace(/<script\s+src="\.\/(?:jspdf\.umd\.min\.js|jspdf\.plugin\.autotable\.min\.js)\?v=\d+"\s*><\/script>\s*/g,'');
 
+const approvalFile='registration-approval.js';
+const approvalCode=await fs.readFile(new URL(`./${approvalFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_REGISTRATION_APPROVAL_V1/.test(approvalCode))throw new Error('Registration approval v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,approvalFile),approvalCode);
+
 const modules=[
  ['kp-enhancement.js',4],
  ['ptk-swasta-enhancement.js',1],
- ['super-admin-enhancement.js',3],
+ ['super-admin-enhancement.js',4],
+ ['registration-approval.js',1],
  ['kadin-dashboard-v2.js',3],
  ['dinas-login-enhancement.js',1],
  ['private-school-access.js',1],
@@ -61,60 +65,23 @@ const modules=[
  ['login-channel-hardening.js',3],
  ['login-click-rescue.js',2]
 ];
-
-for(const [file] of modules){
- try{await fs.access(path.join(staticDir,file));}
- catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}
-}
-for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){
- try{await fs.access(path.join(staticDir,file));}
- catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}
-}
+for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
+for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
 
 const classicFile='login-classic-rescue.js';
 const classicCode=await fs.readFile(new URL(`./${classicFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V3/.test(classicCode))throw new Error('Classic login rescue v3 tidak valid.');
+if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V4/.test(classicCode))throw new Error('Classic login rescue v4 tidak valid.');
 await fs.writeFile(path.join(staticDir,classicFile),classicCode);
-
 const pdfTags='<script src="./jspdf.umd.min.js?v=1"></script>\n<script src="./jspdf.plugin.autotable.min.js?v=1"></script>';
-const classicTag=`<script src="./${classicFile}?v=3"></script>`;
+const classicTag=`<script src="./${classicFile}?v=4"></script>`;
 const moduleTags=modules.map(([file,v])=>`<script type="module" src="./${file}?v=${v}"></script>`).join('\n');
 html=`${headAndBody.trimEnd()}\n${pdfTags}\n${classicTag}\n${moduleTags}\n</body>\n</html>\n`;
-
-const bodyMatches=html.match(/<\/body>/g)||[];
-const htmlMatches=html.match(/<\/html>/g)||[];
-const openScripts=(html.match(/<script\b/g)||[]).length;
-const closeScripts=(html.match(/<\/script>/g)||[]).length;
+const bodyMatches=html.match(/<\/body>/g)||[],htmlMatches=html.match(/<\/html>/g)||[],openScripts=(html.match(/<script\b/g)||[]).length,closeScripts=(html.match(/<\/script>/g)||[]).length;
 if(bodyMatches.length!==1)throw new Error(`Struktur HTML tidak valid: </body> = ${bodyMatches.length}`);
 if(htmlMatches.length!==1)throw new Error(`Struktur HTML tidak valid: </html> = ${htmlMatches.length}`);
 if(openScripts!==closeScripts)throw new Error(`Tag script tidak seimbang: buka=${openScripts}, tutup=${closeScripts}`);
-for(const [file,v] of modules){
- const ref=`./${file}?v=${v}`;
- const count=html.split(ref).length-1;
- if(count!==1)throw new Error(`Referensi ${ref} harus tepat 1, ditemukan ${count}`);
-}
-for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1']){
- if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`)
-}
-const classicRef=`./${classicFile}?v=3`;
-if(html.split(classicRef).length-1!==1)throw new Error('Classic login rescue v3 harus tepat 1 kali.');
-
+for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).length-1!==1)throw new Error(`Referensi ${ref} harus tepat 1 kali.`)}
+for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
+if(html.split(`./${classicFile}?v=4`).length-1!==1)throw new Error('Classic login rescue v4 harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({
- htmlFinalized:true,
- canonicalModuleCount:modules.length,
- removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),
- scriptTags:openScripts,
- attendanceRecap:true,
- directPdfDownload:true,
- localPdfLibraries:true,
- gtkNeedsScopeV2:true,
- negeriNeedsOnly:true,
- privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],
- ptkBaruNegeriHidden:true,
- loginRescue:true,
- classicLoginRescue:true,
- selfRegistrationGtk:true,
- roleFirstLoginChannelGuard:true,
- validClosingTags:true
-}));
+console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV2:true,negeriNeedsOnly:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV4:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApproval:true,roleFirstLoginChannelGuard:true,validClosingTags:true}));
