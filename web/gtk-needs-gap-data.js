@@ -1,10 +1,10 @@
-/* SIMANTAB_GTK_NEEDS_GAP_DATA_V5 */
+/* SIMANTAB_GTK_NEEDS_GAP_DATA_V6 */
 (()=>{
 'use strict';
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
 const CENTRAL_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','STAFF_DINAS','STAFF_TPG','STAFF_KGB','STAFF_KP_EKIN','STAFF_PROMOSI','STAFF_ARSIP','STAFF_SKP','STAFF_PENSIUN','STAFF_CUTI','STAFF_SPJ_SIMTENDIK','STAFF_USUL_SK']);
 const REVIEW_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK']);
-let busy=false,lastMetrics=null,retryTimer=null,hookTimer=null;
+let busy=false,lastMetrics=null,retryTimer=null,hookTimer=null,reviewRetryTimer=null,reviewObserver=null,reviewTbody=null;
 
 function role(){return String(window.__simantabProfile?.role||'').toUpperCase()}
 function isDinas(){return CENTRAL_ROLES.has(role())}
@@ -97,7 +97,8 @@ function reviewHtml(npsn,status){
 function restoreReviewColumn(){
  if(!isDinas())return false;
  const table=document.getElementById('simNeedsSchoolTable');if(!table)return false;
- for(const tr of table.querySelectorAll('tbody>tr')){
+ const rows=[...table.querySelectorAll('tbody>tr')];if(!rows.length)return false;
+ for(const tr of rows){
   const npsn=npsnFromRow(tr);if(!npsn||!tr.cells.length)continue;
   const statusText=String(tr.cells[1]?.textContent||'').toLowerCase();
   const status=statusText.includes('diajukan')?'SUBMITTED':statusText.includes('diverifikasi')?'VERIFIED':statusText.includes('perlu perbaikan')?'REVISION':statusText.includes('draft')?'DRAFT':'NOT_STARTED';
@@ -107,12 +108,31 @@ function restoreReviewColumn(){
  }
  return true;
 }
+function bindReviewObserver(){
+ if(!isDinas())return false;
+ const tbody=document.querySelector('#simNeedsSchoolTable tbody');if(!tbody)return false;
+ if(reviewTbody!==tbody){
+  if(reviewObserver)reviewObserver.disconnect();
+  reviewTbody=tbody;
+  reviewObserver=new MutationObserver(()=>setTimeout(()=>restoreReviewColumn(),0));
+  reviewObserver.observe(tbody,{childList:true});
+ }
+ return restoreReviewColumn();
+}
+function scheduleReviewRestore(attempt=0){
+ if(!isDinas()||attempt>40)return;
+ if(reviewRetryTimer)clearTimeout(reviewRetryTimer);
+ reviewRetryTimer=setTimeout(()=>{
+  if(bindReviewObserver())return;
+  scheduleReviewRestore(attempt+1);
+ },200);
+}
 
 async function refreshUi(force=false){
  ensureStyle();
  const grid=dashboardGrid(),table=document.getElementById('simNeedsSchoolTable');
  if(!grid&&!table)return false;
- if(table)restoreReviewColumn();
+ if(table&&!bindReviewObserver())scheduleReviewRestore();
  if(grid){
   if(lastMetrics&&!force)paintMetrics(lastMetrics);
   else if(!busy){
@@ -134,28 +154,31 @@ function boundedRefresh(force=true,attempt=0){
 }
 
 function hookShowTab(){
- if(window.__simNeedsStableUiHookedV5)return;
+ if(window.__simNeedsStableUiHookedV6)return;
  if(typeof window.showTab!=='function'){
   if(hookTimer)clearTimeout(hookTimer);hookTimer=setTimeout(hookShowTab,250);return;
  }
  const original=window.showTab;
  window.showTab=async function(id){
   const result=await original.apply(this,arguments);
-  if(id==='needs'){lastMetrics=null;setTimeout(()=>boundedRefresh(true),180);setTimeout(()=>boundedRefresh(true),900)}
+  if(id==='needs'){lastMetrics=null;setTimeout(()=>boundedRefresh(true),180);setTimeout(()=>scheduleReviewRestore(),260);setTimeout(()=>boundedRefresh(true),900)}
   return result;
  };
- window.__simNeedsStableUiHookedV5=true;
+ window.__simNeedsStableUiHookedV6=true;
 }
 
 document.addEventListener('click',e=>{
  const t=e.target;
- if(t?.closest?.('[data-tab="needs"]')){lastMetrics=null;setTimeout(()=>boundedRefresh(true),300)}
- if(t?.closest?.('#simNeedsSave,#simNeedsSubmit')){lastMetrics=null;setTimeout(()=>boundedRefresh(true),650)}
- if(t?.closest?.('.sim-needs-action')){lastMetrics=null;setTimeout(()=>boundedRefresh(true),1200)}
+ if(t?.closest?.('[data-tab="needs"]')){lastMetrics=null;setTimeout(()=>boundedRefresh(true),300);setTimeout(()=>scheduleReviewRestore(),380)}
+ if(t?.closest?.('#simNeedsSave,#simNeedsSubmit')){lastMetrics=null;setTimeout(()=>boundedRefresh(true),650);setTimeout(()=>scheduleReviewRestore(),750)}
+ if(t?.closest?.('.sim-needs-action')){lastMetrics=null;setTimeout(()=>boundedRefresh(true),1200);setTimeout(()=>scheduleReviewRestore(),1300)}
+},true);
+document.addEventListener('input',()=>{
+ if(document.getElementById('simNeedsSchoolTable'))setTimeout(()=>scheduleReviewRestore(),80);
 },true);
 
 ensureStyle();hookShowTab();
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>boundedRefresh(true),700),{once:true});
-else setTimeout(()=>boundedRefresh(true),700);
-window.__simantabGtkNeedsGapData={version:5,position:'right-of-gap-riil',dinasSource:'VERIFIED-only',reviewIndicators:'restored',observer:'disabled'};
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>boundedRefresh(true),700);setTimeout(()=>scheduleReviewRestore(),800)},{once:true});
+else{setTimeout(()=>boundedRefresh(true),700);setTimeout(()=>scheduleReviewRestore(),800)}
+window.__simantabGtkNeedsGapData={version:6,position:'right-of-gap-riil',dinasSource:'VERIFIED-only',reviewIndicators:'async-table-safe',observer:'tbody-childlist-only'};
 })();
