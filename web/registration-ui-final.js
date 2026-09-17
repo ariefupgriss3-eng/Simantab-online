@@ -1,4 +1,4 @@
-/* SIMANTAB_REGISTRATION_UI_FINAL_V4 */
+/* SIMANTAB_REGISTRATION_UI_FINAL_V5 */
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
@@ -11,8 +11,7 @@ function show(text,type='ok'){const m=$('authMsg');if(!m)return;m.className=type
 function headers(){return {'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'}}
 async function parseResponse(response){const text=await response.text();let data={};try{data=text?JSON.parse(text):{}}catch{data={message:text}}if(!response.ok)throw new Error(data.error_description||data.msg||data.message||data.error||`HTTP ${response.status}`);return data}
 async function validateSchool(npsn){const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/registration_school_lookup`,{method:'POST',headers:headers(),body:JSON.stringify({p_npsn:npsn})});const rows=await parseResponse(response);return rows?.[0]||null}
-async function registerPending(payload){const response=await fetch(`${SUPABASE_URL}/functions/v1/simantab-register-pending`,{method:'POST',headers:headers(),body:JSON.stringify(payload)});return parseResponse(response)}
-async function registerGtk(payload){const response=await fetch(`${SUPABASE_URL}/auth/v1/signup`,{method:'POST',headers:headers(),body:JSON.stringify({email:payload.email,password:payload.password,data:{full_name:payload.full_name,account_channel:'GTK',requested_role:'GTK',nip:payload.nip||'',school_npsn:'',registration_note:'Pendaftaran mandiri GTK melalui SIMANTAB'}})});return parseResponse(response)}
+async function registerAccount(payload){const response=await fetch(`${SUPABASE_URL}/functions/v1/simantab-register-pending`,{method:'POST',headers:headers(),body:JSON.stringify(payload)});return parseResponse(response)}
 async function submitRegistration(){
  if(submitting||!isSignup())return;
  const fullName=String($('fullName')?.value||'').trim();
@@ -25,6 +24,7 @@ async function submitRegistration(){
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return show('Gunakan alamat email yang valid.','err');
  if(password.length<8)return show('Password minimal 8 karakter.','err');
  if(!['KEPALA_SEKOLAH','GTK','PENGAWAS'].includes(role))return show('Pilih jenis akun.','err');
+ if(nip&&nip.length!==18)return show('Jika NIP diisi, gunakan 18 digit.','err');
  if(role==='PENGAWAS'&&nip.length!==18)return show('NIP Pengawas wajib 18 digit.','err');
  if(role==='KEPALA_SEKOLAH'){
   if(!/^\d{8}$/.test(npsn))return show('NPSN Kepala Sekolah wajib 8 digit.','err');
@@ -35,14 +35,13 @@ async function submitRegistration(){
  show('Mendaftarkan akun…','ok');
  try{
   const payload={email,password,full_name:fullName,role,nip:nip||'',school_npsn:npsn||''};
+  await registerAccount(payload);
   if(role==='KEPALA_SEKOLAH'||role==='PENGAWAS'){
-   await registerPending(payload);
    show(`Pendaftaran berhasil. Akun ${role==='KEPALA_SEKOLAH'?'Kepala Sekolah':'Pengawas'} sudah tercatat dan menunggu persetujuan Super Admin. Tidak perlu menunggu email konfirmasi.`,'ok');
   }else{
-   const data=await registerGtk(payload);
-   show(data?.access_token?'Pendaftaran GTK berhasil. Silakan pilih Masuk untuk membuka SIMANTAB.':'Pendaftaran GTK berhasil. Silakan cek email untuk konfirmasi, lalu login kembali.','ok');
+   show('Pendaftaran GTK berhasil. Akun siap digunakan tanpa menunggu email konfirmasi. Silakan pilih Masuk.','ok');
   }
- }catch(error){let message=error?.message||'Pendaftaran gagal.';if(/already|registered|exists/i.test(message))message='Email sudah terdaftar. Jika sebelumnya sudah mendaftar sebagai KS/Pengawas, tunggu persetujuan Super Admin atau gunakan Masuk setelah disetujui.';show(message,'err')}
+ }catch(error){let message=error?.message||'Pendaftaran gagal.';if(/already|registered|exists/i.test(message))message='Email sudah terdaftar. Silakan pilih Masuk atau tunggu persetujuan Super Admin sesuai jenis akun.';show(message,'err')}
  finally{submitting=false;if(btn)btn.disabled=false}
 }
 function apply(){
@@ -62,10 +61,10 @@ function apply(){
  }
 }
 function intercept(event){if(!isSignup())return;const target=event.target;if(event.type==='click'&&target?.closest?.('#authBtn')){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void submitRegistration()}else if(event.type==='submit'){const form=target;if(form?.querySelector?.('#authBtn')){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void submitRegistration()}}else if(event.type==='keydown'&&event.key==='Enter'&&!target?.matches?.('textarea,select,button')){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void submitRegistration()}}
-function bind(){const sw=$('switchLink');if(sw&&!sw.dataset.registrationUiFinal){sw.dataset.registrationUiFinal='4';sw.addEventListener('click',()=>{setTimeout(apply,0);setTimeout(apply,250)},false)}apply()}
+function bind(){const sw=$('switchLink');if(sw&&!sw.dataset.registrationUiFinal){sw.dataset.registrationUiFinal='5';sw.addEventListener('click',()=>{setTimeout(apply,0);setTimeout(apply,250)},false)}apply()}
 document.addEventListener('click',intercept,true);
 document.addEventListener('submit',intercept,true);
 document.addEventListener('keydown',intercept,true);
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>{bind();setTimeout(apply,1000);setTimeout(apply,3000)}):(()=>{bind();setTimeout(apply,1000);setTimeout(apply,3000)})();
-window.__simantabRegistrationUiFinal={version:4,dinasSignupDisabled:true,dedicatedSignupGuard:true,pendingServerRegistration:true};
+window.__simantabRegistrationUiFinal={version:5,dinasSignupDisabled:true,dedicatedSignupGuard:true,allGtkServerRegistration:true};
 })();
