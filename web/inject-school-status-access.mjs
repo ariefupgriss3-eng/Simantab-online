@@ -6,10 +6,10 @@ let html=await fs.readFile(outputPath,'utf8');
 let code=await fs.readFile(new URL(`./${moduleName}`,import.meta.url),'utf8');
 if(!code.includes('SIMANTAB_SCHOOL_STATUS_ACCESS_V1'))throw new Error('Modul status sekolah tidak valid.');
 
-// Revisi kebijakan 16 Sep 2026:
-// - Kebutuhan GTK Riil hanya sekolah negeri.
+// Kebijakan sekolah:
+// - Kebutuhan GTK Riil hanya sekolah negeri (renderer otoritatif ada di gtk-needs-progress V11).
 // - Sekolah swasta: TPG + Usul PTK Baru Swasta.
-// - Usul PTK Baru Swasta tidak boleh tampil pada sekolah negeri.
+// - Modul ini tidak boleh lagi merender ulang Kebutuhan GTK Riil.
 code=code
  .replace("allowedServices:['TPG_KONSULTASI']","allowedServices:['TPG_KONSULTASI','PTK_BARU_SWASTA']")
  .replace('<div class="navhead">Layanan</div><button class="navbtn" data-tab="tpg" onclick="showTab(\'tpg\')"><span class="ico">◉</span>TPG</button>', '<div class="navhead">Layanan</div><button class="navbtn" onclick="openSubmission(\'PTK_BARU_SWASTA\',\'Usul PTK Baru Swasta\')"><span class="ico">🧑‍🏫</span>Usul PTK Baru</button><button class="navbtn" data-tab="tpg" onclick="showTab(\'tpg\')"><span class="ico">◉</span>TPG</button>')
@@ -25,6 +25,18 @@ code=code
  .replace("if(isPrivate&&type!=='TPG_KONSULTASI'){alert('Sekolah swasta hanya dapat menggunakan layanan TPG.');return window.showTab('tpg')}","if(isPrivate&&!['TPG_KONSULTASI','PTK_BARU_SWASTA'].includes(type)){alert('Sekolah swasta hanya dapat menggunakan layanan TPG dan Usul PTK Baru.');return window.showTab('tpg')}")
  .replace("privateServices:['TPG_KONSULTASI']","privateServices:['TPG_KONSULTASI','PTK_BARU_SWASTA']");
 
+// Hentikan renderer lama Kebutuhan GTK Riil agar tidak menimpa core V11.
+const oldShowNeeds="}else if(id==='needs'){await wait(120);await renderNegeriNeeds()}return r};";
+const newShowNeeds="}return r};";
+if(!code.includes(oldShowNeeds))throw new Error('Anchor override needs pada showTab tidak ditemukan.');
+code=code.replace(oldShowNeeds,newShowNeeds);
+
+const oldRefreshNeeds="}else if($('needs')?.classList.contains('active'))await renderNegeriNeeds();return r};";
+const newRefreshNeeds="}return r};";
+if(!code.includes(oldRefreshNeeds))throw new Error('Anchor override needs pada refreshAll tidak ditemukan.');
+code=code.replace(oldRefreshNeeds,newRefreshNeeds);
+code=code.replace("window.__simantabSchoolStatusAccess={version:1,","window.__simantabSchoolStatusAccess={version:3,needsRenderer:'core-v11',");
+
 // Patch modul PTK lama: pada KS negeri jangan tampilkan kartu error PTK Swasta sama sekali.
 const ptkPath='.vercel/output/static/ptk-swasta-enhancement.js';
 let ptkCode=await fs.readFile(ptkPath,'utf8');
@@ -37,7 +49,7 @@ await fs.writeFile(ptkPath,ptkCode);
 html=html.replace(/<script type="module" src="\.\/school-status-access-v1\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-html=html.slice(0,bodyClose)+`<script type="module" src="./${moduleName}?v=2"></script>\n`+html.slice(bodyClose);
+html=html.slice(0,bodyClose)+`<script type="module" src="./${moduleName}?v=3"></script>\n`+html.slice(bodyClose);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({schoolStatusAccess:true,negeriNeedsOnly:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true}));
+console.log(JSON.stringify({schoolStatusAccess:true,version:3,negeriNeedsOnly:true,needsRenderer:'gtk-needs-progress-v11',legacyNeedsOverrideDisabled:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true}));
