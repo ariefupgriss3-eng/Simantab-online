@@ -1,9 +1,9 @@
-/* SIMANTAB_GTK_NEEDS_GAP_DATA_V3 */
+/* SIMANTAB_GTK_NEEDS_GAP_DATA_V4 */
 (()=>{
 'use strict';
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
 const CENTRAL_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','STAFF_DINAS','STAFF_TPG','STAFF_KGB','STAFF_KP_EKIN','STAFF_PROMOSI','STAFF_ARSIP','STAFF_SKP','STAFF_PENSIUN','STAFF_CUTI','STAFF_SPJ_SIMTENDIK','STAFF_USUL_SK']);
-let scheduled=false,busy=false,lastMetrics=null;
+let busy=false,lastMetrics=null,retryTimer=null;
 
 function role(){return String(window.__simantabProfile?.role||'').toUpperCase()}
 function isDinas(){return CENTRAL_ROLES.has(role())}
@@ -30,7 +30,6 @@ function dashboardGrid(){
 function metricCard(grid,pattern){
  return [...grid.querySelectorAll('.sim-needs-metric')].find(card=>pattern.test(String(card.querySelector('span')?.textContent||'')))||null;
 }
-
 function gapRiilCard(grid){return metricCard(grid,/gap riil/i)}
 
 function ensureGapDataCard(grid){
@@ -64,10 +63,8 @@ async function loadApprovedDinasMetrics(){
  const approved=new Set((workflow||[]).filter(w=>['VERIFIED','APPROVED'].includes(String(w.status||'').toUpperCase())&&negeri.has(String(w.school_npsn||''))).map(w=>String(w.school_npsn||'')));
  let gapRiil=0,gapData=0;
  for(const r of needs||[]){
-  const npsn=String(r.school_npsn||'');
-  if(!approved.has(npsn))continue;
-  gapRiil+=num(r.gap_riil);
-  gapData+=num(r.gap_data);
+  const npsn=String(r.school_npsn||'');if(!approved.has(npsn))continue;
+  gapRiil+=num(r.gap_riil);gapData+=num(r.gap_data);
  }
  return {gapRiil,gapData,approvedOnly:true,approvedSchools:approved.size};
 }
@@ -76,66 +73,60 @@ function setNote(card,text){
  if(!card)return;
  let note=card.querySelector('.sim-needs-note');
  if(!note){note=document.createElement('div');note.className='sim-needs-note';card.appendChild(note)}
- note.textContent=text;
+ if(note.textContent!==text)note.textContent=text;
 }
 
 function paint(metrics){
  const grid=dashboardGrid();if(!grid)return false;
  const gapDataCard=ensureGapDataCard(grid);if(!gapDataCard)return false;
- const gapDataValue=gapDataCard.querySelector('b');if(gapDataValue)gapDataValue.textContent=String(metrics.gapData??0);
+ const gapDataValue=gapDataCard.querySelector('b');
+ const gapDataText=String(metrics.gapData??0);
+ if(gapDataValue&&gapDataValue.textContent!==gapDataText)gapDataValue.textContent=gapDataText;
  if(metrics.approvedOnly){
-  const gapCard=gapRiilCard(grid);
-  const gapValue=gapCard?.querySelector('b');if(gapValue)gapValue.textContent=String(metrics.gapRiil??0);
+  const gapCard=gapRiilCard(grid),gapValue=gapCard?.querySelector('b'),gapText=String(metrics.gapRiil??0);
+  if(gapValue&&gapValue.textContent!==gapText)gapValue.textContent=gapText;
   const note='Hanya data yang telah di-approve Dinas';
-  setNote(gapCard,note);
-  setNote(gapDataCard,note);
- }else{
-  setNote(gapDataCard,'ABK dikurangi ASN & Non-ASN');
- }
+  setNote(gapCard,note);setNote(gapDataCard,note);
+ }else setNote(gapDataCard,'ABK dikurangi ASN & Non-ASN');
  return true;
 }
 
-async function sync(force=false){
- scheduled=false;ensureStyle();
- const grid=dashboardGrid();if(!grid)return;
- ensureGapDataCard(grid);
- if(lastMetrics&&!force){paint(lastMetrics);return}
- if(busy)return;
+async function refreshMetrics(force=false){
+ ensureStyle();
+ if(!dashboardGrid())return false;
+ if(lastMetrics&&!force){paint(lastMetrics);return true}
+ if(busy)return true;
  busy=true;
  try{
-  const metrics=isDinas()?await loadApprovedDinasMetrics():await loadAllGapData();
-  lastMetrics=metrics;
-  paint(metrics);
+  lastMetrics=isDinas()?await loadApprovedDinasMetrics():await loadAllGapData();
+  paint(lastMetrics);
  }catch(error){
   console.error('GTK needs Gap Data dashboard',error);
-  const card=ensureGapDataCard(grid);const value=card?.querySelector('b');if(value)value.textContent='—';
-  setNote(card,'Gap Data belum dapat dimuat');
- }finally{
-  busy=false;
-  if(lastMetrics)setTimeout(()=>paint(lastMetrics),0);
- }
+  const grid=dashboardGrid(),card=grid?ensureGapDataCard(grid):null,value=card?.querySelector('b');
+  if(value)value.textContent='—';setNote(card,'Gap Data belum dapat dimuat');
+ }finally{busy=false}
+ return true;
 }
 
-function schedule(force=false){
- if(force)lastMetrics=null;
- if(scheduled)return;
- scheduled=true;
- requestAnimationFrame(()=>void sync(force));
+function boundedRefresh(force=true,attempt=0){
+ if(retryTimer)clearTimeout(retryTimer);
+ const done=refreshMetrics(force);
+ Promise.resolve(done).then(ok=>{
+  if(ok||attempt>=8)return;
+  retryTimer=setTimeout(()=>boundedRefresh(force,attempt+1),250);
+ });
 }
 
-const observer=new MutationObserver(()=>{
- const grid=dashboardGrid();if(!grid)return;
- if(!grid.querySelector('.sim-needs-metric[data-sim-gap-data="1"]')){schedule(false);return}
- if(lastMetrics)paint(lastMetrics);
-});
-observer.observe(document.documentElement,{childList:true,subtree:true});
-
-document.addEventListener('input',e=>{if(e.target?.closest?.('#simNeedsEditor'))schedule(true)},true);
+// Tanpa MutationObserver global: mencegah loop render pada tabel ratusan sekolah.
 document.addEventListener('click',e=>{
  const t=e.target;
- if(t?.closest?.('[data-tab="needs"],#simNeedsSave,#simNeedsSubmit'))setTimeout(()=>schedule(true),400);
- if(t?.closest?.('.sim-needs-action')&&/verifikasi|perbaikan/i.test(String(t.textContent||'')))setTimeout(()=>schedule(true),900);
+ if(t?.closest?.('[data-tab="needs"]'))setTimeout(()=>boundedRefresh(true),250);
+ if(t?.closest?.('#simNeedsSave,#simNeedsSubmit'))setTimeout(()=>boundedRefresh(true),500);
+ if(t?.closest?.('.sim-needs-action')&&/verifikasi|perbaikan/i.test(String(t.textContent||'')))setTimeout(()=>boundedRefresh(true),900);
 },true);
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>schedule(true),{once:true});else schedule(true);
-window.__simantabGtkNeedsGapData={version:3,position:'right-of-gap-riil',dinasSource:'VERIFIED-only'};
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>setTimeout(()=>boundedRefresh(true),400),{once:true});
+else setTimeout(()=>boundedRefresh(true),400);
+
+window.__simantabGtkNeedsGapData={version:4,position:'right-of-gap-riil',dinasSource:'VERIFIED-only',observer:'disabled'};
 })();
