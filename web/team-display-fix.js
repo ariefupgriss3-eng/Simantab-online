@@ -1,3 +1,4 @@
+/* SIMANTAB_TEAM_DISPLAY_FIX_V1 */
 /* SIMANTAB_TEAM_DISPLAY_FIX_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
