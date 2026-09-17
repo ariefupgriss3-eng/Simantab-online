@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_NEEDS_GAP_DATA_V1 */
+/* SIMANTAB_GTK_NEEDS_GAP_DATA_V2 */
 (()=>{
 'use strict';
 const num=v=>Number.isFinite(Number(v))?Number(v):0;
@@ -29,46 +29,70 @@ function gapRiilCard(grid){
 
 function ensureCard(grid){
  let card=grid.querySelector('.sim-needs-metric[data-sim-gap-data="1"]');
- if(card)return {card,isNew:false};
- const gapCard=gapRiilCard(grid);if(!gapCard)return {card:null,isNew:false};
+ if(card)return card;
+ const gapCard=gapRiilCard(grid);if(!gapCard)return null;
  card=document.createElement('div');
  card.className='sim-needs-metric';
  card.dataset.simGapData='1';
  card.innerHTML='<span>Gap Data</span><b>…</b><div class="sim-needs-note">ABK dikurangi ASN & Non-ASN</div>';
  gapCard.insertAdjacentElement('afterend',card);
- return {card,isNew:true};
+ return card;
 }
 
 async function loadGapData(){
  const client=window.__simantabSb;if(!client)throw new Error('Koneksi data belum siap.');
- const {data,error}=await client.from('school_gtk_needs').select('abk,pns,pppk,pppk_pw,non_asn_before_2024,non_asn_after_2024');
+ const {data,error}=await client.from('school_gtk_needs').select('gap_data');
  if(error)throw error;
- return (data||[]).reduce((sum,r)=>sum+(num(r.abk)-(num(r.pns)+num(r.pppk)+num(r.pppk_pw))-(num(r.non_asn_before_2024)+num(r.non_asn_after_2024))),0);
+ return (data||[]).reduce((sum,r)=>sum+num(r.gap_data),0);
 }
 
-async function sync(){
+function paint(value,note='ABK dikurangi ASN & Non-ASN'){
+ const grid=dashboardGrid();if(!grid)return false;
+ const card=ensureCard(grid);if(!card)return false;
+ const valueEl=card.querySelector('b');
+ if(valueEl)valueEl.textContent=String(value);
+ const noteEl=card.querySelector('.sim-needs-note');if(noteEl)noteEl.textContent=note;
+ return true;
+}
+
+async function sync(force=false){
  scheduled=false;ensureStyle();
  const grid=dashboardGrid();if(!grid)return;
- const {card,isNew}=ensureCard(grid);if(!card)return;
- const valueEl=card.querySelector('b');
- if(lastValue!==null&&valueEl&&valueEl.textContent!==String(lastValue))valueEl.textContent=String(lastValue);
- if(!isNew||busy)return;
+ ensureCard(grid);
+ if(lastValue!==null&&!force){paint(lastValue);return}
+ if(busy)return;
  busy=true;
  try{
-  const value=await loadGapData();lastValue=value;
-  if(card.isConnected&&valueEl&&valueEl.textContent!==String(value))valueEl.textContent=String(value);
+  const value=await loadGapData();
+  lastValue=value;
+  paint(value);
  }catch(error){
   console.error('GTK needs Gap Data dashboard',error);
-  if(card.isConnected&&valueEl)valueEl.textContent='—';
-  const note=card.querySelector('.sim-needs-note');if(note)note.textContent='Gap Data belum dapat dimuat';
- }finally{busy=false}
+  paint('—','Gap Data belum dapat dimuat');
+ }finally{
+  busy=false;
+  if(lastValue!==null)setTimeout(()=>paint(lastValue),0);
+ }
 }
 
-function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>void sync())}
-const observer=new MutationObserver(schedule);
+function schedule(force=false){
+ if(force)lastValue=null;
+ if(scheduled)return;
+ scheduled=true;
+ requestAnimationFrame(()=>void sync(force));
+}
+
+const observer=new MutationObserver(()=>{
+ const grid=dashboardGrid();
+ if(!grid)return;
+ const card=grid.querySelector('.sim-needs-metric[data-sim-gap-data="1"]');
+ if(!card){schedule(false);return}
+ if(lastValue!==null&&card.querySelector('b')?.textContent!==String(lastValue))paint(lastValue);
+});
 observer.observe(document.documentElement,{childList:true,subtree:true});
-document.addEventListener('input',e=>{if(e.target?.closest?.('#simNeedsEditor'))schedule()},true);
-document.addEventListener('click',e=>{if(e.target?.closest?.('[data-tab="needs"],#simNeedsSave,#simNeedsSubmit'))setTimeout(()=>{lastValue=null;schedule()},250)},true);
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule,{once:true});else schedule();
-window.__simantabGtkNeedsGapData={version:1,position:'right-of-gap-riil'};
+
+document.addEventListener('input',e=>{if(e.target?.closest?.('#simNeedsEditor'))schedule(true)},true);
+document.addEventListener('click',e=>{if(e.target?.closest?.('[data-tab="needs"],#simNeedsSave,#simNeedsSubmit'))setTimeout(()=>schedule(true),350)},true);
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>schedule(true),{once:true});else schedule(true);
+window.__simantabGtkNeedsGapData={version:2,position:'right-of-gap-riil',source:'gap_data'};
 })();
