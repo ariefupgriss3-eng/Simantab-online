@@ -7,7 +7,7 @@ let html=await fs.readFile(outputPath,'utf8');
 let code=await fs.readFile(modulePath,'utf8');
 if(!code.includes('SIMANTAB_GTK_NEEDS_PROGRESS_V2'))throw new Error('Modul Kebutuhan GTK Riil V2 tidak valid.');
 
-// Core V12: authoritative renderer for Kebutuhan GTK Riil.
+// Core V13: authoritative renderer for Kebutuhan GTK Riil.
 // Negeri-only scope, Gap Data, verified-only Dinas metrics, review actions,
 // and clickable Gap Riil/Gap Data breakdowns by position live here.
 code=code.replace('.sim-needs-grid{display:grid;grid-template-columns:repeat(4,1fr);','.sim-needs-grid{display:grid;grid-template-columns:repeat(5,1fr);');
@@ -18,7 +18,7 @@ code=code.replace(".eq('is_active',true).order('school_name');if(error)throw err
 const summaryStart=code.indexOf('function schoolSummaryRows(');
 const scopedStart=code.indexOf('async function renderScoped(',summaryStart);
 const renderStart=code.indexOf('async function render(force=false)',scopedStart);
-if(summaryStart<0||scopedStart<0||renderStart<0)throw new Error('Struktur fungsi GTK needs tidak ditemukan untuk core V12.');
+if(summaryStart<0||scopedStart<0||renderStart<0)throw new Error('Struktur fungsi GTK needs tidak ditemukan untuk core V13.');
 
 const breakdownHelpers=`function positionBreakdown(rows,kind){
  const by=new Map();
@@ -56,7 +56,14 @@ const summaryFn=`function schoolSummaryRows(schools,needs,workflow,mode){
  const by=new Map();for(const r of needs){if(!by.has(r.school_npsn))by.set(r.school_npsn,[]);by.get(r.school_npsn).push(r)}
  const needsSet=new Set(needs.map(x=>x.school_npsn));
  const reviewers=['SUPER_ADMIN','KEPALA_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK'];
- return schools.map(s=>{
+ const statusPriority={SUBMITTED:0,REVISION:1,DRAFT:2,NOT_STARTED:3,VERIFIED:4,APPROVED:4};
+ const orderedSchools=[...schools].sort((a,b)=>{
+  const sa=statusFor(a.npsn,needsSet,workflow),sb=statusFor(b.npsn,needsSet,workflow);
+  const pa=statusPriority[sa]??9,pb=statusPriority[sb]??9;
+  if(pa!==pb)return pa-pb;
+  return String(a.school_name||'').localeCompare(String(b.school_name||''),'id',{sensitivity:'base'});
+ });
+ return orderedSchools.map(s=>{
   const rows=by.get(s.npsn)||[],a=aggregateRows(rows),st=statusFor(s.npsn,needsSet,workflow),wf=workflow.get(s.npsn);
   let action=mode==='DINAS'?'—':'Baca saja';
   if(mode==='DINAS'){
@@ -69,7 +76,7 @@ const summaryFn=`function schoolSummaryRows(schools,needs,workflow,mode){
   registerBreakdown(gapKey,\`Gap Riil — \${s.school_name}\`,rows,'gap',\`NPSN \${s.npsn} • ABK dikurangi ASN\`);
   registerBreakdown(gapDataKey,\`Gap Data — \${s.school_name}\`,rows,'gapData',\`NPSN \${s.npsn} • ABK dikurangi ASN dan Non-ASN\`);
   const detail=rows.length?\`<details class="sim-needs-detail"><summary>\${rows.length} jabatan</summary><table><thead><tr><th>Jabatan</th><th>ABK</th><th>ASN</th><th>Non-ASN</th><th>Gap Riil</th><th>Gap Data</th></tr></thead><tbody>\${rows.map(r=>{const c=calcRow(r);return\`<tr><td>\${esc(r.position_name)}</td><td>\${c.abk}</td><td>\${c.asn}</td><td>\${c.non}</td><td>\${Math.max(0,c.gap)}</td><td>\${Math.max(0,c.gapData)}</td></tr>\`}).join('')}</tbody></table></details>\`:'<div class="sim-needs-note">Belum input</div>';
-  return \`<tr><td><b>\${esc(s.school_name)}</b><div class="sim-needs-note">\${esc(s.npsn)} • \${esc(s.jenjang||s.bentuk_pendidikan||'-')} • \${esc(s.kecamatan||'-')} • NEGERI</div>\${detail}</td><td><span class="sim-needs-status \${STATUS_CLASS[st]||'not'}">\${esc(st==='APPROVED'?'Diverifikasi':(STATUS_LABEL[st]||st))}</span>\${wf?.note?\`<div class="sim-needs-note">\${esc(wf.note)}</div>\`:''}</td><td>\${a.abk}</td><td>\${a.asn}</td><td>\${a.non}</td><td>\${gapButton(a.gap,gapKey,'Gap Riil')}</td><td>\${gapButton(a.gapData,gapDataKey,'Gap Data')}</td><td>\${action}</td></tr>\`;
+  return \`<tr><td><b>\${esc(s.school_name)}</b><div class="sim-needs-note">\${esc(s.npsn)} • \${esc(s.jenjang||s.bentuk_pendidikan||'-')} • \${esc(s.kecamatan||'-')} • NEGERI</div>\${detail}</td><td><span class="sim-needs-status \${STATUS_CLASS[st]||'not'}">\${esc(st==='SUBMITTED'?'Perlu Verifikasi':(st==='APPROVED'?'Diverifikasi':(STATUS_LABEL[st]||st)))}</span>\${wf?.note?\`<div class="sim-needs-note">\${esc(wf.note)}</div>\`:''}</td><td>\${a.abk}</td><td>\${a.asn}</td><td>\${a.non}</td><td>\${gapButton(a.gap,gapKey,'Gap Riil')}</td><td>\${gapButton(a.gapData,gapDataKey,'Gap Data')}</td><td>\${action}</td></tr>\`;
  }).join('')
 }
 
@@ -115,8 +122,8 @@ if(!code.includes('<th>Gap Data</th>')||!code.includes('✓ Diverifikasi')||!cod
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=12"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=13"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:12,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:13,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
