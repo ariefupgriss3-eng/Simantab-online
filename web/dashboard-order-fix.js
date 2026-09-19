@@ -1,6 +1,9 @@
 /* SIMANTAB_DASHBOARD_ORDER_FIX_V1 */
-(()=>{
+/* SIMANTAB_DASHBOARD_ORDER_FIX_V2 */
+(async()=>{
 const $=id=>document.getElementById(id);
+for(let i=0;i<240&&!window.__simantabProfile;i++)await new Promise(r=>setTimeout(r,50));
+if(['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(String(window.__simantabProfile?.role||''))){window.__simantabDashboardOrder={version:2,leaderSafe:true};return;}
 function reorderDashboard(){
   const body=$('dashboardBody');
   if(!body)return;
