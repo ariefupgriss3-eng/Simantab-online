@@ -48,6 +48,29 @@ html=html.replace(
  "<b>SD:</b> ABK 153 • ASN 152 • Gap Riil 30 • Gap Data 14",
  "<b>SD:</b> ABK 119 • ASN 97 • Gap Riil 22 • Gap Data 8"
 );
+
+// STAFF_ADMIN_CORE_FAST_PATH_V1
+// STAFF/ADMIN internal do not need Dashboard Dinas. Remove dashboard/network work from the auth critical path.
+const staffAdminRoleExpr="profile && (String(profile.role||'').startsWith('STAFF_') || String(profile.role||'').startsWith('ADMIN_'))";
+
+// Normalize afterAuth whether production already contains the base form or a previous build copy.
+html=html.replace(
+ "applyProfile(); buildNav(); await refreshAll(); showTab('dashboard');",
+ "applyProfile(); buildNav();\n const __staffAdmin=profile && (String(profile.role||'').startsWith('STAFF_') || String(profile.role||'').startsWith('ADMIN_'));\n if(__staffAdmin){\n  try{await refreshNotifCount()}catch(e){console.error(e)}\n  try{await showTab('activities')}catch(e){console.error(e);setTimeout(()=>window.showTab?.('activities'),0)}\n  return;\n }\n await refreshAll(); showTab('dashboard');"
+);
+
+// Make every later refreshAll call safe for STAFF/ADMIN too.
+const refreshAllBase="async function refreshAll(){\n try{await Promise.all([refreshDashboard(),refreshNotifCount()]); if(isGtkSide()){await loadStatus()} }catch(e){console.error(e)}\n}";
+const refreshAllSafe="async function refreshAll(){\n try{\n  if(profile && (String(profile.role||'').startsWith('STAFF_') || String(profile.role||'').startsWith('ADMIN_'))){await refreshNotifCount();return}\n  await Promise.all([refreshDashboard(),refreshNotifCount()]); if(isGtkSide()){await loadStatus()}\n }catch(e){console.error(e)}\n}";
+if(html.includes(refreshAllBase))html=html.replace(refreshAllBase,refreshAllSafe);
+
+// Direct refreshDashboard calls are also made harmless for STAFF/ADMIN.
+const refreshDashboardBase="async function refreshDashboard(){";
+const refreshDashboardSafe="async function refreshDashboard(){\n if(profile && (String(profile.role||'').startsWith('STAFF_') || String(profile.role||'').startsWith('ADMIN_'))){\n  if($('dashDesc'))$('dashDesc').textContent='Akun staf/admin menggunakan Kegiatan Bidang sebagai halaman utama.';\n  if($('dashboardBody'))$('dashboardBody').innerHTML='<div class=\"card info\"><b>Halaman utama staf/admin:</b> Kegiatan Bidang.</div>';\n  return;\n }";
+if(!html.includes("Akun staf/admin menggunakan Kegiatan Bidang sebagai halaman utama.")){
+  html=html.replace(refreshDashboardBase,refreshDashboardSafe);
+}
+
 const leaderCoreNeedle="async function refreshDashboard(){\n if(isGtkSide()){";
 const leaderCoreAlreadyPatched=html.includes('window.__simantabLeaderCoreRendered=true');
 const leaderCoreCanPatch=html.includes(leaderCoreNeedle);
