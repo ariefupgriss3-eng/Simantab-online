@@ -140,5 +140,7 @@
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});else refresh();
-  new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});
+  const navRoot=document.getElementById('nav');
+  if(navRoot)new MutationObserver(schedule).observe(navRoot,{childList:true,subtree:true});
+  window.__simantabUiBrandingIcons={version:3,observerScope:'nav-only'};
 })();
