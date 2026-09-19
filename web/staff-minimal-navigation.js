@@ -1,4 +1,5 @@
 /* SIMANTAB_STAFF_MINIMAL_NAV_V1 */
+/* SIMANTAB_STAFF_MINIMAL_NAV_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<180&&(!window.__simantabProfile||!window.showTab);i++)await wait(50);
@@ -14,6 +15,7 @@ const ITEMS=[
  ['team','👥','Tim Ketenagaan']
 ];
 const ALLOWED=new Set(ITEMS.map(x=>x[0]));
+const INTERNAL_ALLOWED=new Set(['tpg','newSubmission']);
 let pruning=false;
 function makeButton([id,ico,label]){
  const b=document.createElement('button');
@@ -38,6 +40,7 @@ function pruneNav(){
      b.appendChild(document.createTextNode(item[2]));
      frag.appendChild(b);
    }
+   const bridge=document.createElement('button');bridge.className='navbtn';bridge.dataset.tab='tpg';bridge.style.display='none';bridge.innerHTML='<span class="ico">◉</span>TPG / Tamsil';bridge.onclick=()=>window.showTab?.('tpg');frag.appendChild(bridge);
    nav.replaceChildren(frag);
  }finally{pruning=false}
 }
@@ -47,7 +50,7 @@ function normalizeActive(){
 }
 const priorShow=window.showTab;
 window.showTab=async function(id){
- const target=ALLOWED.has(id)?id:'activities';
+ const target=(ALLOWED.has(id)||INTERNAL_ALLOWED.has(id))?id:'activities';
  pruneNav();
  const r=await priorShow.call(this,target);
  pruneNav();
@@ -64,5 +67,5 @@ if(nav){
 }
 await wait(100);
 pruneNav();normalizeActive();
-window.__simantabStaffMinimalNav={version:1,allowed:[...ALLOWED],landing:'activities'};
+window.__simantabStaffMinimalNav={version:2,allowed:[...ALLOWED],internal:[...INTERNAL_ALLOWED],landing:'activities'};
 })();
