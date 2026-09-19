@@ -1,5 +1,6 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V2 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V3 */
+/* SIMANTAB_DIKLAT_KS_BCKS_V4 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -7,9 +8,12 @@ const sb=window.__simantabSb,$=id=>document.getElementById(id),profile=()=>windo
 if(!sb||!window.showTab)return;
 const FILE_LIMIT=512000,BUCKET='simantab-documents';
 const REQUIREMENTS=[
- ['IJAZAH_TERAKHIR','Ijazah terakhir'],['SERTIFIKAT_PENDIDIK','Sertifikat Pendidik'],['SK_PNS','SK PNS'],
- ['SKP_1','SKP 1'],['SKP_2','SKP 2'],['SK_PENGALAMAN_MANAJERIAL','SK pengalaman Manajerial'],
- ['SK_HUDIS','SK Hudis'],['SKCK','SKCK'],['PAKTA_INTEGRITAS','Pakta Integritas'],
+ ['SKP_1','SKP 1'],
+ ['SKP_2','SKP 2'],
+ ['SK_PENGALAMAN_MANAJERIAL','SK Pengalaman Manajerial'],
+ ['SK_HUDIS','SK Bebas Hudis'],
+ ['SKCK','SKCK'],
+ ['PAKTA_INTEGRITAS','Pakta Integritas'],
  ['SURAT_PERNYATAAN_DIKLAT','Surat Pernyataan Bermeterai Bersedia Mengikuti Seluruh Proses Diklat KS']
 ];
 const REVIEW_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK']);
@@ -76,5 +80,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:3,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT};
+window.__simantabDiklatKsBcks={version:4,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT};
 })();
