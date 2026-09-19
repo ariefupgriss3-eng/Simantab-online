@@ -3,6 +3,7 @@
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V4 */
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V5 */
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V6 */
+/* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V7 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<600&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
@@ -130,20 +131,7 @@ async function leaderDash(force=false){
  const rt=roleTitle();
  $('dashTitle').textContent=`Dashboard ${rt}`;
  $('dashDesc').textContent='Ringkasan strategis ketenagaan dan layanan. Klik agregat untuk melihat rincian.';
- // Always render immediately. Never block the executive dashboard on network.
  renderLeaderSummary(LEADER_SAFE_SNAPSHOT,false);
- if(b.dataset.leaderSync==='1'&&!force)return;
- b.dataset.leaderSync='1';
- setTimeout(async()=>{
-  try{
-   const live=await fetchLeaderLive();
-   if(live&&$('dashboardBody')===b){
-    live.snapshot_at=LEADER_SAFE_SNAPSHOT.snapshot_at;
-    renderLeaderSummary(live,true);
-   }
-  }catch(_){}
-  finally{if($('dashboardBody')===b)b.dataset.leaderSync='0'}
- },0);
 }
 async function dash(force=false){if(!isDashboardRole())return;if(isLeader())return leaderDash(force);addStyle();const b=$('dashboardBody');if(!b)return;const lev=scopeLevel(),rt=roleTitle();$('dashTitle').textContent=`Dashboard ${rt}`;$('dashDesc').textContent=lev?`Infografis ketenagaan khusus ${ROLE()==='SUBKOOR_TK'?'PAUD/TK dan PNF':`jenjang ${lev}`}.`:`Ringkasan strategis ketenagaan TK, SD, SMP${showPnf()?', dan PNF':''} dalam satu layar.`;b.innerHTML='<div class="card">Memuat infografis...</div>';try{const d=await data(force),a=agg(d),cov=pct(a.need.schools,a.school.total),next=a.up[0],lv=shownLevels(),top=lv.map(l=>[l,a.need.lev[l]]).sort((x,y)=>y[1].gap-x[1].gap)[0],scopeText=lev?`Jenjang ${lev}`:'Semua jenjang';b.innerHTML=`<div class="kdg"><div class="kh k12"><h2>Command Center Ketenagaan</h2><p>${esc(rt)} • ${esc(scopeText)} • kondisi sekolah, GTK, layanan, dan isu prioritas.</p></div>${card('🏫','Total Sekolah',fmt(a.school.total),schoolSub(a))}${card('👥','GTK Dapodik',fmt(a.school.teachers+a.school.staff),`Guru ${fmt(a.school.teachers)} • Tendik ${fmt(a.school.staff)}`)}${card('◎','Kebutuhan GTK Riil',`${fmt(a.need.schools)} sekolah`,`${fmt(a.need.rows)} entri jabatan • Gap riil ${fmt(a.need.gap)} • cakupan ${cov}%`)}${card('☑','Usulan Aktif',fmt(a.active),`Perbaikan ${fmt(a.workflow.PERBAIKAN||0)} • Selesai ${fmt(a.workflow.SELESAI||0)}`,"__leaderOpenSubmissionDetails('ACTIVE')")}${card('🧑‍🏫','PTK Baru Swasta',fmt(d.ptk.length),ptkSub(a))}${card('🔔','Perhatian',fmt(a.need.short+a.status.REVISION),`Kekurangan ${fmt(a.need.short)} • Perbaikan ${fmt(a.status.REVISION)} • Notifikasi ${fmt(d.unread)}`)}${pnfPanel(a)}<div class="kp k7"><h3>${lev?`Kebutuhan GTK ${lev}`:'Kebutuhan GTK per Jenjang'}</h3>${levelBars(a)}</div><div class="kp k5"><h3>Komposisi GTK</h3>${donut(a)}</div><div class="kp k6"><h3>Workflow Layanan</h3>${workflowBars(a)}<button class="btn soft" style="margin-top:8px" onclick="__leaderOpenSubmissionDetails('ALL')">Lihat seluruh usulan</button></div><div class="kp k6"><h3>Cakupan Input Kebutuhan</h3><div class="kv">${cov}%</div><div class="ks">${fmt(a.need.schools)} dari ${fmt(a.school.total)} sekolah ${lev?lev:''} sudah memiliki input.</div><div class="kt" style="height:14px;margin-top:12px"><div class="kf kg" style="width:${cov}%"></div></div></div><div class="kp k12"><h3>Sorotan ${esc(rt)}</h3><div class="kprio"><div class="ka"><b>${fmt(a.need.short)}</b>Kekurangan GTK (gap positif)</div><div class="ka"><b>${esc(top?.[0]||'-')}</b>${lev?'Gap jenjang':'Jenjang gap tertinggi'}: ${fmt(top?.[1]?.gap||0)}</div><div class="ka"><b>${fmt(Math.max(0,a.school.total-a.need.schools))}</b>Sekolah ${lev?lev:''} belum input kebutuhan GTK</div><div class="ka"><b>${next?esc(next.activity_name):'-'}</b>${next?`${esc(next.activity_date)} • ${esc(next.place||'-')}`:'Belum ada agenda mendatang'}</div></div></div></div>`}catch(e){b.innerHTML=`<div class="card err">${esc(e.message)}</div>`}}
 function topGap(d){const m=new Map;for(const x of d.needs){const k=x.school_npsn||x.school_name,o=m.get(k)||{name:x.school_name,npsn:x.school_npsn,g:0};o.g+=Math.max(0,num(x.gap_riil));m.set(k,o)}return[...m.values()].filter(x=>x.g>0).sort((a,b)=>b.g-a.g).slice(0,10)}
