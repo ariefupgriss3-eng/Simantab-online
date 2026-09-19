@@ -1,6 +1,7 @@
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V2 */
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V3 */
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V4 */
+/* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V5 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<600&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
@@ -47,6 +48,26 @@ const head=(t,d)=>`<div class="khead"><div><h2>${esc(t)}</h2><p>${esc(d)}</p></d
 function schoolSub(a){const lev=scopeLevel();return lev?`${lev}${ROLE()==='SUBKOOR_TK'?' + PNF':''} • Negeri ${fmt(a.school.negeri)} • Swasta ${fmt(a.school.swasta)}`:`TK ${fmt(a.school.TK)} • SD ${fmt(a.school.SD)} • SMP ${fmt(a.school.SMP)}${showPnf()?` • PNF ${fmt(a.pnf.total)}`:''}<br>Negeri ${fmt(a.school.negeri)} • Swasta ${fmt(a.school.swasta)}`}
 function pnfPanel(a){if(!showPnf())return'';const types=Object.entries(a.pnf.types).sort((x,y)=>y[1]-x[1]);return `<div class="kp k12"><h3>Informasi Pendidikan Nonformal (PNF)</h3><div class="kprio"><div class="ka"><b>${fmt(a.pnf.total)}</b>Satuan PNF aktif</div><div class="ka"><b>${fmt(a.pnf.students)}</b>Peserta didik/warga belajar</div><div class="ka"><b>${fmt(a.pnf.teachers)}</b>Pendidik PNF</div><div class="ka"><b>${fmt(a.pnf.staff)}</b>Tenaga kependidikan PNF</div></div><div class="ks" style="margin-top:11px"><b>Jenis satuan:</b> ${types.length?types.map(([k,v])=>`${esc(k)} ${fmt(v)}`).join(' • '):'Belum ada data PNF pada Master Sekolah.'}</div></div>`}
 function ptkSub(a){const lev=scopeLevel();return lev?`${lev} ${fmt(a.ptkl[lev])} usulan`:`TK ${fmt(a.ptkl.TK)} • SD ${fmt(a.ptkl.SD)} • SMP ${fmt(a.ptkl.SMP)}`}
+async function leaderSummaryFallback(){
+ const timed=(promise,ms=9000)=>Promise.race([promise,new Promise((_,rej)=>setTimeout(()=>rej(new Error('Timeout koneksi data pimpinan.')),ms))]);
+ const rr=await timed(Promise.all([
+   sb.from('school_master').select('jenjang,bentuk_pendidikan,teachers,staff').eq('is_active',true),
+   sb.from('school_gtk_needs').select('school_npsn,school_level,abk,pns,pppk,pppk_pw,asn_total,non_asn_total'),
+   sb.from('submissions').select('status,workflow_state'),
+   sb.from('field_activities').select('activity_date')
+ ]));
+ const er=rr.find(x=>x.error)?.error;if(er)throw er;
+ const schools=rr[0].data||[],needs=rr[1].data||[],subs=rr[2].data||[],acts=rr[3].data||[];
+ const sc={total:schools.length,tk:0,sd:0,smp:0,pnf:0,teachers:0,staff:0};
+ for(const x of schools){const j=String(x.jenjang||'').toUpperCase(),b=String(x.bentuk_pendidikan||'').toUpperCase();if(j==='PAUD')sc.tk++;if(j==='SD')sc.sd++;if(j==='SMP')sc.smp++;if(['PNF','KESETARAAN'].includes(j)||['PKBM','SKB','LKP'].includes(b))sc.pnf++;sc.teachers+=num(x.teachers);sc.staff+=num(x.staff)}
+ const lv={TK:{abk:0,asn:0,non_asn:0,gap_riil:0,gap_data:0},SD:{abk:0,asn:0,non_asn:0,gap_riil:0,gap_data:0},SMP:{abk:0,asn:0,non_asn:0,gap_riil:0,gap_data:0}};
+ const n={rows:needs.length,schools:new Set(needs.map(x=>x.school_npsn)).size,abk:0,asn:0,non_asn:0,pns:0,pppk:0,pppk_pw:0,gap_riil:0,gap_data:0,levels:lv};
+ for(const x of needs){const raw=String(x.school_level||'').toUpperCase(),l=raw==='PAUD'||raw==='TK'?'TK':raw==='SD'?'SD':raw==='SMP'?'SMP':null,abk=num(x.abk),asn=num(x.asn_total),non=num(x.non_asn_total),gr=Math.max(0,abk-asn),gd=Math.max(0,abk-asn-non);n.abk+=abk;n.asn+=asn;n.non_asn+=non;n.pns+=num(x.pns);n.pppk+=num(x.pppk);n.pppk_pw+=num(x.pppk_pw);n.gap_riil+=gr;n.gap_data+=gd;if(l){lv[l].abk+=abk;lv[l].asn+=asn;lv[l].non_asn+=non;lv[l].gap_riil+=gr;lv[l].gap_data+=gd}}
+ const w={total:0,active:0,selesai:0,perbaikan:0,menunggu_kabid:0,verifikasi_staf:0,menunggu_disposisi:0,menunggu_koordinator:0};
+ for(const x of subs){if(x.status==='DRAFT')continue;w.total++;const st=x.workflow_state||'';if(st!=='SELESAI')w.active++;if(st==='SELESAI')w.selesai++;if(st==='PERBAIKAN')w.perbaikan++;if(st==='MENUNGGU_PERSETUJUAN_KABID')w.menunggu_kabid++;if(st==='VERIFIKASI_STAF')w.verifikasi_staf++;if(st==='MENUNGGU_DISPOSISI_KOORDINATOR')w.menunggu_disposisi++;if(st==='MENUNGGU_APPROVAL_KOORDINATOR')w.menunggu_koordinator++}
+ const today=new Date().toISOString().slice(0,10),ac={total:acts.length,upcoming:acts.filter(x=>String(x.activity_date||'')>=today).length};
+ return{role:ROLE(),schools:sc,needs:n,workflow:w,activities:ac};
+}
 async function leaderDash(force=false){
  addStyle();
  const b=$('dashboardBody');if(!b)return;
@@ -55,8 +76,13 @@ async function leaderDash(force=false){
  $('dashDesc').textContent='Ringkasan strategis ketenagaan dan layanan. Klik agregat untuk melihat rincian.';
  b.innerHTML='<div class="card">Memuat ringkasan pimpinan...</div>';
  try{
-   const {data:s,error}=await sb.rpc('leader_dashboard_summary');
-   if(error)throw error;
+   let s=null;
+   const rpcResult=await Promise.race([
+     sb.rpc('leader_dashboard_summary'),
+     new Promise(resolve=>setTimeout(()=>resolve({data:null,error:{message:'RPC_TIMEOUT'}}),6000))
+   ]);
+   if(!rpcResult.error&&rpcResult.data){s=rpcResult.data}
+   else{s=await leaderSummaryFallback()}
    const sc=s?.schools||{},n=s?.needs||{},lv=n.levels||{},w=s?.workflow||{},ac=s?.activities||{};
    const a={
      need:{
