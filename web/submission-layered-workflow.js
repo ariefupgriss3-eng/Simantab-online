@@ -1,4 +1,5 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1 */
+/* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V4 */
 /* SIMANTAB_COORDINATOR_SERVICE_AGGREGATE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -40,26 +41,31 @@ function style(){if($('layeredWorkflowStyle'))return;const s=document.createElem
 async function fetchWorkflowData(scopeOnly=null){
  let sq=sb.from('submissions').select('id,user_id,service_type,title,status,scope_level,coordinator_role,assigned_role,workflow_state,assigned_user_id,assigned_by,assigned_at,assignment_note,staff_verified_by,staff_verified_at,staff_verification_note,coordinator_approved_by,coordinator_approved_at,coordinator_approval_note,kabid_approved_by,kabid_approved_at,kabid_approval_note,workflow_completed_at,submitted_at,updated_at').order('submitted_at',{ascending:false}).limit(1000);
  if(scopeOnly)sq=sq.eq('scope_level',scopeOnly);
- const [s,u,t]=await Promise.all([
+ const [s,u,t,a]=await Promise.all([
   sq,
   sb.from('profiles').select('id,full_name,role,account_channel,unit,position,is_active').order('full_name'),
-  sb.from('team_task_assignments').select('user_id,capability,is_active').eq('is_active',true)
+  sb.from('team_task_assignments').select('user_id,capability,is_active').eq('is_active',true),
+  sb.from('submission_assignees').select('submission_id,user_id,assigned_at,verified_at,verification_result')
  ]);
- const e=s.error||u.error||t.error;if(e)throw e;
- return{subs:s.data||[],profiles:u.data||[],tasks:t.data||[]};
+ const e=s.error||u.error||t.error||a.error;if(e)throw e;
+ return{subs:s.data||[],profiles:u.data||[],tasks:t.data||[],assignees:a.data||[]};
 }
 function maps(d){return{names:new Map(d.profiles.map(x=>[x.id,x.full_name||'-'])),prof:new Map(d.profiles.map(x=>[x.id,x]))}}
 function labelService(s){return SERVICE_LABEL[s]||s||'-'}
 function statePill(s){const cls=s==='SELESAI'?'lwf-done':s==='PERBAIKAN'?'lwf-bad':'lwf-warn';return `<span class="lwf-badge ${cls}">${esc(STATE_LABEL[s]||s||'-')}</span>`}
+function assigneeIds(d,submissionId){return (d.assignees||[]).filter(a=>a.submission_id===submissionId).map(a=>a.user_id)}
 function visibleRows(d){
  const r=role(),uid=p().id;
  if(r==='SUPER_ADMIN'||r==='KABID')return d.subs;
  if(COORDS.has(r)){const scope=COORD_SCOPE[r];return d.subs.filter(x=>x.scope_level===scope);}
  if(LEADERS.has(r))return d.subs;
- return d.subs.filter(x=>x.assigned_user_id===uid);
+ return d.subs.filter(x=>assigneeIds(d,x.id).includes(uid)||x.assigned_user_id===uid);
 }
 function candidateStaff(d,sub){
- let arr=d.profiles.filter(x=>x.is_active&&x.account_channel==='DINAS'&&!['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','PENGAWAS','KORWIL'].includes(x.role));
+ let arr=d.profiles.filter(x=>{
+  const r=String(x.role||'');
+  return x.is_active&&x.account_channel==='DINAS'&&(r.startsWith('STAFF_')||r.startsWith('ADMIN_'));
+ });
  arr.sort((a,b)=>String(a.full_name||'').localeCompare(String(b.full_name||''),'id'));
  return arr;
 }
@@ -67,7 +73,7 @@ function actionHtml(s,d){
  const r=role(),uid=p().id;
  if((r==='SUPER_ADMIN'||r===s.coordinator_role)&&s.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR')
    return `<button class="btn primary" onclick="layerOpenAssign('${s.id}')">👤 Bagi Tugas</button>`;
- if((r==='SUPER_ADMIN'||s.assigned_user_id===uid)&&s.workflow_state==='VERIFIKASI_STAF')
+ if((r==='SUPER_ADMIN'||assigneeIds(d,s.id).includes(uid)||s.assigned_user_id===uid)&&s.workflow_state==='VERIFIKASI_STAF')
    return `<button class="btn success" onclick="layerStaffVerify('${s.id}',true)">✓ Terverifikasi</button><button class="btn danger" onclick="layerStaffVerify('${s.id}',false)">↺ Perbaikan</button>`;
  if((r==='SUPER_ADMIN'||r===s.coordinator_role)&&s.workflow_state==='MENUNGGU_APPROVAL_KOORDINATOR')
    return `<button class="btn success" onclick="layerCoordinatorApprove('${s.id}',true)">✓ Approve</button><button class="btn danger" onclick="layerCoordinatorApprove('${s.id}',false)">↺ Kembalikan</button>`;
@@ -84,7 +90,8 @@ function workflowFlow(){return '<div class="lwf-flow"><div><b>1. GTK</b>Ajukan l
 function tableHtml(rows,d,withActions=true){
  const {names}=maps(d);
  if(!rows.length)return '<div class="empty">Belum ada data pada tahap ini.</div>';
- return `<div class="tablewrap"><table><thead><tr><th>Pemohon</th><th>Layanan</th><th>Jenjang</th><th>Tahap</th><th>Pelaksana</th><th>Update</th>${withActions?'<th>Aksi</th>':''}</tr></thead><tbody>${rows.map(s=>`<tr><td><b>${esc(names.get(s.user_id)||'-')}</b><div class="small">${esc(s.title||'')}</div></td><td>${esc(labelService(s.service_type))}</td><td>${esc(SCOPE_LABEL[s.scope_level]||s.scope_level||'-')}</td><td>${statePill(s.workflow_state)}<div class="lwf-step">${esc(s.coordinator_role||'-')}</div></td><td>${esc(s.assigned_user_id?(names.get(s.assigned_user_id)||'-'):'Belum ditugaskan')}</td><td>${fmt(s.updated_at)}</td>${withActions?`<td><div class="lwf-actions">${actionHtml(s,d)}${s.service_type==='DIKLAT_KS_BCKS'?'<button class="btn soft" onclick="showTab(\'diklatKsBcks\')">🎓 Buka Diklat</button>':''}</div></td>`:''}</tr>`).join('')}</tbody></table></div>`;
+ const assigneeLabel=s=>{const ids=assigneeIds(d,s.id),vals=ids.map(id=>names.get(id)).filter(Boolean);if(vals.length)return vals.join(', ');return s.assigned_user_id?(names.get(s.assigned_user_id)||'-'):'Belum ditugaskan'};
+ return `<div class="tablewrap"><table><thead><tr><th>Pemohon</th><th>Layanan</th><th>Jenjang</th><th>Tahap</th><th>Pelaksana</th><th>Update</th>${withActions?'<th>Aksi</th>':''}</tr></thead><tbody>${rows.map(s=>`<tr><td><b>${esc(names.get(s.user_id)||'-')}</b><div class="small">${esc(s.title||'')}</div></td><td>${esc(labelService(s.service_type))}</td><td>${esc(SCOPE_LABEL[s.scope_level]||s.scope_level||'-')}</td><td>${statePill(s.workflow_state)}<div class="lwf-step">${esc(s.coordinator_role||'-')}</div></td><td>${esc(assigneeLabel(s))}</td><td>${fmt(s.updated_at)}</td>${withActions?`<td><div class="lwf-actions">${actionHtml(s,d)}${s.service_type==='DIKLAT_KS_BCKS'?'<button class="btn soft" onclick="showTab(\'diklatKsBcks\')">🎓 Buka Diklat</button>':''}</div></td>`:''}</tr>`).join('')}</tbody></table></div>`;
 }
 
 function coordinatorFlow(){
@@ -156,9 +163,10 @@ async function renderMonitoring(){
 window.layerOpenAssign=id=>{
  const d=currentData;if(!d)return;const s=d.subs.find(x=>x.id===id);if(!s)return;
  const cand=candidateStaff(d,s);let m=$('layerAssignModal');m?.remove();m=document.createElement('div');m.id='layerAssignModal';m.className='lwf-modal';m.onclick=e=>{if(e.target===m)m.remove()};
- m.innerHTML=`<div class="lwf-box" style="width:min(620px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • pilih admin/staf Dinas aktif</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Staf/Admin Verifikator</label><select id="layerAssignee"><option value="">Pilih staf/admin...</option>${cand.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||x.role)}</option>`).join('')}</select></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
+ const choices=cand.length?cand.map(x=>`<label style="display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border:1px solid #dbe3ec;border-radius:10px;margin:6px 0;cursor:pointer"><input type="checkbox" class="layer-assignee-check" value="${x.id}" style="margin-top:2px"><span><b>${esc(x.full_name)}</b><br><span class="small">${esc(x.position||x.role)}</span></span></label>`).join(''):'<div class="notice">Belum ada admin/staf internal aktif yang tersedia.</div>';
+ m.innerHTML=`<div class="lwf-box" style="width:min(680px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • dapat memilih lebih dari satu admin/staf internal</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Verifikator</label><div style="max-height:300px;overflow:auto;padding:4px">${choices}</div></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
 };
-window.layerSaveAssign=async id=>{const uid=$('layerAssignee')?.value,msg=$('layerAssignMsg');if(!uid){msg.textContent='Pilih staf/admin terlebih dahulu.';return}msg.textContent='Menyimpan penugasan...';const {error}=await sb.rpc('submission_assign_staff',{p_submission_id:id,p_assignee_user_id:uid,p_note:$('layerAssignNote')?.value?.trim()||null});if(error){msg.textContent=error.message;return}$('layerAssignModal')?.remove();await refreshWorkflowSurface()};
+window.layerSaveAssign=async id=>{const ids=[...document.querySelectorAll('#layerAssignModal .layer-assignee-check:checked')].map(x=>x.value),msg=$('layerAssignMsg');if(!ids.length){msg.textContent='Pilih minimal satu admin/staf internal.';return}msg.textContent='Menyimpan penugasan...';const {error}=await sb.rpc('submission_assign_staff_multi',{p_submission_id:id,p_assignee_user_ids:ids,p_note:$('layerAssignNote')?.value?.trim()||null});if(error){msg.textContent=error.message;return}$('layerAssignModal')?.remove();await refreshWorkflowSurface()};
 async function askAction(id,fn,approve,promptText){
  const note=prompt(promptText||'Catatan (opsional):')||'';
  if(!approve&&!note.trim()){alert('Catatan wajib diisi jika mengembalikan/menolak.');return}
@@ -209,5 +217,5 @@ window.showTab=async function(id){
  return r;
 };
 style();
-window.__simantabLayeredWorkflow={version:3,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
+window.__simantabLayeredWorkflow={version:4,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
 })();
