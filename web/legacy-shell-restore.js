@@ -1,9 +1,15 @@
 /* SIMANTAB_LEGACY_SHELL_RESTORE_V1 */
+/* SIMANTAB_LEGACY_SHELL_RESTORE_V3 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id),profile=()=>window.__simantabProfile||{};
 if(!sb||!window.showTab)return;
+const leaderRole=['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(String(profile().role||''));
+if(leaderRole){
+  window.__simantabLegacyShell={version:3,leaderSafe:true,restored:[],observer:false};
+  return;
+}
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 const DINAS_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','STAFF_DINAS','STAFF_TPG','STAFF_KGB','STAFF_KP_EKIN','STAFF_PROMOSI','STAFF_ARSIP','STAFF_SKP','STAFF_PENSIUN','STAFF_CUTI','STAFF_SPJ_SIMTENDIK','STAFF_USUL_SK','PENGAWAS']);
