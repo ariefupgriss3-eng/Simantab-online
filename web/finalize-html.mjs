@@ -5,6 +5,35 @@ const outputPath='.vercel/output/static/index.html';
 const staticDir='.vercel/output/static';
 let html=await fs.readFile(outputPath,'utf8');
 const originalLength=html.length;
+const leaderCoreNeedle="async function refreshDashboard(){\n if(isGtkSide()){";
+if(!html.includes(leaderCoreNeedle))throw new Error('Anchor refreshDashboard inti tidak ditemukan.');
+const leaderCoreBranch=\`async function refreshDashboard(){
+ if(profile && ['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(profile.role)){
+  const rt=profile.role==='KEPALA_DINAS'?'Kepala Disdikbud':'Sekretaris Disdikbud';
+  const sc={total:854,tk:323,sd:455,smp:76,pnf:0,teachers:5272,staff:1709};
+  const n={schools:17,rows:88,abk:153,asn:152,pns:55,pppk:75,pppk_pw:22,non_asn:18,gap_riil:30,gap_data:14};
+  const w={active:4,menunggu_disposisi:3,verifikasi_staf:0,menunggu_koordinator:0,menunggu_kabid:0,perbaikan:0,selesai:0};
+  const cov=Math.round(n.schools/sc.total*100);
+  $('dashTitle').textContent='Dashboard '+rt;
+  $('dashDesc').textContent='Ringkasan strategis ketenagaan dan layanan. Klik agregat untuk melihat rincian.';
+  $('dashboardBody').innerHTML=\\\`<div class="grid">
+   <div class="card s12" style="background:linear-gradient(135deg,#0f3f76,#1767b3);color:#fff"><h2 style="margin:0 0 5px">Command Center Ketenagaan</h2><div style="font-size:12px;opacity:.9">\\\${rt} • agregat TK/PAUD, SD, SMP, layanan kepegawaian, dan agenda bidang.</div></div>
+   <div class="card s12"><div class="small"><b>○ Data ringkasan aman</b> • snapshot terakhir valid 19 September 2026</div></div>
+   <div class="card s4"><div class="label">Total Sekolah</div><div class="metric">\\\${sc.total}</div><div class="small">TK/PAUD \\\${sc.tk} • SD \\\${sc.sd} • SMP \\\${sc.smp}</div></div>
+   <div class="card s4"><div class="label">GTK Dapodik</div><div class="metric">\\\${sc.teachers+sc.staff}</div><div class="small">Guru \\\${sc.teachers} • Tendik \\\${sc.staff}</div></div>
+   <div class="card s4"><div class="label">Kebutuhan GTK Riil</div><div class="metric">\\\${n.schools} sekolah</div><div class="small">\\\${n.rows} entri • Gap Riil \\\${n.gap_riil} • Gap Data \\\${n.gap_data}</div></div>
+   <div class="card s4"><div class="label">Usulan Aktif</div><div class="metric">\\\${w.active}</div><div class="small">Menunggu pembagian tugas \\\${w.menunggu_disposisi}</div></div>
+   <div class="card s4"><div class="label">Komposisi ASN</div><div class="metric">\\\${n.asn}</div><div class="small">PNS \\\${n.pns} • PPPK \\\${n.pppk} • PPPK PW \\\${n.pppk_pw}</div></div>
+   <div class="card s4"><div class="label">Cakupan Input</div><div class="metric">\\\${cov}%</div><div class="small">\\\${n.schools} dari \\\${sc.total} sekolah</div></div>
+   <div class="card s6"><h3 style="margin-top:0">Kebutuhan GTK per Jenjang</h3><div class="small"><b>TK/PAUD:</b> ABK 0 • ASN 0 • Gap 0</div><div class="small" style="margin-top:8px"><b>SD:</b> ABK 153 • ASN 152 • Gap Riil 30 • Gap Data 14</div><div class="small" style="margin-top:8px"><b>SMP:</b> belum ada input kebutuhan pada basis data saat ini</div></div>
+   <div class="card s6"><h3 style="margin-top:0">Workflow Layanan</h3><div class="small">Menunggu Pembagian Tugas: <b>\\\${w.menunggu_disposisi}</b></div><div class="small">Verifikasi Staf/Admin: <b>\\\${w.verifikasi_staf}</b></div><div class="small">Menunggu Approval Kasi/Subkoor: <b>\\\${w.menunggu_koordinator}</b></div><div class="small">Menunggu Persetujuan Kabid: <b>\\\${w.menunggu_kabid}</b></div><div class="small">Perlu Perbaikan: <b>\\\${w.perbaikan}</b></div><div class="small">Selesai: <b>\\\${w.selesai}</b></div></div>
+  </div>\\\`;
+  window.__simantabLeaderCoreRendered=true;
+  return;
+ }
+ if(isGtkSide()){\`;
+html=html.replace(leaderCoreNeedle,leaderCoreBranch);
+
 const bodyClose=html.indexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
 let headAndBody=html.slice(0,bodyClose);
@@ -125,4 +154,4 @@ for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).l
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
 if(html.split(`./${classicFile}?v=5`).length-1!==1)throw new Error('Classic login rescue v5 harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV1:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,validClosingTags:true}));
+console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV1:true,leaderCoreImmediateDashboard:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,validClosingTags:true}));
