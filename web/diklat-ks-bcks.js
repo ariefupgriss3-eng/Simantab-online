@@ -6,6 +6,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V7 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V8 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V9 */
+/* SIMANTAB_DIKLAT_KS_BCKS_V10 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -136,18 +137,20 @@ window.ksbCoordOpenAssign=async id=>{
  const d=window.__ksbCoordData||await coordinatorDiklatData();
  window.__ksbCoordData=d;
  const candidates=d.profiles
-  .filter(x=>x.is_active&&x.account_channel==='DINAS'&&!['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','PENGAWAS','KORWIL'].includes(x.role))
+  .filter(x=>{const r=String(x.role||'');return x.is_active&&x.account_channel==='DINAS'&&(r.startsWith('STAFF_')||r.startsWith('ADMIN_'))})
   .sort((a,b)=>String(a.full_name||'').localeCompare(String(b.full_name||''),'id'));
  let m=$('ksbCoordAssignModal');m?.remove();m=document.createElement('div');m.id='ksbCoordAssignModal';
  Object.assign(m.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#0b203c99',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'});
  m.onclick=e=>{if(e.target===m)m.remove()};
- m.innerHTML=`<div class="card" style="width:min(620px,100%);max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">BAGI TUGAS DIKLAT KS/BCKS</div><h3 style="margin:4px 0">Pilih Admin/Staf Verifikator</h3></div><button class="btn secondary" onclick="document.getElementById('ksbCoordAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Dinas</label><select id="ksbCoordAssignee"><option value="">Pilih admin...</option>${candidates.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||x.role)}</option>`).join('')}</select></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="ksbCoordAssignNote"></textarea></div><button class="btn" onclick="ksbCoordSaveAssign('${id}')">Tetapkan Tugas</button><div id="ksbCoordAssignMsg" class="small" style="margin-top:7px"></div></div>`;
+ const choices=candidates.length?candidates.map(x=>`<label style="display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border:1px solid #dbe3ec;border-radius:10px;margin:6px 0;cursor:pointer"><input type="checkbox" class="ksb-assignee-check" value="${x.id}" style="margin-top:2px"><span><b>${esc(x.full_name)}</b><br><span class="small">${esc(x.position||x.role)}</span></span></label>`).join(''):'<div class="notice">Belum ada admin/staf internal aktif yang tersedia.</div>';
+ m.innerHTML=`<div class="card" style="width:min(680px,100%);max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">BAGI TUGAS DIKLAT KS/BCKS</div><h3 style="margin:4px 0">Pilih Admin/Staf Verifikator</h3><div class="small">Dapat memilih lebih dari satu admin/staf internal.</div></div><button class="btn secondary" onclick="document.getElementById('ksbCoordAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Internal Dinas</label><div style="max-height:300px;overflow:auto;padding:4px">${choices}</div></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="ksbCoordAssignNote"></textarea></div><button class="btn" onclick="ksbCoordSaveAssign('${id}')">Tetapkan Tugas</button><div id="ksbCoordAssignMsg" class="small" style="margin-top:7px"></div></div>`;
  document.body.appendChild(m);
 };
 window.ksbCoordSaveAssign=async id=>{
- const uid=$('ksbCoordAssignee')?.value,msg=$('ksbCoordAssignMsg');if(!uid){if(msg)msg.textContent='Pilih admin/staf terlebih dahulu.';return}
+ const ids=[...document.querySelectorAll('#ksbCoordAssignModal .ksb-assignee-check:checked')].map(x=>x.value),msg=$('ksbCoordAssignMsg');
+ if(!ids.length){if(msg)msg.textContent='Pilih minimal satu admin/staf internal.';return}
  if(msg)msg.textContent='Menyimpan penugasan...';
- const {error}=await sb.rpc('submission_assign_staff',{p_submission_id:id,p_assignee_user_id:uid,p_note:$('ksbCoordAssignNote')?.value?.trim()||null});
+ const {error}=await sb.rpc('submission_assign_staff_multi',{p_submission_id:id,p_assignee_user_ids:ids,p_note:$('ksbCoordAssignNote')?.value?.trim()||null});
  if(error){if(msg)msg.textContent=error.message;return}
  $('ksbCoordAssignModal')?.remove();await renderCoordinatorDiklat();
 };
@@ -246,5 +249,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:9,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:10,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
