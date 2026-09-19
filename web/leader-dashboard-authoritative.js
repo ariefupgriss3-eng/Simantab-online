@@ -1,11 +1,12 @@
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V1 */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V2 */
+/* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V3 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const $=id=>document.getElementById(id);
 const SNAPSHOT={
  schools:{sd:455,tk:323,pnf:0,smp:76,staff:1709,total:854,teachers:5272},
- needs:{abk:153,asn:152,pns:55,pppk:75,rows:88,levels:{SD:{abk:153,asn:152,non_asn:18,gap_data:14,gap_riil:30},TK:{abk:0,asn:0,non_asn:0,gap_data:0,gap_riil:0},SMP:{abk:0,asn:0,non_asn:0,gap_data:0,gap_riil:0}},non_asn:18,pppk_pw:22,schools:17,gap_data:14,gap_riil:30},
+ needs:{abk:119,asn:97,pns:37,pppk:47,rows:54,levels:{SD:{abk:119,asn:97,non_asn:14,gap_data:8,gap_riil:22},TK:{abk:0,asn:0,non_asn:0,gap_data:0,gap_riil:0},SMP:{abk:0,asn:0,non_asn:0,gap_data:0,gap_riil:0}},non_asn:14,pppk_pw:13,schools:10,gap_data:8,gap_riil:22},
  workflow:{total:4,active:4,selesai:0,perbaikan:0,menunggu_kabid:0,verifikasi_staf:0,menunggu_disposisi:3,menunggu_koordinator:0},
  activities:{total:3,upcoming:0,next_date:null},
  snapshot_at:'19 September 2026'
@@ -88,5 +89,5 @@ function ensure(){ return; }
 for(let i=0;i<240&&!window.__simantabProfile;i++)await wait(50);
 if(!isLeader())return;
 render(SNAPSHOT,false);
-window.__simantabLeaderDashboardAuthoritative={version:2,render,syncLive,stable:true};
+window.__simantabLeaderDashboardAuthoritative={version:3,render,syncLive,stable:true,verifiedNeedsOnly:true};
 })();
