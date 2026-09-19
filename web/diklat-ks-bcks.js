@@ -2,6 +2,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V3 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V4 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V5 */
+/* SIMANTAB_DIKLAT_KS_BCKS_V6 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -18,7 +19,18 @@ const REQUIREMENTS=[
  ['SURAT_PERNYATAAN_DIKLAT','Surat Pernyataan Bermeterai Bersedia Mengikuti Seluruh Proses Diklat KS']
 ];
 const REVIEW_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK']);
+const COORD_ROLES=new Set(['KASI_SD','KASI_SMP','SUBKOOR_TK']);
+const COORD_SCOPE={KASI_SD:'SD',KASI_SMP:'SMP',SUBKOOR_TK:'TK_PAUD_PNF'};
+const KSB_FLOW_LABEL={
+ MENUNGGU_DISPOSISI_KOORDINATOR:'Bagi Tugas',
+ VERIFIKASI_STAF:'Verifikasi Admin',
+ MENUNGGU_APPROVAL_KOORDINATOR:'Approve Kasi/Subkoor',
+ MENUNGGU_PERSETUJUAN_KABID:'Persetujuan Kabid',
+ PERBAIKAN:'Perbaikan',
+ SELESAI:'Selesai / Naik Level'
+};
 const isReviewer=()=>REVIEW_ROLES.has(profile().role)||String(profile().username||'').toLowerCase()==='kasim';
+const isCoordinator=()=>COORD_ROLES.has(profile().role);
 const isApplicant=()=>['GTK','KEPALA_SEKOLAH'].includes(profile().role);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmtDate=v=>v?new Date(v).toLocaleDateString('id-ID'):'-';
@@ -62,6 +74,84 @@ function bindApplicant(d,files){
  $('ksbSubmit')?.addEventListener('click',async()=>{if(!confirm('Ajukan Seleksi Administrasi ke Dinas?'))return;try{const {error}=await sb.rpc('ks_bcks_submit_administrasi',{p_submission_id:d.submission_id});if(error)throw error;toast('Seleksi Administrasi berhasil diajukan.');await renderApplicant()}catch(e){toast(e.message||String(e),true)}});
  $('ksbCertSubmit')?.addEventListener('click',async()=>{if(!confirm('Ajukan data sertifikat ke Admin KSPS untuk diverifikasi?'))return;try{const {error}=await sb.rpc('ks_bcks_submit_certificate_data',{p_submission_id:d.submission_id,p_penerbit:$('ksbCertIssuer')?.value?.trim(),p_nomor:$('ksbCertNo')?.value?.trim(),p_tanggal:$('ksbCertDate')?.value||null,p_note:$('ksbCertNote')?.value?.trim()||null});if(error)throw error;toast('Data sertifikat berhasil diajukan ke Admin KSPS.');await renderApplicant()}catch(e){toast(e.message||String(e),true)}});
 }
+
+async function coordinatorDiklatData(){
+ const scope=COORD_SCOPE[profile().role];
+ let sq=sb.from('submissions')
+  .select('id,user_id,service_type,title,scope_level,workflow_state,assigned_user_id,assigned_role,updated_at,submitted_at')
+  .eq('service_type','DIKLAT_KS_BCKS')
+  .eq('scope_level',scope)
+  .order('submitted_at',{ascending:false})
+  .limit(1000);
+ const [s,pf,ta]=await Promise.all([
+  sq,
+  sb.from('profiles').select('id,full_name,unit,position,role,account_channel,is_active').order('full_name'),
+  sb.from('team_task_assignments').select('user_id,capability,is_active').eq('is_active',true)
+ ]);
+ const err=s.error||pf.error||ta.error;if(err)throw err;
+ return{subs:s.data||[],profiles:pf.data||[],tasks:ta.data||[]};
+}
+function coordKsbPill(state){
+ const label=KSB_FLOW_LABEL[state]||state||'-';
+ const cls=state==='SELESAI'?'#e9f7ef;color:#178354':state==='PERBAIKAN'?'#feeceb;color:#b42318':'#fff3dd;color:#955a00';
+ return `<span style="display:inline-block;padding:4px 8px;border-radius:999px;background:${cls};font-size:9px;font-weight:900">${esc(label)}</span>`;
+}
+function coordKsbFlow(){
+ return '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><b>1. Bagi Tugas</b><p>Kasi/Subkoor menetapkan Admin KSPS.</p></div><div class="service"><b>2. Verifikasi Admin</b><p>Admin memeriksa 7 berkas administrasi.</p></div><div class="service"><b>3. Approve Kasi/Subkoor</b><p>Persetujuan sesuai jenjang.</p></div><div class="service"><b>4. Persetujuan Kabid</b><p>Persetujuan akhir administrasi.</p></div><div class="service"><b>5. Naik Level</b><p>Masuk tahap Seleksi Substansi.</p></div></div>';
+}
+function coordKsbSummary(rows){
+ const defs=[
+  ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
+  ['VERIFIKASI_STAF','Verifikasi Admin'],
+  ['MENUNGGU_APPROVAL_KOORDINATOR','Approve Kasi/Subkoor'],
+  ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
+  ['SELESAI','Selesai / Naik Level']
+ ];
+ return `<div class="grid" style="margin-bottom:12px">${defs.map(([st,label])=>`<div class="card s4"><div class="label">${esc(label)}</div><div class="metric">${rows.filter(x=>x.workflow_state===st).length}</div></div>`).join('')}</div>`;
+}
+function coordKsbAction(s){
+ if(s.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR')return `<button class="btn" onclick="ksbCoordOpenAssign('${s.id}')">👤 Bagi Tugas</button>`;
+ if(s.workflow_state==='MENUNGGU_APPROVAL_KOORDINATOR')return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="ksbCoordApprove('${s.id}',true)">✓ Approve</button><button class="btn secondary" onclick="ksbCoordApprove('${s.id}',false)">↺ Kembalikan</button></div>`;
+ return '';
+}
+async function renderCoordinatorDiklat(){
+ const body=$('diklatKsBcksBody');if(!body)return;
+ body.innerHTML='<div class="card"><div class="small">Memuat agregat Diklat KS/BCKS sesuai jenjang…</div></div>';
+ try{
+  const d=await coordinatorDiklatData();
+  window.__ksbCoordData=d;
+  const names=new Map(d.profiles.map(x=>[x.id,x]));
+  const scope=COORD_SCOPE[profile().role],scopeLabel=scope==='TK_PAUD_PNF'?'TK/PAUD/PNF':scope;
+  const rows=d.subs;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Pada level Kasi/Subkoor, berkas administrasi peserta tidak ditampilkan. Berkas hanya diperiksa oleh Admin KSPS. Kasi/Subkoor memantau agregat dan melakukan Bagi Tugas/Approve sesuai tahap.</div></div>${coordKsbSummary(rows)}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
+ }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
+}
+window.ksbCoordOpenAssign=async id=>{
+ const d=window.__ksbCoordData||await coordinatorDiklatData();
+ window.__ksbCoordData=d;
+ const caps=new Map;
+ for(const t of d.tasks){if(!caps.has(t.user_id))caps.set(t.user_id,new Set);caps.get(t.user_id).add(t.capability)}
+ const candidates=d.profiles.filter(x=>x.is_active&&x.account_channel==='DINAS'&&caps.get(x.id)?.has('ADMIN_KSPS'));
+ let m=$('ksbCoordAssignModal');m?.remove();m=document.createElement('div');m.id='ksbCoordAssignModal';
+ Object.assign(m.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#0b203c99',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'});
+ m.onclick=e=>{if(e.target===m)m.remove()};
+ m.innerHTML=`<div class="card" style="width:min(620px,100%);max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">BAGI TUGAS DIKLAT KS/BCKS</div><h3 style="margin:4px 0">Pilih Admin KSPS Verifikator</h3></div><button class="btn secondary" onclick="document.getElementById('ksbCoordAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin KSPS</label><select id="ksbCoordAssignee"><option value="">Pilih admin...</option>${candidates.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||x.role)}</option>`).join('')}</select></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="ksbCoordAssignNote"></textarea></div><button class="btn" onclick="ksbCoordSaveAssign('${id}')">Tetapkan Tugas</button><div id="ksbCoordAssignMsg" class="small" style="margin-top:7px"></div></div>`;
+ document.body.appendChild(m);
+};
+window.ksbCoordSaveAssign=async id=>{
+ const uid=$('ksbCoordAssignee')?.value,msg=$('ksbCoordAssignMsg');if(!uid){if(msg)msg.textContent='Pilih Admin KSPS terlebih dahulu.';return}
+ if(msg)msg.textContent='Menyimpan penugasan...';
+ const {error}=await sb.rpc('submission_assign_staff',{p_submission_id:id,p_assignee_user_id:uid,p_note:$('ksbCoordAssignNote')?.value?.trim()||null});
+ if(error){if(msg)msg.textContent=error.message;return}
+ $('ksbCoordAssignModal')?.remove();await renderCoordinatorDiklat();
+};
+window.ksbCoordApprove=async(id,ok)=>{
+ const note=prompt(ok?'Catatan approval Kasi/Subkoor (opsional):':'Alasan dikembalikan ke Admin KSPS:')||'';
+ if(!ok&&!note.trim()){alert('Catatan wajib diisi saat mengembalikan.');return}
+ const {error}=await sb.rpc('submission_coordinator_approve',{p_submission_id:id,p_approve:ok,p_note:note.trim()||null});
+ if(error){alert(error.message);return}
+ await renderCoordinatorDiklat();
+};
 async function reviewerData(){const {data,error}=await sb.from('ks_bcks_submission_details').select('*').order('updated_at',{ascending:false});if(error)throw error;return data||[]}
 function certSummary(d){return `<div class="info" style="margin-top:10px"><b>Data Sertifikat dari Peserta</b><br>Lembaga/Pihak Penerbit: ${esc(d.sertifikat_penerbit||'-')}<br>Nomor: ${esc(d.sertifikat_nomor||'-')}<br>Tanggal: ${fmtDate(d.sertifikat_tanggal)}${d.sertifikat_submitted_at?`<br>Diajukan: ${fmtDateTime(d.sertifikat_submitted_at)}`:''}</div>`}
 function reviewerActions(d){
@@ -85,8 +175,8 @@ async function renderReviewer(){const body=$('diklatKsBcksBody');if(!body)return
 async function loadReviewerDocs(id){const box=$(`docs-${id}`);if(!box)return;const fs=await filesFor(id),by=Object.fromEntries(fs.map(f=>[f.requirement_code,f]));box.innerHTML=`<div class="servicegrid">${REQUIREMENTS.map(([code,label])=>{const f=by[code];return `<div class="service"><b>${esc(label)}</b><div class="small">${f?'✅ '+esc(f.file_name):'❌ Belum ada'}</div>${f?`<button class="btn secondary" data-ksb-view="${esc(f.storage_path)}" style="margin-top:6px">Lihat</button>`:''}</div>`}).join('')}</div>`;box.querySelectorAll('[data-ksb-view]').forEach(b=>b.addEventListener('click',async()=>{const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(b.dataset.ksbView,600);if(error)return toast(error.message,true);window.open(data.signedUrl,'_blank')}))}
 const noteFor=id=>$(`note-${id}`)?.value?.trim()||null;
 function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.id,a=b.dataset.ksbAction;try{let res;if(a==='admin-ok'||a==='admin-no')res=await sb.rpc('ks_bcks_review_administrasi',{p_submission_id:id,p_approve:a==='admin-ok',p_note:noteFor(id)});else if(a==='sub-ok'||a==='sub-no')res=await sb.rpc('ks_bcks_set_substansi_result',{p_submission_id:id,p_lulus:a==='sub-ok',p_note:noteFor(id)});else if(a==='dik-ok'||a==='dik-no')res=await sb.rpc('ks_bcks_set_diklat_result',{p_submission_id:id,p_lulus:a==='dik-ok',p_note:noteFor(id)});else if(a==='cert-ok'||a==='cert-no')res=await sb.rpc('ks_bcks_review_certificate',{p_submission_id:id,p_approve:a==='cert-ok',p_note:noteFor(id)});if(res?.error)throw res.error;toast('Status berhasil diperbarui.');await renderReviewer()}catch(e){toast(e.message||String(e),true)}}))}
-async function render(){ensureSection();ensureNav();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
+async function render(){ensureSection();ensureNav();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:5,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT};
+window.__simantabDiklatKsBcks={version:6,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true};
 })();
