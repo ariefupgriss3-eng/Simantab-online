@@ -1,4 +1,5 @@
 /* SIMANTAB_LOGIN_CLICK_RESCUE_V2 */
+/* SIMANTAB_LOGIN_CLICK_RESCUE_V3 */
 (()=>{
 const $=id=>document.getElementById(id);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -88,6 +89,7 @@ function bind(){
  if(g&&!g.dataset.channelTrack){g.dataset.channelTrack='2';g.addEventListener('click',()=>{window.__simantabSelectedLoginChannel='GTK'},true)}
 }
 bind();
-new MutationObserver(bind).observe(document.documentElement,{childList:true,subtree:true});
+const loginRoot=$('loginPage');
+if(loginRoot)new MutationObserver(bind).observe(loginRoot,{childList:true,subtree:true});
 window.__simantabLoginRescue={version:2,enabled:true};
 })();
