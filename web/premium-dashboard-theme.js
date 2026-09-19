@@ -1,4 +1,5 @@
 /* SIMANTAB_PREMIUM_DASHBOARD_THEME_V2 */
+/* SIMANTAB_PREMIUM_DASHBOARD_THEME_V3 */
 (()=>{
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -66,8 +67,19 @@ function enhance(){
  }
 }
 decorateStatic();
-let t;const ob=new MutationObserver(()=>{clearTimeout(t);t=setTimeout(enhance,80)});const target=$('dashboardBody');if(target)ob.observe(target,{childList:true,subtree:false});
-const prior=window.showTab;if(prior)window.showTab=async id=>{const r=await prior(id);if(id==='dashboard')setTimeout(enhance,50);return r};
-setTimeout(enhance,500);
-window.__simantabPremiumDashboard={version:2,reference:'navy-orange-executive',productionDataUntouched:true};
+(async()=>{
+  for(let i=0;i<240&&!window.__simantabProfile;i++)await new Promise(r=>setTimeout(r,50));
+  const role=String(window.__simantabProfile?.role||'');
+  const leader=['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(role);
+  if(leader){
+    window.__simantabPremiumDashboard={version:3,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true};
+    return;
+  }
+  let t;
+  const ob=new MutationObserver(()=>{clearTimeout(t);t=setTimeout(enhance,80)});
+  const target=$('dashboardBody');if(target)ob.observe(target,{childList:true,subtree:false});
+  const prior=window.showTab;if(prior)window.showTab=async id=>{const r=await prior(id);if(id==='dashboard')setTimeout(enhance,50);return r};
+  setTimeout(enhance,500);
+  window.__simantabPremiumDashboard={version:3,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:false};
+})();
 })();
