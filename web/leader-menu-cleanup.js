@@ -1,4 +1,5 @@
 /* SIMANTAB_LEADER_MENU_CLEANUP_V1 */
+/* SIMANTAB_LEADER_MENU_CLEANUP_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -22,7 +23,5 @@ window.showTab=async function(id){
  return r;
 };
 clean();
-const nav=document.getElementById('nav');
-if(nav)new MutationObserver(()=>queueMicrotask(clean)).observe(nav,{childList:true,subtree:true});
-window.__simantabLeaderMenuCleanup={version:1};
+window.__simantabLeaderMenuCleanup={version:2,observer:false};
 })();
