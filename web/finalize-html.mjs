@@ -135,7 +135,7 @@ const modules=[
  ['private-school-access.js',1],
  ['staff-service-roles.js',1],
  ['team-workflow-authority.js',1],
- ['leadership-directions.js',1],
+ ['leadership-directions.js',2],
  ['submission-layered-workflow.js',8],
  ['staff-assigned-services.js',5],
  ['gtk-service-response-cycle.js',1],
