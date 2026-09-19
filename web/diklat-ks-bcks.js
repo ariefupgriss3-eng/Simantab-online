@@ -4,6 +4,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V5 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V6 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V7 */
+/* SIMANTAB_DIKLAT_KS_BCKS_V8 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -20,6 +21,7 @@ const REQUIREMENTS=[
  ['SURAT_PERNYATAAN_DIKLAT','Surat Pernyataan Bermeterai Bersedia Mengikuti Seluruh Proses Diklat KS']
 ];
 const REVIEW_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK']);
+const LEADER_ROLES=new Set(['KEPALA_DINAS','SEKRETARIS_DINAS']);
 const COORD_ROLES=new Set(['KASI_SD','KASI_SMP','SUBKOOR_TK']);
 const COORD_SCOPE={KASI_SD:'SD',KASI_SMP:'SMP',SUBKOOR_TK:'TK_PAUD_PNF'};
 const KSB_FLOW_LABEL={
@@ -31,6 +33,7 @@ const KSB_FLOW_LABEL={
  SELESAI:'Selesai / Naik Level'
 };
 const isReviewer=()=>REVIEW_ROLES.has(profile().role)||String(profile().username||'').toLowerCase()==='kasim';
+const isLeader=()=>LEADER_ROLES.has(profile().role);
 const isCoordinator=()=>COORD_ROLES.has(profile().role);
 const isApplicant=()=>['GTK','KEPALA_SEKOLAH'].includes(profile().role);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -153,6 +156,51 @@ window.ksbCoordApprove=async(id,ok)=>{
  if(error){alert(error.message);return}
  await renderCoordinatorDiklat();
 };
+
+async function leadershipDiklatData(){
+ const [s,pf]=await Promise.all([
+  sb.from('submissions')
+   .select('id,user_id,service_type,title,scope_level,workflow_state,status,updated_at,submitted_at')
+   .eq('service_type','DIKLAT_KS_BCKS')
+   .order('submitted_at',{ascending:false})
+   .limit(1000),
+  sb.from('profiles')
+   .select('id,full_name,unit,position,role')
+   .order('full_name')
+ ]);
+ const err=s.error||pf.error;if(err)throw err;
+ return{subs:s.data||[],profiles:pf.data||[]};
+}
+function leaderScopeLabel(scope){
+ return scope==='TK_PAUD_PNF'?'TK/PAUD/PNF':(scope||'-');
+}
+function leaderKsbSummary(rows){
+ const defs=[
+  ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
+  ['VERIFIKASI_STAF','Verifikasi Admin/Staf'],
+  ['MENUNGGU_APPROVAL_KOORDINATOR','Approve Kasi/Subkoor'],
+  ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
+  ['PERBAIKAN','Perbaikan'],
+  ['SELESAI','Selesai / Naik Level']
+ ];
+ return `<div class="grid" style="margin-bottom:12px">${defs.map(([st,label])=>`<div class="card s4"><div class="label">${esc(label)}</div><div class="metric">${rows.filter(x=>x.workflow_state===st).length}</div></div>`).join('')}</div>`;
+}
+async function renderLeadershipDiklat(){
+ const body=$('diklatKsBcksBody');if(!body)return;
+ body.innerHTML='<div class="card"><div class="small">Memuat monitoring Diklat KS/BCKS…</div></div>';
+ try{
+  const d=await leadershipDiklatData();
+  const names=new Map(d.profiles.map(x=>[x.id,x]));
+  const rows=d.subs;
+  const leaderLabel=profile().role==='KEPALA_DINAS'?'Kepala Disdikbud':'Sekretaris Disdikbud';
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">
+   <div class="info"><b>Monitoring ${esc(leaderLabel)}.</b> Tampilan pimpinan hanya memuat agregat, identitas pengusul, jenjang, dan status proses. Berkas unggahan peserta tidak ditampilkan dan tetap diperiksa oleh admin/staf verifikator.</div>
+   <div style="margin-top:10px"><button class="btn soft" onclick="showTab('leadershipDirections')">📝 Buka Arahan Pimpinan</button></div>
+  </div>
+  ${leaderKsbSummary(rows)}
+  <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
+ }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
+}
 async function reviewerData(){const {data,error}=await sb.from('ks_bcks_submission_details').select('*').order('updated_at',{ascending:false});if(error)throw error;return data||[]}
 function certSummary(d){return `<div class="info" style="margin-top:10px"><b>Data Sertifikat dari Peserta</b><br>Lembaga/Pihak Penerbit: ${esc(d.sertifikat_penerbit||'-')}<br>Nomor: ${esc(d.sertifikat_nomor||'-')}<br>Tanggal: ${fmtDate(d.sertifikat_tanggal)}${d.sertifikat_submitted_at?`<br>Diajukan: ${fmtDateTime(d.sertifikat_submitted_at)}`:''}</div>`}
 function reviewerActions(d){
@@ -176,8 +224,8 @@ async function renderReviewer(){const body=$('diklatKsBcksBody');if(!body)return
 async function loadReviewerDocs(id){const box=$(`docs-${id}`);if(!box)return;const fs=await filesFor(id),by=Object.fromEntries(fs.map(f=>[f.requirement_code,f]));box.innerHTML=`<div class="servicegrid">${REQUIREMENTS.map(([code,label])=>{const f=by[code];return `<div class="service"><b>${esc(label)}</b><div class="small">${f?'✅ '+esc(f.file_name):'❌ Belum ada'}</div>${f?`<button class="btn secondary" data-ksb-view="${esc(f.storage_path)}" style="margin-top:6px">Lihat</button>`:''}</div>`}).join('')}</div>`;box.querySelectorAll('[data-ksb-view]').forEach(b=>b.addEventListener('click',async()=>{const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(b.dataset.ksbView,600);if(error)return toast(error.message,true);window.open(data.signedUrl,'_blank')}))}
 const noteFor=id=>$(`note-${id}`)?.value?.trim()||null;
 function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.id,a=b.dataset.ksbAction;try{let res;if(a==='admin-ok'||a==='admin-no')res=await sb.rpc('ks_bcks_review_administrasi',{p_submission_id:id,p_approve:a==='admin-ok',p_note:noteFor(id)});else if(a==='sub-ok'||a==='sub-no')res=await sb.rpc('ks_bcks_set_substansi_result',{p_submission_id:id,p_lulus:a==='sub-ok',p_note:noteFor(id)});else if(a==='dik-ok'||a==='dik-no')res=await sb.rpc('ks_bcks_set_diklat_result',{p_submission_id:id,p_lulus:a==='dik-ok',p_note:noteFor(id)});else if(a==='cert-ok'||a==='cert-no')res=await sb.rpc('ks_bcks_review_certificate',{p_submission_id:id,p_approve:a==='cert-ok',p_note:noteFor(id)});if(res?.error)throw res.error;toast('Status berhasil diperbarui.');await renderReviewer()}catch(e){toast(e.message||String(e),true)}}))}
-async function render(){ensureSection();ensureNav();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
+async function render(){ensureSection();ensureNav();if(isLeader())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:7,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:8,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true};
 })();
