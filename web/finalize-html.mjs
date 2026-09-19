@@ -10,6 +10,9 @@ const simantabIconFile='simantab-icon-192.png';
 await fs.writeFile(path.join(staticDir,simantabIconFile),Buffer.from(simantabIconBase64,'base64'));
 
 const simantabIconHref='./'+simantabIconFile+'?v=1';
+// Bootstrap builds start from current production, so remove every prior icon-style injection first.
+html=html.replace(/\\n\s*(?=<style id="simantabAppIconStyle">)/g,'');
+html=html.replace(/<style id="simantabAppIconStyle">[\s\S]*?<\/style>\s*/g,'');
 html=html.replace(/<link rel="icon"[^>]*>\s*/g,'').replace(/<link rel="apple-touch-icon"[^>]*>\s*/g,'');
 html=html.replace('</head>',`<link rel="icon" type="image/png" href="${simantabIconHref}">
 <link rel="apple-touch-icon" href="${simantabIconHref}">
