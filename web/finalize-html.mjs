@@ -157,7 +157,7 @@ const modules=[
  ['dashboard-order-fix.js',2],
  ['login-password-toggle.js',2],
  ['gtk-needs-progress.js',12],
- ['school-status-access-v1.js',3],
+ ['school-status-access-v1.js',4],
  ['activity-participant-import.js',1],
  ['activity-participant-import-save.js',1],
  ['activity-digital-invite.js',1],
