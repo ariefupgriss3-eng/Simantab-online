@@ -5,6 +5,25 @@ const outputPath='.vercel/output/static/index.html';
 const staticDir='.vercel/output/static';
 let html=await fs.readFile(outputPath,'utf8');
 const originalLength=html.length;
+const maintenanceStyle=`<style id="simMaintenanceStyle">
+#simMaintenanceBanner{margin:14px 0 16px;padding:13px 14px;border-radius:14px;background:#fff4e8;border:1px solid #ffd5aa;border-left:5px solid #ff7a00;color:#5f3a12;line-height:1.5}
+#simMaintenanceBanner .sim-maint-title{font-size:12px;font-weight:950;color:#b45309;margin-bottom:3px;letter-spacing:.02em}
+#simMaintenanceBanner .sim-maint-text{font-size:11px;font-weight:750}
+#simMaintenanceBanner .sim-maint-foot{font-size:10px;color:#806244;margin-top:5px}
+</style>`;
+if(!html.includes('id="simMaintenanceStyle"'))html=html.replace('</head>',maintenanceStyle+'\\n</head>');
+
+const maintenanceBanner=`<div id="simMaintenanceBanner" role="status" aria-live="polite">
+ <div class="sim-maint-title">🔧 SIMANTAB SEDANG MAINTENANCE</div>
+ <div class="sim-maint-text">Nyuwun pangapunten Bapak/Ibu, <b>SIMANTAB tasik maintenance</b>.</div>
+ <div class="sim-maint-foot">Sistem sedang kami sempurnakan agar layanan lebih stabil dan nyaman digunakan. Matur nuwun atas pengertian lan kesabarannya. 🙏</div>
+</div>`;
+if(!html.includes('id="simMaintenanceBanner"')){
+ const tabsAnchor='<div class="tabs">';
+ if(!html.includes(tabsAnchor))throw new Error('Anchor tabs login untuk banner maintenance tidak ditemukan.');
+ html=html.replace(tabsAnchor,maintenanceBanner+'\\n   '+tabsAnchor);
+}
+
 const leaderCoreNeedle="async function refreshDashboard(){\n if(isGtkSide()){";
 const leaderCoreAlreadyPatched=html.includes('window.__simantabLeaderCoreRendered=true');
 const leaderCoreCanPatch=html.includes(leaderCoreNeedle);
