@@ -1,6 +1,7 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V4 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V5 */
+/* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V6 */
 /* SIMANTAB_COORDINATOR_SERVICE_AGGREGATE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -40,7 +41,7 @@ const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:
 function style(){if($('layeredWorkflowStyle'))return;const s=document.createElement('style');s.id='layeredWorkflowStyle';s.textContent=`
 .lwf-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.lwf-metric{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px;cursor:pointer}.lwf-metric:hover{box-shadow:0 6px 18px #16395d18}.lwf-num{font-size:26px;font-weight:950;color:var(--navy)}.lwf-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:12px}.lwf-flow>div{padding:10px;border:1px solid var(--line);border-radius:12px;background:#f8fbff;text-align:center;font-size:10px}.lwf-flow b{display:block;color:var(--navy);font-size:11px}.lwf-actions{display:flex;gap:6px;flex-wrap:wrap}.lwf-modal{position:fixed;inset:0;z-index:99999;background:#0b203c99;display:flex;align-items:center;justify-content:center;padding:16px}.lwf-box{width:min(1080px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:16px}.lwf-badge{display:inline-block;padding:4px 7px;border-radius:999px;background:#edf5ff;color:#175ea7;font-size:9px;font-weight:900}.lwf-done{background:#e9f7ef;color:#178354}.lwf-warn{background:#fff3dd;color:#955a00}.lwf-bad{background:#feeceb;color:#b42318}.lwf-step{font-size:10px;color:var(--muted);line-height:1.45}.lwf-click{cursor:pointer;text-decoration:underline;text-decoration-style:dotted}.lwf-staff-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:310px;overflow:auto;padding:4px}.lwf-staff-option{display:grid!important;grid-template-columns:22px minmax(0,1fr);gap:10px!important;align-items:start!important;margin:0!important;padding:11px 12px!important;border:1px solid #dbe3ec;border-radius:12px;background:#fff;cursor:pointer;line-height:1.25}.lwf-staff-option:hover{background:#f5f9ff;border-color:#aac8e8}.lwf-staff-option:has(input:checked){background:#edf6ff;border-color:#4b91d1;box-shadow:0 0 0 1px #4b91d122}.lwf-staff-option input{width:17px;height:17px;margin:1px 0 0!important}.lwf-staff-name{font-size:12px;font-weight:900;color:var(--navy)}.lwf-staff-pos{font-size:10px;color:var(--muted);margin-top:3px}.lwf-bulkbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}.lwf-bulkbtn{border:1px solid #b8d2ec;background:#f3f8ff;color:#155b9d;border-radius:11px;padding:9px 11px;font-weight:900;cursor:pointer}.lwf-bulkbtn:hover{background:#e9f3ff}.lwf-distribution{padding:10px 12px;border-radius:11px;background:#f6f9fc;border:1px solid #dfe7ef;font-size:11px;color:#425466}@media(max-width:900px){.lwf-grid{grid-template-columns:repeat(2,1fr)}.lwf-flow{grid-template-columns:1fr}.lwf-actions{display:block}.lwf-actions button{margin:3px 0}.lwf-staff-grid{grid-template-columns:1fr}}`;document.head.appendChild(s)}
 async function fetchWorkflowData(scopeOnly=null){
- let sq=sb.from('submissions').select('id,user_id,service_type,title,status,scope_level,coordinator_role,assigned_role,workflow_state,assigned_user_id,assigned_by,assigned_at,assignment_note,staff_verified_by,staff_verified_at,staff_verification_note,coordinator_approved_by,coordinator_approved_at,coordinator_approval_note,kabid_approved_by,kabid_approved_at,kabid_approval_note,workflow_completed_at,submitted_at,updated_at').order('submitted_at',{ascending:false}).limit(1000);
+ let sq=sb.from('submissions').select('id,user_id,service_type,title,description,status,scope_level,coordinator_role,assigned_role,workflow_state,assigned_user_id,assigned_by,assigned_at,assignment_note,staff_verified_by,staff_verified_at,staff_verification_note,coordinator_approved_by,coordinator_approved_at,coordinator_approval_note,kabid_approved_by,kabid_approved_at,kabid_approval_note,workflow_completed_at,submitted_at,updated_at').order('submitted_at',{ascending:false}).limit(1000);
  if(scopeOnly)sq=sq.eq('scope_level',scopeOnly);
  const [s,u,t,a]=await Promise.all([
   sq,
@@ -110,11 +111,11 @@ function coordinatorServiceRows(d){
 function coordinatorServiceTable(rows,d){
  const {names,prof}=maps(d);
  if(!rows.length)return '<div class="empty">Belum ada usulan layanan pada jenjang ini.</div>';
- return `<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis Layanan</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{
+ return `<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis Layanan</th><th>Isi / Maksud GTK</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{
    const person=prof.get(s.user_id)||{};
    const action=actionHtml(s,d);
    const actionPart=action.includes('<button')?`<div class="lwf-actions" style="margin-top:7px">${action}</div>`:'';
-   return `<tr><td><b>${esc(names.get(s.user_id)||'-')}</b></td><td>${esc(person.unit||'-')}</td><td>${esc(labelService(s.service_type))}</td><td>${coordinatorStagePill(s)}${actionPart}</td></tr>`;
+   return `<tr><td><b>${esc(names.get(s.user_id)||'-')}</b></td><td>${esc(person.unit||'-')}</td><td>${esc(labelService(s.service_type))}</td><td><div style="max-width:320px;white-space:normal">${esc(s.description||s.title||'-')}</div></td><td>${coordinatorStagePill(s.workflow_state)}${actionPart}</td></tr>`;
  }).join('')}</tbody></table></div>`;
 }
 
@@ -258,5 +259,5 @@ window.showTab=async function(id){
  return r;
 };
 style();
-window.__simantabLayeredWorkflow={version:5,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
+window.__simantabLayeredWorkflow={version:6,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
 })();
