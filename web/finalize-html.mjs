@@ -94,6 +94,11 @@ const layeredWorkflowCode=await fs.readFile(new URL(`./${layeredWorkflowFile}`,i
 if(!/SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1/.test(layeredWorkflowCode))throw new Error('Layered service workflow v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,layeredWorkflowFile),layeredWorkflowCode);
 
+const staffAssignedServicesFile='staff-assigned-services.js';
+const staffAssignedServicesCode=await fs.readFile(new URL(`./${staffAssignedServicesFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_STAFF_ASSIGNED_SERVICES_V1/.test(staffAssignedServicesCode))throw new Error('Staff assigned services v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,staffAssignedServicesFile),staffAssignedServicesCode);
+
 const sekdinRoleFile='sekdin-role-option-fix.js';
 const sekdinRoleCode=await fs.readFile(new URL(`./${sekdinRoleFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_SEKDIN_ROLE_OPTION_FIX_V1/.test(sekdinRoleCode))throw new Error('Sekdin role option fix v1 tidak valid.');
@@ -126,7 +131,8 @@ const modules=[
  ['staff-service-roles.js',1],
  ['team-workflow-authority.js',1],
  ['leadership-directions.js',1],
- ['submission-layered-workflow.js',6],
+ ['submission-layered-workflow.js',7],
+ ['staff-assigned-services.js',1],
  ['sekdin-role-option-fix.js',1],
  ['legacy-shell-restore.js',3],
  ['school-master-restore-fix.js',2],
