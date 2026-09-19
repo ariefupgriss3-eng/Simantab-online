@@ -3,6 +3,7 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V5 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V6 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V7 */
+/* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V8 */
 /* SIMANTAB_COORDINATOR_SERVICE_AGGREGATE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -273,5 +274,5 @@ window.showTab=async function(id){
  return r;
 };
 style();
-window.__simantabLayeredWorkflow={version:7,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
+window.__simantabLayeredWorkflow={version:8,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
 })();
