@@ -84,6 +84,11 @@ const kadinCode=await fs.readFile(new URL(`./${kadinFile}`,import.meta.url),'utf
 if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V6/.test(kadinCode))throw new Error('Dashboard pimpinan instant-snapshot v6 tidak valid.');
 await fs.writeFile(path.join(staticDir,kadinFile),kadinCode);
 
+const gtkInfographicDetailFile='gtk-infographic-details.js';
+const gtkInfographicDetailCode=await fs.readFile(new URL(`./${gtkInfographicDetailFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_GTK_INFOGRAPHIC_DETAILS_V1/.test(gtkInfographicDetailCode))throw new Error('GTK infographic details v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,gtkInfographicDetailFile),gtkInfographicDetailCode);
+
 const layeredWorkflowFile='submission-layered-workflow.js';
 const layeredWorkflowCode=await fs.readFile(new URL(`./${layeredWorkflowFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1/.test(layeredWorkflowCode))throw new Error('Layered service workflow v1 tidak valid.');
@@ -115,6 +120,7 @@ const modules=[
  ['super-admin-enhancement.js',5],
  ['registration-approval.js',2],
  ['kadin-dashboard-v2.js',8],
+ ['gtk-infographic-details.js',1],
  ['dinas-login-enhancement.js',1],
  ['private-school-access.js',1],
  ['staff-service-roles.js',1],
