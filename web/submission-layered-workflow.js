@@ -59,14 +59,8 @@ function visibleRows(d){
  return d.subs.filter(x=>x.assigned_user_id===uid);
 }
 function candidateStaff(d,sub){
- const taskMap=new Map;
- for(const t of d.tasks){if(!taskMap.has(t.user_id))taskMap.set(t.user_id,new Set);taskMap.get(t.user_id).add(t.capability)}
  let arr=d.profiles.filter(x=>x.is_active&&x.account_channel==='DINAS'&&!['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','PENGAWAS','KORWIL'].includes(x.role));
- if(sub.assigned_role==='ADMIN_KSPS')arr=arr.filter(x=>taskMap.get(x.id)?.has('ADMIN_KSPS'));
- arr.sort((a,b)=>{
-  const ar=a.role===sub.assigned_role?0:1,br=b.role===sub.assigned_role?0:1;
-  return ar-br||String(a.full_name).localeCompare(String(b.full_name),'id');
- });
+ arr.sort((a,b)=>String(a.full_name||'').localeCompare(String(b.full_name||''),'id'));
  return arr;
 }
 function actionHtml(s,d){
@@ -162,7 +156,7 @@ async function renderMonitoring(){
 window.layerOpenAssign=id=>{
  const d=currentData;if(!d)return;const s=d.subs.find(x=>x.id===id);if(!s)return;
  const cand=candidateStaff(d,s);let m=$('layerAssignModal');m?.remove();m=document.createElement('div');m.id='layerAssignModal';m.className='lwf-modal';m.onclick=e=>{if(e.target===m)m.remove()};
- m.innerHTML=`<div class="lwf-box" style="width:min(620px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • rekomendasi ${esc(s.assigned_role||'-')}</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Staf/Admin Verifikator</label><select id="layerAssignee"><option value="">Pilih staf/admin...</option>${cand.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||x.role)}</option>`).join('')}</select></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
+ m.innerHTML=`<div class="lwf-box" style="width:min(620px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • pilih admin/staf Dinas aktif</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Staf/Admin Verifikator</label><select id="layerAssignee"><option value="">Pilih staf/admin...</option>${cand.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||x.role)}</option>`).join('')}</select></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
 };
 window.layerSaveAssign=async id=>{const uid=$('layerAssignee')?.value,msg=$('layerAssignMsg');if(!uid){msg.textContent='Pilih staf/admin terlebih dahulu.';return}msg.textContent='Menyimpan penugasan...';const {error}=await sb.rpc('submission_assign_staff',{p_submission_id:id,p_assignee_user_id:uid,p_note:$('layerAssignNote')?.value?.trim()||null});if(error){msg.textContent=error.message;return}$('layerAssignModal')?.remove();await refreshWorkflowSurface()};
 async function askAction(id,fn,approve,promptText){
@@ -215,5 +209,5 @@ window.showTab=async function(id){
  return r;
 };
 style();
-window.__simantabLayeredWorkflow={version:2,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
+window.__simantabLayeredWorkflow={version:3,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
 })();
