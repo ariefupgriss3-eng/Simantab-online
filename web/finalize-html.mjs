@@ -98,7 +98,7 @@ const modules=[
  ['leadership-directions.js',1],
  ['submission-layered-workflow.js',2],
  ['sekdin-role-option-fix.js',1],
- ['legacy-shell-restore.js',2],
+ ['legacy-shell-restore.js',3],
  ['school-master-restore-fix.js',2],
  ['team-display-fix.js',2],
  ['admin-data-summary-fix.js',1],
@@ -136,7 +136,7 @@ const modules=[
  ['login-channel-hardening.js',3],
  ['login-click-rescue.js',3],
  ['registration-ui-final.js',5],
- ['leader-menu-cleanup.js',1],
+ ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',1],
  ['session-boundary-hardening.js',1]
 ];
