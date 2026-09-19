@@ -1,4 +1,5 @@
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V1 */
+/* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const $=id=>document.getElementById(id);
@@ -82,31 +83,10 @@ function render(data=SNAPSHOT,live=false){
  </div>`;
  body.dataset.authoritativeLeader='1'; lastRender=Date.now();
 }
-async function syncLive(){
- if(syncing||!isLeader())return; const sb=window.__simantabSb;if(!sb)return;
- syncing=true;
- try{
-  const res=await Promise.race([sb.rpc('leader_dashboard_summary'),new Promise(r=>setTimeout(()=>r({data:null,error:{message:'timeout'}}),5000))]);
-  if(res?.data&&!res.error){current={...res.data,snapshot_at:SNAPSHOT.snapshot_at};render(current,true)}
- }catch(_){}
- finally{syncing=false}
-}
-function ensure(){
- if(guard||!isLeader())return;const body=$('dashboardBody');if(!body)return;
- const active=$('dashboard')?.classList.contains('active') || body.offsetParent!==null;
- if(!active)return;
- const txt=(body.textContent||'').trim();
- if(body.dataset.authoritativeLeader!=='1'||/Memuat data|Memuat ringkasan pimpinan/i.test(txt)){guard=true;try{render(current,false)}finally{guard=false}}
-}
-for(let i=0;i<900&&!window.__simantabProfile;i++)await wait(50);
+async function syncLive(){ return; }
+function ensure(){ return; }
+for(let i=0;i<240&&!window.__simantabProfile;i++)await wait(50);
 if(!isLeader())return;
 render(SNAPSHOT,false);
-setTimeout(syncLive,0);
-const oldShow=window.showTab;
-if(typeof oldShow==='function')window.showTab=async function(id){const r=await oldShow.apply(this,arguments);if(id==='dashboard'&&isLeader()){render(current,false);setTimeout(syncLive,0)}return r};
-const oldRefresh=window.refreshAll;
-if(typeof oldRefresh==='function')window.refreshAll=async function(){const r=await oldRefresh.apply(this,arguments);if(isLeader()){render(current,false);setTimeout(syncLive,0)}return r};
-new MutationObserver(()=>queueMicrotask(ensure)).observe(document.body,{childList:true,subtree:true,characterData:true});
-setInterval(ensure,800);
-window.__simantabLeaderDashboardAuthoritative={version:1,render,syncLive};
+window.__simantabLeaderDashboardAuthoritative={version:2,render,syncLive,stable:true};
 })();
