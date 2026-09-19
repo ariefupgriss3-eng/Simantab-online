@@ -1,7 +1,7 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-for(let i=0;i<180&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
+for(let i=0;i<600&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id);if(!sb)return;
 const p=()=>window.__simantabProfile||{},role=()=>String(p().role||'');
 const LEADERS=new Set(['KEPALA_DINAS','SEKRETARIS_DINAS']);
