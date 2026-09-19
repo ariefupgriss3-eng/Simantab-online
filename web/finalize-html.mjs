@@ -39,6 +39,15 @@ if(maintenanceBannerStart>=0){
   html=html.slice(0,maintenanceBannerStart)+html.slice(maintenanceTabsStart);
  }
 }
+// Normalize an already-patched leader core carried from a previous production bootstrap.
+html=html.replace(
+ "const n={schools:17,rows:88,abk:153,asn:152,pns:55,pppk:75,pppk_pw:22,non_asn:18,gap_riil:30,gap_data:14};",
+ "const n={schools:10,rows:54,abk:119,asn:97,pns:37,pppk:47,pppk_pw:13,non_asn:14,gap_riil:22,gap_data:8};"
+);
+html=html.replace(
+ "<b>SD:</b> ABK 153 • ASN 152 • Gap Riil 30 • Gap Data 14",
+ "<b>SD:</b> ABK 119 • ASN 97 • Gap Riil 22 • Gap Data 8"
+);
 const leaderCoreNeedle="async function refreshDashboard(){\n if(isGtkSide()){";
 const leaderCoreAlreadyPatched=html.includes('window.__simantabLeaderCoreRendered=true');
 const leaderCoreCanPatch=html.includes(leaderCoreNeedle);
