@@ -120,7 +120,7 @@ const modules=[
  ['super-admin-enhancement.js',5],
  ['registration-approval.js',2],
  ['kadin-dashboard-v2.js',8],
- ['gtk-infographic-details.js',1],
+ ['gtk-infographic-details.js',2],
  ['dinas-login-enhancement.js',1],
  ['private-school-access.js',1],
  ['staff-service-roles.js',1],
