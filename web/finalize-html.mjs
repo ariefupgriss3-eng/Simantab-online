@@ -58,7 +58,7 @@ const modules=[
  ['staff-service-roles.js',1],
  ['team-workflow-authority.js',1],
  ['leadership-directions.js',1],
- ['submission-layered-workflow.js',1],
+ ['submission-layered-workflow.js',2],
  ['sekdin-role-option-fix.js',1],
  ['legacy-shell-restore.js',2],
  ['school-master-restore-fix.js',2],
