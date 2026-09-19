@@ -3,6 +3,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V4 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V5 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V6 */
+/* SIMANTAB_DIKLAT_KS_BCKS_V7 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -97,12 +98,12 @@ function coordKsbPill(state){
  return `<span style="display:inline-block;padding:4px 8px;border-radius:999px;background:${cls};font-size:9px;font-weight:900">${esc(label)}</span>`;
 }
 function coordKsbFlow(){
- return '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><b>1. Bagi Tugas</b><p>Kasi/Subkoor menetapkan Admin KSPS.</p></div><div class="service"><b>2. Verifikasi Admin</b><p>Admin memeriksa 7 berkas administrasi.</p></div><div class="service"><b>3. Approve Kasi/Subkoor</b><p>Persetujuan sesuai jenjang.</p></div><div class="service"><b>4. Persetujuan Kabid</b><p>Persetujuan akhir administrasi.</p></div><div class="service"><b>5. Naik Level</b><p>Masuk tahap Seleksi Substansi.</p></div></div>';
+ return '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><b>1. Bagi Tugas</b><p>Kasi/Subkoor menetapkan Admin KSPS.</p></div><div class="service"><b>2. Verifikasi Admin/Staf</b><p>Admin/staf memeriksa 7 berkas administrasi.</p></div><div class="service"><b>3. Approve Kasi/Subkoor</b><p>Persetujuan sesuai jenjang.</p></div><div class="service"><b>4. Persetujuan Kabid</b><p>Persetujuan akhir administrasi.</p></div><div class="service"><b>5. Naik Level</b><p>Masuk tahap Seleksi Substansi.</p></div></div>';
 }
 function coordKsbSummary(rows){
  const defs=[
   ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
-  ['VERIFIKASI_STAF','Verifikasi Admin'],
+  ['VERIFIKASI_STAF','Verifikasi Admin/Staf'],
   ['MENUNGGU_APPROVAL_KOORDINATOR','Approve Kasi/Subkoor'],
   ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
   ['SELESAI','Selesai / Naik Level']
@@ -123,23 +124,23 @@ async function renderCoordinatorDiklat(){
   const names=new Map(d.profiles.map(x=>[x.id,x]));
   const scope=COORD_SCOPE[profile().role],scopeLabel=scope==='TK_PAUD_PNF'?'TK/PAUD/PNF':scope;
   const rows=d.subs;
-  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Pada level Kasi/Subkoor, berkas administrasi peserta tidak ditampilkan. Berkas hanya diperiksa oleh Admin KSPS. Kasi/Subkoor memantau agregat dan melakukan Bagi Tugas/Approve sesuai tahap.</div></div>${coordKsbSummary(rows)}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Pada level Kasi/Subkoor, berkas administrasi peserta tidak ditampilkan. Berkas hanya diperiksa oleh admin/staf yang ditugaskan. Kasi/Subkoor memantau agregat dan melakukan Bagi Tugas/Approve sesuai tahap.</div></div>${coordKsbSummary(rows)}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 window.ksbCoordOpenAssign=async id=>{
  const d=window.__ksbCoordData||await coordinatorDiklatData();
  window.__ksbCoordData=d;
- const caps=new Map;
- for(const t of d.tasks){if(!caps.has(t.user_id))caps.set(t.user_id,new Set);caps.get(t.user_id).add(t.capability)}
- const candidates=d.profiles.filter(x=>x.is_active&&x.account_channel==='DINAS'&&caps.get(x.id)?.has('ADMIN_KSPS'));
+ const candidates=d.profiles
+  .filter(x=>x.is_active&&x.account_channel==='DINAS'&&!['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','PENGAWAS','KORWIL'].includes(x.role))
+  .sort((a,b)=>String(a.full_name||'').localeCompare(String(b.full_name||''),'id'));
  let m=$('ksbCoordAssignModal');m?.remove();m=document.createElement('div');m.id='ksbCoordAssignModal';
  Object.assign(m.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#0b203c99',display:'flex',alignItems:'center',justifyContent:'center',padding:'16px'});
  m.onclick=e=>{if(e.target===m)m.remove()};
- m.innerHTML=`<div class="card" style="width:min(620px,100%);max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">BAGI TUGAS DIKLAT KS/BCKS</div><h3 style="margin:4px 0">Pilih Admin KSPS Verifikator</h3></div><button class="btn secondary" onclick="document.getElementById('ksbCoordAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin KSPS</label><select id="ksbCoordAssignee"><option value="">Pilih admin...</option>${candidates.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||x.role)}</option>`).join('')}</select></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="ksbCoordAssignNote"></textarea></div><button class="btn" onclick="ksbCoordSaveAssign('${id}')">Tetapkan Tugas</button><div id="ksbCoordAssignMsg" class="small" style="margin-top:7px"></div></div>`;
+ m.innerHTML=`<div class="card" style="width:min(620px,100%);max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">BAGI TUGAS DIKLAT KS/BCKS</div><h3 style="margin:4px 0">Pilih Admin/Staf Verifikator</h3></div><button class="btn secondary" onclick="document.getElementById('ksbCoordAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Dinas</label><select id="ksbCoordAssignee"><option value="">Pilih admin...</option>${candidates.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||x.role)}</option>`).join('')}</select></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="ksbCoordAssignNote"></textarea></div><button class="btn" onclick="ksbCoordSaveAssign('${id}')">Tetapkan Tugas</button><div id="ksbCoordAssignMsg" class="small" style="margin-top:7px"></div></div>`;
  document.body.appendChild(m);
 };
 window.ksbCoordSaveAssign=async id=>{
- const uid=$('ksbCoordAssignee')?.value,msg=$('ksbCoordAssignMsg');if(!uid){if(msg)msg.textContent='Pilih Admin KSPS terlebih dahulu.';return}
+ const uid=$('ksbCoordAssignee')?.value,msg=$('ksbCoordAssignMsg');if(!uid){if(msg)msg.textContent='Pilih admin/staf terlebih dahulu.';return}
  if(msg)msg.textContent='Menyimpan penugasan...';
  const {error}=await sb.rpc('submission_assign_staff',{p_submission_id:id,p_assignee_user_id:uid,p_note:$('ksbCoordAssignNote')?.value?.trim()||null});
  if(error){if(msg)msg.textContent=error.message;return}
@@ -178,5 +179,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:6,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:7,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true};
 })();
