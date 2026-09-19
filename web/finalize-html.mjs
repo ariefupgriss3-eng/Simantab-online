@@ -137,7 +137,7 @@ const modules=[
  ['team-workflow-authority.js',1],
  ['leadership-directions.js',1],
  ['submission-layered-workflow.js',8],
- ['staff-assigned-services.js',4],
+ ['staff-assigned-services.js',5],
  ['gtk-service-response-cycle.js',1],
  ['sekdin-role-option-fix.js',1],
  ['legacy-shell-restore.js',3],
