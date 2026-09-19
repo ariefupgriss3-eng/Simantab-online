@@ -1,4 +1,5 @@
 /* SIMANTAB_GTK_INFOGRAPHIC_DETAILS_V1 */
+/* SIMANTAB_GTK_INFOGRAPHIC_DETAILS_V2 */
 (()=>{
 const sb=window.__simantabSb;
 if(!sb)return;
@@ -71,13 +72,43 @@ window.__leaderOpenGtkDetail=async function(type){
  }catch(e){alert(e.message||String(e))}
 };
 
+
+window.__leaderOpenSchoolGapDetail=async function(npsn,schoolName){
+ try{
+  const d=await loadVerified();
+  const rows=d.rows.filter(x=>String(x.school_npsn||'')===String(npsn||''));
+  if(!rows.length){alert('Rincian kebutuhan sekolah tidak ditemukan atau belum VERIFIED.');return}
+  const all=rows.map(x=>({...x,gr:Math.max(0,num(x.abk)-num(x.asn)),gd:Math.max(0,num(x.abk)-num(x.asn)-num(x.non))}));
+  const shortages=all.filter(x=>x.gr>0).sort((a,b)=>b.gr-a.gr||String(a.position_name||'').localeCompare(String(b.position_name||''),'id'));
+  const totalAbk=all.reduce((s,x)=>s+x.abk,0),totalAsn=all.reduce((s,x)=>s+x.asn,0),totalNon=all.reduce((s,x)=>s+x.non,0),totalGr=all.reduce((s,x)=>s+x.gr,0),totalGd=all.reduce((s,x)=>s+x.gd,0);
+  const summary='<div class="grid" style="margin-bottom:12px">'
+   +'<div class="card s3"><div class="label">ABK</div><div class="metric">'+fmt(totalAbk)+'</div></div>'
+   +'<div class="card s3"><div class="label">ASN</div><div class="metric">'+fmt(totalAsn)+'</div></div>'
+   +'<div class="card s3"><div class="label">Gap Riil</div><div class="metric">'+fmt(totalGr)+'</div></div>'
+   +'<div class="card s3"><div class="label">Gap Data</div><div class="metric">'+fmt(totalGd)+'</div><div class="small">Non-ASN '+fmt(totalNon)+'</div></div>'
+   +'</div>';
+  const table=shortages.length
+   ?'<div class="tablewrap"><table><thead><tr><th>Jabatan</th><th>ABK</th><th>PNS</th><th>PPPK</th><th>PPPK PW</th><th>ASN</th><th>Non-ASN</th><th>Gap Riil</th><th>Gap Data</th></tr></thead><tbody>'
+    +shortages.map(x=>'<tr><td><b>'+esc(x.position_name||'-')+'</b></td><td>'+fmt(x.abk)+'</td><td>'+fmt(x.pns)+'</td><td>'+fmt(x.pppk)+'</td><td>'+fmt(x.pw)+'</td><td>'+fmt(x.asn)+'</td><td>'+fmt(x.non)+'</td><td><b>'+fmt(x.gr)+'</b></td><td>'+fmt(x.gd)+'</td></tr>').join('')
+    +'</tbody></table></div>'
+   :'<div class="empty">Tidak ada jabatan dengan Gap Riil positif pada sekolah ini.</div>';
+  modal(schoolName||rows[0].school_name||'Rincian Kekurangan Sekolah','Rincian jabatan yang masih kekurangan pada sekolah VERIFIED/APPROVED.',summary,table);
+ }catch(e){alert(e.message||String(e))}
+};
+
 document.addEventListener('click',e=>{
+ const kurang=e.target.closest('#kadinGtk .kpill');
+ if(kurang&&/^Kurang\s+/i.test(String(kurang.textContent||'').trim())){
+  const tr=kurang.closest('tr'),cells=tr?.querySelectorAll('td')||[];
+  const schoolName=String(cells[0]?.textContent||'').trim(),npsn=String(cells[1]?.textContent||'').trim();
+  if(npsn){e.preventDefault();window.__leaderOpenSchoolGapDetail(npsn,schoolName);return}
+ }
  const card=e.target.closest('#kadinGtk .kk');if(!card)return;
  const label=String(card.querySelector('.label')?.textContent||'').trim().toUpperCase();
  const type=allowed.get(label);if(!type)return;
  e.preventDefault();window.__leaderOpenGtkDetail(type);
 });
 
-const s=document.createElement('style');s.id='gtkInfographicDetailStyle';s.textContent='#kadinGtk .kk{cursor:pointer}#kadinGtk .kk:hover{transform:translateY(-1px);box-shadow:0 9px 24px rgba(19,49,85,.12)}#kadinGtk .kk .ks:after{content:" • Klik untuk rincian";font-weight:800;color:#1767b3}';document.head.appendChild(s);
-window.__simantabGtkInfographicDetails={version:1,clickable:true,verifiedOnly:true};
+const s=document.createElement('style');s.id='gtkInfographicDetailStyle';s.textContent='#kadinGtk .kk{cursor:pointer}#kadinGtk .kk:hover{transform:translateY(-1px);box-shadow:0 9px 24px rgba(19,49,85,.12)}#kadinGtk .kk .ks:after{content:" • Klik untuk rincian";font-weight:800;color:#1767b3}#kadinGtk .kpill{cursor:pointer}#kadinGtk .kpill:hover{text-decoration:underline}';document.head.appendChild(s);
+window.__simantabGtkInfographicDetails={version:2,clickable:true,verifiedOnly:true,schoolGapDetail:true};
 })();
