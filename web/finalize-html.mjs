@@ -29,7 +29,7 @@ await fs.writeFile(path.join(staticDir,leadershipFile),leadershipCode);
 
 const kadinFile='kadin-dashboard-v2.js';
 const kadinCode=await fs.readFile(new URL(`./${kadinFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V4/.test(kadinCode))throw new Error('Dashboard pimpinan server-summary v4 tidak valid.');
+if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V5/.test(kadinCode))throw new Error('Dashboard pimpinan fallback v5 tidak valid.');
 await fs.writeFile(path.join(staticDir,kadinFile),kadinCode);
 
 const layeredWorkflowFile='submission-layered-workflow.js';
@@ -52,7 +52,7 @@ const modules=[
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',5],
  ['registration-approval.js',2],
- ['kadin-dashboard-v2.js',5],
+ ['kadin-dashboard-v2.js',6],
  ['dinas-login-enhancement.js',1],
  ['private-school-access.js',1],
  ['staff-service-roles.js',1],
