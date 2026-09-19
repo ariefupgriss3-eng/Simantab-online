@@ -27,6 +27,16 @@ const leadershipCode=await fs.readFile(new URL(`./${leadershipFile}`,import.meta
 if(!/SIMANTAB_LEADERSHIP_DIRECTIONS_V1/.test(leadershipCode))throw new Error('Leadership directions v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,leadershipFile),leadershipCode);
 
+const kadinFile='kadin-dashboard-v2.js';
+const kadinCode=await fs.readFile(new URL(`./${kadinFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V3/.test(kadinCode))throw new Error('Dashboard pimpinan agregat v3 tidak valid.');
+await fs.writeFile(path.join(staticDir,kadinFile),kadinCode);
+
+const layeredWorkflowFile='submission-layered-workflow.js';
+const layeredWorkflowCode=await fs.readFile(new URL(`./${layeredWorkflowFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1/.test(layeredWorkflowCode))throw new Error('Layered service workflow v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,layeredWorkflowFile),layeredWorkflowCode);
+
 const sekdinRoleFile='sekdin-role-option-fix.js';
 const sekdinRoleCode=await fs.readFile(new URL(`./${sekdinRoleFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_SEKDIN_ROLE_OPTION_FIX_V1/.test(sekdinRoleCode))throw new Error('Sekdin role option fix v1 tidak valid.');
@@ -37,12 +47,13 @@ const modules=[
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',5],
  ['registration-approval.js',2],
- ['kadin-dashboard-v2.js',3],
+ ['kadin-dashboard-v2.js',4],
  ['dinas-login-enhancement.js',1],
  ['private-school-access.js',1],
  ['staff-service-roles.js',1],
  ['team-workflow-authority.js',1],
  ['leadership-directions.js',1],
+ ['submission-layered-workflow.js',1],
  ['sekdin-role-option-fix.js',1],
  ['legacy-shell-restore.js',2],
  ['school-master-restore-fix.js',2],
@@ -65,7 +76,7 @@ const modules=[
  ['korwil-dashboard-title.js',1],
  ['cuti-requirements.js',1],
  ['super-admin-merge-pengawas.js',1],
- ['diklat-ks-bcks.js',8],
+ ['diklat-ks-bcks.js',9],
  ['ui-branding-icons.js',2],
  ['kasim-role-label.js',1],
  ['login-developer-branding.js',1],
@@ -102,4 +113,4 @@ for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).l
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
 if(html.split(`./${classicFile}?v=5`).length-1!==1)throw new Error('Classic login rescue v5 harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,validClosingTags:true}));
+console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,validClosingTags:true}));
