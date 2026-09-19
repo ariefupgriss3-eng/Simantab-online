@@ -1,5 +1,6 @@
 /* SIMANTAB_STAFF_MINIMAL_NAV_V1 */
 /* SIMANTAB_STAFF_MINIMAL_NAV_V2 */
+/* SIMANTAB_STAFF_MINIMAL_NAV_V3 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<180&&(!window.__simantabProfile||!window.showTab);i++)await wait(50);
@@ -24,9 +25,15 @@ function makeButton([id,ico,label]){
  b.onclick=()=>window.showTab?.(id);
  return b;
 }
+function navIsCorrect(nav){
+ const buttons=[...nav.querySelectorAll('.navbtn[data-tab]')];
+ const visible=buttons.filter(b=>b.style.display!=='none').map(b=>b.dataset.tab);
+ const hiddenTpg=buttons.some(b=>b.dataset.tab==='tpg'&&b.style.display==='none');
+ return visible.length===ITEMS.length&&visible.every((id,i)=>id===ITEMS[i][0])&&hiddenTpg;
+}
 function pruneNav(){
  if(pruning)return;
- const nav=$('nav');if(!nav)return;
+ const nav=$('nav');if(!nav||navIsCorrect(nav))return;
  pruning=true;
  try{
    const existing=new Map([...nav.querySelectorAll('.navbtn[data-tab]')].map(b=>[b.dataset.tab,b]));
@@ -40,7 +47,10 @@ function pruneNav(){
      b.appendChild(document.createTextNode(item[2]));
      frag.appendChild(b);
    }
-   const bridge=document.createElement('button');bridge.className='navbtn';bridge.dataset.tab='tpg';bridge.style.display='none';bridge.innerHTML='<span class="ico">◉</span>TPG / Tamsil';bridge.onclick=()=>window.showTab?.('tpg');frag.appendChild(bridge);
+   const bridge=existing.get('tpg')||document.createElement('button');
+   bridge.className='navbtn';bridge.dataset.tab='tpg';bridge.style.display='none';
+   bridge.innerHTML='<span class="ico">◉</span>TPG / Tamsil';bridge.onclick=()=>window.showTab?.('tpg');
+   frag.appendChild(bridge);
    nav.replaceChildren(frag);
  }finally{pruning=false}
 }
@@ -57,15 +67,10 @@ window.showTab=async function(id){
  return r;
 };
 pruneNav();
-const nav=$('nav');
-if(nav){
- let queued=false;
- new MutationObserver(()=>{
-  if(queued||pruning)return;queued=true;
-  queueMicrotask(()=>{queued=false;pruneNav()});
- }).observe(nav,{childList:true,subtree:true});
-}
+// No MutationObserver here: repeated nav rewrites can crash mobile browsers.
+// A few bounded checks are enough because this module is loaded last.
+for(const ms of [80,250,700])setTimeout(()=>{pruneNav()},ms);
 await wait(100);
 pruneNav();normalizeActive();
-window.__simantabStaffMinimalNav={version:2,allowed:[...ALLOWED],internal:[...INTERNAL_ALLOWED],landing:'activities'};
+window.__simantabStaffMinimalNav={version:3,allowed:[...ALLOWED],internal:[...INTERNAL_ALLOWED],landing:'activities',observer:false};
 })();
