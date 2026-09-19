@@ -99,6 +99,11 @@ const staffAssignedServicesCode=await fs.readFile(new URL(`./${staffAssignedServ
 if(!/SIMANTAB_STAFF_ASSIGNED_SERVICES_V1/.test(staffAssignedServicesCode))throw new Error('Staff assigned services v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,staffAssignedServicesFile),staffAssignedServicesCode);
 
+const gtkServiceResponseFile='gtk-service-response-cycle.js';
+const gtkServiceResponseCode=await fs.readFile(new URL(`./${gtkServiceResponseFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_GTK_SERVICE_RESPONSE_CYCLE_V1/.test(gtkServiceResponseCode))throw new Error('GTK service response cycle v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,gtkServiceResponseFile),gtkServiceResponseCode);
+
 const sekdinRoleFile='sekdin-role-option-fix.js';
 const sekdinRoleCode=await fs.readFile(new URL(`./${sekdinRoleFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_SEKDIN_ROLE_OPTION_FIX_V1/.test(sekdinRoleCode))throw new Error('Sekdin role option fix v1 tidak valid.');
@@ -131,8 +136,9 @@ const modules=[
  ['staff-service-roles.js',1],
  ['team-workflow-authority.js',1],
  ['leadership-directions.js',1],
- ['submission-layered-workflow.js',7],
- ['staff-assigned-services.js',3],
+ ['submission-layered-workflow.js',8],
+ ['staff-assigned-services.js',4],
+ ['gtk-service-response-cycle.js',1],
  ['sekdin-role-option-fix.js',1],
  ['legacy-shell-restore.js',3],
  ['school-master-restore-fix.js',2],
