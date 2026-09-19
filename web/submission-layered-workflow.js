@@ -1,5 +1,6 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V4 */
+/* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V5 */
 /* SIMANTAB_COORDINATOR_SERVICE_AGGREGATE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -37,7 +38,7 @@ const SERVICE_LABEL={
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 function style(){if($('layeredWorkflowStyle'))return;const s=document.createElement('style');s.id='layeredWorkflowStyle';s.textContent=`
-.lwf-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.lwf-metric{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px;cursor:pointer}.lwf-metric:hover{box-shadow:0 6px 18px #16395d18}.lwf-num{font-size:26px;font-weight:950;color:var(--navy)}.lwf-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:12px}.lwf-flow>div{padding:10px;border:1px solid var(--line);border-radius:12px;background:#f8fbff;text-align:center;font-size:10px}.lwf-flow b{display:block;color:var(--navy);font-size:11px}.lwf-actions{display:flex;gap:6px;flex-wrap:wrap}.lwf-modal{position:fixed;inset:0;z-index:99999;background:#0b203c99;display:flex;align-items:center;justify-content:center;padding:16px}.lwf-box{width:min(1080px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:16px}.lwf-badge{display:inline-block;padding:4px 7px;border-radius:999px;background:#edf5ff;color:#175ea7;font-size:9px;font-weight:900}.lwf-done{background:#e9f7ef;color:#178354}.lwf-warn{background:#fff3dd;color:#955a00}.lwf-bad{background:#feeceb;color:#b42318}.lwf-step{font-size:10px;color:var(--muted);line-height:1.45}.lwf-click{cursor:pointer;text-decoration:underline;text-decoration-style:dotted}@media(max-width:900px){.lwf-grid{grid-template-columns:repeat(2,1fr)}.lwf-flow{grid-template-columns:1fr}.lwf-actions{display:block}.lwf-actions button{margin:3px 0}}`;document.head.appendChild(s)}
+.lwf-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.lwf-metric{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px;cursor:pointer}.lwf-metric:hover{box-shadow:0 6px 18px #16395d18}.lwf-num{font-size:26px;font-weight:950;color:var(--navy)}.lwf-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:12px}.lwf-flow>div{padding:10px;border:1px solid var(--line);border-radius:12px;background:#f8fbff;text-align:center;font-size:10px}.lwf-flow b{display:block;color:var(--navy);font-size:11px}.lwf-actions{display:flex;gap:6px;flex-wrap:wrap}.lwf-modal{position:fixed;inset:0;z-index:99999;background:#0b203c99;display:flex;align-items:center;justify-content:center;padding:16px}.lwf-box{width:min(1080px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:16px}.lwf-badge{display:inline-block;padding:4px 7px;border-radius:999px;background:#edf5ff;color:#175ea7;font-size:9px;font-weight:900}.lwf-done{background:#e9f7ef;color:#178354}.lwf-warn{background:#fff3dd;color:#955a00}.lwf-bad{background:#feeceb;color:#b42318}.lwf-step{font-size:10px;color:var(--muted);line-height:1.45}.lwf-click{cursor:pointer;text-decoration:underline;text-decoration-style:dotted}.lwf-staff-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;max-height:310px;overflow:auto;padding:4px}.lwf-staff-option{display:grid!important;grid-template-columns:22px minmax(0,1fr);gap:10px!important;align-items:start!important;margin:0!important;padding:11px 12px!important;border:1px solid #dbe3ec;border-radius:12px;background:#fff;cursor:pointer;line-height:1.25}.lwf-staff-option:hover{background:#f5f9ff;border-color:#aac8e8}.lwf-staff-option:has(input:checked){background:#edf6ff;border-color:#4b91d1;box-shadow:0 0 0 1px #4b91d122}.lwf-staff-option input{width:17px;height:17px;margin:1px 0 0!important}.lwf-staff-name{font-size:12px;font-weight:900;color:var(--navy)}.lwf-staff-pos{font-size:10px;color:var(--muted);margin-top:3px}.lwf-bulkbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0}.lwf-bulkbtn{border:1px solid #b8d2ec;background:#f3f8ff;color:#155b9d;border-radius:11px;padding:9px 11px;font-weight:900;cursor:pointer}.lwf-bulkbtn:hover{background:#e9f3ff}.lwf-distribution{padding:10px 12px;border-radius:11px;background:#f6f9fc;border:1px solid #dfe7ef;font-size:11px;color:#425466}@media(max-width:900px){.lwf-grid{grid-template-columns:repeat(2,1fr)}.lwf-flow{grid-template-columns:1fr}.lwf-actions{display:block}.lwf-actions button{margin:3px 0}.lwf-staff-grid{grid-template-columns:1fr}}`;document.head.appendChild(s)}
 async function fetchWorkflowData(scopeOnly=null){
  let sq=sb.from('submissions').select('id,user_id,service_type,title,status,scope_level,coordinator_role,assigned_role,workflow_state,assigned_user_id,assigned_by,assigned_at,assignment_note,staff_verified_by,staff_verified_at,staff_verification_note,coordinator_approved_by,coordinator_approved_at,coordinator_approval_note,kabid_approved_by,kabid_approved_at,kabid_approval_note,workflow_completed_at,submitted_at,updated_at').order('submitted_at',{ascending:false}).limit(1000);
  if(scopeOnly)sq=sq.eq('scope_level',scopeOnly);
@@ -116,6 +117,46 @@ function coordinatorServiceTable(rows,d){
    return `<tr><td><b>${esc(names.get(s.user_id)||'-')}</b></td><td>${esc(person.unit||'-')}</td><td>${esc(labelService(s.service_type))}</td><td>${coordinatorStagePill(s)}${actionPart}</td></tr>`;
  }).join('')}</tbody></table></div>`;
 }
+
+function coordinatorBulkHtml(rows){
+ const pending=rows.filter(x=>x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR');
+ const groups=new Map;
+ for(const s of pending){const k=s.service_type||'OTHER';if(!groups.has(k))groups.set(k,[]);groups.get(k).push(s)}
+ const items=[...groups.entries()].filter(([,list])=>list.length>=2).sort((a,b)=>String(labelService(a[0])).localeCompare(String(labelService(b[0])),'id'));
+ if(!items.length)return'';
+ return `<div class="card" style="margin-top:12px"><div class="label">PEMBAGIAN TUGAS AGREGAT</div><div class="small" style="margin:4px 0 8px">Usulan dengan jenis layanan yang sama dibagi otomatis dan merata. Satu usulan hanya mendapat satu petugas.</div><div class="lwf-bulkbar">${items.map(([service,list])=>`<button class="lwf-bulkbtn" onclick="layerOpenBulkAssign('${esc(service)}')">⚖️ ${esc(labelService(service))} <b>(${list.length})</b></button>`).join('')}</div></div>`;
+}
+function staffChoicesHtml(cand,klass){
+ if(!cand.length)return'<div class="notice">Belum ada admin/staf internal aktif yang tersedia.</div>';
+ return `<div class="lwf-staff-grid">${cand.map(x=>`<label class="lwf-staff-option"><input type="checkbox" class="${klass}" value="${x.id}"><span><div class="lwf-staff-name">${esc(x.full_name)}</div><div class="lwf-staff-pos">${esc(x.position||x.role)}</div></span></label>`).join('')}</div>`;
+}
+window.layerBulkPreview=()=>{
+ const box=$('layerBulkAssignModal');if(!box)return;
+ const n=Number(box.dataset.submissionCount||0),m=box.querySelectorAll('.layer-bulk-assignee:checked').length,out=$('layerBulkPreview');
+ if(out)out.innerHTML=m?`<b>${n} usulan</b> akan dibagi ke <b>${m} petugas</b>. Perkiraan masing-masing ${Math.floor(n/m)}–${Math.ceil(n/m)} usulan, menyesuaikan beban aktif.`:'Pilih minimal satu admin/staf internal.';
+};
+window.layerOpenBulkAssign=serviceType=>{
+ const d=currentData;if(!d)return;
+ const scope=COORD_SCOPE[role()];
+ const rows=d.subs.filter(x=>x.scope_level===scope&&x.service_type===serviceType&&x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR');
+ if(rows.length<2){alert('Pembagian agregat membutuhkan minimal 2 usulan sejenis pada tahap Bagi Tugas.');return}
+ const cand=candidateStaff(d,rows[0]);let m=$('layerBulkAssignModal');m?.remove();m=document.createElement('div');m.id='layerBulkAssignModal';m.className='lwf-modal';m.dataset.submissionCount=String(rows.length);m.onclick=e=>{if(e.target===m)m.remove()};
+ m.innerHTML=`<div class="lwf-box" style="width:min(760px,100%)"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><div class="label">BAGI TUGAS AGREGAT</div><h3 style="margin:3px 0">${esc(labelService(serviceType))}</h3><div class="small">${rows.length} usulan • jenjang ${esc(SCOPE_LABEL[scope]||scope)}</div></div><button class="btn soft" onclick="document.getElementById('layerBulkAssignModal')?.remove()">✕</button></div><div class="info" style="margin:12px 0"><b>Pembagian otomatis merata.</b> Setiap usulan hanya ditugaskan kepada satu admin/staf. Sistem mendahulukan petugas dengan beban aktif lebih sedikit.</div><div class="field"><label>Pilih Admin/Staf Internal</label>${staffChoicesHtml(cand,'layer-bulk-assignee')}</div><div id="layerBulkPreview" class="lwf-distribution">Pilih minimal satu admin/staf internal.</div><div class="field" style="margin-top:10px"><label>Catatan penugasan (opsional)</label><textarea id="layerBulkNote"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn soft" onclick="document.getElementById('layerBulkAssignModal')?.remove()">Batal</button><button class="btn primary" onclick="layerSaveBulkAssign('${esc(serviceType)}')">⚖️ Bagi Tugas Merata</button></div><div id="layerBulkMsg" class="small" style="margin-top:7px"></div></div>`;
+ document.body.appendChild(m);
+ m.querySelectorAll('.layer-bulk-assignee').forEach(x=>x.addEventListener('change',window.layerBulkPreview));
+};
+window.layerSaveBulkAssign=async serviceType=>{
+ const d=currentData,scope=COORD_SCOPE[role()],msg=$('layerBulkMsg');
+ const rows=d.subs.filter(x=>x.scope_level===scope&&x.service_type===serviceType&&x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR');
+ const ids=[...document.querySelectorAll('#layerBulkAssignModal .layer-bulk-assignee:checked')].map(x=>x.value);
+ if(!ids.length){msg.textContent='Pilih minimal satu admin/staf internal.';return}
+ if(rows.length<2){msg.textContent='Usulan sejenis yang belum dibagi tugas kurang dari 2.';return}
+ msg.textContent='Membagi '+rows.length+' usulan secara merata...';
+ const {data,error}=await sb.rpc('submission_assign_staff_balanced',{p_submission_ids:rows.map(x=>x.id),p_assignee_user_ids:ids,p_note:$('layerBulkNote')?.value?.trim()||null});
+ if(error){msg.textContent=error.message;return}
+ $('layerBulkAssignModal')?.remove();
+ await renderCoordinatorServices();
+};
 function coordinatorServiceSummary(rows){
  const stages=[
   ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
@@ -136,7 +177,7 @@ async function renderCoordinatorServices(){
   const d=await fetchWorkflowData(scope);currentData=d;
   const rows=coordinatorServiceRows(d);
   const revision=rows.filter(x=>x.workflow_state==='PERBAIKAN').length;
-  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordinatorFlow()}<div class="info"><b>Cakupan: ${esc(scopeLabel)} saja.</b> Tampilan hanya memuat nama, unit kerja, jenis layanan, dan status proses. Berkas unggahan tetap diperiksa oleh admin/staf verifikator dan tidak ditampilkan di layar Kasi/Subkoor.</div>${revision?`<div class="notice" style="margin-top:9px"><b>Perlu perbaikan:</b> ${revision} usulan sedang dikembalikan untuk perbaikan.</div>`:''}</div>${coordinatorServiceSummary(rows)}<div style="height:12px"></div><div class="card">${coordinatorServiceTable(rows,d)}</div>`;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordinatorFlow()}<div class="info"><b>Cakupan: ${esc(scopeLabel)} saja.</b> Tampilan hanya memuat nama, unit kerja, jenis layanan, dan status proses. Berkas unggahan tetap diperiksa oleh admin/staf verifikator dan tidak ditampilkan di layar Kasi/Subkoor.</div>${revision?`<div class="notice" style="margin-top:9px"><b>Perlu perbaikan:</b> ${revision} usulan sedang dikembalikan untuk perbaikan.</div>`:''}</div>${coordinatorServiceSummary(rows)}${coordinatorBulkHtml(rows)}<div style="height:12px"></div><div class="card">${coordinatorServiceTable(rows,d)}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e?.message||e)}</div>`}
 }
 function activateCoordinatorServicesTab(){
@@ -163,8 +204,8 @@ async function renderMonitoring(){
 window.layerOpenAssign=id=>{
  const d=currentData;if(!d)return;const s=d.subs.find(x=>x.id===id);if(!s)return;
  const cand=candidateStaff(d,s);let m=$('layerAssignModal');m?.remove();m=document.createElement('div');m.id='layerAssignModal';m.className='lwf-modal';m.onclick=e=>{if(e.target===m)m.remove()};
- const choices=cand.length?cand.map(x=>`<label style="display:flex;gap:9px;align-items:flex-start;padding:9px 10px;border:1px solid #dbe3ec;border-radius:10px;margin:6px 0;cursor:pointer"><input type="checkbox" class="layer-assignee-check" value="${x.id}" style="margin-top:2px"><span><b>${esc(x.full_name)}</b><br><span class="small">${esc(x.position||x.role)}</span></span></label>`).join(''):'<div class="notice">Belum ada admin/staf internal aktif yang tersedia.</div>';
- m.innerHTML=`<div class="lwf-box" style="width:min(680px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • dapat memilih lebih dari satu admin/staf internal</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Verifikator</label><div style="max-height:300px;overflow:auto;padding:4px">${choices}</div></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
+ const choices=staffChoicesHtml(cand,'layer-assignee-check');
+ m.innerHTML=`<div class="lwf-box" style="width:min(680px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • dapat memilih lebih dari satu admin/staf internal</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Verifikator</label>${choices}</div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
 };
 window.layerSaveAssign=async id=>{const ids=[...document.querySelectorAll('#layerAssignModal .layer-assignee-check:checked')].map(x=>x.value),msg=$('layerAssignMsg');if(!ids.length){msg.textContent='Pilih minimal satu admin/staf internal.';return}msg.textContent='Menyimpan penugasan...';const {error}=await sb.rpc('submission_assign_staff_multi',{p_submission_id:id,p_assignee_user_ids:ids,p_note:$('layerAssignNote')?.value?.trim()||null});if(error){msg.textContent=error.message;return}$('layerAssignModal')?.remove();await refreshWorkflowSurface()};
 async function askAction(id,fn,approve,promptText){
@@ -217,5 +258,5 @@ window.showTab=async function(id){
  return r;
 };
 style();
-window.__simantabLayeredWorkflow={version:4,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
+window.__simantabLayeredWorkflow={version:5,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
 })();
