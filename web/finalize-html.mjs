@@ -34,7 +34,7 @@ await fs.writeFile(path.join(staticDir,leadershipFile),leadershipCode);
 
 const kadinFile='kadin-dashboard-v2.js';
 const kadinCode=await fs.readFile(new URL(`./${kadinFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V6/.test(kadinCode))throw new Error('Dashboard pimpinan kompatibel v6 tidak valid.');
+if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V6/.test(kadinCode))throw new Error('Dashboard pimpinan instant-snapshot v6 tidak valid.');
 await fs.writeFile(path.join(staticDir,kadinFile),kadinCode);
 
 const layeredWorkflowFile='submission-layered-workflow.js';
@@ -62,7 +62,7 @@ const modules=[
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',5],
  ['registration-approval.js',2],
- ['kadin-dashboard-v2.js',9],
+ ['kadin-dashboard-v2.js',7],
  ['dinas-login-enhancement.js',1],
  ['private-school-access.js',1],
  ['staff-service-roles.js',1],
@@ -109,7 +109,7 @@ const modules=[
  ['login-click-rescue.js',2],
  ['registration-ui-final.js',5],
  ['leader-menu-cleanup.js',1],
- ['leader-dashboard-authoritative.js',3]
+ ['leader-dashboard-authoritative.js',1]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
@@ -130,4 +130,4 @@ for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).l
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
 if(html.split(`./${classicFile}?v=5`).length-1!==1)throw new Error('Classic login rescue v5 harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV1:true,leaderDashboardMobileStableV2:true,leaderCoreImmediateDashboard:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,validClosingTags:true}));
+console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV1:true,leaderCoreImmediateDashboard:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,validClosingTags:true}));
