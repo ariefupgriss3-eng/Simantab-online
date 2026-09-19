@@ -1,4 +1,5 @@
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V1 */
+/* SIMANTAB_STAFF_ASSIGNED_SERVICES_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -28,13 +29,13 @@ async function loadAssigned(){
  const uid=p().id;
  const [aa,legacy]=await Promise.all([
   sb.from('submission_assignees').select('submission_id,user_id,assigned_at,assignment_note,verified_at,verification_result').eq('user_id',uid),
-  sb.from('submissions').select('id,user_id,service_type,title,description,status,scope_level,workflow_state,assigned_user_id,assignment_note,submitted_at,updated_at').eq('assigned_user_id',uid).order('submitted_at',{ascending:false})
+  sb.from('submissions').select('id,user_id,service_type,title,description,status,scope_level,workflow_state,assigned_user_id,assignment_note,staff_response,staff_response_by,staff_response_at,submitted_at,updated_at').eq('assigned_user_id',uid).order('submitted_at',{ascending:false})
  ]);
  if(aa.error)throw aa.error;if(legacy.error)throw legacy.error;
  const ids=[...new Set((aa.data||[]).map(x=>x.submission_id))];
  let subs=[];
  if(ids.length){
-  const q=await sb.from('submissions').select('id,user_id,service_type,title,description,status,scope_level,workflow_state,assigned_user_id,assignment_note,submitted_at,updated_at').in('id',ids).order('submitted_at',{ascending:false});
+  const q=await sb.from('submissions').select('id,user_id,service_type,title,description,status,scope_level,workflow_state,assigned_user_id,assignment_note,staff_response,staff_response_by,staff_response_at,submitted_at,updated_at').in('id',ids).order('submitted_at',{ascending:false});
   if(q.error)throw q.error;subs=q.data||[];
  }
  const by=new Map(subs.map(x=>[x.id,x]));
@@ -56,28 +57,42 @@ async function renderStaffServices(){
   const d=await loadAssigned(),rows=d.subs;
   const active=rows.filter(x=>x.workflow_state==='VERIFIKASI_STAF').length;
   body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang menunggu verifikasi. Klik <b>Lihat Isi Usulan</b> untuk membaca maksud GTK, catatan penugasan, dan berkas pendukung.</div>'+
-  '<div class="card">'+(rows.length?'<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Pemohon</th><th>Layanan</th><th>Isi / Maksud GTK</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+
-  rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+(s.workflow_state==='VERIFIKASI_STAF'?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn success" onclick="staffVerifyAssigned(\''+s.id+'\',true)">✓ Terverifikasi</button><button class="btn danger" onclick="staffVerifyAssigned(\''+s.id+'\',false)">↺ Perlu Perbaikan</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
+  '<div class="card">'+(rows.length?'<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Pemohon</th><th>Layanan</th><th>Isi / Maksud GTK</th><th>Respon Admin/Staf</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+
+  rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+(s.workflow_state==='VERIFIKASI_STAF'?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn success" onclick="staffVerifyAssigned(\''+s.id+'\',true)">✓ Terverifikasi</button><button class="btn danger" onclick="staffVerifyAssigned(\''+s.id+'\',false)">↺ Perlu Perbaikan</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td><div style="max-width:320px;white-space:normal">'+(s.staff_response?esc(s.staff_response):'<span class="small">Belum dijawab</span>')+(s.staff_response_at?'<div class="small" style="margin-top:4px">'+fmt(s.staff_response_at)+'</div>':'')+'</div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
   '</tbody></table></div>':'<div class="empty">Belum ada usulan yang ditugaskan kepada akun Anda.</div>')+'</div>';
  }catch(e){body.innerHTML='<div class="card err">'+esc(e.message||e)+'</div>'}
 }
 window.staffOpenSubmissionDetail=async id=>{
  try{
   const [s,f]=await Promise.all([
-   sb.from('submissions').select('id,user_id,service_type,title,description,scope_level,workflow_state,assignment_note,submitted_at').eq('id',id).single(),
+   sb.from('submissions').select('id,user_id,service_type,title,description,scope_level,workflow_state,assignment_note,staff_response,staff_response_by,staff_response_at,submitted_at').eq('id',id).single(),
    sb.from('submission_files').select('id,storage_path,file_name,file_size,mime_type,requirement_code,created_at').eq('submission_id',id).order('created_at')
   ]);
   if(s.error)throw s.error;if(f.error)throw f.error;
   const sub=s.data;
   const pr=await sb.from('profiles').select('full_name,unit,position').eq('id',sub.user_id).maybeSingle();
   if(pr.error)throw pr.error;
+  let responder=null;
+  if(sub.staff_response_by){
+   const rr=await sb.from('profiles').select('full_name,position').eq('id',sub.staff_response_by).maybeSingle();
+   if(!rr.error)responder=rr.data||null;
+  }
   let m=$('staffSubmissionDetailModal');m?.remove();m=document.createElement('div');m.id='staffSubmissionDetailModal';
   m.style='position:fixed;inset:0;z-index:99999;background:#0b203c99;display:flex;align-items:center;justify-content:center;padding:16px';
   m.onclick=e=>{if(e.target===m)m.remove()};
   const files=(f.data||[]).length?(f.data||[]).map(x=>'<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)"><div><b>'+esc(x.file_name)+'</b><div class="small">'+Math.ceil(Number(x.file_size||0)/1024)+' KB'+(x.requirement_code?' • '+esc(x.requirement_code):'')+'</div></div><button class="btn soft" onclick="staffOpenAssignedFile(\''+encodeURIComponent(x.storage_path)+'\')">Buka</button></div>').join(''):'<div class="empty">Tidak ada berkas pendukung.</div>';
-  m.innerHTML='<div class="card" style="width:min(820px,100%);max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="label">ISI USULAN GTK</div><h3 style="margin:3px 0">'+esc(sub.title||labelService(sub.service_type))+'</h3><div class="small">'+esc(pr.data?.full_name||'-')+' • '+esc(pr.data?.unit||'-')+'</div></div><button class="btn soft" onclick="document.getElementById(\'staffSubmissionDetailModal\')?.remove()">✕</button></div><div class="info" style="margin-top:12px"><b>Maksud/Keterangan GTK</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.description||'-')+'</div></div><div class="notice" style="margin-top:10px"><b>Catatan penugasan Kasi/Subkoor</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.assignment_note||'-')+'</div></div><div class="small" style="margin:10px 0"><b>Jenjang:</b> '+esc(sub.scope_level||'-')+' • <b>Status:</b> '+esc(FLOW[sub.workflow_state]||sub.workflow_state||'-')+' • <b>Diajukan:</b> '+fmt(sub.submitted_at)+'</div><h3>Berkas Pendukung</h3>'+files+'</div>';
+  m.innerHTML='<div class="card" style="width:min(820px,100%);max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="label">ISI USULAN GTK</div><h3 style="margin:3px 0">'+esc(sub.title||labelService(sub.service_type))+'</h3><div class="small">'+esc(pr.data?.full_name||'-')+' • '+esc(pr.data?.unit||'-')+'</div></div><button class="btn soft" onclick="document.getElementById(\'staffSubmissionDetailModal\')?.remove()">✕</button></div><div class="info" style="margin-top:12px"><b>Maksud/Keterangan GTK</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.description||'-')+'</div></div><div class="notice" style="margin-top:10px"><b>Catatan penugasan Kasi/Subkoor</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.assignment_note||'-')+'</div></div><div class="small" style="margin:10px 0"><b>Jenjang:</b> '+esc(sub.scope_level||'-')+' • <b>Status:</b> '+esc(FLOW[sub.workflow_state]||sub.workflow_state||'-')+' • <b>Diajukan:</b> '+fmt(sub.submitted_at)+'</div><div class="card" style="margin:12px 0;background:#f8fbff;border-color:#cfe0f2"><div class="label">RESPON / JAWABAN ADMIN-STAF</div><div class="field"><label>Jawaban untuk GTK</label><textarea id="staffResponseText" placeholder="Tuliskan jawaban, penjelasan, atau tindak lanjut untuk GTK...">'+esc(sub.staff_response||'')+'</textarea></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn primary" onclick="staffSaveResponse(\''+sub.id+'\')">💬 Simpan Respon</button><span id="staffResponseMsg" class="small">'+(sub.staff_response_at?'Terakhir disimpan '+fmt(sub.staff_response_at)+(responder?.full_name?' oleh '+esc(responder.full_name):''):'Belum ada respon')+'</span></div></div><h3>Berkas Pendukung</h3>'+files+'</div>';
   document.body.appendChild(m);
  }catch(e){alert(e.message||String(e))}
+};
+window.staffSaveResponse=async id=>{
+ const msg=$('staffResponseMsg'),text=String($('staffResponseText')?.value||'').trim();
+ if(!text){if(msg){msg.textContent='Respon/jawaban tidak boleh kosong.';msg.style.color='var(--red)'}return}
+ if(msg){msg.textContent='Menyimpan respon...';msg.style.color=''}
+ const {error}=await sb.rpc('submission_staff_respond',{p_submission_id:id,p_response:text});
+ if(error){if(msg){msg.textContent=error.message;msg.style.color='var(--red)'}return}
+ if(msg){msg.textContent='Respon tersimpan dan notifikasi dikirim ke GTK.';msg.style.color='var(--green)'}
+ await renderStaffServices();
 };
 window.staffOpenAssignedFile=async encoded=>{const path=decodeURIComponent(encoded);const {data,error}=await sb.storage.from('simantab-documents').createSignedUrl(path,120);if(error)alert(error.message);else window.open(data.signedUrl,'_blank','noopener')};
 window.staffVerifyAssigned=async(id,ok)=>{
@@ -94,5 +109,5 @@ window.showTab=async function(id){
  return r;
 };
 if(document.querySelector('#services.active'))await renderStaffServices();
-window.__simantabStaffAssignedServices={version:1,assignedOnly:true,showsPurpose:true,showsFiles:true};
+window.__simantabStaffAssignedServices={version:2,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true};
 })();
