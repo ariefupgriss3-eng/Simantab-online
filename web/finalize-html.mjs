@@ -124,6 +124,12 @@ const sessionBoundaryCode=await fs.readFile(new URL(`./${sessionBoundaryFile}`,i
 if(!/SIMANTAB_SESSION_BOUNDARY_HARDENING_V1/.test(sessionBoundaryCode))throw new Error('Session boundary hardening v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,sessionBoundaryFile),sessionBoundaryCode);
 
+
+const tpgServicePlacementFile='tpg-service-placement.js';
+const tpgServicePlacementCode=await fs.readFile(new URL(`./${tpgServicePlacementFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_TPG_SERVICE_PLACEMENT_V1/.test(tpgServicePlacementCode))throw new Error('TPG service placement v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,tpgServicePlacementFile),tpgServicePlacementCode);
+
 const staffMinimalNavFile='staff-minimal-navigation.js';
 const staffMinimalNavCode=await fs.readFile(new URL(`./${staffMinimalNavFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_STAFF_MINIMAL_NAV_V1/.test(staffMinimalNavCode))throw new Error('Staff minimal navigation v1 tidak valid.');
@@ -186,7 +192,8 @@ const modules=[
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',2],
  ['session-boundary-hardening.js',1],
- ['staff-minimal-navigation.js',1]
+ ['tpg-service-placement.js',1],
+ ['staff-minimal-navigation.js',2]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
