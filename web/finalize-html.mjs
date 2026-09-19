@@ -6,8 +6,8 @@ const staticDir='.vercel/output/static';
 let html=await fs.readFile(outputPath,'utf8');
 const originalLength=html.length;
 // Remove obsolete maintenance announcement from login, including builds bootstrapped from older production.
-html=html.replace(/<style id="simMaintenanceStyle">[\\s\\S]*?<\\/style>\\s*/g,'');
-html=html.replace(/<div id="simMaintenanceBanner"[\\s\\S]*?<\\/div>\\s*(?=<div class="tabs">)/g,'');
+html=html.replace(/<style id="simMaintenanceStyle">[\s\S]*?<\/style>\s*/g,'');
+html=html.replace(/<div id="simMaintenanceBanner"[\s\S]*?<\/div>\s*(?=<div class="tabs">)/g,'');
 const leaderCoreNeedle="async function refreshDashboard(){\n if(isGtkSide()){";
 const leaderCoreAlreadyPatched=html.includes('window.__simantabLeaderCoreRendered=true');
 const leaderCoreCanPatch=html.includes(leaderCoreNeedle);
