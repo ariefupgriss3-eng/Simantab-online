@@ -1,4 +1,5 @@
 /* SIMANTAB_LOGIN_PASSWORD_TOGGLE_V1 */
+/* SIMANTAB_LOGIN_PASSWORD_TOGGLE_V2 */
 (()=>{
   const style=document.createElement('style');
   style.textContent=`
@@ -39,7 +40,5 @@
   }
 
   mount();
-  const observer=new MutationObserver(mount);
-  observer.observe(document.documentElement,{childList:true,subtree:true});
-  window.__simantabLoginPasswordToggle={version:1,enabled:true};
+  window.__simantabLoginPasswordToggle={version:2,enabled:true,observer:false};
 })();
