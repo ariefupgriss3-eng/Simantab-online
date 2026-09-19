@@ -1,4 +1,5 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1 */
+/* SIMANTAB_COORDINATOR_SERVICE_AGGREGATE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<600&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
@@ -6,6 +7,15 @@ const sb=window.__simantabSb,$=id=>document.getElementById(id);if(!sb)return;
 const p=()=>window.__simantabProfile||{},role=()=>String(p().role||'');
 const LEADERS=new Set(['KEPALA_DINAS','SEKRETARIS_DINAS']);
 const COORDS=new Set(['KASI_SD','KASI_SMP','SUBKOOR_TK']);
+const COORD_SCOPE={KASI_SD:'SD',KASI_SMP:'SMP',SUBKOOR_TK:'TK_PAUD_PNF'};
+const COORD_STAGE_LABEL={
+ MENUNGGU_DISPOSISI_KOORDINATOR:'Bagi Tugas',
+ VERIFIKASI_STAF:'Verifikasi Admin/Staf',
+ MENUNGGU_APPROVAL_KOORDINATOR:'Approve Kasi/Subkoor',
+ MENUNGGU_PERSETUJUAN_KABID:'Persetujuan Kabid',
+ PERBAIKAN:'Perbaikan',
+ SELESAI:'Selesai'
+};
 const STATE_LABEL={
  DRAFT:'Draft',
  MENUNGGU_DISPOSISI_KOORDINATOR:'Menunggu Pembagian Tugas',
@@ -27,9 +37,11 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 function style(){if($('layeredWorkflowStyle'))return;const s=document.createElement('style');s.id='layeredWorkflowStyle';s.textContent=`
 .lwf-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}.lwf-metric{border:1px solid var(--line);border-radius:14px;background:#fff;padding:12px;cursor:pointer}.lwf-metric:hover{box-shadow:0 6px 18px #16395d18}.lwf-num{font-size:26px;font-weight:950;color:var(--navy)}.lwf-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:7px;margin-bottom:12px}.lwf-flow>div{padding:10px;border:1px solid var(--line);border-radius:12px;background:#f8fbff;text-align:center;font-size:10px}.lwf-flow b{display:block;color:var(--navy);font-size:11px}.lwf-actions{display:flex;gap:6px;flex-wrap:wrap}.lwf-modal{position:fixed;inset:0;z-index:99999;background:#0b203c99;display:flex;align-items:center;justify-content:center;padding:16px}.lwf-box{width:min(1080px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:16px}.lwf-badge{display:inline-block;padding:4px 7px;border-radius:999px;background:#edf5ff;color:#175ea7;font-size:9px;font-weight:900}.lwf-done{background:#e9f7ef;color:#178354}.lwf-warn{background:#fff3dd;color:#955a00}.lwf-bad{background:#feeceb;color:#b42318}.lwf-step{font-size:10px;color:var(--muted);line-height:1.45}.lwf-click{cursor:pointer;text-decoration:underline;text-decoration-style:dotted}@media(max-width:900px){.lwf-grid{grid-template-columns:repeat(2,1fr)}.lwf-flow{grid-template-columns:1fr}.lwf-actions{display:block}.lwf-actions button{margin:3px 0}}`;document.head.appendChild(s)}
-async function fetchWorkflowData(){
+async function fetchWorkflowData(scopeOnly=null){
+ let sq=sb.from('submissions').select('id,user_id,service_type,title,status,scope_level,coordinator_role,assigned_role,workflow_state,assigned_user_id,assigned_by,assigned_at,assignment_note,staff_verified_by,staff_verified_at,staff_verification_note,coordinator_approved_by,coordinator_approved_at,coordinator_approval_note,kabid_approved_by,kabid_approved_at,kabid_approval_note,workflow_completed_at,submitted_at,updated_at').order('submitted_at',{ascending:false}).limit(1000);
+ if(scopeOnly)sq=sq.eq('scope_level',scopeOnly);
  const [s,u,t]=await Promise.all([
-  sb.from('submissions').select('id,user_id,service_type,title,status,scope_level,coordinator_role,assigned_role,workflow_state,assigned_user_id,assigned_by,assigned_at,assignment_note,staff_verified_by,staff_verified_at,staff_verification_note,coordinator_approved_by,coordinator_approved_at,coordinator_approval_note,kabid_approved_by,kabid_approved_at,kabid_approval_note,workflow_completed_at,submitted_at,updated_at').order('submitted_at',{ascending:false}).limit(1000),
+  sq,
   sb.from('profiles').select('id,full_name,role,account_channel,unit,position,is_active').order('full_name'),
   sb.from('team_task_assignments').select('user_id,capability,is_active').eq('is_active',true)
  ]);
@@ -42,7 +54,7 @@ function statePill(s){const cls=s==='SELESAI'?'lwf-done':s==='PERBAIKAN'?'lwf-ba
 function visibleRows(d){
  const r=role(),uid=p().id;
  if(r==='SUPER_ADMIN'||r==='KABID')return d.subs;
- if(COORDS.has(r))return d.subs.filter(x=>x.coordinator_role===r);
+ if(COORDS.has(r)){const scope=COORD_SCOPE[r];return d.subs.filter(x=>x.scope_level===scope);}
  if(LEADERS.has(r))return d.subs;
  return d.subs.filter(x=>x.assigned_user_id===uid);
 }
@@ -80,6 +92,61 @@ function tableHtml(rows,d,withActions=true){
  if(!rows.length)return '<div class="empty">Belum ada data pada tahap ini.</div>';
  return `<div class="tablewrap"><table><thead><tr><th>Pemohon</th><th>Layanan</th><th>Jenjang</th><th>Tahap</th><th>Pelaksana</th><th>Update</th>${withActions?'<th>Aksi</th>':''}</tr></thead><tbody>${rows.map(s=>`<tr><td><b>${esc(names.get(s.user_id)||'-')}</b><div class="small">${esc(s.title||'')}</div></td><td>${esc(labelService(s.service_type))}</td><td>${esc(SCOPE_LABEL[s.scope_level]||s.scope_level||'-')}</td><td>${statePill(s.workflow_state)}<div class="lwf-step">${esc(s.coordinator_role||'-')}</div></td><td>${esc(s.assigned_user_id?(names.get(s.assigned_user_id)||'-'):'Belum ditugaskan')}</td><td>${fmt(s.updated_at)}</td>${withActions?`<td><div class="lwf-actions">${actionHtml(s,d)}${s.service_type==='DIKLAT_KS_BCKS'?'<button class="btn soft" onclick="showTab(\'diklatKsBcks\')">🎓 Buka Diklat</button>':''}</div></td>`:''}</tr>`).join('')}</tbody></table></div>`;
 }
+
+function coordinatorFlow(){
+ return '<div class="lwf-flow"><div><b>1. Bagi Tugas</b>Kasi/Subkoor menetapkan admin/staf</div><div><b>2. Verifikasi Admin/Staf</b>Pemeriksaan usulan</div><div><b>3. Approve Kasi/Subkoor</b>Persetujuan jenjang</div><div><b>4. Persetujuan Kabid</b>Naik ke level Kabid</div><div><b>5. Selesai</b>Proses layanan selesai</div></div>';
+}
+function coordinatorStagePill(s){
+ const label=COORD_STAGE_LABEL[s]||STATE_LABEL[s]||s||'-';
+ const cls=s==='SELESAI'?'lwf-done':s==='PERBAIKAN'?'lwf-bad':'lwf-warn';
+ return `<span class="lwf-badge ${cls}">${esc(label)}</span>`;
+}
+function coordinatorServiceRows(d){
+ const scope=COORD_SCOPE[role()];
+ return d.subs.filter(x=>x.scope_level===scope);
+}
+function coordinatorServiceTable(rows,d){
+ const {names,prof}=maps(d);
+ if(!rows.length)return '<div class="empty">Belum ada usulan layanan pada jenjang ini.</div>';
+ return `<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis Layanan</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{
+   const person=prof.get(s.user_id)||{};
+   const action=actionHtml(s,d);
+   const actionPart=action.includes('<button')?`<div class="lwf-actions" style="margin-top:7px">${action}</div>`:'';
+   return `<tr><td><b>${esc(names.get(s.user_id)||'-')}</b></td><td>${esc(person.unit||'-')}</td><td>${esc(labelService(s.service_type))}</td><td>${coordinatorStagePill(s)}${actionPart}</td></tr>`;
+ }).join('')}</tbody></table></div>`;
+}
+function coordinatorServiceSummary(rows){
+ const stages=[
+  ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
+  ['VERIFIKASI_STAF','Verifikasi Admin/Staf'],
+  ['MENUNGGU_APPROVAL_KOORDINATOR','Approve Kasi/Subkoor'],
+  ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
+  ['SELESAI','Selesai / Naik Level']
+ ];
+ return `<div class="lwf-grid">${stages.map(([st,label])=>`<div class="lwf-metric" style="cursor:default"><div class="label">${esc(label)}</div><div class="lwf-num">${rows.filter(x=>x.workflow_state===st).length}</div></div>`).join('')}</div>`;
+}
+async function renderCoordinatorServices(){
+ const body=$('servicesBody');if(!body||!COORDS.has(role()))return;
+ const scope=COORD_SCOPE[role()];
+ const scopeLabel=SCOPE_LABEL[scope]||scope;
+ if($('servicesDesc'))$('servicesDesc').textContent=`Monitoring agregat layanan kepegawaian jenjang ${scopeLabel}. Berkas unggahan tidak ditampilkan pada level Kasi/Subkoor.`;
+ body.innerHTML='<div class="card empty">Memuat antrean layanan jenjang...</div>';
+ try{
+  const d=await fetchWorkflowData(scope);currentData=d;
+  const rows=coordinatorServiceRows(d);
+  const revision=rows.filter(x=>x.workflow_state==='PERBAIKAN').length;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordinatorFlow()}<div class="info"><b>Cakupan: ${esc(scopeLabel)} saja.</b> Tampilan hanya memuat nama, unit kerja, jenis layanan, dan status proses. Berkas unggahan tetap diperiksa oleh admin/staf verifikator dan tidak ditampilkan di layar Kasi/Subkoor.</div>${revision?`<div class="notice" style="margin-top:9px"><b>Perlu perbaikan:</b> ${revision} usulan sedang dikembalikan untuk perbaikan.</div>`:''}</div>${coordinatorServiceSummary(rows)}<div style="height:12px"></div><div class="card">${coordinatorServiceTable(rows,d)}</div>`;
+ }catch(e){body.innerHTML=`<div class="card err">${esc(e?.message||e)}</div>`}
+}
+function activateCoordinatorServicesTab(){
+ document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id==='services'));
+ document.querySelectorAll('.navbtn').forEach(x=>x.classList.toggle('active',x.dataset.tab==='services'));
+ $('sidebar')?.classList.remove('open');
+}
+async function refreshWorkflowSurface(){
+ if(COORDS.has(role())&&$('services')?.classList.contains('active'))return renderCoordinatorServices();
+ return renderMonitoring();
+}
 async function renderMonitoring(){
  const body=$('monitoringBody');if(!body)return;
  body.innerHTML='<div class="card empty">Memuat workflow layanan...</div>';
@@ -97,11 +164,11 @@ window.layerOpenAssign=id=>{
  const cand=candidateStaff(d,s);let m=$('layerAssignModal');m?.remove();m=document.createElement('div');m.id='layerAssignModal';m.className='lwf-modal';m.onclick=e=>{if(e.target===m)m.remove()};
  m.innerHTML=`<div class="lwf-box" style="width:min(620px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • rekomendasi ${esc(s.assigned_role||'-')}</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Staf/Admin Verifikator</label><select id="layerAssignee"><option value="">Pilih staf/admin...</option>${cand.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||x.role)}</option>`).join('')}</select></div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
 };
-window.layerSaveAssign=async id=>{const uid=$('layerAssignee')?.value,msg=$('layerAssignMsg');if(!uid){msg.textContent='Pilih staf/admin terlebih dahulu.';return}msg.textContent='Menyimpan penugasan...';const {error}=await sb.rpc('submission_assign_staff',{p_submission_id:id,p_assignee_user_id:uid,p_note:$('layerAssignNote')?.value?.trim()||null});if(error){msg.textContent=error.message;return}$('layerAssignModal')?.remove();await renderMonitoring()};
+window.layerSaveAssign=async id=>{const uid=$('layerAssignee')?.value,msg=$('layerAssignMsg');if(!uid){msg.textContent='Pilih staf/admin terlebih dahulu.';return}msg.textContent='Menyimpan penugasan...';const {error}=await sb.rpc('submission_assign_staff',{p_submission_id:id,p_assignee_user_id:uid,p_note:$('layerAssignNote')?.value?.trim()||null});if(error){msg.textContent=error.message;return}$('layerAssignModal')?.remove();await refreshWorkflowSurface()};
 async function askAction(id,fn,approve,promptText){
  const note=prompt(promptText||'Catatan (opsional):')||'';
  if(!approve&&!note.trim()){alert('Catatan wajib diisi jika mengembalikan/menolak.');return}
- const {error}=await sb.rpc(fn,{p_submission_id:id,p_approve:approve,p_note:note.trim()||null});if(error){alert(error.message);return}await renderMonitoring();
+ const {error}=await sb.rpc(fn,{p_submission_id:id,p_approve:approve,p_note:note.trim()||null});if(error){alert(error.message);return}await refreshWorkflowSurface();
 }
 window.layerStaffVerify=(id,ok)=>askAction(id,'submission_staff_verify',ok,ok?'Catatan hasil verifikasi (opsional):':'Tuliskan kekurangan/perbaikan yang harus dilakukan GTK:');
 window.layerCoordinatorApprove=(id,ok)=>askAction(id,'submission_coordinator_approve',ok,ok?'Catatan approval Kasi/Subkoor (opsional):':'Alasan dikembalikan ke staf/admin:');
@@ -136,7 +203,17 @@ window.leaderDirectionDrill=async(kind,val)=>{
 const oldLead=window.loadLeadershipDirections;
 if(typeof oldLead==='function')window.loadLeadershipDirections=async function(force=false){if(LEADERS.has(role()))return renderLeaderDirections();return oldLead(force)};
 const priorShow=window.showTab;
-window.showTab=async function(id){const r=await priorShow.apply(this,arguments);if(id==='monitoring')await renderMonitoring();if(id==='leadershipDirections'&&LEADERS.has(role()))await renderLeaderDirections();return r};
+window.showTab=async function(id){
+ if(id==='services'&&COORDS.has(role())){
+  activateCoordinatorServicesTab();
+  await renderCoordinatorServices();
+  return;
+ }
+ const r=await priorShow.apply(this,arguments);
+ if(id==='monitoring')await renderMonitoring();
+ if(id==='leadershipDirections'&&LEADERS.has(role()))await renderLeaderDirections();
+ return r;
+};
 style();
-window.__simantabLayeredWorkflow={version:1,states:STATE_LABEL,renderMonitoring,renderLeaderDirections};
+window.__simantabLayeredWorkflow={version:2,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
 })();
