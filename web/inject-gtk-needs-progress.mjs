@@ -64,7 +64,7 @@ const summaryFn=`function schoolSummaryRows(schools,needs,workflow,mode){
   return String(a.school_name||'').localeCompare(String(b.school_name||''),'id',{sensitivity:'base'});
  });
  return orderedSchools.map(s=>{
-  const rows=by.get(s.npsn)||[],a=aggregateRows(rows),st=statusFor(s.npsn,needsSet,workflow),wf=workflow.get(s.npsn);
+  const rows=visibleNeedsRows(s.jenjang||s.bentuk_pendidikan,by.get(s.npsn)||[]),a=aggregateRows(rows),st=statusFor(s.npsn,needsSet,workflow),wf=workflow.get(s.npsn);
   let action=mode==='DINAS'?'—':'Baca saja';
   if(mode==='DINAS'){
    const allowed=reviewers.includes(profile().role);
@@ -97,12 +97,14 @@ const scopedFn=`async function renderScoped(box,mode){
  if(ne)throw ne;if(we)throw we;
  const allowed=new Set(schools.map(x=>x.npsn));
  const scopedNeeds=(needs||[]).filter(x=>allowed.has(x.school_npsn));
+ const schoolLevelByNpsn=new Map(schools.map(s=>[s.npsn,s.jenjang||s.bentuk_pendidikan||'-']));
+ const visibleScopedNeeds=scopedNeeds.filter(x=>visibleNeedsRows(schoolLevelByNpsn.get(x.school_npsn),[x]).length);
  const workflow=new Map((wfs||[]).filter(x=>allowed.has(x.school_npsn)).map(x=>[x.school_npsn,x]));
  const needsSet=new Set(scopedNeeds.map(x=>x.school_npsn));
  const total=schools.length,input=schools.filter(s=>needsSet.has(s.npsn)).length;
  const submitted=schools.filter(s=>statusFor(s.npsn,needsSet,workflow)==='SUBMITTED').length;
  const verified=schools.filter(s=>['VERIFIED','APPROVED'].includes(statusFor(s.npsn,needsSet,workflow))).length;
- const metricNeeds=mode==='DINAS'?scopedNeeds.filter(x=>['VERIFIED','APPROVED'].includes(String(workflow.get(x.school_npsn)?.status||'').toUpperCase())):scopedNeeds;
+ const metricNeeds=mode==='DINAS'?visibleScopedNeeds.filter(x=>['VERIFIED','APPROVED'].includes(String(workflow.get(x.school_npsn)?.status||'').toUpperCase())):visibleScopedNeeds;
  const agg=aggregateRows(metricNeeds);
  const metricNote=mode==='DINAS'?'Hanya data sekolah yang telah diverifikasi Dinas':\`Cakupan \${scopeLabel}\`;
  registerBreakdown('scope-gap',\`Rincian Gap Riil per Jabatan — \${scopeLabel}\`,metricNeeds,'gap',metricNote);
@@ -122,8 +124,8 @@ if(!code.includes('<th>Gap Data</th>')||!code.includes('✓ Diverifikasi')||!cod
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=14"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=15"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:14,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:15,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
