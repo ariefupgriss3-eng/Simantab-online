@@ -15,6 +15,14 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const fmtDate=v=>v?new Date(v+'T00:00:00').toLocaleDateString('id-ID',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}):'-';
 const fmtTime=v=>String(v||'').slice(0,5)||'-';
 const fmtDateTime=v=>v?new Date(v).toLocaleString('id-ID',{timeZone:'Asia/Jakarta',dateStyle:'medium',timeStyle:'short'}):'-';
+const dateKey=v=>{
+ if(!v)return'';
+ const d=new Date(v);
+ const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+ const get=t=>parts.find(x=>x.type===t)?.value||'';
+ return get('year')+'-'+get('month')+'-'+get('day');
+};
+const monthKey=v=>dateKey(v).slice(0,7);
 
 async function loadRows(){
  const [done,mine]=await Promise.all([
@@ -39,17 +47,9 @@ function activeHtml(rows){
 }
 
 function doneHtml(rows){
- const today=new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Jakarta'});
- const now=new Date();
- const ym=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit'}).format(now).replace('-','-');
- const todayCount=rows.filter(x=>String(x.completed_at||'').slice(0,10)===today).length;
- const monthCount=rows.filter(x=>{
-   if(!x.completed_at)return false;
-   const d=new Date(x.completed_at);
-   const y=d.toLocaleString('en-CA',{timeZone:'Asia/Jakarta',year:'numeric'});
-   const m=d.toLocaleString('en-CA',{timeZone:'Asia/Jakarta',month:'2-digit'});
-   return y+'-'+m===ym;
- }).length;
+ const now=new Date(),today=dateKey(now),ym=monthKey(now);
+ const todayCount=rows.filter(x=>dateKey(x.completed_at||x.updated_at)===today).length;
+ const monthCount=rows.filter(x=>monthKey(x.completed_at||x.updated_at)===ym).length;
  return '<div class="card" id="offlineConsultationMonitoringCard"><div class="head"><div><div class="label">MONITORING DINAS</div><h3 style="margin:3px 0">📚 Rekam Konsultasi Luring Selesai</h3><div class="small">Riwayat konsultasi yang telah diselesaikan oleh petugas dan dapat dilihat seluruh akun Dinas.</div></div><button class="btn soft" onclick="refreshOfflineConsultationMonitoring()">↻ Refresh</button></div>'+
  '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><div class="small">SELESAI HARI INI</div><h3>'+todayCount+'</h3></div><div class="service"><div class="small">SELESAI BULAN INI</div><h3>'+monthCount+'</h3></div><div class="service"><div class="small">TOTAL TEREKAM</div><h3>'+rows.length+'</h3></div></div>'+
  (rows.length?'<div class="tablewrap"><table><thead><tr><th>Selesai</th><th>No.</th><th>Peserta</th><th>Layanan</th><th>Topik Konsultasi</th><th>Petugas</th><th>Jadwal</th></tr></thead><tbody>'+
