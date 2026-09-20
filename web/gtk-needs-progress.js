@@ -37,8 +37,9 @@ function curriculumDefinitions(level){
  const l=curriculumLevel(level);
  if(l==='TK')return[
   ['KEPALA_SEKOLAH','Kepala Sekolah',1],
-  ['GURU_TK','Guru Kelas',0],
-  ['TAS','Tenaga Administrasi Sekolah',0]
+  ['GURU_TK','Guru Kelas TK/PAUD',0],
+  ['TAS','Tenaga Administrasi Sekolah',0],
+  ['PENJAGA_SEKOLAH','Penjaga',0]
  ];
  if(l==='SD')return[
   ['KEPALA_SEKOLAH','Kepala Sekolah',1],
@@ -66,7 +67,7 @@ function curriculumDefinitions(level){
  return[['KEPALA_SEKOLAH','Kepala Sekolah',1],['GTK','GTK',0],['TAS','Tenaga Administrasi Sekolah',0]]
 }
 const SD_HIDDEN_JOB_CODES=new Set(['GURU_BING','GURU_KODING_KA','GURU_MULOK']);
-const TK_VISIBLE_JOB_CODES=new Set(['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS']);
+const TK_VISIBLE_JOB_CODES=new Set(['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ']);
 const SMP_HIDDEN_JOB_CODES=new Set(['GURU_KODING_KA']);
 function isHiddenSdNeedRow(r){
  const code=String(r?.job_code||'').toUpperCase();
@@ -78,7 +79,7 @@ function isVisibleTkNeedRow(r){
  const code=String(r?.job_code||'').toUpperCase();
  if(TK_VISIBLE_JOB_CODES.has(code))return true;
  const name=norm(r?.position_name||'');
- return name==='kepala sekolah'||name==='guru kelas'||name.includes('guru tk')||name.includes('guru paud')||name==='tas'||name==='tenaga administrasi sekolah';
+ return name==='kepala sekolah'||name==='guru kelas'||name.includes('guru tk')||name.includes('guru paud')||name==='tas'||name==='tenaga administrasi sekolah'||name==='penjaga'||name==='penjaga sekolah'||name==='penjaga sekolaj';
 }
 function isHiddenSmpNeedRow(r){
  const code=String(r?.job_code||'').toUpperCase();
@@ -108,7 +109,7 @@ function mergeCurriculumRows(level,rows){
 }
 function curriculumNote(level){
  const l=curriculumLevel(level);
- if(l==='TK')return'Pada Kebutuhan GTK Riil TK, jabatan yang ditampilkan hanya Kepala Sekolah, Guru Kelas, dan Tenaga Administrasi Sekolah (TAS).';
+ if(l==='TK')return'Pada Kebutuhan GTK Riil TK/PAUD, jabatan yang ditampilkan adalah Kepala Sekolah, Guru Kelas TK/PAUD, Tenaga Administrasi Sekolah (TAS), dan Penjaga.';
  if(l==='SD')return'SD berbasis Guru Kelas. Pada tampilan Kebutuhan GTK Riil SD, kebutuhan yang dicatat adalah Kepala Sekolah, Guru Kelas, Guru Pendidikan Agama dan Budi Pekerti, Guru PJOK, dan Tenaga Administrasi Sekolah.';
  if(l==='SMP')return'SMP menggunakan guru per mata pelajaran: Agama dan Budi Pekerti, Pendidikan Pancasila, Bahasa Indonesia, Matematika, IPA, IPS, Bahasa Inggris, PJOK, Informatika, Seni/Budaya/Prakarya, Muatan Lokal, dan BK; Guru Koding tidak ditampilkan pada Kebutuhan GTK Riil. TAS tetap dicatat sebagai kebutuhan tenaga pendukung.';
  return'Isian disesuaikan dengan jenjang dan kebutuhan riil satuan pendidikan.'
