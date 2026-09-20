@@ -102,21 +102,21 @@ function surplusNeedRows(schools,needs,workflow){
  }
  const needsSet=new Set((needs||[]).map(x=>x.school_npsn)),out=[];
  for(const g of grouped.values()){
-  const surplusAsn=Math.max(0,g.asn-g.abk),surplusTotal=Math.max(0,g.asn+g.non-g.abk);
-  if(surplusTotal<=0)continue;
+  const surplusAsn=Math.max(0,g.asn-g.abk);
+  if(surplusAsn<=0)continue;
   const approvedStatus=String(workflow.get(g.school.npsn)?.status||'').toUpperCase();
-  out.push({...g,surplusAsn,surplusTotal,status:approvedStatus});
+  out.push({...g,surplusAsn,status:approvedStatus});
  }
- return out.sort((a,b)=>b.surplusTotal-a.surplusTotal||b.surplusAsn-a.surplusAsn||String(a.school.school_name||'').localeCompare(String(b.school.school_name||''),'id'));
+ return out.sort((a,b)=>b.surplusAsn-a.surplusAsn||String(a.school.school_name||'').localeCompare(String(b.school.school_name||''),'id'));
 }
 function renderSurplusPanel(rows){
  const cats=['Guru','TAS','Penjaga'];
  const summary=cats.map(cat=>{
-  const hit=rows.filter(x=>x.category===cat),schools=new Set(hit.map(x=>x.school.npsn)).size,total=hit.reduce((n,x)=>n+x.surplusTotal,0);
-  return '<div class="sim-needs-surplus-chip"><b>'+schools+' sekolah</b><span>'+cat+' • kelebihan total '+total+'</span></div>';
+  const hit=rows.filter(x=>x.category===cat),schools=new Set(hit.map(x=>x.school.npsn)).size,total=hit.reduce((n,x)=>n+x.surplusAsn,0);
+  return '<div class="sim-needs-surplus-chip"><b>'+schools+' sekolah</b><span>'+cat+' • kelebihan ASN '+total+'</span></div>';
  }).join('');
- const body=rows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><span class="sim-needs-status revision">'+esc(x.category)+'</span></td><td><b>'+esc(x.school.school_name)+'</b><div class="sim-needs-note">'+esc(x.school.npsn)+' • '+esc(x.school.jenjang||x.school.bentuk_pendidikan||'-')+' • '+esc(x.school.kecamatan||'-')+'</div></td><td>'+esc(x.position_name)+'</td><td><span class="sim-needs-status verified">'+esc(x.status==='APPROVED'?'Disetujui':'Diverifikasi')+'</span></td><td>'+x.abk+'</td><td>'+x.asn+'</td><td>'+x.non+'</td><td><b>'+x.surplusAsn+'</b></td><td><b>'+x.surplusTotal+'</b></td></tr>').join('');
- return '<div class="sim-needs-panel sim-needs-surplus"><h3>⚠️ Daftar Sekolah Negeri Kelebihan Guru, TAS, dan Penjaga</h3><div class="sim-needs-note"><strong>Hanya sekolah dengan data yang sudah diverifikasi/disetujui yang ditampilkan.</strong> Kelebihan dihitung per jabatan. Kelebihan ASN = ASN − ABK; Kelebihan Total = ASN + Non-ASN − ABK.</div><div class="sim-needs-surplus-summary">'+summary+'</div><div class="sim-needs-table"><table><thead><tr><th>No</th><th>Kategori</th><th>Sekolah</th><th>Jabatan</th><th>Status Data</th><th>ABK</th><th>ASN</th><th>Non-ASN</th><th>Kelebihan ASN</th><th>Kelebihan Total</th></tr></thead><tbody>'+(body||'<tr><td colspan="10"><div class="sim-needs-note">Tidak ada sekolah negeri yang sudah diverifikasi/disetujui dan memiliki kelebihan Guru, TAS, atau Penjaga.</div></td></tr>')+'</tbody></table></div></div>';
+ const body=rows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><span class="sim-needs-status revision">'+esc(x.category)+'</span></td><td><b>'+esc(x.school.school_name)+'</b><div class="sim-needs-note">'+esc(x.school.npsn)+' • '+esc(x.school.jenjang||x.school.bentuk_pendidikan||'-')+' • '+esc(x.school.kecamatan||'-')+'</div></td><td>'+esc(x.position_name)+'</td><td><span class="sim-needs-status verified">'+esc(x.status==='APPROVED'?'Disetujui':'Diverifikasi')+'</span></td><td>'+x.abk+'</td><td>'+x.asn+'</td><td>'+x.non+'</td><td><b>'+x.surplusAsn+'</b></td></tr>').join('');
+ return '<div class="sim-needs-panel sim-needs-surplus"><h3>⚠️ Daftar Sekolah Negeri Kelebihan Guru, TAS, dan Penjaga</h3><div class="sim-needs-note"><strong>Hanya sekolah dengan data yang sudah diverifikasi/disetujui yang ditampilkan.</strong> Kelebihan dihitung per jabatan. Kelebihan = ASN − ABK. Non-ASN tidak dihitung sebagai kelebihan.</div><div class="sim-needs-surplus-summary">'+summary+'</div><div class="sim-needs-table"><table><thead><tr><th>No</th><th>Kategori</th><th>Sekolah</th><th>Jabatan</th><th>Status Data</th><th>ABK</th><th>ASN</th><th>Non-ASN (Informasi)</th><th>Kelebihan ASN</th></tr></thead><tbody>'+(body||'<tr><td colspan="9"><div class="sim-needs-note">Tidak ada sekolah negeri yang sudah diverifikasi/disetujui dan memiliki kelebihan ASN pada Guru, TAS, atau Penjaga.</div></td></tr>')+'</tbody></table></div></div>';
 }
 
 `;
@@ -194,8 +194,8 @@ if(!code.includes('<th>Gap Data</th>')||!code.includes('✓ Diverifikasi')||!cod
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=22"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=23"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:22,surplusApprovedOnly:true,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,rombelColumn:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:23,surplusApprovedOnly:true,surplusAsnOnly:true,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,rombelColumn:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
