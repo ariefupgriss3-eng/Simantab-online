@@ -67,7 +67,7 @@ window.simGtkNeedsShowBreakdown=key=>{
  modal.setAttribute('style','position:fixed;inset:0;z-index:9999;background:rgba(8,26,48,.58);display:flex;align-items:center;justify-content:center;padding:16px');
  modal.onclick=e=>{if(e.target===modal)modal.remove()};
  const total=(d.items||[]).reduce((n,x)=>n+num(x.total),0);
- const formula=d.kind==='gapData'?'Gap Data = ABK − ASN − Non-ASN':'Gap Riil = ABK − ASN';
+ const formula=d.kind==='gapData'?'Gap Data = Σ max(ABK − ASN − Non-ASN, 0) per jabatan':'Gap Riil = Σ max(ABK − ASN, 0) per jabatan';
  const rows=(d.items||[]).map((x,i)=>\`<tr><td>\${i+1}</td><td><b>\${esc(x.position_name)}</b></td><td style="text-align:right"><b>\${num(x.total)}</b></td></tr>\`).join('');
  modal.innerHTML=\`<div style="width:min(620px,100%);max-height:86vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.28);padding:18px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><div class="sim-needs-note">\${esc(formula)}</div><h3 style="margin:3px 0 4px;color:#0a3568">\${esc(d.title)}</h3>\${d.note?\`<div class="sim-needs-note">\${esc(d.note)}</div>\`:''}</div><button type="button" class="sim-needs-action soft" onclick="document.getElementById('simNeedsBreakdownModal')?.remove()">✕ Tutup</button></div><div style="margin-top:14px" class="sim-needs-table"><table><thead><tr><th>No</th><th>Jabatan</th><th style="text-align:right">Jumlah Kekurangan</th></tr></thead><tbody>\${rows||'<tr><td colspan="3"><div class="sim-needs-note">Tidak ada kekurangan pada cakupan data ini.</div></td></tr>'}</tbody><tfoot><tr><td colspan="2"><b>Total</b></td><td style="text-align:right"><b>\${total}</b></td></tr></tfoot></table></div></div>\`;
  document.body.appendChild(modal);
@@ -90,7 +90,7 @@ const summaryFn=`function schoolSummaryRows(schools,needs,workflow,mode){
   return String(a.school_name||'').localeCompare(String(b.school_name||''),'id',{sensitivity:'base'});
  });
  return orderedSchools.map(s=>{
-  const level=s.jenjang||s.bentuk_pendidikan;const rows=curriculumLevel(level)==='TK'?mergeCurriculumRows(level,by.get(s.npsn)||[]):visibleNeedsRows(level,by.get(s.npsn)||[]),a=aggregateRows(rows),st=statusFor(s.npsn,needsSet,workflow),wf=workflow.get(s.npsn);
+  const level=s.jenjang||s.bentuk_pendidikan;const rows=curriculumLevel(level)==='TK'?mergeCurriculumRows(level,by.get(s.npsn)||[]):visibleNeedsRows(level,by.get(s.npsn)||[]),a=aggregateRows(rows),st=statusFor(s.npsn,needsSet,workflow),wf=workflow.get(s.npsn),ksRow=rows.find(r=>String(r.job_code||'').toUpperCase()==='KEPALA_SEKOLAH'),ksInvalid=!ksRow||num(ksRow.abk)!==1;
   let action=mode==='DINAS'?'—':'Baca saja';
   if(mode==='DINAS'){
    const allowed=reviewers.includes(profile().role);
@@ -102,7 +102,7 @@ const summaryFn=`function schoolSummaryRows(schools,needs,workflow,mode){
   registerBreakdown(gapKey,\`Gap Riil — \${s.school_name}\`,rows,'gap',\`NPSN \${s.npsn} • ABK dikurangi ASN\`);
   registerBreakdown(gapDataKey,\`Gap Data — \${s.school_name}\`,rows,'gapData',\`NPSN \${s.npsn} • ABK dikurangi ASN dan Non-ASN\`);
   const detail=rows.length?\`<details class="sim-needs-detail"><summary>\${rows.length} jabatan</summary><table><thead><tr><th>Jabatan</th><th>ABK</th><th>ASN</th><th>Non-ASN</th><th>Gap Riil</th><th>Gap Data</th></tr></thead><tbody>\${rows.map(r=>{const c=calcRow(r);return\`<tr><td>\${esc(r.position_name)}</td><td>\${c.abk}</td><td>\${c.asn}</td><td>\${c.non}</td><td>\${Math.max(0,c.gap)}</td><td>\${Math.max(0,c.gapData)}</td></tr>\`}).join('')}</tbody></table></details>\`:'<div class="sim-needs-note">Belum input</div>';
-  return \`<tr><td><b>\${esc(s.school_name)}</b><div class="sim-needs-note">\${esc(s.npsn)} • \${esc(s.jenjang||s.bentuk_pendidikan||'-')} • \${esc(s.kecamatan||'-')} • NEGERI</div>\${detail}</td><td><span class="sim-needs-status \${STATUS_CLASS[st]||'not'}">\${esc(st==='SUBMITTED'?'Perlu Verifikasi':(st==='APPROVED'?'Diverifikasi':(STATUS_LABEL[st]||st)))}</span>\${wf?.note?\`<div class="sim-needs-note">\${esc(wf.note)}</div>\`:''}</td><td>\${a.abk}</td><td>\${a.asn}</td><td>\${a.non}</td><td>\${gapButton(a.gap,gapKey,'Gap Riil')}</td><td>\${gapButton(a.gapData,gapDataKey,'Gap Data')}</td><td>\${action}</td></tr>\`;
+  return \`<tr><td><b>\${esc(s.school_name)}</b><div class="sim-needs-note">\${esc(s.npsn)} • \${esc(s.jenjang||s.bentuk_pendidikan||'-')} • \${esc(s.kecamatan||'-')} • NEGERI</div>\${ksInvalid?'<div class="sim-needs-warn" style="margin-top:6px"><b>⚠ ABK Kepala Sekolah harus 1.</b><br>Distribusikan ABK ke masing-masing jabatan/mapel sebelum verifikasi.</div>':''}\${detail}</td><td><span class="sim-needs-status \${STATUS_CLASS[st]||'not'}">\${esc(st==='SUBMITTED'?'Perlu Verifikasi':(st==='APPROVED'?'Diverifikasi':(STATUS_LABEL[st]||st)))}</span>\${wf?.note?\`<div class="sim-needs-note">\${esc(wf.note)}</div>\`:''}</td><td>\${a.abk}</td><td>\${a.asn}</td><td>\${a.non}</td><td>\${gapButton(a.gap,gapKey,'Gap Riil')}<div class="sim-needs-note">per jabatan</div></td><td>\${gapButton(a.gapData,gapDataKey,'Gap Data')}<div class="sim-needs-note">per jabatan</div></td><td>\${ksInvalid?'<span class="sim-needs-status revision">Perlu Koreksi ABK</span>':action}</td></tr>\`;
  }).join('')
 }
 
@@ -150,8 +150,8 @@ if(!code.includes('<th>Gap Data</th>')||!code.includes('✓ Diverifikasi')||!cod
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=18"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=19"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:18,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:19,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
