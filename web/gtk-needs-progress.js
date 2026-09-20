@@ -37,7 +37,7 @@ function curriculumDefinitions(level){
  const l=curriculumLevel(level);
  if(l==='TK')return[
   ['KEPALA_SEKOLAH','Kepala Sekolah',1],
-  ['GURU_TK','Guru TK/PAUD (Guru Kelas)',0],
+  ['GURU_TK','Guru Kelas',0],
   ['TAS','Tenaga Administrasi Sekolah',0]
  ];
  if(l==='SD')return[
@@ -59,7 +59,6 @@ function curriculumDefinitions(level){
   ['GURU_PJOK','Guru Pendidikan Jasmani, Olahraga, dan Kesehatan',0],
   ['GURU_INFORMATIKA','Guru Informatika',0],
   ['GURU_SENI_PRAKARYA','Guru Seni, Budaya, dan Prakarya',0],
-  ['GURU_KODING_KA','Guru Koding dan Kecerdasan Artifisial (Pilihan)',0],
   ['GURU_MULOK','Guru Muatan Lokal (jika berdiri sendiri)',0],
   ['GURU_BK','Guru Bimbingan dan Konseling',0],
   ['TAS','Tenaga Administrasi Sekolah',0]
@@ -67,15 +66,33 @@ function curriculumDefinitions(level){
  return[['KEPALA_SEKOLAH','Kepala Sekolah',1],['GTK','GTK',0],['TAS','Tenaga Administrasi Sekolah',0]]
 }
 const SD_HIDDEN_JOB_CODES=new Set(['GURU_BING','GURU_KODING_KA','GURU_MULOK']);
+const TK_VISIBLE_JOB_CODES=new Set(['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS']);
+const SMP_HIDDEN_JOB_CODES=new Set(['GURU_KODING_KA']);
 function isHiddenSdNeedRow(r){
  const code=String(r?.job_code||'').toUpperCase();
  if(SD_HIDDEN_JOB_CODES.has(code))return true;
  const name=norm(r?.position_name||'');
  return name.includes('guru bahasa inggris')||name.includes('guru koding')||name.includes('kecerdasan artifisial')||name.includes('guru muatan lokal')||name.includes('guru mulok');
 }
+function isVisibleTkNeedRow(r){
+ const code=String(r?.job_code||'').toUpperCase();
+ if(TK_VISIBLE_JOB_CODES.has(code))return true;
+ const name=norm(r?.position_name||'');
+ return name==='kepala sekolah'||name==='guru kelas'||name.includes('guru tk')||name.includes('guru paud')||name==='tas'||name==='tenaga administrasi sekolah';
+}
+function isHiddenSmpNeedRow(r){
+ const code=String(r?.job_code||'').toUpperCase();
+ if(SMP_HIDDEN_JOB_CODES.has(code))return true;
+ const name=norm(r?.position_name||'');
+ return name.includes('guru koding')||name.includes('kecerdasan artifisial');
+}
 function visibleNeedsRows(level,rows){
  const src=(rows||[]).map(x=>({...x}));
- return curriculumLevel(level)==='SD'?src.filter(x=>!isHiddenSdNeedRow(x)):src;
+ const l=curriculumLevel(level);
+ if(l==='TK')return src.filter(isVisibleTkNeedRow);
+ if(l==='SD')return src.filter(x=>!isHiddenSdNeedRow(x));
+ if(l==='SMP')return src.filter(x=>!isHiddenSmpNeedRow(x));
+ return src;
 }
 function blankNeedRow(job_code,position_name,abk=0){return{job_code,position_name,abk,pns:0,pppk:0,pppk_pw:0,non_asn_before_2024:0,non_asn_after_2024:0,__new:true}}
 function defaultRows(level){return curriculumDefinitions(level).map(([job_code,position_name,abk])=>blankNeedRow(job_code,position_name,abk))}
@@ -91,9 +108,9 @@ function mergeCurriculumRows(level,rows){
 }
 function curriculumNote(level){
  const l=curriculumLevel(level);
- if(l==='TK')return'TK/PAUD tidak menggunakan guru per mata pelajaran. Kebutuhan guru dicatat sebagai Guru TK/PAUD (Guru Kelas).';
+ if(l==='TK')return'Pada Kebutuhan GTK Riil TK, jabatan yang ditampilkan hanya Kepala Sekolah, Guru Kelas, dan Tenaga Administrasi Sekolah (TAS).';
  if(l==='SD')return'SD berbasis Guru Kelas. Pada tampilan Kebutuhan GTK Riil SD, kebutuhan yang dicatat adalah Kepala Sekolah, Guru Kelas, Guru Pendidikan Agama dan Budi Pekerti, Guru PJOK, dan Tenaga Administrasi Sekolah.';
- if(l==='SMP')return'SMP menggunakan guru per mata pelajaran: Agama dan Budi Pekerti, Pendidikan Pancasila, Bahasa Indonesia, Matematika, IPA, IPS, Bahasa Inggris, PJOK, Informatika, Seni/Budaya/Prakarya; Koding dan Kecerdasan Artifisial bersifat pilihan. BK dan TAS tetap dicatat sebagai kebutuhan layanan/tenaga pendukung.';
+ if(l==='SMP')return'SMP menggunakan guru per mata pelajaran: Agama dan Budi Pekerti, Pendidikan Pancasila, Bahasa Indonesia, Matematika, IPA, IPS, Bahasa Inggris, PJOK, Informatika, Seni/Budaya/Prakarya, Muatan Lokal, dan BK; Guru Koding tidak ditampilkan pada Kebutuhan GTK Riil. TAS tetap dicatat sebagai kebutuhan tenaga pendukung.';
  return'Isian disesuaikan dengan jenjang dan kebutuhan riil satuan pendidikan.'
 }
 
