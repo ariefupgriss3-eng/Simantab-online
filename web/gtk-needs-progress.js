@@ -98,7 +98,34 @@ function visibleNeedsRows(level,rows){
 function blankNeedRow(job_code,position_name,abk=0){return{job_code,position_name,abk,pns:0,pppk:0,pppk_pw:0,non_asn_before_2024:0,non_asn_after_2024:0,__new:true}}
 function defaultRows(level){return curriculumDefinitions(level).map(([job_code,position_name,abk])=>blankNeedRow(job_code,position_name,abk))}
 function mergeCurriculumRows(level,rows){
- const defs=curriculumDefinitions(level),src=visibleNeedsRows(level,rows),byCode=new Map(src.map(x=>[String(x.job_code||''),x])),used=new Set(),out=[];
+ const l=curriculumLevel(level),defs=curriculumDefinitions(level);
+ let src=visibleNeedsRows(level,rows);
+ if(l==='TK'){
+  const canonical=new Map();
+  const codeOf=x=>{
+   const code=String(x?.job_code||'').toUpperCase();
+   if(code==='GURU_KELAS')return'GURU_TK';
+   if(['PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'].includes(code))return'PENJAGA_SEKOLAH';
+   return code;
+  };
+  for(const x of src){
+   const code=codeOf(x);
+   if(!code)continue;
+   const prev=canonical.get(code);
+   if(!prev)canonical.set(code,{...x,job_code:code});
+   else canonical.set(code,{
+    ...prev,
+    abk:num(prev.abk)+num(x.abk),
+    pns:num(prev.pns)+num(x.pns),
+    pppk:num(prev.pppk)+num(x.pppk),
+    pppk_pw:num(prev.pppk_pw)+num(x.pppk_pw),
+    non_asn_before_2024:num(prev.non_asn_before_2024)+num(x.non_asn_before_2024),
+    non_asn_after_2024:num(prev.non_asn_after_2024)+num(x.non_asn_after_2024)
+   });
+  }
+  src=[...canonical.values()];
+ }
+ const byCode=new Map(src.map(x=>[String(x.job_code||''),x])),used=new Set(),out=[];
  for(const [job_code,position_name,abk] of defs){
   const hit=byCode.get(job_code);
   if(hit){used.add(hit);out.push({...hit,position_name});}
