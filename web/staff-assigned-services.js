@@ -17,7 +17,8 @@ const LABEL={
  KP:'Kenaikan Pangkat',CUTI:'Cuti',PENSIUN:'Pensiun',MUTASI:'Mutasi',KGB:'Kenaikan Gaji Berkala',
  LAINNYA:'Layanan Lainnya',KLARIFIKASI_PAK:'Klarifikasi PAK',E_JABFUNG:'e-Jabfung',
  SKP_KS_PENGAWAS:'SKP KS/Pengawas',PAK_KS_PENGAWAS:'PAK KS/Pengawas',
- DIKLAT_KS_BCKS:'Diklat KS/BCKS',USUL_SK:'Usul Penerbitan SK',TPG_TAMSIL:'TPG/Tamsil'
+ DIKLAT_KS_BCKS:'Diklat KS/BCKS',USUL_SK:'Usul Penerbitan SK',TPG_TAMSIL:'TPG/Tamsil',
+ TUGAS_BELAJAR:'Tugas Belajar',PENGEMBANGAN_KOMPETENSI:'Pengembangan Kompetensi'
 };
 const FLOW={
  MENUNGGU_DISPOSISI_KOORDINATOR:'Menunggu Bagi Tugas',
