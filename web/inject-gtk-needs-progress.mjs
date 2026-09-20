@@ -11,7 +11,7 @@ if(!code.includes('SIMANTAB_GTK_NEEDS_PROGRESS_V2'))throw new Error('Modul Kebut
 // Negeri-only scope, Gap Data, verified-only Dinas metrics, review actions,
 // and clickable Gap Riil/Gap Data breakdowns by position live here.
 code=code.replace('.sim-needs-grid{display:grid;grid-template-columns:repeat(4,1fr);','.sim-needs-grid{display:grid;grid-template-columns:repeat(5,1fr);');
-code=code.replace('.sim-needs-right{text-align:right}.sim-needs-nowrap{white-space:nowrap}',`.sim-needs-right{text-align:right}.sim-needs-nowrap{white-space:nowrap}.sim-needs-gap-card{cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}.sim-needs-gap-card:hover,.sim-needs-gap-card:focus{transform:translateY(-1px);border-color:#9fc4e2;box-shadow:0 8px 22px rgba(10,53,104,.11);outline:none}.sim-needs-gap-card .sim-needs-note{color:#1767b3;font-weight:800}.sim-needs-gap-button{border:0;background:transparent;padding:2px 4px;color:#0a3568;font-weight:950;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.sim-needs-gap-button:hover{color:#1767b3}`);
+code=code.replace('.sim-needs-right{text-align:right}.sim-needs-nowrap{white-space:nowrap}',`.sim-needs-right{text-align:right}.sim-needs-nowrap{white-space:nowrap}.sim-needs-gap-card{cursor:pointer;transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease}.sim-needs-gap-card:hover,.sim-needs-gap-card:focus{transform:translateY(-1px);border-color:#9fc4e2;box-shadow:0 8px 22px rgba(10,53,104,.11);outline:none}.sim-needs-gap-card .sim-needs-note{color:#1767b3;font-weight:800}.sim-needs-gap-button{border:0;background:transparent;padding:2px 4px;color:#0a3568;font-weight:950;cursor:pointer;text-decoration:underline dotted;text-underline-offset:3px}.sim-needs-gap-button:hover{color:#1767b3}.sim-needs-surplus{border:1px solid #f2c66d;background:linear-gradient(180deg,#fffaf0,#fff)}.sim-needs-surplus h3{display:flex;align-items:center;gap:7px}.sim-needs-surplus-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}.sim-needs-surplus-chip{background:#fff;border:1px solid #f0dfbb;border-radius:11px;padding:9px}.sim-needs-surplus-chip b{display:block;font-size:18px;color:#8a4b00}.sim-needs-surplus-chip span{font-size:9px;color:#775f45;font-weight:800}.sim-needs-surplus .sim-needs-note strong{color:#8a4b00}@media(max-width:760px){.sim-needs-surplus-summary{grid-template-columns:1fr}}`);
 code=code.replace("function aggregateRows(rows){return rows.reduce((o,r)=>{const c=calcRow(r);o.abk+=c.abk;o.asn+=c.asn;o.non+=c.non;o.gap+=c.gap;o.gapData+=c.gapData;return o},{abk:0,asn:0,non:0,gap:0,gapData:0})}","function aggregateRows(rows){return rows.reduce((o,r)=>{const c=calcRow(r);o.abk+=c.abk;o.asn+=c.asn;o.non+=c.non;o.gap+=Math.max(0,c.gap);o.gapData+=Math.max(0,c.gapData);return o},{abk:0,asn:0,non:0,gap:0,gapData:0})}");
 code=code.replace(".eq('is_active',true).order('school_name');if(error)throw error;const schools=all||[]", ".eq('is_active',true).eq('school_status','NEGERI').order('school_name');if(error)throw error;const schools=all||[]");
 
@@ -78,6 +78,46 @@ function gapButton(value,key,label){
 
 `;
 
+const surplusHelpers=`function surplusCategory(r){
+ const code=String(r?.job_code||'').toUpperCase(),name=norm(r?.position_name||'');
+ if(code==='TAS'||name==='tas'||name.includes('tenaga administrasi'))return'TAS';
+ if(['PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'].includes(code)||name==='penjaga'||name.includes('penjaga sekolah'))return'Penjaga';
+ if(code.startsWith('GURU_')||name.includes('guru'))return'Guru';
+ return'';
+}
+function surplusNeedRows(schools,needs,workflow){
+ const schoolBy=new Map((schools||[]).filter(s=>String(s.school_status||'').toUpperCase()==='NEGERI').map(s=>[s.npsn,s]));
+ const grouped=new Map();
+ for(const r of needs||[]){
+  const s=schoolBy.get(r.school_npsn);if(!s)continue;
+  const level=s.jenjang||s.bentuk_pendidikan||r.school_level||'';
+  if(!visibleNeedsRows(level,[r]).length)continue;
+  const category=surplusCategory(r);if(!category)continue;
+  const cr=calcRow(r),position=canonicalPositionName({...r,school_level:level});
+  const key=[s.npsn,category,position].join('|');
+  const g=grouped.get(key)||{school:s,category,position_name:position,abk:0,asn:0,non:0};
+  g.abk+=cr.abk;g.asn+=cr.asn;g.non+=cr.non;grouped.set(key,g);
+ }
+ const needsSet=new Set((needs||[]).map(x=>x.school_npsn)),out=[];
+ for(const g of grouped.values()){
+  const surplusAsn=Math.max(0,g.asn-g.abk),surplusTotal=Math.max(0,g.asn+g.non-g.abk);
+  if(surplusTotal<=0)continue;
+  out.push({...g,surplusAsn,surplusTotal,status:statusFor(g.school.npsn,needsSet,workflow)});
+ }
+ return out.sort((a,b)=>b.surplusTotal-a.surplusTotal||b.surplusAsn-a.surplusAsn||String(a.school.school_name||'').localeCompare(String(b.school.school_name||''),'id'));
+}
+function renderSurplusPanel(rows){
+ const cats=['Guru','TAS','Penjaga'];
+ const summary=cats.map(cat=>{
+  const hit=rows.filter(x=>x.category===cat),schools=new Set(hit.map(x=>x.school.npsn)).size,total=hit.reduce((n,x)=>n+x.surplusTotal,0);
+  return '<div class="sim-needs-surplus-chip"><b>'+schools+' sekolah</b><span>'+cat+' • kelebihan total '+total+'</span></div>';
+ }).join('');
+ const body=rows.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><span class="sim-needs-status revision">'+esc(x.category)+'</span></td><td><b>'+esc(x.school.school_name)+'</b><div class="sim-needs-note">'+esc(x.school.npsn)+' • '+esc(x.school.jenjang||x.school.bentuk_pendidikan||'-')+' • '+esc(x.school.kecamatan||'-')+'</div></td><td>'+esc(x.position_name)+'</td><td><span class="sim-needs-status '+(STATUS_CLASS[x.status]||'not')+'">'+esc(STATUS_LABEL[x.status]||x.status)+'</span></td><td>'+x.abk+'</td><td>'+x.asn+'</td><td>'+x.non+'</td><td><b>'+x.surplusAsn+'</b></td><td><b>'+x.surplusTotal+'</b></td></tr>').join('');
+ return '<div class="sim-needs-panel sim-needs-surplus"><h3>⚠️ Daftar Sekolah Negeri Kelebihan Guru, TAS, dan Penjaga</h3><div class="sim-needs-note"><strong>Ditampilkan sebelum proses verifikasi/approve.</strong> Kelebihan dihitung per jabatan. Kelebihan ASN = ASN − ABK; Kelebihan Total = ASN + Non-ASN − ABK.</div><div class="sim-needs-surplus-summary">'+summary+'</div><div class="sim-needs-table"><table><thead><tr><th>No</th><th>Kategori</th><th>Sekolah</th><th>Jabatan</th><th>Status Data</th><th>ABK</th><th>ASN</th><th>Non-ASN</th><th>Kelebihan ASN</th><th>Kelebihan Total</th></tr></thead><tbody>'+(body||'<tr><td colspan="10"><div class="sim-needs-note">Tidak ada sekolah negeri yang kelebihan Guru, TAS, atau Penjaga pada data saat ini.</div></td></tr>')+'</tbody></table></div></div>';
+}
+
+`;
+
 const summaryFn=`function schoolSummaryRows(schools,needs,workflow,mode){
  const by=new Map();for(const r of needs){if(!by.has(r.school_npsn))by.set(r.school_npsn,[]);by.get(r.school_npsn).push(r)}
  const needsSet=new Set(needs.map(x=>x.school_npsn));
@@ -138,20 +178,21 @@ const scopedFn=`async function renderScoped(box,mode){
  updateTile(mode==='PENGAWAS'?\`\${scopeLabel} • \${input}/\${total} sekolah\`:\`\${input}/\${total} sekolah negeri sudah input\`);
  const levelMap=new Map();schools.forEach(s=>{const k=s.jenjang||s.bentuk_pendidikan||'-';if(!levelMap.has(k))levelMap.set(k,{total:0,input:0});const x=levelMap.get(k);x.total++;if(needsSet.has(s.npsn))x.input++});
  const levelHtml=[...levelMap.entries()].map(([k,v])=>\`<div class="sim-needs-level"><b>\${esc(k)}: \${v.input}/\${v.total}</b><small>\${pct(v.input,v.total)}% sudah input</small><div class="sim-needs-bar"><i style="width:\${pct(v.input,v.total)}%"></i></div></div>\`).join('');
- box.innerHTML=\`<div class="sim-needs-scope"><b>Kebutuhan GTK Riil — SEKOLAH NEGERI</b><br>\${mode==='PENGAWAS'?\`Data kebutuhan dibatasi pada sekolah negeri di \${esc(scopeLabel)} sesuai wilayah tugas Pengawas.\`:'Menampilkan hanya sekolah negeri se-Kabupaten Batang. Sekolah swasta tidak termasuk modul ini.'}</div><div class="sim-needs-grid"><div class="sim-needs-metric"><span>Sekolah Negeri</span><b>\${total}</b><div class="sim-needs-note">\${esc(scopeLabel)}</div></div><div class="sim-needs-metric"><span>Sudah Input</span><b>\${input}</b><div class="sim-needs-bar"><i style="width:\${pct(input,total)}%"></i></div></div><div class="sim-needs-metric sim-needs-gap-card" role="button" tabindex="0" onclick="simGtkNeedsShowBreakdown('scope-gap')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();simGtkNeedsShowBreakdown('scope-gap')}"><span>Total Gap Riil</span><b>\${agg.gap}</b><div class="sim-needs-note">\${mode==='DINAS'?'Data terverifikasi • Klik rincian jabatan':'Klik untuk rincian jabatan'}</div></div><div class="sim-needs-metric sim-needs-gap-card" role="button" tabindex="0" onclick="simGtkNeedsShowBreakdown('scope-gap-data')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();simGtkNeedsShowBreakdown('scope-gap-data')}"><span>Gap Data</span><b>\${agg.gapData}</b><div class="sim-needs-note">\${mode==='DINAS'?'Data terverifikasi • Klik rincian jabatan':'Klik untuk rincian jabatan'}</div></div><div class="sim-needs-metric"><span>Diajukan / Diverifikasi</span><b>\${submitted} / \${verified}</b></div></div><div class="sim-needs-panel"><h3>Progres per Jenjang</h3><div class="sim-needs-levels">\${levelHtml||'<div class="sim-needs-note">Belum ada sekolah pada cakupan ini.</div>'}</div></div><div class="sim-needs-panel"><h3>Daftar Sekolah Negeri</h3><input class="sim-needs-filter" id="simNeedsSchoolFilter" placeholder="Cari sekolah, NPSN, kecamatan..."><div class="sim-needs-table"><table id="simNeedsSchoolTable"><thead><tr><th>Sekolah</th><th>Status</th><th>Jumlah Rombel</th><th>ABK</th><th>ASN</th><th>Non-ASN</th><th>Gap Riil</th><th>Gap Data</th><th>\${mode==='DINAS'?'Verifikasi':'Akses'}</th></tr></thead><tbody>\${schoolSummaryRows(schools,scopedNeeds,workflow,mode)}</tbody></table></div></div>\`;
+ const surplusHtml=mode==='DINAS'?renderSurplusPanel(surplusNeedRows(schools,scopedNeeds,workflow)):'';
+ box.innerHTML=\`<div class="sim-needs-scope"><b>Kebutuhan GTK Riil — SEKOLAH NEGERI</b><br>\${mode==='PENGAWAS'?\`Data kebutuhan dibatasi pada sekolah negeri di \${esc(scopeLabel)} sesuai wilayah tugas Pengawas.\`:'Menampilkan hanya sekolah negeri se-Kabupaten Batang. Sekolah swasta tidak termasuk modul ini.'}</div>\${surplusHtml}<div class="sim-needs-grid"><div class="sim-needs-metric"><span>Sekolah Negeri</span><b>\${total}</b><div class="sim-needs-note">\${esc(scopeLabel)}</div></div><div class="sim-needs-metric"><span>Sudah Input</span><b>\${input}</b><div class="sim-needs-bar"><i style="width:\${pct(input,total)}%"></i></div></div><div class="sim-needs-metric sim-needs-gap-card" role="button" tabindex="0" onclick="simGtkNeedsShowBreakdown('scope-gap')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();simGtkNeedsShowBreakdown('scope-gap')}"><span>Total Gap Riil</span><b>\${agg.gap}</b><div class="sim-needs-note">\${mode==='DINAS'?'Data terverifikasi • Klik rincian jabatan':'Klik untuk rincian jabatan'}</div></div><div class="sim-needs-metric sim-needs-gap-card" role="button" tabindex="0" onclick="simGtkNeedsShowBreakdown('scope-gap-data')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();simGtkNeedsShowBreakdown('scope-gap-data')}"><span>Gap Data</span><b>\${agg.gapData}</b><div class="sim-needs-note">\${mode==='DINAS'?'Data terverifikasi • Klik rincian jabatan':'Klik untuk rincian jabatan'}</div></div><div class="sim-needs-metric"><span>Diajukan / Diverifikasi</span><b>\${submitted} / \${verified}</b></div></div><div class="sim-needs-panel"><h3>Progres per Jenjang</h3><div class="sim-needs-levels">\${levelHtml||'<div class="sim-needs-note">Belum ada sekolah pada cakupan ini.</div>'}</div></div><div class="sim-needs-panel"><h3>Daftar Sekolah Negeri</h3><input class="sim-needs-filter" id="simNeedsSchoolFilter" placeholder="Cari sekolah, NPSN, kecamatan..."><div class="sim-needs-table"><table id="simNeedsSchoolTable"><thead><tr><th>Sekolah</th><th>Status</th><th>Jumlah Rombel</th><th>ABK</th><th>ASN</th><th>Non-ASN</th><th>Gap Riil</th><th>Gap Data</th><th>\${mode==='DINAS'?'Verifikasi':'Akses'}</th></tr></thead><tbody>\${schoolSummaryRows(schools,scopedNeeds,workflow,mode)}</tbody></table></div></div>\`;
  $('simNeedsSchoolFilter').oninput=e=>{const q=String(e.target.value||'').toLowerCase();document.querySelectorAll('#simNeedsSchoolTable tbody>tr').forEach(tr=>tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none')}
 }
 
 `;
 
-code=code.slice(0,summaryStart)+breakdownHelpers+summaryFn+scopedFn+code.slice(renderStart);
-if(!code.includes('<th>Gap Data</th>')||!code.includes('✓ Diverifikasi')||!code.includes("eq('school_status','NEGERI')")||!code.includes('simGtkNeedsShowBreakdown'))throw new Error('Core V12 gagal menanam scope negeri/Gap Data/Verifikasi/rincian jabatan.');
+code=code.slice(0,summaryStart)+breakdownHelpers+surplusHelpers+summaryFn+scopedFn+code.slice(renderStart);
+if(!code.includes('<th>Gap Data</th>')||!code.includes('✓ Diverifikasi')||!code.includes("eq('school_status','NEGERI')")||!code.includes('simGtkNeedsShowBreakdown')||!code.includes('renderSurplusPanel')||!code.includes('Kelebihan Guru, TAS, dan Penjaga'))throw new Error('Core V21 gagal menanam scope negeri/Gap Data/Verifikasi/rincian jabatan/daftar kelebihan.');
 
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=20"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=21"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:20,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,rombelColumn:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:21,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,rombelColumn:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
