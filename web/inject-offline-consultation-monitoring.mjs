@@ -1,0 +1,15 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+const outputPath='.vercel/output/static/index.html';
+const staticDir='.vercel/output/static';
+const file='offline-consultation-monitoring.js';
+const source=await fs.readFile(new URL('./'+file,import.meta.url),'utf8');
+if(!/SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V1/.test(source))throw new Error('Offline consultation monitoring v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,file),source);
+let html=await fs.readFile(outputPath,'utf8');
+html=html.replace(/\s*<script\s+type="module"\s+src="\.\/offline-consultation-monitoring\.js\?v=\d+"\s*><\/script>\s*/g,'\n');
+if(!html.includes('</body>'))throw new Error('Tag </body> tidak ditemukan.');
+html=html.replace('</body>','<script type="module" src="./offline-consultation-monitoring.js?v=1"></script>\n</body>');
+if((html.match(/\.\/offline-consultation-monitoring\.js\?v=1/g)||[]).length!==1)throw new Error('Offline consultation monitoring harus tepat satu kali.');
+await fs.writeFile(outputPath,html);
+console.log(JSON.stringify({offlineConsultationMonitoring:true,version:1}));
