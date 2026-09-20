@@ -20,12 +20,34 @@ const scopedStart=code.indexOf('async function renderScoped(',summaryStart);
 const renderStart=code.indexOf('async function render(force=false)',scopedStart);
 if(summaryStart<0||scopedStart<0||renderStart<0)throw new Error('Struktur fungsi GTK needs tidak ditemukan untuk core V14.');
 
-const breakdownHelpers=`function positionBreakdown(rows,kind){
+const breakdownHelpers=`function canonicalPositionName(r){
+ const code=String(r?.job_code||'').toUpperCase();
+ const raw=clean(r?.position_name)||'Jabatan lainnya';
+ const map={
+  KEPALA_SEKOLAH:'Kepala Sekolah',
+  GURU_KELAS:'Guru Kelas',
+  GURU_PAI:'Guru Pendidikan Agama dan Budi Pekerti',
+  GURU_PJOK:'Guru Pendidikan Jasmani, Olahraga, dan Kesehatan',
+  TAS:'Tenaga Administrasi Sekolah',
+  PENJAGA:'Penjaga Sekolah',
+  PENJAGA_SEKOLAH:'Penjaga Sekolah',
+  PENJAGA_SEKOLAJ:'Penjaga Sekolah'
+ };
+ if(map[code])return map[code];
+ const n=norm(raw);
+ if(n==='guru pai'||n==='pai')return map.GURU_PAI;
+ if(n==='guru pjok')return map.GURU_PJOK;
+ if(n==='tas')return map.TAS;
+ if(n==='penjaga'||n==='penjaga sekolah'||n==='penjaga sekolaj')return map.PENJAGA_SEKOLAH;
+ if(n==='kepala sekolah')return map.KEPALA_SEKOLAH;
+ return raw;
+}
+function positionBreakdown(rows,kind){
  const by=new Map();
  for(const r of rows||[]){
   const c=calcRow(r),value=kind==='gapData'?Math.max(0,c.gapData):Math.max(0,c.gap);
   if(value<=0)continue;
-  const name=clean(r.position_name)||'Jabatan lainnya';
+  const name=canonicalPositionName(r);
   by.set(name,(by.get(name)||0)+value);
  }
  return [...by.entries()].map(([position_name,total])=>({position_name,total})).sort((a,b)=>b.total-a.total||a.position_name.localeCompare(b.position_name,'id'));
@@ -128,4 +150,4 @@ const tag=`<script type="module" src="./${moduleName}?v=15"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:15,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:15,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],normalizedPositionLabels:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
