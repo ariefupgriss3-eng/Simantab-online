@@ -1,6 +1,7 @@
 /* SIMANTAB_STAFF_MINIMAL_NAV_V1 */
 /* SIMANTAB_STAFF_MINIMAL_NAV_V2 */
 /* SIMANTAB_STAFF_MINIMAL_NAV_V3 */
+/* SIMANTAB_STAFF_MINIMAL_NAV_V4 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<180&&(!window.__simantabProfile||!window.showTab);i++)await wait(50);
@@ -10,6 +11,7 @@ if(!isStaffAdmin())return;
 const $=id=>document.getElementById(id);
 const ITEMS=[
  ['activities','📅','Kegiatan Bidang'],
+ ['monitoring','📊','Monitoring'],
  ['profile','♙','Profil'],
  ['services','☑','Layanan Kepegawaian'],
  ['notifications','🔔','Notifikasi'],
@@ -67,10 +69,8 @@ window.showTab=async function(id){
  return r;
 };
 pruneNav();
-// No MutationObserver here: repeated nav rewrites can crash mobile browsers.
-// A few bounded checks are enough because this module is loaded last.
 for(const ms of [80,250,700])setTimeout(()=>{pruneNav()},ms);
 await wait(100);
 pruneNav();normalizeActive();
-window.__simantabStaffMinimalNav={version:3,allowed:[...ALLOWED],internal:[...INTERNAL_ALLOWED],landing:'activities',observer:false};
+window.__simantabStaffMinimalNav={version:4,allowed:[...ALLOWED],internal:[...INTERNAL_ALLOWED],landing:'activities',observer:false};
 })();
