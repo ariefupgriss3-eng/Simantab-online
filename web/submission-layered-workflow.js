@@ -38,7 +38,8 @@ const SERVICE_LABEL={
  SKP_KS_PENGAWAS:'SKP KS/Pengawas',PAK_KS_PENGAWAS:'PAK KS/Pengawas',
  KGB:'Kenaikan Gaji Berkala',CUTI:'Izin/Cuti',TPG_TAMSIL:'TPG/Tamsil',TPG_KONSULTASI:'Konsultasi TPG/Tamsil',
  USUL_SK:'Usul Penerbitan SK',PENSIUN:'Pensiun/Pemberhentian',PENSIUN_HUDIS_PIDANA:'Hudis/Pidana',
- PENSIUN_SKMD:'SKMD',DIKLAT_KS_BCKS:'Diklat KS/BCKS'
+ PENSIUN_SKMD:'SKMD',DIKLAT_KS_BCKS:'Diklat KS/BCKS',
+ TUGAS_BELAJAR:'Tugas Belajar',PENGEMBANGAN_KOMPETENSI:'Pengembangan Kompetensi'
 };
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
