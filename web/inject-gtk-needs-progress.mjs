@@ -90,7 +90,7 @@ const summaryFn=`function schoolSummaryRows(schools,needs,workflow,mode){
   return String(a.school_name||'').localeCompare(String(b.school_name||''),'id',{sensitivity:'base'});
  });
  return orderedSchools.map(s=>{
-  const rows=visibleNeedsRows(s.jenjang||s.bentuk_pendidikan,by.get(s.npsn)||[]),a=aggregateRows(rows),st=statusFor(s.npsn,needsSet,workflow),wf=workflow.get(s.npsn);
+  const level=s.jenjang||s.bentuk_pendidikan;const rows=curriculumLevel(level)==='TK'?mergeCurriculumRows(level,by.get(s.npsn)||[]):visibleNeedsRows(level,by.get(s.npsn)||[]),a=aggregateRows(rows),st=statusFor(s.npsn,needsSet,workflow),wf=workflow.get(s.npsn);
   let action=mode==='DINAS'?'—':'Baca saja';
   if(mode==='DINAS'){
    const allowed=reviewers.includes(profile().role);
@@ -150,8 +150,8 @@ if(!code.includes('<th>Gap Data</th>')||!code.includes('✓ Diverifikasi')||!cod
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=17"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=18"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:17,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:18,authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',dinas:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
