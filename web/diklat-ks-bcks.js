@@ -9,6 +9,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V10 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V11 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V12_DIRECT_KABID */
+/* SIMANTAB_DIKLAT_KS_BCKS_V13_SUPERADMIN_RESET_DRAFT */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -36,6 +37,7 @@ const KSB_FLOW_LABEL={
  SELESAI:'Selesai / Naik Level'
 };
 const isReviewer=()=>REVIEW_ROLES.has(profile().role)||String(profile().username||'').toLowerCase()==='kasim';
+const isSuperAdmin=()=>profile().role==='SUPER_ADMIN';
 const isLeader=()=>LEADER_ROLES.has(profile().role);
 const isKabid=()=>profile().role==='KABID';
 const isCoordinator=()=>COORD_ROLES.has(profile().role);
@@ -266,12 +268,17 @@ async function renderLeadershipDiklat(){
 }
 async function reviewerData(){const {data,error}=await sb.from('ks_bcks_submission_details').select('*').order('updated_at',{ascending:false});if(error)throw error;return data||[]}
 function certSummary(d){return `<div class="info" style="margin-top:10px"><b>Data Sertifikat dari Peserta</b><br>Lembaga/Pihak Penerbit: ${esc(d.sertifikat_penerbit||'-')}<br>Nomor: ${esc(d.sertifikat_nomor||'-')}<br>Tanggal: ${fmtDate(d.sertifikat_tanggal)}${d.sertifikat_submitted_at?`<br>Diajukan: ${fmtDateTime(d.sertifikat_submitted_at)}`:''}</div>`}
+function superAdminDraftAction(d){
+ if(!isSuperAdmin()||d.workflow_stage!=='ADMINISTRASI'||d.admin_status==='DRAFT')return '';
+ return `<div style="margin-top:10px;padding:10px;border:1px solid #f2c7a5;border-radius:12px;background:#fff8f1"><div class="small" style="margin-bottom:7px"><b>Kontrol Super Admin:</b> turunkan peserta ke Draft agar biodata dan berkas dapat diedit/diganti kembali.</div><button class="btn secondary" data-ksb-action="reset-draft" data-id="${d.submission_id}">↩ Turunkan ke Draft</button></div>`;
+}
 function reviewerActions(d){
+ const reset=superAdminDraftAction(d);
  if(['DIAJUKAN','TERVERIFIKASI','DISETUJUI_KOORDINATOR'].includes(d.admin_status)){
   const msg=d.admin_status==='DIAJUKAN'
    ?'Menunggu pembagian tugas/verifikasi oleh staf/admin.'
    :'Berkas telah diverifikasi staf/admin dan langsung menunggu persetujuan Kabid Ketenagaan.';
-  return `<div class="info"><b>Persetujuan Administrasi</b><br>${esc(msg)}</div><button class="btn soft" style="margin-top:8px" onclick="showTab('monitoring')">Buka Workflow Monitoring</button>`;
+  return `<div class="info"><b>Persetujuan Administrasi</b><br>${esc(msg)}</div><button class="btn soft" style="margin-top:8px" onclick="showTab('monitoring')">Buka Workflow Monitoring</button>${reset}`;
  }
  if(d.workflow_stage==='SUBSTANSI')return `<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Seleksi Substansi"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="sub-ok" data-id="${d.submission_id}">Lulus Substansi</button><button class="btn secondary" data-ksb-action="sub-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
  if(d.workflow_stage==='DIKLAT')return `<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Diklat"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="dik-ok" data-id="${d.submission_id}">Lulus Diklat</button><button class="btn secondary" data-ksb-action="dik-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
@@ -279,14 +286,27 @@ function reviewerActions(d){
  if(d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status==='TERCATAT')return `${certSummary(d)}<div class="small" style="margin-top:8px">✅ Sudah di-approve Admin KSPS.</div>`;
  if(d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status==='DITOLAK')return `${certSummary(d)}<div class="small" style="margin-top:8px">Menunggu peserta memperbaiki dan mengajukan ulang data sertifikat.</div>`;
  if(d.workflow_stage==='SERTIFIKAT')return `<div class="small">Menunggu KS/peserta Diklat mengisi dan mengajukan data sertifikat.</div>`;
+ if(d.workflow_stage==='ADMINISTRASI'&&reset)return reset;
  return `<div class="small">Tidak ada aksi pada status ini.</div>`;
 }
 async function renderReviewer(){const body=$('diklatKsBcksBody');if(!body)return;body.innerHTML='<div class="card"><div class="small">Memuat peserta Diklat KS/BCKS…</div></div>';try{const rows=await reviewerData();body.innerHTML=`<div class="card" style="margin-bottom:12px"><div class="info"><b>Workflow:</b> Administrasi: GTK → Kasi/Subkoor bagi tugas → Staf/Admin verifikasi → langsung Persetujuan Kabid. Setelah disetujui Kabid, peserta lanjut Substansi → Diklat → Pencatatan Sertifikat.</div></div>${rows.length?rows.map(d=>`<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><div class="small">${esc(d.nip)}</div><h3 style="margin:4px 0">${esc(d.full_name)}</h3><div>${esc(d.pangkat_golruang)} • ${esc(d.unit_kerja)}</div><div class="small">TMT KS: ${fmtDate(d.tmt_penugasan_ks)} • Update: ${fmtDateTime(d.updated_at)}</div></div><div><b>${esc(d.workflow_stage)}</b><div class="small">Adm ${esc(d.admin_status)} • Sub ${esc(d.substansi_status)} • Diklat ${esc(d.diklat_status)} • Sertifikat ${esc(d.sertifikat_status)}</div></div></div><div id="docs-${d.submission_id}" style="margin:12px 0"></div>${reviewerActions(d)}</div>`).join(''):'<div class="card"><div class="empty">Belum ada peserta.</div></div>'}`;for(const d of rows)await loadReviewerDocs(d.submission_id);bindReviewer()}catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}}
 async function loadReviewerDocs(id){const box=$(`docs-${id}`);if(!box)return;const fs=await filesFor(id),by=Object.fromEntries(fs.map(f=>[f.requirement_code,f]));box.innerHTML=`<div class="servicegrid">${REQUIREMENTS.map(([code,label])=>{const f=by[code];return `<div class="service"><b>${esc(label)}</b><div class="small">${f?'✅ '+esc(f.file_name):'❌ Belum ada'}</div>${f?`<button class="btn secondary" data-ksb-view="${esc(f.storage_path)}" style="margin-top:6px">Lihat</button>`:''}</div>`}).join('')}</div>`;box.querySelectorAll('[data-ksb-view]').forEach(b=>b.addEventListener('click',async()=>{const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(b.dataset.ksbView,600);if(error)return toast(error.message,true);window.open(data.signedUrl,'_blank')}))}
 const noteFor=id=>$(`note-${id}`)?.value?.trim()||null;
-function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.id,a=b.dataset.ksbAction;try{let res;if(a==='admin-ok'||a==='admin-no')res=await sb.rpc('ks_bcks_review_administrasi',{p_submission_id:id,p_approve:a==='admin-ok',p_note:noteFor(id)});else if(a==='sub-ok'||a==='sub-no')res=await sb.rpc('ks_bcks_set_substansi_result',{p_submission_id:id,p_lulus:a==='sub-ok',p_note:noteFor(id)});else if(a==='dik-ok'||a==='dik-no')res=await sb.rpc('ks_bcks_set_diklat_result',{p_submission_id:id,p_lulus:a==='dik-ok',p_note:noteFor(id)});else if(a==='cert-ok'||a==='cert-no')res=await sb.rpc('ks_bcks_review_certificate',{p_submission_id:id,p_approve:a==='cert-ok',p_note:noteFor(id)});if(res?.error)throw res.error;toast('Status berhasil diperbarui.');await renderReviewer()}catch(e){toast(e.message||String(e),true)}}))}
+function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.id,a=b.dataset.ksbAction;try{
+ if(a==='reset-draft'){
+  if(!isSuperAdmin())throw new Error('Hanya Super Admin yang dapat menurunkan ke Draft.');
+  const reason=(prompt('Alasan menurunkan Seleksi Administrasi ke Draft (wajib):')||'').trim();
+  if(!reason)return;
+  if(!confirm('Turunkan peserta ini ke DRAFT?\n\nPeserta akan dapat mengedit biodata dan mengganti/menghapus berkas, lalu harus mengajukan ulang.'))return;
+  const {error}=await sb.rpc('ks_bcks_superadmin_reset_to_draft',{p_submission_id:id,p_note:reason});
+  if(error)throw error;
+  toast('Seleksi Administrasi berhasil diturunkan ke Draft.');
+  await renderReviewer();
+  return;
+ }
+ let res;if(a==='admin-ok'||a==='admin-no')res=await sb.rpc('ks_bcks_review_administrasi',{p_submission_id:id,p_approve:a==='admin-ok',p_note:noteFor(id)});else if(a==='sub-ok'||a==='sub-no')res=await sb.rpc('ks_bcks_set_substansi_result',{p_submission_id:id,p_lulus:a==='sub-ok',p_note:noteFor(id)});else if(a==='dik-ok'||a==='dik-no')res=await sb.rpc('ks_bcks_set_diklat_result',{p_submission_id:id,p_lulus:a==='dik-ok',p_note:noteFor(id)});else if(a==='cert-ok'||a==='cert-no')res=await sb.rpc('ks_bcks_review_certificate',{p_submission_id:id,p_approve:a==='cert-ok',p_note:noteFor(id)});if(res?.error)throw res.error;toast('Status berhasil diperbarui.');await renderReviewer()}catch(e){toast(e.message||String(e),true)}}))}
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:12,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:13,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
