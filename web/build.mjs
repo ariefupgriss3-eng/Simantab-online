@@ -5,7 +5,7 @@ const SOURCE='https://simantab-online.vercel.app/';
 const PATCHES=[
  {file:'kp-enhancement.js',url:'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/kp-enhancement.js',marker:'SIMANTAB_KP_SOP_UI_V1',version:4},
  {file:'ptk-swasta-enhancement.js',url:'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/ptk-swasta-enhancement.js',marker:'SIMANTAB_PTK_SWASTA_UI_V1',version:1},
- {file:'super-admin-enhancement.js',url:'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/super-admin-enhancement.js',marker:'SIMANTAB_SUPER_ADMIN_COMMAND_CENTER_V1',version:3},
+ {file:'super-admin-enhancement.js',url:'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/super-admin-enhancement.js',marker:'SIMANTAB_SUPER_ADMIN_COMMAND_CENTER_V1',version:6},
  {file:'kadin-dashboard-v2.js',url:'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/kadin-dashboard-v2.js',marker:'SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V10',version:10},
  {file:'dinas-login-enhancement.js',url:'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/dinas-login-enhancement.js',marker:'SIMANTAB_DINAS_USERNAME_LOGIN_V1',version:1},
  {file:'private-school-access.js',url:'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/private-school-access.js',marker:'SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V1',version:1},
