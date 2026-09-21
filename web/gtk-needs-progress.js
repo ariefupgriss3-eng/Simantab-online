@@ -46,7 +46,8 @@ function curriculumDefinitions(level){
   ['GURU_KELAS','Guru Kelas',0],
   ['GURU_PAI','Guru Pendidikan Agama dan Budi Pekerti',0],
   ['GURU_PJOK','Guru Pendidikan Jasmani, Olahraga, dan Kesehatan',0],
-  ['TAS','Tenaga Administrasi Sekolah',0]
+  ['TAS','Tenaga Administrasi Sekolah',0],
+  ['PENJAGA_SEKOLAH','Penjaga',0]
  ];
  if(l==='SMP')return[
   ['KEPALA_SEKOLAH','Kepala Sekolah',1],
@@ -125,7 +126,12 @@ function mergeCurriculumRows(level,rows){
   }
   src=[...canonical.values()];
  }
- const byCode=new Map(src.map(x=>[String(x.job_code||''),x])),used=new Set(),out=[];
+ const keyOf=x=>{
+  const code=String(x?.job_code||'').toUpperCase();
+  if(l==='SD'&&['PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ','OLO','PRAMU_BAKTI_PENJAGA'].includes(code))return'PENJAGA_SEKOLAH';
+  return code;
+ };
+ const byCode=new Map(src.map(x=>[keyOf(x),x])),used=new Set(),out=[];
  for(const [job_code,position_name,abk] of defs){
   const hit=byCode.get(job_code);
   if(hit){used.add(hit);out.push({...hit,position_name});}
@@ -137,7 +143,7 @@ function mergeCurriculumRows(level,rows){
 function curriculumNote(level){
  const l=curriculumLevel(level);
  if(l==='TK')return'Pada Kebutuhan GTK Riil TK/PAUD, jabatan yang ditampilkan adalah Kepala Sekolah, Guru Kelas TK/PAUD, Tenaga Administrasi Sekolah (TAS), dan Penjaga.';
- if(l==='SD')return'SD berbasis Guru Kelas. Pada tampilan Kebutuhan GTK Riil SD, kebutuhan yang dicatat adalah Kepala Sekolah, Guru Kelas, Guru Pendidikan Agama dan Budi Pekerti, Guru PJOK, dan Tenaga Administrasi Sekolah.';
+ if(l==='SD')return'SD berbasis Guru Kelas. Kebutuhan yang dicatat adalah Kepala Sekolah, Guru Kelas, Guru Pendidikan Agama dan Budi Pekerti, Guru PJOK, Tenaga Administrasi Sekolah, dan Penjaga.';
  if(l==='SMP')return'SMP menggunakan guru per mata pelajaran: Agama dan Budi Pekerti, Pendidikan Pancasila, Bahasa Indonesia, Matematika, IPA, IPS, Bahasa Inggris, PJOK, Informatika, Seni/Budaya/Prakarya, Muatan Lokal, dan BK; Guru Koding tidak ditampilkan pada Kebutuhan GTK Riil. TAS tetap dicatat sebagai kebutuhan tenaga pendukung.';
  return'Isian disesuaikan dengan jenjang dan kebutuhan riil satuan pendidikan.'
 }
