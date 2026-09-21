@@ -1,6 +1,7 @@
 /* SIMANTAB_SUPER_ADMIN_COMMAND_CENTER_V1 */
 /* SIMANTAB_SUPER_ADMIN_PASSWORD_RESET_V2 */
 /* SIMANTAB_SUPER_ADMIN_MISSING_DINAS_ACCOUNTS_V1 */
+/* SIMANTAB_SUPER_ADMIN_NEW_DINAS_ACCOUNTS_V1 */
 (async()=>{
 const w=ms=>new Promise(r=>setTimeout(r,ms));for(let i=0;i<100&&(!window.__simantabSb||!window.showTab);i++)await w(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id),sa=()=>window.__simantabProfile?.role==='SUPER_ADMIN';if(!sb)return;
@@ -19,6 +20,11 @@ const MISSING_DINAS_ACCOUNTS=[
  {full_name:'Mamik',username:'mamik1234',role:'STAFF_ARSIP',position:'Staf Arsip/Persuratan'},
  {full_name:'Danny',username:'danny1234',role:'STAFF_CUTI',position:'Staf Izin Cuti'},
  {full_name:'Icha',username:'icha1234',role:'STAFF_SPJ_SIMTENDIK',position:'Staf SPJ & Simtendik'}
+];
+const NEW_DINAS_ACCOUNTS=[
+ {full_name:'Imam Prabowo',username:'prabowo',role:'STAFF_USUL_SK',position:'Staf Usul SK'},
+ {full_name:'Sucipto',username:'sucipto',role:'STAFF_TPG',position:'Staf TPG'},
+ {full_name:'Rina Ratnawati',username:'rina',role:'STAFF_KGB',position:'Staf KGB'}
 ];
 function makeTempPassword(){
  const alphabet='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
@@ -71,6 +77,44 @@ window.simantabCreateMissingDinasAccounts=async()=>{
  }catch(e){alert(e?.message||'Gagal membuat akun staf Dinas.');const btn=$('simCreateMissingDinasBtn');if(btn){btn.disabled=false;btn.textContent='➕ Coba Lagi'}}
 };
 
+
+async function installNewDinasAccounts(){
+ if(!sa())return;const body=$('usersBody');if(!body||body.querySelector('[data-new-dinas-accounts]'))return;
+ const card=document.createElement('div');card.className='card';card.dataset.newDinasAccounts='1';card.style.marginBottom='12px';
+ card.innerHTML='<h3 style="margin-top:0">Akun Dinas Baru — Prabowo, Sucipto, Rina</h3><div class="small">Memeriksa username baru…</div>';body.prepend(card);
+ try{
+  const usernames=NEW_DINAS_ACCOUNTS.map(x=>x.username);
+  const {data,error}=await sb.from('profiles').select('username,full_name,role').in('username',usernames);if(error)throw error;
+  const existing=new Set((data||[]).map(x=>x.username));
+  const pending=NEW_DINAS_ACCOUNTS.filter(x=>!existing.has(x.username));
+  card.innerHTML=`<h3 style="margin-top:0">Akun Dinas Baru — Prabowo, Sucipto, Rina</h3><div class="small" style="margin-bottom:10px">Akun lama tetap aktif. Username baru dibuat terpisah agar tidak bentrok.</div><div style="display:grid;gap:7px">${NEW_DINAS_ACCOUNTS.map(x=>`<div class="info" style="display:flex;justify-content:space-between;gap:10px;align-items:center"><div><b>${x.full_name}</b><div class="small">${x.position} • username baru: ${x.username}</div></div><b style="color:${existing.has(x.username)?'#166534':'#9a3412'}">${existing.has(x.username)?'✓ Sudah dibuat':'Siap dibuat'}</b></div>`).join('')}</div><div style="margin-top:12px"><button id="simCreateNewDinasBtn" class="btn" ${pending.length?'':'disabled'}>➕ Buat ${pending.length} Akun Baru</button></div>`;
+  const btn=$('simCreateNewDinasBtn');if(btn)btn.onclick=()=>window.simantabCreateNewDinasAccounts();
+ }catch(e){card.innerHTML=`<h3 style="margin-top:0">Akun Dinas Baru — Prabowo, Sucipto, Rina</h3><div class="err">${e?.message||'Gagal memeriksa akun baru.'}</div>`}
+}
+window.simantabCreateNewDinasAccounts=async()=>{
+ if(!sa())return alert('Hanya Super Admin.');
+ try{
+  const usernames=NEW_DINAS_ACCOUNTS.map(x=>x.username);
+  const {data:exists,error:qe}=await sb.from('profiles').select('username').in('username',usernames);if(qe)throw qe;
+  const existing=new Set((exists||[]).map(x=>x.username));
+  const pending=NEW_DINAS_ACCOUNTS.filter(x=>!existing.has(x.username));
+  if(!pending.length)return alert('Ketiga akun baru sudah tersedia.');
+  if(!confirm(`Buat ${pending.length} akun Dinas baru?\n\n${pending.map(x=>'• '+x.full_name+' — '+x.username).join('\n')}\n\nAkun lama tetap aktif. Password sementara akan ditampilkan satu kali.`))return;
+  const btn=$('simCreateNewDinasBtn');if(btn){btn.disabled=true;btn.textContent='Membuat akun…'}
+  const {data:{session}}=await sb.auth.getSession();if(!session?.access_token)throw new Error('Sesi Super Admin tidak tersedia. Silakan login ulang.');
+  const created=[];
+  for(const item of pending){
+   const password=makeTempPassword();
+   const {data,error}=await sb.functions.invoke('simantab-admin-create-dinas-user',{body:{full_name:item.full_name,username:item.username,password,role:item.role,unit:'Dinas Pendidikan dan Kebudayaan Kabupaten Batang',position:item.position,nip:'',school_npsn:''},headers:{Authorization:`Bearer ${session.access_token}`}});
+   if(error||data?.error){let detail=data?.error||'';try{detail=detail||(await error?.context?.clone?.().json())?.error||''}catch(_){}throw new Error(`${item.full_name}: ${detail||error?.message||'gagal dibuat'}`)}
+   created.push({...item,password});
+  }
+  if(created.length)showDinasCredentials(created);
+  document.querySelector('[data-new-dinas-accounts]')?.remove();
+  await installNewDinasAccounts();
+ }catch(e){alert(e?.message||'Gagal membuat akun Dinas baru.');const btn=$('simCreateNewDinasBtn');if(btn){btn.disabled=false;btn.textContent='➕ Coba Lagi'}}
+};
+
 function installPasswordResetActions(){
  if(!sa())return;const body=$('usersBody');if(!body)return;
  body.querySelectorAll('tbody tr').forEach(tr=>{
@@ -93,5 +137,5 @@ window.simantabAdminSendPasswordReset=async(id,name)=>{
 };
 const usersBody=$('usersBody');if(usersBody&&!window.__simantabResetPasswordObserver){window.__simantabResetPasswordObserver=true;new MutationObserver(()=>installPasswordResetActions()).observe(usersBody,{childList:true})}
 
-const old=window.showTab;window.showTab=async id=>{await old(id);await w(40);if(id==='services')await svc();if(id==='users'){installPasswordResetActions();await installMissingDinasAccounts()}};for(let i=0;i<60&&!window.__simantabProfile;i++)await w(100);if(sa()&&document.querySelector('.section.active')?.id==='services')await svc();if(sa()&&document.querySelector('.section.active')?.id==='users'){installPasswordResetActions();await installMissingDinasAccounts();}
+const old=window.showTab;window.showTab=async id=>{await old(id);await w(40);if(id==='services')await svc();if(id==='users'){installPasswordResetActions();await installMissingDinasAccounts();await installNewDinasAccounts()}};for(let i=0;i<60&&!window.__simantabProfile;i++)await w(100);if(sa()&&document.querySelector('.section.active')?.id==='services')await svc();if(sa()&&document.querySelector('.section.active')?.id==='users'){installPasswordResetActions();await installMissingDinasAccounts();await installNewDinasAccounts();}
 })();
