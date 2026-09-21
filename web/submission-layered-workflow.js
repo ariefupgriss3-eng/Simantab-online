@@ -4,6 +4,7 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V6 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V7 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V8 */
+/* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V9 */
 /* SIMANTAB_COORDINATOR_SERVICE_AGGREGATE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -89,7 +90,7 @@ function actionHtml(s,d){
  if((r==='SUPER_ADMIN'||r===s.coordinator_role)&&s.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR')
    return `<button class="btn primary" onclick="layerOpenAssign('${s.id}')">👤 Bagi Tugas</button>`;
  if((r==='SUPER_ADMIN'||assigneeIds(d,s.id).includes(uid)||s.assigned_user_id===uid)&&s.workflow_state==='VERIFIKASI_STAF'){
-   if(s.service_type==='DIKLAT_KS_BCKS')return `<button class="btn success" onclick="layerStaffVerify('${s.id}',true)">✓ Terverifikasi</button><button class="btn danger" onclick="layerStaffVerify('${s.id}',false)">↺ Perbaikan</button>`;
+   if(s.service_type==='DIKLAT_KS_BCKS')return `<button class="btn success" onclick="layerStaffVerify('${s.id}',true)">✓ Verifikasi</button><button class="btn danger" onclick="layerStaffVerify('${s.id}',false)">↺ Perbaikan</button>`;
    return '<button class="btn primary" onclick="showTab(\'services\')">💬 Susun Respon</button>';
  }
  if((r==='SUPER_ADMIN'||r===s.coordinator_role)&&s.workflow_state==='MENUNGGU_APPROVAL_KOORDINATOR')
@@ -275,5 +276,5 @@ window.showTab=async function(id){
  return r;
 };
 style();
-window.__simantabLayeredWorkflow={version:8,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
+window.__simantabLayeredWorkflow={version:9,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
 })();
