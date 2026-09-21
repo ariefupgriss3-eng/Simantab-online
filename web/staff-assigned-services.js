@@ -3,6 +3,7 @@
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V3 */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V4 */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V5 */
+/* SIMANTAB_STAFF_ASSIGNED_SERVICES_V6 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -70,7 +71,7 @@ async function renderStaffServices(){
   const active=rows.filter(x=>x.workflow_state==='VERIFIKASI_STAF').length;
   body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang menunggu verifikasi. Klik <b>Lihat Isi Usulan</b> untuk membaca maksud GTK, catatan penugasan, dan berkas pendukung.</div>'+
   '<div class="card">'+(rows.length?'<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Pemohon</th><th>Layanan</th><th>Isi / Maksud GTK</th><th>Respon Admin/Staf</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+
-  rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+((s.service_type==='DIKLAT_KS_BCKS'&&s.workflow_state==='VERIFIKASI_STAF')?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn success" onclick="staffVerifyAssigned(\''+s.id+'\',true)">✓ Terverifikasi</button><button class="btn danger" onclick="staffVerifyAssigned(\''+s.id+'\',false)">↺ Perlu Perbaikan</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td><div style="max-width:320px;white-space:normal">'+((s.__cycle?.staff_response||s.staff_response)?esc(s.__cycle?.staff_response||s.staff_response):'<span class="small">Belum dijawab</span>')+((s.__cycle?.staff_response_at||s.staff_response_at)?'<div class="small" style="margin-top:4px">'+fmt(s.__cycle?.staff_response_at||s.staff_response_at)+'</div>':'')+'</div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
+  rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+((s.service_type==='DIKLAT_KS_BCKS'&&s.workflow_state==='VERIFIKASI_STAF')?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn success" onclick="staffVerifyAssigned(\''+s.id+'\',true)">✓ Verifikasi</button><button class="btn danger" onclick="staffVerifyAssigned(\''+s.id+'\',false)">↺ Perlu Perbaikan</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td><div style="max-width:320px;white-space:normal">'+((s.__cycle?.staff_response||s.staff_response)?esc(s.__cycle?.staff_response||s.staff_response):'<span class="small">Belum dijawab</span>')+((s.__cycle?.staff_response_at||s.staff_response_at)?'<div class="small" style="margin-top:4px">'+fmt(s.__cycle?.staff_response_at||s.staff_response_at)+'</div>':'')+'</div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
   '</tbody></table></div>':'<div class="empty">Belum ada usulan yang ditugaskan kepada akun Anda.</div>')+'</div>';
  }catch(e){body.innerHTML='<div class="card err">'+esc(e.message||e)+'</div>'}
 }
@@ -128,5 +129,5 @@ window.showTab=async function(id){
  return r;
 };
 if(document.querySelector('#services.active'))await renderStaffServices();
-window.__simantabStaffAssignedServices={version:5,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
+window.__simantabStaffAssignedServices={version:6,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
 })();
