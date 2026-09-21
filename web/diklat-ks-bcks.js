@@ -8,6 +8,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V9 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V10 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V11 */
+/* SIMANTAB_DIKLAT_KS_BCKS_V12_DIRECT_KABID */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -30,7 +31,6 @@ const COORD_SCOPE={KASI_SD:'SD',KASI_SMP:'SMP',SUBKOOR_TK:'TK_PAUD_PNF'};
 const KSB_FLOW_LABEL={
  MENUNGGU_DISPOSISI_KOORDINATOR:'Bagi Tugas',
  VERIFIKASI_STAF:'Verifikasi Admin',
- MENUNGGU_APPROVAL_KOORDINATOR:'Approve Kasi/Subkoor',
  MENUNGGU_PERSETUJUAN_KABID:'Persetujuan Kabid',
  PERBAIKAN:'Perbaikan',
  SELESAI:'Selesai / Naik Level'
@@ -126,13 +126,12 @@ function coordKsbPill(state){
  return `<span style="display:inline-block;padding:4px 8px;border-radius:999px;background:${cls};font-size:9px;font-weight:900">${esc(label)}</span>`;
 }
 function coordKsbFlow(){
- return '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><b>1. Bagi Tugas</b><p>Kasi/Subkoor menetapkan Admin KSPS.</p></div><div class="service"><b>2. Verifikasi Admin/Staf</b><p>Admin/staf memeriksa 7 berkas administrasi.</p></div><div class="service"><b>3. Approve Kasi/Subkoor</b><p>Persetujuan sesuai jenjang.</p></div><div class="service"><b>4. Persetujuan Kabid</b><p>Persetujuan akhir administrasi.</p></div><div class="service"><b>5. Naik Level</b><p>Masuk tahap Seleksi Substansi.</p></div></div>';
+ return '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><b>1. Bagi Tugas</b><p>Kasi/Subkoor menetapkan Admin/Staf verifikator.</p></div><div class="service"><b>2. Verifikasi Admin/Staf</b><p>Admin/staf memeriksa 7 berkas administrasi.</p></div><div class="service"><b>3. Persetujuan Kabid</b><p>Hasil verifikasi langsung diteruskan ke Kabid.</p></div><div class="service"><b>4. Naik Level</b><p>Setelah disetujui Kabid, peserta masuk Seleksi Substansi.</p></div></div>';
 }
 function coordKsbSummary(rows){
  const defs=[
   ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
   ['VERIFIKASI_STAF','Verifikasi Admin/Staf'],
-  ['MENUNGGU_APPROVAL_KOORDINATOR','Approve Kasi/Subkoor'],
   ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
   ['SELESAI','Selesai / Naik Level']
  ];
@@ -140,7 +139,6 @@ function coordKsbSummary(rows){
 }
 function coordKsbAction(s){
  if(s.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR')return `<button class="btn" onclick="ksbCoordOpenAssign('${s.id}')">👤 Bagi Tugas</button>`;
- if(s.workflow_state==='MENUNGGU_APPROVAL_KOORDINATOR')return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn" onclick="ksbCoordApprove('${s.id}',true)">✓ Approve</button><button class="btn secondary" onclick="ksbCoordApprove('${s.id}',false)">↺ Kembalikan</button></div>`;
  return '';
 }
 async function renderCoordinatorDiklat(){
@@ -154,7 +152,7 @@ async function renderCoordinatorDiklat(){
   const rows=d.subs;
   const pendingCount=rows.filter(x=>x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR').length;
   const bulk=pendingCount>=2?`<div class="ksb-bulkbox"><div><div class="label">PEMBAGIAN TUGAS AGREGAT</div><div class="small">${pendingCount} peserta menunggu pembagian tugas. Sistem membagi satu peserta ke satu petugas secara merata.</div></div><button class="btn" onclick="ksbOpenBulkAssign()">⚖️ Bagi Tugas Agregat (${pendingCount})</button></div>`:'';
-  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Pada level Kasi/Subkoor, berkas administrasi peserta tidak ditampilkan. Berkas hanya diperiksa oleh admin/staf yang ditugaskan. Kasi/Subkoor memantau agregat dan melakukan Bagi Tugas/Approve sesuai tahap.</div></div>${coordKsbSummary(rows)}${bulk}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Pada level Kasi/Subkoor, berkas administrasi peserta tidak ditampilkan. Berkas hanya diperiksa oleh admin/staf yang ditugaskan. Kasi/Subkoor memantau agregat dan melakukan Bagi Tugas. Setelah staf/admin menyelesaikan verifikasi, usulan langsung diteruskan ke Kabid untuk persetujuan.</div></div>${coordKsbSummary(rows)}${bulk}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 window.ksbCoordOpenAssign=async id=>{
@@ -235,7 +233,6 @@ function leaderKsbSummary(rows){
  const defs=[
   ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
   ['VERIFIKASI_STAF','Verifikasi Admin/Staf'],
-  ['MENUNGGU_APPROVAL_KOORDINATOR','Approve Kasi/Subkoor'],
   ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
   ['PERBAIKAN','Perbaikan'],
   ['SELESAI','Selesai / Naik Level']
@@ -251,7 +248,7 @@ function kabidKsbAction(s){
  </div>`;
 }
 window.ksbKabidApprove=async(id,approve)=>{
- const note=prompt(approve?'Catatan persetujuan Kabid (opsional):':'Alasan dikembalikan ke Kasi/Subkoor:')||'';
+ const note=prompt(approve?'Catatan persetujuan Kabid (opsional):':'Alasan dikembalikan ke staf/admin verifikator:')||'';
  if(!approve&&!note.trim()){alert('Alasan pengembalian wajib diisi.');return}
  const {error}=await sb.rpc('submission_kabid_approve',{p_submission_id:id,p_approve:approve,p_note:note.trim()||null});
  if(error){alert(error.message);return}
@@ -280,11 +277,9 @@ function certSummary(d){return `<div class="info" style="margin-top:10px"><b>Dat
 function reviewerActions(d){
  if(['DIAJUKAN','TERVERIFIKASI','DISETUJUI_KOORDINATOR'].includes(d.admin_status)){
   const msg=d.admin_status==='DIAJUKAN'
-   ?'Menunggu Kasi/Subkoor membagi tugas kepada staf/admin untuk verifikasi.'
-   :d.admin_status==='TERVERIFIKASI'
-    ?'Berkas telah diverifikasi staf/admin dan menunggu approval Kasi/Subkoor.'
-    :'Sudah di-approve Kasi/Subkoor dan menunggu persetujuan Kabid Ketenagaan.';
-  return `<div class="info"><b>Persetujuan Administrasi Berjenjang</b><br>${esc(msg)}</div><button class="btn soft" style="margin-top:8px" onclick="showTab('monitoring')">Buka Workflow Monitoring</button>`;
+   ?'Menunggu pembagian tugas/verifikasi oleh staf/admin.'
+   :'Berkas telah diverifikasi staf/admin dan langsung menunggu persetujuan Kabid Ketenagaan.';
+  return `<div class="info"><b>Persetujuan Administrasi</b><br>${esc(msg)}</div><button class="btn soft" style="margin-top:8px" onclick="showTab('monitoring')">Buka Workflow Monitoring</button>`;
  }
  if(d.workflow_stage==='SUBSTANSI')return `<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Seleksi Substansi"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="sub-ok" data-id="${d.submission_id}">Lulus Substansi</button><button class="btn secondary" data-ksb-action="sub-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
  if(d.workflow_stage==='DIKLAT')return `<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Diklat"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="dik-ok" data-id="${d.submission_id}">Lulus Diklat</button><button class="btn secondary" data-ksb-action="dik-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
@@ -294,12 +289,12 @@ function reviewerActions(d){
  if(d.workflow_stage==='SERTIFIKAT')return `<div class="small">Menunggu KS/peserta Diklat mengisi dan mengajukan data sertifikat.</div>`;
  return `<div class="small">Tidak ada aksi pada status ini.</div>`;
 }
-async function renderReviewer(){const body=$('diklatKsBcksBody');if(!body)return;body.innerHTML='<div class="card"><div class="small">Memuat peserta Diklat KS/BCKS…</div></div>';try{const rows=await reviewerData();body.innerHTML=`<div class="card" style="margin-bottom:12px"><div class="info"><b>Workflow:</b> Administrasi mengikuti persetujuan berjenjang: GTK → Kasi/Subkoor bagi tugas → Staf/Admin verifikasi → Kasi/Subkoor approve → Kabid setujui. Setelah itu peserta lanjut Substansi → Diklat → Pencatatan Sertifikat.</div></div>${rows.length?rows.map(d=>`<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><div class="small">${esc(d.nip)}</div><h3 style="margin:4px 0">${esc(d.full_name)}</h3><div>${esc(d.pangkat_golruang)} • ${esc(d.unit_kerja)}</div><div class="small">TMT KS: ${fmtDate(d.tmt_penugasan_ks)} • Update: ${fmtDateTime(d.updated_at)}</div></div><div><b>${esc(d.workflow_stage)}</b><div class="small">Adm ${esc(d.admin_status)} • Sub ${esc(d.substansi_status)} • Diklat ${esc(d.diklat_status)} • Sertifikat ${esc(d.sertifikat_status)}</div></div></div><div id="docs-${d.submission_id}" style="margin:12px 0"></div>${reviewerActions(d)}</div>`).join(''):'<div class="card"><div class="empty">Belum ada peserta.</div></div>'}`;for(const d of rows)await loadReviewerDocs(d.submission_id);bindReviewer()}catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}}
+async function renderReviewer(){const body=$('diklatKsBcksBody');if(!body)return;body.innerHTML='<div class="card"><div class="small">Memuat peserta Diklat KS/BCKS…</div></div>';try{const rows=await reviewerData();body.innerHTML=`<div class="card" style="margin-bottom:12px"><div class="info"><b>Workflow:</b> Administrasi: GTK → Kasi/Subkoor bagi tugas → Staf/Admin verifikasi → langsung Persetujuan Kabid. Setelah disetujui Kabid, peserta lanjut Substansi → Diklat → Pencatatan Sertifikat.</div></div>${rows.length?rows.map(d=>`<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><div class="small">${esc(d.nip)}</div><h3 style="margin:4px 0">${esc(d.full_name)}</h3><div>${esc(d.pangkat_golruang)} • ${esc(d.unit_kerja)}</div><div class="small">TMT KS: ${fmtDate(d.tmt_penugasan_ks)} • Update: ${fmtDateTime(d.updated_at)}</div></div><div><b>${esc(d.workflow_stage)}</b><div class="small">Adm ${esc(d.admin_status)} • Sub ${esc(d.substansi_status)} • Diklat ${esc(d.diklat_status)} • Sertifikat ${esc(d.sertifikat_status)}</div></div></div><div id="docs-${d.submission_id}" style="margin:12px 0"></div>${reviewerActions(d)}</div>`).join(''):'<div class="card"><div class="empty">Belum ada peserta.</div></div>'}`;for(const d of rows)await loadReviewerDocs(d.submission_id);bindReviewer()}catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}}
 async function loadReviewerDocs(id){const box=$(`docs-${id}`);if(!box)return;const fs=await filesFor(id),by=Object.fromEntries(fs.map(f=>[f.requirement_code,f]));box.innerHTML=`<div class="servicegrid">${REQUIREMENTS.map(([code,label])=>{const f=by[code];return `<div class="service"><b>${esc(label)}</b><div class="small">${f?'✅ '+esc(f.file_name):'❌ Belum ada'}</div>${f?`<button class="btn secondary" data-ksb-view="${esc(f.storage_path)}" style="margin-top:6px">Lihat</button>`:''}</div>`}).join('')}</div>`;box.querySelectorAll('[data-ksb-view]').forEach(b=>b.addEventListener('click',async()=>{const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(b.dataset.ksbView,600);if(error)return toast(error.message,true);window.open(data.signedUrl,'_blank')}))}
 const noteFor=id=>$(`note-${id}`)?.value?.trim()||null;
 function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.id,a=b.dataset.ksbAction;try{let res;if(a==='admin-ok'||a==='admin-no')res=await sb.rpc('ks_bcks_review_administrasi',{p_submission_id:id,p_approve:a==='admin-ok',p_note:noteFor(id)});else if(a==='sub-ok'||a==='sub-no')res=await sb.rpc('ks_bcks_set_substansi_result',{p_submission_id:id,p_lulus:a==='sub-ok',p_note:noteFor(id)});else if(a==='dik-ok'||a==='dik-no')res=await sb.rpc('ks_bcks_set_diklat_result',{p_submission_id:id,p_lulus:a==='dik-ok',p_note:noteFor(id)});else if(a==='cert-ok'||a==='cert-no')res=await sb.rpc('ks_bcks_review_certificate',{p_submission_id:id,p_approve:a==='cert-ok',p_note:noteFor(id)});if(res?.error)throw res.error;toast('Status berhasil diperbarui.');await renderReviewer()}catch(e){toast(e.message||String(e),true)}}))}
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:11,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:12,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
