@@ -107,7 +107,7 @@ await fs.writeFile(path.join(staticDir,leadershipFile),leadershipCode);
 
 const kadinFile='kadin-dashboard-v2.js';
 const kadinCode=await fs.readFile(new URL(`./${kadinFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V6/.test(kadinCode))throw new Error('Dashboard pimpinan instant-snapshot v6 tidak valid.');
+if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V11_GLOBAL_REQUESTER_SEARCH/.test(kadinCode))throw new Error('Dashboard Dinas V11 dengan pencarian pengusul tidak valid.');
 await fs.writeFile(path.join(staticDir,kadinFile),kadinCode);
 
 const gtkInfographicDetailFile='gtk-infographic-details.js';
@@ -166,7 +166,7 @@ const modules=[
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',7],
  ['registration-approval.js',2],
- ['kadin-dashboard-v2.js',8],
+ ['kadin-dashboard-v2.js',11],
  ['gtk-infographic-details.js',2],
  ['dinas-login-enhancement.js',1],
  ['private-school-access.js',1],
@@ -240,4 +240,4 @@ for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).l
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
 if(html.split(`./${classicFile}?v=5`).length-1!==1)throw new Error('Classic login rescue v5 harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsCanonicalVersion:25,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV1:true,leaderCoreImmediateDashboard:true,sessionBoundaryHardening:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,missingDinasAccountsButton:true,newDinasAccountsButton:true,ksAdminDirectKabid:true,superAdminKsResetDraft:true,diklatParticipantSearch:true,verifyActionLabel:true,validClosingTags:true}));
+console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsCanonicalVersion:25,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV1:true,leaderCoreImmediateDashboard:true,sessionBoundaryHardening:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,missingDinasAccountsButton:true,newDinasAccountsButton:true,ksAdminDirectKabid:true,superAdminKsResetDraft:true,diklatParticipantSearch:true,verifyActionLabel:true,globalRequesterSearch:true,validClosingTags:true}));
