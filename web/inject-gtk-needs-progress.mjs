@@ -195,13 +195,23 @@ const scopedFn=`async function renderScoped(box,mode){
 `;
 
 code=code.slice(0,summaryStart)+breakdownHelpers+surplusHelpers+summaryFn+scopedFn+code.slice(renderStart);
+// AI VERIFIER PILOT: SD now includes Penjaga as a standard row required by the ABK rules.
+code=code.replace(
+ "  ['TAS','Tenaga Administrasi Sekolah',0]\n ];\n if(l==='SMP')return[",
+ "  ['TAS','Tenaga Administrasi Sekolah',0],\n  ['PENJAGA_SEKOLAH','Penjaga',0]\n ];\n if(l==='SMP')return["
+);
+code=code.replace(
+ "if(l==='SD')return'SD berbasis Guru Kelas. Pada tampilan Kebutuhan GTK Riil SD, kebutuhan yang dicatat adalah Kepala Sekolah, Guru Kelas, Guru Pendidikan Agama dan Budi Pekerti, Guru PJOK, dan Tenaga Administrasi Sekolah.';",
+ "if(l==='SD')return'SD berbasis Guru Kelas. Kebutuhan yang dicatat adalah Kepala Sekolah, Guru Kelas, Guru Pendidikan Agama dan Budi Pekerti, Guru PJOK, Tenaga Administrasi Sekolah, dan Penjaga.';"
+);
+
 if(!code.includes('<th>Gap Data</th>')||!code.includes('✓ Diverifikasi')||!code.includes("eq('school_status','NEGERI')")||!code.includes('simGtkNeedsShowBreakdown')||!code.includes('renderSurplusPanel')||!code.includes('Kelebihan Guru, TAS, dan Penjaga'))throw new Error('Core V21 gagal menanam scope negeri/Gap Data/Verifikasi/rincian jabatan/daftar kelebihan.');
 
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=25"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=26"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:25,canonicalAssetVersion:true,roleLevelScope:true,surplusApprovedOnly:true,surplusAsnOnly:true,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,rombelColumn:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',kabid:'district-wide-negeri',kasiSd:'sd-negeri-only',kasiSmp:'smp-negeri-only',subkoorTk:'tk-paud-negeri-only',pimpinan:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:26,aiVerifierPilot:true,sdPenjagaStandard:true,canonicalAssetVersion:true,roleLevelScope:true,surplusApprovedOnly:true,surplusAsnOnly:true,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,rombelColumn:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',kabid:'district-wide-negeri',kasiSd:'sd-negeri-only',kasiSmp:'smp-negeri-only',subkoorTk:'tk-paud-negeri-only',pimpinan:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
