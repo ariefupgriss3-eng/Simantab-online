@@ -204,14 +204,6 @@ window.ksbSaveBulkAssign=async()=>{
  if(error){msg.textContent=error.message;return}
  $('ksbBulkAssignModal')?.remove();await renderCoordinatorDiklat();
 };
-window.ksbCoordApprove=async(id,ok)=>{
- const note=prompt(ok?'Catatan approval Kasi/Subkoor (opsional):':'Alasan dikembalikan ke Admin KSPS:')||'';
- if(!ok&&!note.trim()){alert('Catatan wajib diisi saat mengembalikan.');return}
- const {error}=await sb.rpc('submission_coordinator_approve',{p_submission_id:id,p_approve:ok,p_note:note.trim()||null});
- if(error){alert(error.message);return}
- await renderCoordinatorDiklat();
-};
-
 async function leadershipDiklatData(){
  const [s,pf]=await Promise.all([
   sb.from('submissions')
