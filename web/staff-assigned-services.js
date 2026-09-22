@@ -5,6 +5,7 @@
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V5 */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V6 */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V7_VERIFY_ACTION_VISIBLE */
+/* SIMANTAB_STAFF_ASSIGNED_SERVICES_V8_RESET_DRAFT_ASSIGNED */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -72,7 +73,7 @@ async function renderStaffServices(){
   const active=rows.filter(x=>x.workflow_state==='VERIFIKASI_STAF').length;
   body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang menunggu verifikasi. Klik <b>Lihat Isi Usulan</b> untuk membaca maksud GTK, catatan penugasan, dan berkas pendukung.</div>'+
   '<div class="card">'+(rows.length?'<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Pemohon</th><th>Layanan</th><th>Isi / Maksud GTK</th><th>Respon Admin/Staf</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+
-  rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+((s.service_type==='DIKLAT_KS_BCKS'&&s.workflow_state==='VERIFIKASI_STAF')?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn success" onclick="staffVerifyAssigned(\''+s.id+'\',true)">✓ Verifikasi</button><button class="btn danger" onclick="staffVerifyAssigned(\''+s.id+'\',false)">↺ Perlu Perbaikan</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td><div style="max-width:320px;white-space:normal">'+((s.__cycle?.staff_response||s.staff_response)?esc(s.__cycle?.staff_response||s.staff_response):'<span class="small">Belum dijawab</span>')+((s.__cycle?.staff_response_at||s.staff_response_at)?'<div class="small" style="margin-top:4px">'+fmt(s.__cycle?.staff_response_at||s.staff_response_at)+'</div>':'')+'</div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
+  rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+((s.service_type==='DIKLAT_KS_BCKS'&&s.workflow_state==='VERIFIKASI_STAF')?'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px"><button class="btn success" onclick="staffVerifyAssigned(\''+s.id+'\',true)">✓ Verifikasi</button><button class="btn danger" onclick="staffVerifyAssigned(\''+s.id+'\',false)">↺ Perlu Perbaikan</button></div>':'')+((s.service_type==='DIKLAT_KS_BCKS'&&s.workflow_state!=='DRAFT')?'<div style="margin-top:6px"><button class="btn soft" onclick="staffResetKsToDraft(\''+s.id+'\')">↩ Turunkan ke Draft</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td><div style="max-width:320px;white-space:normal">'+((s.__cycle?.staff_response||s.staff_response)?esc(s.__cycle?.staff_response||s.staff_response):'<span class="small">Belum dijawab</span>')+((s.__cycle?.staff_response_at||s.staff_response_at)?'<div class="small" style="margin-top:4px">'+fmt(s.__cycle?.staff_response_at||s.staff_response_at)+'</div>':'')+'</div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
   '</tbody></table></div>':'<div class="empty">Belum ada usulan yang ditugaskan kepada akun Anda.</div>')+'</div>';
  }catch(e){body.innerHTML='<div class="card err">'+esc(e.message||e)+'</div>'}
 }
@@ -105,9 +106,22 @@ window.staffOpenSubmissionDetail=async id=>{
   const verifyEditor=(sub.service_type==='DIKLAT_KS_BCKS'&&sub.workflow_state==='VERIFIKASI_STAF')
    ?'<div class="card" style="margin:12px 0;background:#f4fbf6;border:1px solid #b7dfc3"><div class="label">EKSEKUSI VERIFIKASI ADMIN/STAF</div><div class="small" style="margin:5px 0 10px">Periksa seluruh berkas terlebih dahulu. Jika lengkap dan sesuai, klik <b>Verifikasi</b>. Jika ada kekurangan, klik <b>Perlu Perbaikan</b> dan tuliskan catatan.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn success" style="font-weight:900" onclick="staffVerifyAssigned(\''+sub.id+'\',true)">✓ Verifikasi</button><button class="btn danger" style="font-weight:900" onclick="staffVerifyAssigned(\''+sub.id+'\',false)">↺ Perlu Perbaikan</button></div><div class="small" style="margin-top:8px">Setelah berhasil diverifikasi, usulan langsung masuk ke <b>Persetujuan Kabid</b>.</div></div>'
    :'';
-  m.innerHTML='<div class="card" style="width:min(820px,100%);max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="label">ISI USULAN GTK</div><h3 style="margin:3px 0">'+esc(sub.title||labelService(sub.service_type))+'</h3><div class="small">'+esc(pr.data?.full_name||'-')+' • '+esc(pr.data?.unit||'-')+'</div></div><button class="btn soft" onclick="document.getElementById(\'staffSubmissionDetailModal\')?.remove()">✕</button></div><div class="info" style="margin-top:12px"><b>Maksud/Keterangan GTK</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.description||'-')+'</div></div><div class="notice" style="margin-top:10px"><b>Catatan penugasan Kasi/Subkoor</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.assignment_note||'-')+'</div></div>'+followup+approvalNotes+'<div class="small" style="margin:10px 0"><b>Jenjang:</b> '+esc(sub.scope_level||'-')+' • <b>Status:</b> '+esc(FLOW[sub.workflow_state]||sub.workflow_state||'-')+' • <b>Diajukan:</b> '+fmt(sub.submitted_at)+'</div>'+responseEditor+verifyEditor+'<h3>Berkas Pendukung</h3>'+files+'</div>';
+  const resetDraftEditor=(sub.service_type==='DIKLAT_KS_BCKS'&&sub.workflow_state!=='DRAFT')
+   ?'<div class="card" style="margin:12px 0;background:#fff8f1;border:1px solid #f2c7a5"><div class="label">KONTROL STATUS PESERTA</div><div class="small" style="margin:5px 0 9px">Sebagai verifikator yang ditugaskan, Anda dapat menurunkan peserta kembali ke <b>DRAFT</b>, termasuk setelah peserta naik level. Riwayat lama tetap tercatat.</div><button class="btn soft" onclick="staffResetKsToDraft(\''+sub.id+'\')">↩ Turunkan ke Draft</button></div>'
+   :'';
+  m.innerHTML='<div class="card" style="width:min(820px,100%);max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="label">ISI USULAN GTK</div><h3 style="margin:3px 0">'+esc(sub.title||labelService(sub.service_type))+'</h3><div class="small">'+esc(pr.data?.full_name||'-')+' • '+esc(pr.data?.unit||'-')+'</div></div><button class="btn soft" onclick="document.getElementById(\'staffSubmissionDetailModal\')?.remove()">✕</button></div><div class="info" style="margin-top:12px"><b>Maksud/Keterangan GTK</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.description||'-')+'</div></div><div class="notice" style="margin-top:10px"><b>Catatan penugasan Kasi/Subkoor</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.assignment_note||'-')+'</div></div>'+followup+approvalNotes+'<div class="small" style="margin:10px 0"><b>Jenjang:</b> '+esc(sub.scope_level||'-')+' • <b>Status:</b> '+esc(FLOW[sub.workflow_state]||sub.workflow_state||'-')+' • <b>Diajukan:</b> '+fmt(sub.submitted_at)+'</div>'+responseEditor+verifyEditor+resetDraftEditor+'<h3>Berkas Pendukung</h3>'+files+'</div>';
   document.body.appendChild(m);
  }catch(e){alert(e.message||String(e))}
+};
+window.staffResetKsToDraft=async id=>{
+ const reason=(prompt('Alasan menurunkan peserta ke DRAFT (wajib):')||'').trim();
+ if(!reason)return;
+ if(!confirm('Turunkan peserta ini ke DRAFT?\n\nPeserta dapat kembali mengedit biodata dan berkas, lalu harus mengajukan ulang. Riwayat sebelumnya tetap tersimpan.'))return;
+ const {error}=await sb.rpc('ks_bcks_reset_to_draft',{p_submission_id:id,p_note:reason});
+ if(error){alert(error.message);return}
+ document.getElementById('staffSubmissionDetailModal')?.remove();
+ alert('Peserta berhasil diturunkan ke DRAFT.');
+ await renderStaffServices();
 };
 window.staffSaveResponse=async id=>{
  const msg=$('staffResponseMsg'),text=String($('staffResponseText')?.value||'').trim();
@@ -136,5 +150,5 @@ window.showTab=async function(id){
  return r;
 };
 if(document.querySelector('#services.active'))await renderStaffServices();
-window.__simantabStaffAssignedServices={version:7,verifyActionInDetail:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
+window.__simantabStaffAssignedServices={version:8,verifyActionInDetail:true,resetAssignedKsToDraft:true,resetAfterLevelUp:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
 })();
