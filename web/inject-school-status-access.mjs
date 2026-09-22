@@ -28,14 +28,14 @@ code=code
 // Hentikan renderer lama Kebutuhan GTK Riil agar tidak menimpa core V11.
 const oldShowNeeds="}else if(id==='needs'){await wait(120);await renderNegeriNeeds()}return r};";
 const newShowNeeds="}return r};";
-if(!code.includes(oldShowNeeds))throw new Error('Anchor override needs pada showTab tidak ditemukan.');
-code=code.replace(oldShowNeeds,newShowNeeds);
+if(code.includes(oldShowNeeds))code=code.replace(oldShowNeeds,newShowNeeds);
 
 const oldRefreshNeeds="}else if($('needs')?.classList.contains('active'))await renderNegeriNeeds();return r};";
 const newRefreshNeeds="}return r};";
-if(!code.includes(oldRefreshNeeds))throw new Error('Anchor override needs pada refreshAll tidak ditemukan.');
-code=code.replace(oldRefreshNeeds,newRefreshNeeds);
-code=code.replace("window.__simantabSchoolStatusAccess={version:1,","window.__simantabSchoolStatusAccess={version:3,needsRenderer:'core-v11',");
+if(code.includes(oldRefreshNeeds))code=code.replace(oldRefreshNeeds,newRefreshNeeds);
+if(code.includes("else if(id==='needs'){await wait(120);await renderNegeriNeeds()}")||code.includes("else if($('needs')?.classList.contains('active'))await renderNegeriNeeds()"))throw new Error('Renderer legacy needs masih aktif.');
+code=code.replace("window.__simantabSchoolStatusAccess={version:1,","window.__simantabSchoolStatusAccess={version:6,needsRenderer:'gtk-needs-progress-v32',legacyNeedsOverrideDisabled:true,");
+code=code.replace("window.__simantabSchoolStatusAccess={version:5,","window.__simantabSchoolStatusAccess={version:6,needsRenderer:'gtk-needs-progress-v32',legacyNeedsOverrideDisabled:true,");
 
 // Patch modul PTK lama: pada KS negeri jangan tampilkan kartu error PTK Swasta sama sekali.
 const ptkPath='.vercel/output/static/ptk-swasta-enhancement.js';
@@ -49,7 +49,7 @@ await fs.writeFile(ptkPath,ptkCode);
 html=html.replace(/<script type="module" src="\.\/school-status-access-v1\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-html=html.slice(0,bodyClose)+`<script type="module" src="./${moduleName}?v=4"></script>\n`+html.slice(bodyClose);
+html=html.slice(0,bodyClose)+`<script type="module" src="./${moduleName}?v=6"></script>\n`+html.slice(bodyClose);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({schoolStatusAccess:true,version:4,negeriNeedsOnly:true,needsRenderer:'gtk-needs-progress-v11',legacyNeedsOverrideDisabled:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true}));
+console.log(JSON.stringify({schoolStatusAccess:true,version:6,negeriNeedsOnly:true,needsRenderer:'gtk-needs-progress-v32',legacyNeedsOverrideDisabled:true,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true}));
