@@ -161,6 +161,11 @@ const staffMinimalNavCode=await fs.readFile(new URL(`./${staffMinimalNavFile}`,i
 if(!/SIMANTAB_STAFF_MINIMAL_NAV_V1/.test(staffMinimalNavCode))throw new Error('Staff minimal navigation v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,staffMinimalNavFile),staffMinimalNavCode);
 
+const gtkStudentColumnFile='gtk-needs-student-column-final.js';
+const gtkStudentColumnCode=await fs.readFile(new URL(`./${gtkStudentColumnFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_GTK_STUDENT_COLUMN_FINAL_V1/.test(gtkStudentColumnCode))throw new Error('GTK student final column v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,gtkStudentColumnFile),gtkStudentColumnCode);
+
 const gtkRedistributionFile='gtk-redistribution-analysis.js';
 const gtkRedistributionCode=await fs.readFile(new URL(`./${gtkRedistributionFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V3/.test(gtkRedistributionCode))throw new Error('GTK redistribution analysis v1 tidak valid.');
@@ -215,7 +220,8 @@ const modules=[
  ['premium-dashboard-theme.js',3],
  ['dashboard-order-fix.js',2],
  ['login-password-toggle.js',2],
- ['gtk-needs-progress.js',30],
+ ['gtk-needs-progress.js',31],
+ ['gtk-needs-student-column-final.js',1],
  ['gtk-redistribution-analysis.js',3],
  ['school-status-access-v1.js',4],
  ['activity-participant-import.js',1],
@@ -252,4 +258,4 @@ for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).l
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
 if(html.split(`./${classicFile}?v=5`).length-1!==1)throw new Error('Classic login rescue v5 harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsCanonicalVersion:25,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV1:true,leaderCoreImmediateDashboard:true,sessionBoundaryHardening:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,missingDinasAccountsButton:true,newDinasAccountsButton:true,newWartonoAccountButton:true,ksAdminDirectKabid:true,superAdminKsResetDraft:true,diklatParticipantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,performanceAchievementV1:true,performanceDownloads:['PDF','CSV'],gtkRedistributionAnalysisV3:true,redistributionDownloads:['PDF','CSV'],verifyActionLabel:true,staffVerifyActionInDetail:true,globalRequesterSearch:true,gtkAiVerifierPilot:false,gtkAiVerifierDisabled:true,validClosingTags:true}));
+console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsCanonicalVersion:25,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV1:true,leaderCoreImmediateDashboard:true,sessionBoundaryHardening:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV5:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,missingDinasAccountsButton:true,newDinasAccountsButton:true,newWartonoAccountButton:true,ksAdminDirectKabid:true,superAdminKsResetDraft:true,diklatParticipantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,performanceAchievementV1:true,performanceDownloads:['PDF','CSV'],gtkStudentColumnFinalV1:true,gtkRedistributionAnalysisV3:true,redistributionDownloads:['PDF','CSV'],verifyActionLabel:true,staffVerifyActionInDetail:true,globalRequesterSearch:true,gtkAiVerifierPilot:false,gtkAiVerifierDisabled:true,validClosingTags:true}));
