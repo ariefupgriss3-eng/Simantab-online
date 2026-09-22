@@ -1,6 +1,7 @@
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V1 */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V2 */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V3 */
+/* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V4_EDU_UNITS_BATANG */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const $=id=>document.getElementById(id);
@@ -12,6 +13,13 @@ const SNAPSHOT={
  snapshot_at:'19 September 2026'
 };
 const num=v=>Number(v)||0, fmt=v=>new Intl.NumberFormat('id-ID').format(num(v));
+const EDU_BATANG={
+ snapshot_at:'22 September 2026',total:1194,
+ formal:{total:854,negeri:509,swasta:345,types:{TK:{total:323,negeri:13,swasta:310},SD:{total:455,negeri:445,swasta:10},SMP:{total:76,negeri:51,swasta:25}}},
+ nonformal:{total:340,negeri:1,swasta:339,types:{KB:{total:214,negeri:0,swasta:214},TPA:{total:17,negeri:0,swasta:17},SPS:{total:35,negeri:0,swasta:35},'Kursus/LKP':{total:30,negeri:0,swasta:30},TBM:{total:0,negeri:0,swasta:0},PKBM:{total:23,negeri:0,swasta:23},SKB:{total:1,negeri:1,swasta:0},Ponpes:{total:20,negeri:0,swasta:20}}},
+ status:{negeri:510,swasta:684},
+ source:'Formal: master aktif SIMANTAB. Nonformal: Referensi Data Kemendikdasmen.'
+};
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const role=()=>String(window.__simantabProfile?.role||'');
 const isLeader=()=>['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(role());
@@ -41,7 +49,20 @@ function style(){
  #dashboardBody .lad-state{display:grid;grid-template-columns:1fr auto;gap:6px;padding:8px 0;border-bottom:1px solid #eef2f6;font-size:11px}
  #dashboardBody .lad-state:last-child{border-bottom:0}
  #dashboardBody .lad-note{grid-column:span 12;background:#f8fbff;border:1px solid #dce8f5;border-radius:12px;padding:10px 12px;font-size:10px;color:#58708a}
- @media(max-width:760px){#dashboardBody .lad-card,#dashboardBody .lad-wide{grid-column:span 12}}
+ #dashboardBody .lad-edu{grid-column:span 12;background:#fff;border:1px solid var(--line,#dde6ef);border-radius:16px;padding:14px}
+ #dashboardBody .lad-edu-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
+ #dashboardBody .lad-edu-total{font-size:29px;font-weight:950;color:#0f3f76}
+ #dashboardBody .lad-edu-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+ #dashboardBody .lad-edu-box{border:1px solid #e2e8f0;border-radius:13px;padding:11px;background:#fbfdff}
+ #dashboardBody .lad-edu-box h4{margin:0 0 7px;color:#173b60}
+ #dashboardBody .lad-edu-row{display:grid;grid-template-columns:1fr auto auto auto;gap:7px;padding:5px 0;border-bottom:1px solid #eef2f6;font-size:10px}
+ #dashboardBody .lad-edu-row:last-child{border-bottom:0}
+ #dashboardBody .lad-edu-n{color:#0f5ca8;font-weight:800}.lad-edu-s{color:#8a5a00;font-weight:800}
+ #dashboardBody .lad-edu-pills{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}
+ #dashboardBody .lad-edu-pill{padding:6px 9px;border-radius:999px;background:#edf5ff;color:#175ea7;font-size:9px;font-weight:900}
+ #dashboardBody .lad-edu-pill.sw{background:#fff5df;color:#8a5a00}
+ #dashboardBody .lad-edu-source{margin-top:8px;font-size:9px;color:#64748b;line-height:1.4}
+ @media(max-width:760px){#dashboardBody .lad-card,#dashboardBody .lad-wide{grid-column:span 12}#dashboardBody .lad-edu-grid{grid-template-columns:1fr}}
  `;document.head.appendChild(s);
 }
 function levelRows(levelObj){
@@ -59,6 +80,11 @@ function workflowRows(w){
  ];
  return rows.map(([l,v])=>`<div class="lad-state"><span>${esc(l)}</span><b>${fmt(v)}</b></div>`).join('');
 }
+function eduPanel(){
+ const e=EDU_BATANG;
+ const rows=o=>Object.entries(o.types).map(([name,x])=>`<div class="lad-edu-row"><b>${esc(name)}</b><span>${fmt(x.total)}</span><span class="lad-edu-n">N ${fmt(x.negeri)}</span><span class="lad-edu-s">S ${fmt(x.swasta)}</span></div>`).join('');
+ return `<div class="lad-edu"><div class="lad-edu-head"><div><div class="lad-label">SATUAN PENDIDIKAN SE-KABUPATEN BATANG</div><div class="lad-edu-total">${fmt(e.total)}</div><div class="lad-sub">Formal ${fmt(e.formal.total)} • Nonformal ${fmt(e.nonformal.total)}</div></div><div class="lad-edu-pills"><span class="lad-edu-pill">Negeri ${fmt(e.status.negeri)}</span><span class="lad-edu-pill sw">Swasta ${fmt(e.status.swasta)}</span></div></div><div class="lad-edu-grid"><div class="lad-edu-box"><h4>🏫 Formal — ${fmt(e.formal.total)}</h4>${rows(e.formal)}<div class="lad-edu-pills"><span class="lad-edu-pill">Negeri ${fmt(e.formal.negeri)}</span><span class="lad-edu-pill sw">Swasta ${fmt(e.formal.swasta)}</span></div></div><div class="lad-edu-box"><h4>🎓 Nonformal — ${fmt(e.nonformal.total)}</h4>${rows(e.nonformal)}<div class="lad-edu-pills"><span class="lad-edu-pill">Negeri ${fmt(e.nonformal.negeri)}</span><span class="lad-edu-pill sw">Swasta ${fmt(e.nonformal.swasta)}</span></div></div></div><div class="lad-edu-source"><b>Snapshot ${esc(e.snapshot_at)}.</b> ${esc(e.source)} Tidak memasukkan SMA/SMK/MA/MTs/MI/RA.</div></div>`;
+}
 function render(data=SNAPSHOT,live=false){
  if(!isLeader())return;
  const body=$('dashboardBody'); if(!body)return;
@@ -71,7 +97,8 @@ function render(data=SNAPSHOT,live=false){
  body.innerHTML=`<div class="lad-grid">
   <div class="lad-hero"><h2>Command Center Ketenagaan</h2><p>${esc(roleTitle())} • agregat TK/PAUD, SD, SMP, layanan kepegawaian, dan agenda bidang.</p></div>
   <div class="lad-note"><b>${live?'● Data live':'○ Data ringkasan aman'}</b> • ${live?'tersinkron dengan server':'snapshot terakhir valid '+esc(data.snapshot_at||SNAPSHOT.snapshot_at)}</div>
-  <div class="lad-card"><div class="lad-label">Total Sekolah</div><div class="lad-value">${fmt(sc.total)}</div><div class="lad-sub">TK/PAUD ${fmt(sc.tk)} • SD ${fmt(sc.sd)} • SMP ${fmt(sc.smp)} • PNF ${fmt(sc.pnf)}</div></div>
+  ${eduPanel()}
+  <div class="lad-card"><div class="lad-label">Total Satuan Pendidikan</div><div class="lad-value">${fmt(EDU_BATANG.total)}</div><div class="lad-sub">Formal ${fmt(EDU_BATANG.formal.total)} • Nonformal ${fmt(EDU_BATANG.nonformal.total)} • N ${fmt(EDU_BATANG.status.negeri)} • S ${fmt(EDU_BATANG.status.swasta)}</div></div>
   <div class="lad-card"><div class="lad-label">GTK Dapodik</div><div class="lad-value">${fmt(num(sc.teachers)+num(sc.staff))}</div><div class="lad-sub">Guru ${fmt(sc.teachers)} • Tendik ${fmt(sc.staff)}</div></div>
   <div class="lad-card"><div class="lad-label">Kebutuhan GTK Riil</div><div class="lad-value">${fmt(n.schools)} sekolah</div><div class="lad-sub">${fmt(n.rows)} entri • Gap Riil ${fmt(n.gap_riil)} • Gap Data ${fmt(n.gap_data)} • Cakupan ${cov}%</div></div>
   <div class="lad-card click" onclick="window.showTab&&window.showTab('kadinMonitoring')"><div class="lad-label">Usulan Aktif</div><div class="lad-value">${fmt(w.active)}</div><div class="lad-sub">Klik untuk melihat agregat dan rincian layanan</div></div>
@@ -89,5 +116,5 @@ function ensure(){ return; }
 for(let i=0;i<240&&!window.__simantabProfile;i++)await wait(50);
 if(!isLeader())return;
 render(SNAPSHOT,false);
-window.__simantabLeaderDashboardAuthoritative={version:3,render,syncLive,stable:true,verifiedNeedsOnly:true};
+window.__simantabLeaderDashboardAuthoritative={version:4,render,syncLive,stable:true,verifiedNeedsOnly:true,eduUnitsBatang:true};
 })();
