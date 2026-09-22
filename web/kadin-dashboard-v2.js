@@ -40,6 +40,7 @@ const EDU_BATANG={
  },
  nonformal:{
   total:340,negeri:1,swasta:339,
+  groups:{'PAUD Nonformal':{total:266,negeri:0,swasta:266},'DIKMAS/PNF':{total:74,negeri:1,swasta:73}},
   types:{
    KB:{total:214,negeri:0,swasta:214},
    TPA:{total:17,negeri:0,swasta:17},
@@ -82,7 +83,7 @@ function eduUnitPanel(){
   <div class="kedu-head"><div><div class="label">SATUAN PENDIDIKAN SE-KABUPATEN BATANG</div><div class="kedu-total">${fmt(e.total)}</div><div class="ks">Formal ${fmt(e.formal.total)} • Nonformal ${fmt(e.nonformal.total)}</div></div><div class="kedu-status"><span class="kedu-pill">Negeri ${fmt(e.status.negeri)}</span><span class="kedu-pill sw">Swasta ${fmt(e.status.swasta)}</span></div></div>
   <div class="kedu-grid">
    <div class="kedu-box"><h4>🏫 Formal — ${fmt(e.formal.total)}</h4>${rows(e.formal)}<div class="kedu-status"><span class="kedu-pill">Negeri ${fmt(e.formal.negeri)}</span><span class="kedu-pill sw">Swasta ${fmt(e.formal.swasta)}</span></div></div>
-   <div class="kedu-box"><h4>🎓 Nonformal — ${fmt(e.nonformal.total)}</h4>${rows(e.nonformal)}<div class="kedu-status"><span class="kedu-pill">Negeri ${fmt(e.nonformal.negeri)}</span><span class="kedu-pill sw">Swasta ${fmt(e.nonformal.swasta)}</span></div></div>
+   <div class="kedu-box"><h4>🎓 Nonformal — ${fmt(e.nonformal.total)}</h4><div class="ks" style="margin-bottom:7px"><b>PAUD Nonformal ${fmt(e.nonformal.groups['PAUD Nonformal'].total)}</b> (KB, TPA, SPS) • <b>DIKMAS/PNF ${fmt(e.nonformal.groups['DIKMAS/PNF'].total)}</b></div>${rows(e.nonformal)}<div class="kedu-status"><span class="kedu-pill">Negeri ${fmt(e.nonformal.negeri)}</span><span class="kedu-pill sw">Swasta ${fmt(e.nonformal.swasta)}</span></div></div>
   </div>
   <div class="kedu-source"><b>Snapshot ${esc(e.snapshot_at)}.</b> ${esc(e.source)} Total ini khusus cakupan layanan pendidikan Kabupaten Batang yang ditampilkan SIMANTAB (TK, SD, SMP serta KB/TPA/SPS dan DIKMAS/PNF); tidak memasukkan SMA/SMK/MA/MTs/MI/RA.</div>
  </div>`;
