@@ -13,6 +13,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V14_PARTICIPANT_SEARCH */
 /* SIMANTAB_DIKLAT_KS_BCKS_V15_PAKTA_UPLOAD_FALLBACK */
 /* SIMANTAB_DIKLAT_KS_BCKS_V16_FIXED_KABID_COMMENT */
+/* SIMANTAB_DIKLAT_KS_BCKS_V17_PERSIST_KABID_APPROVAL */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -224,7 +225,7 @@ window.ksbSaveBulkAssign=async()=>{
 async function leadershipDiklatData(){
  const [s,pf]=await Promise.all([
   sb.from('submissions')
-   .select('id,user_id,service_type,title,scope_level,workflow_state,status,updated_at,submitted_at')
+   .select('id,user_id,service_type,title,scope_level,workflow_state,status,updated_at,submitted_at,kabid_approved_by,kabid_approved_at,kabid_approval_note')
    .eq('service_type','DIKLAT_KS_BCKS')
    .order('submitted_at',{ascending:false})
    .limit(1000),
@@ -250,13 +251,22 @@ function leaderKsbSummary(rows){
 }
 
 const KABID_SUCCESS_NOTE='Selamat naik Level Bpk/Ibu Peserta Diklat, Sukses👍🙏';
-function kabidKsbAction(s){
- if(!isKabid()||s.workflow_state!=='MENUNGGU_PERSETUJUAN_KABID')return'';
- return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+function kabidKsbAction(s,names){
+ if(!isKabid())return'';
+ if(s.workflow_state==='MENUNGGU_PERSETUJUAN_KABID')return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
   <button class="btn" onclick="ksbKabidApprove('${s.id}',true)">✓ Setujui</button>
   <button class="btn secondary" onclick="ksbKabidApprove('${s.id}',false)">↺ Kembalikan</button>
   <div class="small" style="width:100%;margin-top:4px"><b>Komentar persetujuan:</b> ${esc(KABID_SUCCESS_NOTE)}</div>
  </div>`;
+ if(s.kabid_approved_at){
+  const approver=names?.get(s.kabid_approved_by)||{};
+  const note=String(s.kabid_approval_note||'').trim();
+  return `<div style="min-width:190px"><div style="font-weight:900;color:#166534">✅ Disetujui Kabid</div>${note?`<div class="small" style="margin-top:4px"><b>Komentar:</b> ${esc(note)}</div>`:''}<div class="small" style="margin-top:4px">${esc(approver.full_name||'Kabid Ketenagaan')} • ${esc(fmtDateTime(s.kabid_approved_at))}</div></div>`;
+ }
+ if(s.status==='ADMIN_APPROVED'||s.workflow_state==='SELESAI'){
+  return '<div style="font-weight:900;color:#166534">✅ Disetujui Kabid</div><div class="small">Riwayat lama — catatan persetujuan belum tersimpan.</div>';
+ }
+ return'';
 }
 window.ksbKabidApprove=async(id,approve)=>{
  const note=approve?KABID_SUCCESS_NOTE:(prompt('Alasan dikembalikan ke staf/admin verifikator:')||'');
@@ -281,7 +291,7 @@ async function renderLeadershipDiklat(){
    ${isKabidView?'':'<div style="margin-top:10px"><button class="btn soft" onclick="showTab(\'leadershipDirections\')">📝 Buka Arahan Pimpinan</button></div>'}
   </div>
   ${leaderKsbSummary(rows)}
-  <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Status / Proses</th>${isKabidView?'<th>Persetujuan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}</td>${isKabidView?`<td>${kabidKsbAction(s)||'—'}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
+  <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Status / Proses</th>${isKabidView?'<th>Persetujuan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}</td>${isKabidView?`<td>${kabidKsbAction(s,names)||'—'}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 async function reviewerData(){const {data,error}=await sb.from('ks_bcks_submission_details').select('*').order('updated_at',{ascending:false});if(error)throw error;return data||[]}
@@ -326,5 +336,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:16,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:17,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
