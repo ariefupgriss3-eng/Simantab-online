@@ -16,6 +16,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V17_PERSIST_KABID_APPROVAL */
 /* SIMANTAB_DIKLAT_KS_BCKS_V18_TOTAL_PENGUSUL */
 /* SIMANTAB_DIKLAT_KS_BCKS_V19_TOTAL_PENGUSUL_AKTIF */
+/* SIMANTAB_DIKLAT_KS_BCKS_V20_MULTI_ROLE_RESET_DRAFT */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -51,6 +52,20 @@ const isApplicant=()=>['GTK','KEPALA_SEKOLAH'].includes(profile().role);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmtDate=v=>v?new Date(v).toLocaleDateString('id-ID'):'-';
 const fmtDateTime=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
+const canResetDraftRole=()=>['SUPER_ADMIN','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(profile().role);
+function resetDraftButton(id,state,label='↩ Turunkan ke Draft'){
+ if(state==='DRAFT')return '';
+ return `<button class="btn secondary" style="margin-top:6px" onclick="ksbResetToDraft('${id}')">${label}</button>`;
+}
+window.ksbResetToDraft=async id=>{
+ const reason=(prompt('Alasan menurunkan peserta ke DRAFT (wajib):')||'').trim();
+ if(!reason)return;
+ if(!confirm('Turunkan peserta ini ke DRAFT?\n\nLevel akan kembali ke Seleksi Administrasi. Peserta dapat mengedit biodata dan mengganti/menghapus berkas lalu harus mengajukan ulang. Riwayat sebelumnya tetap tersimpan.'))return;
+ const {error}=await sb.rpc('ks_bcks_reset_to_draft',{p_submission_id:id,p_note:reason});
+ if(error){alert(error.message);return}
+ toast('Peserta berhasil diturunkan ke DRAFT.');
+ await render();
+};
 
 function ensureKsbAssignStyle(){
  if($('ksbAssignStyle'))return;
@@ -158,8 +173,9 @@ function coordKsbSummary(rows){
  return `<div class="grid" style="margin-bottom:12px">${defs.map(([st,label])=>`<div class="card s4"><div class="label">${esc(label)}</div><div class="metric">${rows.filter(x=>x.workflow_state===st).length}</div></div>`).join('')}</div>`;
 }
 function coordKsbAction(s){
- if(s.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR')return `<button class="btn" onclick="ksbCoordOpenAssign('${s.id}')">👤 Bagi Tugas</button>`;
- return '';
+ const reset=resetDraftButton(s.id,s.workflow_state);
+ if(s.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR')return `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" onclick="ksbCoordOpenAssign('${s.id}')">👤 Bagi Tugas</button>${reset}</div>`;
+ return reset;
 }
 async function renderCoordinatorDiklat(){
  const body=$('diklatKsBcksBody');if(!body)return;
@@ -259,20 +275,22 @@ function leaderKsbSummary(rows){
 const KABID_SUCCESS_NOTE='Selamat naik Level Bpk/Ibu Peserta Diklat, Sukses👍🙏';
 function kabidKsbAction(s,names){
  if(!isKabid())return'';
+ const reset=resetDraftButton(s.id,s.workflow_state);
  if(s.workflow_state==='MENUNGGU_PERSETUJUAN_KABID')return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
   <button class="btn" onclick="ksbKabidApprove('${s.id}',true)">✓ Setujui</button>
   <button class="btn secondary" onclick="ksbKabidApprove('${s.id}',false)">↺ Kembalikan</button>
   <div class="small" style="width:100%;margin-top:4px"><b>Komentar persetujuan:</b> ${esc(KABID_SUCCESS_NOTE)}</div>
+  ${reset}
  </div>`;
  if(s.kabid_approved_at){
   const approver=names?.get(s.kabid_approved_by)||{};
   const note=String(s.kabid_approval_note||'').trim();
-  return `<div style="min-width:190px"><div style="font-weight:900;color:#166534">✅ Disetujui Kabid</div>${note?`<div class="small" style="margin-top:4px"><b>Komentar:</b> ${esc(note)}</div>`:''}<div class="small" style="margin-top:4px">${esc(approver.full_name||'Kabid Ketenagaan')} • ${esc(fmtDateTime(s.kabid_approved_at))}</div></div>`;
+  return `<div style="min-width:190px"><div style="font-weight:900;color:#166534">✅ Disetujui Kabid</div>${note?`<div class="small" style="margin-top:4px"><b>Komentar:</b> ${esc(note)}</div>`:''}<div class="small" style="margin-top:4px">${esc(approver.full_name||'Kabid Ketenagaan')} • ${esc(fmtDateTime(s.kabid_approved_at))}</div>${reset}</div>`;
  }
  if(s.status==='ADMIN_APPROVED'||s.workflow_state==='SELESAI'){
-  return '<div style="font-weight:900;color:#166534">✅ Disetujui Kabid</div><div class="small">Riwayat lama — catatan persetujuan belum tersimpan.</div>';
+  return '<div style="font-weight:900;color:#166534">✅ Disetujui Kabid</div><div class="small">Riwayat lama — catatan persetujuan belum tersimpan.</div>'+reset;
  }
- return'';
+ return reset;
 }
 window.ksbKabidApprove=async(id,approve)=>{
  const note=approve?KABID_SUCCESS_NOTE:(prompt('Alasan dikembalikan ke staf/admin verifikator:')||'');
@@ -303,8 +321,8 @@ async function renderLeadershipDiklat(){
 async function reviewerData(){const {data,error}=await sb.from('ks_bcks_submission_details').select('*').order('updated_at',{ascending:false});if(error)throw error;return data||[]}
 function certSummary(d){return `<div class="info" style="margin-top:10px"><b>Data Sertifikat dari Peserta</b><br>Lembaga/Pihak Penerbit: ${esc(d.sertifikat_penerbit||'-')}<br>Nomor: ${esc(d.sertifikat_nomor||'-')}<br>Tanggal: ${fmtDate(d.sertifikat_tanggal)}${d.sertifikat_submitted_at?`<br>Diajukan: ${fmtDateTime(d.sertifikat_submitted_at)}`:''}</div>`}
 function superAdminDraftAction(d){
- if(!isSuperAdmin()||d.workflow_stage!=='ADMINISTRASI'||d.admin_status==='DRAFT')return '';
- return `<div style="margin-top:10px;padding:10px;border:1px solid #f2c7a5;border-radius:12px;background:#fff8f1"><div class="small" style="margin-bottom:7px"><b>Kontrol Super Admin:</b> turunkan peserta ke Draft agar biodata dan berkas dapat diedit/diganti kembali.</div><button class="btn secondary" data-ksb-action="reset-draft" data-id="${d.submission_id}">↩ Turunkan ke Draft</button></div>`;
+ if(!isSuperAdmin()||d.admin_status==='DRAFT')return '';
+ return `<div style="margin-top:10px;padding:10px;border:1px solid #f2c7a5;border-radius:12px;background:#fff8f1"><div class="small" style="margin-bottom:7px"><b>Kontrol Super Admin:</b> dapat menurunkan ke Draft dari level mana pun agar biodata dan berkas dapat diedit/diganti kembali.</div><button class="btn secondary" data-ksb-action="reset-draft" data-id="${d.submission_id}">↩ Turunkan ke Draft</button></div>`;
 }
 function reviewerActions(d){
  const reset=superAdminDraftAction(d);
@@ -314,12 +332,12 @@ function reviewerActions(d){
    :'Berkas telah diverifikasi staf/admin dan langsung menunggu persetujuan Kabid Ketenagaan.';
   return `<div class="info"><b>Persetujuan Administrasi</b><br>${esc(msg)}</div><button class="btn soft" style="margin-top:8px" onclick="showTab('monitoring')">Buka Workflow Monitoring</button>${reset}`;
  }
- if(d.workflow_stage==='SUBSTANSI')return `<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Seleksi Substansi"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="sub-ok" data-id="${d.submission_id}">Lulus Substansi</button><button class="btn secondary" data-ksb-action="sub-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
- if(d.workflow_stage==='DIKLAT')return `<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Diklat"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="dik-ok" data-id="${d.submission_id}">Lulus Diklat</button><button class="btn secondary" data-ksb-action="dik-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
- if(d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status==='DIAJUKAN')return `${certSummary(d)}<textarea id="note-${d.submission_id}" placeholder="Catatan verifikasi Admin KSPS (opsional)"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="cert-ok" data-id="${d.submission_id}">Approve Data Sertifikat</button><button class="btn secondary" data-ksb-action="cert-no" data-id="${d.submission_id}">Tolak/Perbaiki</button></div>`;
- if(d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status==='TERCATAT')return `${certSummary(d)}<div class="small" style="margin-top:8px">✅ Sudah di-approve Admin KSPS.</div>`;
- if(d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status==='DITOLAK')return `${certSummary(d)}<div class="small" style="margin-top:8px">Menunggu peserta memperbaiki dan mengajukan ulang data sertifikat.</div>`;
- if(d.workflow_stage==='SERTIFIKAT')return `<div class="small">Menunggu KS/peserta Diklat mengisi dan mengajukan data sertifikat.</div>`;
+ if(d.workflow_stage==='SUBSTANSI')return reset+`<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Seleksi Substansi"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="sub-ok" data-id="${d.submission_id}">Lulus Substansi</button><button class="btn secondary" data-ksb-action="sub-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
+ if(d.workflow_stage==='DIKLAT')return reset+`<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Diklat"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="dik-ok" data-id="${d.submission_id}">Lulus Diklat</button><button class="btn secondary" data-ksb-action="dik-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
+ if(d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status==='DIAJUKAN')return reset+`${certSummary(d)}<textarea id="note-${d.submission_id}" placeholder="Catatan verifikasi Admin KSPS (opsional)"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="cert-ok" data-id="${d.submission_id}">Approve Data Sertifikat</button><button class="btn secondary" data-ksb-action="cert-no" data-id="${d.submission_id}">Tolak/Perbaiki</button></div>`;
+ if(d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status==='TERCATAT')return reset+`${certSummary(d)}<div class="small" style="margin-top:8px">✅ Sudah di-approve Admin KSPS.</div>`;
+ if(d.workflow_stage==='SERTIFIKAT'&&d.sertifikat_status==='DITOLAK')return reset+`${certSummary(d)}<div class="small" style="margin-top:8px">Menunggu peserta memperbaiki dan mengajukan ulang data sertifikat.</div>`;
+ if(d.workflow_stage==='SERTIFIKAT')return reset+`<div class="small">Menunggu KS/peserta Diklat mengisi dan mengajukan data sertifikat.</div>`;
  if(d.workflow_stage==='ADMINISTRASI'&&reset)return reset;
  return `<div class="small">Tidak ada aksi pada status ini.</div>`;
 }
@@ -328,11 +346,11 @@ async function loadReviewerDocs(id){const box=$(`docs-${id}`);if(!box)return;con
 const noteFor=id=>$(`note-${id}`)?.value?.trim()||null;
 function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b=>b.addEventListener('click',async()=>{const id=b.dataset.id,a=b.dataset.ksbAction;try{
  if(a==='reset-draft'){
-  if(!isSuperAdmin())throw new Error('Hanya Super Admin yang dapat menurunkan ke Draft.');
+  if(!isSuperAdmin())throw new Error('Akun ini tidak berwenang menurunkan ke Draft.');
   const reason=(prompt('Alasan menurunkan Seleksi Administrasi ke Draft (wajib):')||'').trim();
   if(!reason)return;
   if(!confirm('Turunkan peserta ini ke DRAFT?\n\nPeserta akan dapat mengedit biodata dan mengganti/menghapus berkas, lalu harus mengajukan ulang.'))return;
-  const {error}=await sb.rpc('ks_bcks_superadmin_reset_to_draft',{p_submission_id:id,p_note:reason});
+  const {error}=await sb.rpc('ks_bcks_reset_to_draft',{p_submission_id:id,p_note:reason});
   if(error)throw error;
   toast('Seleksi Administrasi berhasil diturunkan ke Draft.');
   await renderReviewer();
@@ -342,5 +360,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:19,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:20,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
