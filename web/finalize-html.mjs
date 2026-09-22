@@ -208,7 +208,7 @@ const modules=[
  ['korwil-dashboard-title.js',1],
  ['cuti-requirements.js',1],
  ['super-admin-merge-pengawas.js',1],
- ['diklat-ks-bcks.js',21],
+ ['diklat-ks-bcks.js',22],
  ['ui-branding-icons.js',3],
  ['kasim-role-label.js',1],
  ['login-developer-branding.js',1],
