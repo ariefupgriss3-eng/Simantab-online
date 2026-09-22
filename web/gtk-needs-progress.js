@@ -63,7 +63,8 @@ function curriculumDefinitions(level){
   ['GURU_SENI_PRAKARYA','Guru Seni, Budaya, dan Prakarya',0],
   ['GURU_MULOK','Guru Muatan Lokal (jika berdiri sendiri)',0],
   ['GURU_BK','Guru Bimbingan dan Konseling',0],
-  ['TAS','Tenaga Administrasi Sekolah',0]
+  ['TAS','Tenaga Administrasi Sekolah',0],
+  ['PENJAGA_SEKOLAH','Penjaga Sekolah',0]
  ];
  return[['KEPALA_SEKOLAH','Kepala Sekolah',1],['GTK','GTK',0],['TAS','Tenaga Administrasi Sekolah',0]]
 }
@@ -128,7 +129,7 @@ function mergeCurriculumRows(level,rows){
  }
  const keyOf=x=>{
   const code=String(x?.job_code||'').toUpperCase();
-  if(l==='SD'&&['PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ','OLO','PRAMU_BAKTI_PENJAGA'].includes(code))return'PENJAGA_SEKOLAH';
+  if(['SD','SMP'].includes(l)&&['PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ','OLO','PRAMU_BAKTI_PENJAGA'].includes(code))return'PENJAGA_SEKOLAH';
   return code;
  };
  const byCode=new Map(src.map(x=>[keyOf(x),x])),used=new Set(),out=[];
@@ -209,7 +210,7 @@ async function decorateOwnAbkRegulatif(){
  if(abkRegulatifBusy)return;
  const mode=roleMode();if(!['KS','GTK'].includes(mode))return;
  const table=$('simNeedsEditor'),npsn=clean(profile().school_npsn);if(!table||!npsn)return;
- if(table.dataset.abkRegulatif==='v1')return;
+ if(table.dataset.abkRegulatif==='v2')return;
  abkRegulatifBusy=true;
  try{
   const rows=await loadAbkRegulatif(npsn);if(!rows.length)return;
@@ -224,7 +225,7 @@ async function decorateOwnAbkRegulatif(){
     first.insertAdjacentHTML('beforeend',abkRuleDetail(hit));
    }
    if(hit.result_status==='OK'&&hit.calculated_abk!=null){
-    if(input){input.value=String(hit.calculated_abk);input.readOnly=true;input.title='ABK dihitung otomatis berdasarkan rule engine regulatif';input.style.background='#eef7ff';input.style.fontWeight='900'}
+    if(input){input.value=String(hit.calculated_abk);input.readOnly=true;input.title='ABK dihitung otomatis berdasarkan rule engine ABK';input.style.background='#eef7ff';input.style.fontWeight='900'}
     else if(abkCell){abkCell.innerHTML='<b>'+num(hit.calculated_abk)+'</b><div class="sim-needs-note">ABK regulatif</div>'}
    }else if(hit.result_status==='LOCAL_MANUAL'&&input){
     input.readOnly=false;input.title='Parameter lokal/manual';
@@ -235,10 +236,10 @@ async function decorateOwnAbkRegulatif(){
   if(panel&&!panel.querySelector('[data-abk-regulatif-info]')){
    const info=document.createElement('div');info.dataset.abkRegulatifInfo='1';info.className='sim-needs-scope';
    info.style.margin='9px 0';
-   info.innerHTML='<b>ABK Regulatif aktif</b><br>Guru dengan norma nasional dihitung otomatis dan dikunci. TAS, Penjaga, serta parameter lokal tetap diisi manual. GAP menunjukkan kekurangan saja: <b>max(ABK − tersedia, 0)</b>.';
+   info.innerHTML='<b>ABK Otomatis aktif</b><br>Guru dihitung dengan norma regulatif nasional. <b>TAS dan Penjaga dihitung otomatis sebagai parameter daerah berbasis Anjab/ABK</b>: siswa &lt; 200 → TAS 1; siswa ≥ 200 → ceil(rombel ÷ 2); Penjaga 1 per satuan pendidikan. Parameter lokal lain yang berstatus manual tetap dapat diisi. GAP menunjukkan kekurangan saja: <b>max(ABK − tersedia, 0)</b>.';
    const toolbar=panel.querySelector('.sim-needs-toolbar');toolbar?.insertAdjacentElement('beforebegin',info);
   }
-  table.dataset.abkRegulatif='v1';
+  table.dataset.abkRegulatif='v2';
  }finally{abkRegulatifBusy=false}
 }
 window.simGtkNeedsShowAbkRegulatif=async npsn=>{
@@ -252,7 +253,7 @@ window.simGtkNeedsShowAbkRegulatif=async npsn=>{
   const cur=x.current_abk==null?'-':num(x.current_abk),calc=x.calculated_abk==null?'Manual':num(x.calculated_abk);
   return '<tr><td><b>'+esc(x.position_name||x.job_code||'-')+'</b><div class="sim-needs-note">'+esc(x.job_code||'')+'</div>'+abkRuleBadge(x)+'</td><td>'+num(x.rombel_input)+'</td><td>'+cur+'</td><td><b>'+calc+'</b><div class="sim-needs-note">Raw '+esc(x.abk_raw??'-')+'</div></td><td>'+esc(x.gap_riil_calculated??'-')+'</td><td>'+esc(x.gap_data_calculated??'-')+'</td><td><div class="sim-needs-note">'+esc(x.formula_text||'-')+'<br>'+esc(x.legal_basis||'-')+'</div></td></tr>';
  }).join('');
- modal.innerHTML='<div style="width:min(1050px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.28)"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="sim-needs-note">PREVIEW DETERMINISTIK • bukan AI</div><h3 style="margin:3px 0;color:#0a3568">ABK Regulatif — '+esc(school.school_name||npsn)+'</h3><div class="sim-needs-note">Rombel '+num(school.rombel_total)+' • NPSN '+esc(npsn)+'</div></div><button class="sim-needs-action soft" onclick="document.getElementById(\'simAbkRegulatifModal\')?.remove()">✕ Tutup</button></div><div class="sim-needs-table" style="margin-top:12px"><table><thead><tr><th>Jabatan/Mapel</th><th>Rombel Layanan</th><th>ABK Tersimpan</th><th>ABK Regulatif</th><th>Gap Riil</th><th>Gap Data</th><th>Rumus & Dasar</th></tr></thead><tbody>'+body+'</tbody></table></div><div class="sim-needs-note" style="margin-top:9px">Gap Riil = max(ABK − ASN, 0). Gap Data = max(ABK − ASN − Non-ASN, 0). Parameter LOCAL tidak dihitung otomatis.</div></div>';
+ modal.innerHTML='<div style="width:min(1050px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.28)"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="sim-needs-note">PREVIEW DETERMINISTIK • bukan AI</div><h3 style="margin:3px 0;color:#0a3568">ABK Otomatis — '+esc(school.school_name||npsn)+'</h3><div class="sim-needs-note">Rombel '+num(school.rombel_total)+' • NPSN '+esc(npsn)+'</div></div><button class="sim-needs-action soft" onclick="document.getElementById(\'simAbkRegulatifModal\')?.remove()">✕ Tutup</button></div><div class="sim-needs-table" style="margin-top:12px"><table><thead><tr><th>Jabatan/Mapel</th><th>Rombel Layanan</th><th>ABK Tersimpan</th><th>ABK Otomatis</th><th>Gap Riil</th><th>Gap Data</th><th>Rumus & Dasar</th></tr></thead><tbody>'+body+'</tbody></table></div><div class="sim-needs-note" style="margin-top:9px">Gap Riil = max(ABK − ASN, 0). Gap Data = max(ABK − ASN − Non-ASN, 0). TAS/Penjaga dengan scope LOCAL dihitung otomatis sesuai parameter daerah; hanya rule LOCAL_MANUAL yang tetap manual.</div></div>';
  document.body.appendChild(modal);
 };
 function decorateScopedAbkButtons(){
@@ -261,7 +262,7 @@ function decorateScopedAbkButtons(){
  table.querySelectorAll('tbody>tr').forEach(tr=>{
   if(tr.querySelector('[data-abk-preview-npsn]'))return;
   const m=tr.textContent.match(/\b\d{8}\b/);if(!m)return;
-  const btn=document.createElement('button');btn.type='button';btn.className='sim-needs-action soft';btn.dataset.abkPreviewNpsn=m[0];btn.style.marginTop='6px';btn.textContent='ABK Regulatif';
+  const btn=document.createElement('button');btn.type='button';btn.className='sim-needs-action soft';btn.dataset.abkPreviewNpsn=m[0];btn.style.marginTop='6px';btn.textContent='ABK Otomatis';
   btn.onclick=e=>{e.preventDefault();e.stopPropagation();window.simGtkNeedsShowAbkRegulatif(m[0])};
   tr.children[0]?.appendChild(btn);
  });
