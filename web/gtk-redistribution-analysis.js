@@ -360,7 +360,7 @@ function downloadPdf(m){
  y=(doc.lastAutoTable?.finalY||y+20)+6;
  if(y>175){doc.addPage();y=14}
  doc.setFontSize(10);doc.text('Indikasi Redistribusi Donor → Penerima',14,y);
- doc.autoTable({startY:y+3,head:[['Skor','Tier','Wilayah','Jenjang','Jabatan','Donor','Kec. Donor','Penerima','Kec. Penerima','Jumlah']],body:m.redistribution.pairs.map(x=>[x.score,x.tier,x.priority,x.level,x.label,x.donorSchool,x.donorDistrict,x.targetSchool,x.targetDistrict,x.qty]),styles:{fontSize:6.2},headStyles:{fontSize:6.2}});
+ doc.autoTable({startY:y+3,head:[['Skor','Tier','Wilayah/Jarak','Jenjang','Jabatan','Donor','Penerima','Jumlah']],body:m.redistribution.pairs.map(x=>[x.score,x.tier,x.distanceBasis,x.level,x.label,x.donorSchool,x.targetSchool,x.qty]),styles:{fontSize:6.2},headStyles:{fontSize:6.2}});
  doc.setFontSize(7);doc.text('Catatan: indikasi redistribusi bukan keputusan mutasi; verifikasi individu, kompetensi, status kepegawaian, jarak, dan kebutuhan layanan tetap diperlukan.',14,200);
  doc.save('analisis_redistribusi_gtk_'+new Date().toISOString().slice(0,10)+'.pdf');
 }
@@ -400,8 +400,8 @@ async function saveLocation(){
 }
 function exportMissingLocations(){
  const rows=(currentModel?.data?.schools||[]).filter(s=>!hasCoord(s));
- const lines=[['NPSN','Nama Sekolah','Kecamatan','Latitude','Longitude','Google Maps URL'],...rows.map(s=>[s.npsn,s.school_name,s.kecamatan||'','','',''])];
- const blob=new Blob(['\ufeff'+lines.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+ const lines=[['NPSN','Latitude','Longitude','Google Maps URL','Nama Sekolah','Kecamatan'],...rows.map(s=>[s.npsn,'','', '',s.school_name,s.kecamatan||''])];
+ const blob=new Blob(['\ufeff'+lines.map(r=>r.map(v=>String(v??'').replaceAll(';',',')).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='template_lokasi_sekolah_belum_lengkap.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
 async function importLocationBulk(){
