@@ -2,6 +2,7 @@
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V2 */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V3 */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V4_EDU_UNITS_BATANG */
+/* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V5_COMPACT_EDU_DETAILS */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const $=id=>document.getElementById(id);
@@ -62,6 +63,11 @@ function style(){
  #dashboardBody .lad-edu-pill{padding:6px 9px;border-radius:999px;background:#edf5ff;color:#175ea7;font-size:9px;font-weight:900}
  #dashboardBody .lad-edu-pill.sw{background:#fff5df;color:#8a5a00}
  #dashboardBody .lad-edu-source{margin-top:8px;font-size:9px;color:#64748b;line-height:1.4}
+ #dashboardBody .lad-edu-modal{position:fixed;inset:0;z-index:9999;background:#0b1f338f;display:none;align-items:center;justify-content:center;padding:22px}
+ #dashboardBody .lad-edu-dialog{width:min(980px,96vw);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;box-shadow:0 24px 70px #0004;border:1px solid #dce6ef;padding:16px}
+ #dashboardBody .lad-edu-dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;position:sticky;top:-16px;background:#fff;padding:4px 0 10px;z-index:2;border-bottom:1px solid #edf2f7}
+ #dashboardBody .lad-edu-close,#dashboardBody .lad-edu-btn{border:1px solid #cbd9e8;background:#f7fbff;color:#0f3f76;border-radius:9px;padding:6px 9px;font-size:10px;font-weight:900;cursor:pointer}
+ #dashboardBody .lad-edu-close{background:#fff;color:#173b60}
  @media(max-width:760px){#dashboardBody .lad-card,#dashboardBody .lad-wide{grid-column:span 12}#dashboardBody .lad-edu-grid{grid-template-columns:1fr}}
  `;document.head.appendChild(s);
 }
@@ -83,8 +89,18 @@ function workflowRows(w){
 function eduPanel(){
  const e=EDU_BATANG;
  const rows=o=>Object.entries(o.types).map(([name,x])=>`<div class="lad-edu-row"><b>${esc(name)}</b><span>${fmt(x.total)}</span><span class="lad-edu-n">N ${fmt(x.negeri)}</span><span class="lad-edu-s">S ${fmt(x.swasta)}</span></div>`).join('');
- return `<div class="lad-edu"><div class="lad-edu-head"><div><div class="lad-label">SATUAN PENDIDIKAN SE-KABUPATEN BATANG</div><div class="lad-edu-total">${fmt(e.total)}</div><div class="lad-sub">Formal ${fmt(e.formal.total)} • Nonformal ${fmt(e.nonformal.total)}</div></div><div class="lad-edu-pills"><span class="lad-edu-pill">Negeri ${fmt(e.status.negeri)}</span><span class="lad-edu-pill sw">Swasta ${fmt(e.status.swasta)}</span></div></div><div class="lad-edu-grid"><div class="lad-edu-box"><h4>🏫 Formal — ${fmt(e.formal.total)}</h4>${rows(e.formal)}<div class="lad-edu-pills"><span class="lad-edu-pill">Negeri ${fmt(e.formal.negeri)}</span><span class="lad-edu-pill sw">Swasta ${fmt(e.formal.swasta)}</span></div></div><div class="lad-edu-box"><h4>🎓 Nonformal — ${fmt(e.nonformal.total)}</h4><div class="lad-sub" style="margin-bottom:7px"><b>PAUD Nonformal ${fmt(e.nonformal.groups['PAUD Nonformal'].total)}</b> (KB, TPA, SPS) • <b>DIKMAS/PNF ${fmt(e.nonformal.groups['DIKMAS/PNF'].total)}</b></div>${rows(e.nonformal)}<div class="lad-edu-pills"><span class="lad-edu-pill">Negeri ${fmt(e.nonformal.negeri)}</span><span class="lad-edu-pill sw">Swasta ${fmt(e.nonformal.swasta)}</span></div></div></div><div class="lad-edu-source"><b>Snapshot ${esc(e.snapshot_at)}.</b> ${esc(e.source)} Tidak memasukkan SMA/SMK/MA/MTs/MI/RA.</div></div>`;
+ return `<div id="eduBatangModal" class="lad-edu-modal" role="dialog" aria-modal="true" aria-label="Rincian satuan pendidikan Kabupaten Batang" onclick="if(event.target===this)__toggleEduUnitsBatang(false)"><div class="lad-edu-dialog"><div class="lad-edu-dialog-head"><div><div class="lad-label">RINCIAN SATUAN PENDIDIKAN SE-KABUPATEN BATANG</div><div class="lad-edu-total">${fmt(e.total)}</div><div class="lad-sub">Formal ${fmt(e.formal.total)} • Nonformal ${fmt(e.nonformal.total)} • Negeri ${fmt(e.status.negeri)} • Swasta ${fmt(e.status.swasta)}</div></div><button class="lad-edu-close" type="button" onclick="__toggleEduUnitsBatang(false)">✕ Tutup</button></div><div class="lad-edu-grid"><div class="lad-edu-box"><h4>🏫 Formal — ${fmt(e.formal.total)}</h4>${rows(e.formal)}<div class="lad-edu-pills"><span class="lad-edu-pill">Negeri ${fmt(e.formal.negeri)}</span><span class="lad-edu-pill sw">Swasta ${fmt(e.formal.swasta)}</span></div></div><div class="lad-edu-box"><h4>🎓 Nonformal — ${fmt(e.nonformal.total)}</h4><div class="lad-sub" style="margin-bottom:7px"><b>PAUD Nonformal ${fmt(e.nonformal.groups['PAUD Nonformal'].total)}</b> (KB, TPA, SPS) • <b>DIKMAS/PNF ${fmt(e.nonformal.groups['DIKMAS/PNF'].total)}</b></div>${rows(e.nonformal)}<div class="lad-edu-pills"><span class="lad-edu-pill">Negeri ${fmt(e.nonformal.negeri)}</span><span class="lad-edu-pill sw">Swasta ${fmt(e.nonformal.swasta)}</span></div></div></div><div class="lad-edu-source"><b>Snapshot ${esc(e.snapshot_at)}.</b> ${esc(e.source)} Tidak memasukkan SMA/SMK/MA/MTs/MI/RA.</div></div></div>`;
 }
+window.__toggleEduUnitsBatang=(show)=>{
+ const el=$('eduBatangModal');if(!el)return;
+ el.style.display=show?'flex':'none';
+ document.body.style.overflow=show?'hidden':'';
+};
+if(!window.__simantabEduEscapeBound){
+ window.__simantabEduEscapeBound=true;
+ document.addEventListener('keydown',e=>{if(e.key==='Escape')window.__toggleEduUnitsBatang?.(false)});
+}
+
 function render(data=SNAPSHOT,live=false){
  if(!isLeader())return;
  const body=$('dashboardBody'); if(!body)return;
@@ -98,7 +114,7 @@ function render(data=SNAPSHOT,live=false){
   <div class="lad-hero"><h2>Command Center Ketenagaan</h2><p>${esc(roleTitle())} • agregat TK/PAUD, SD, SMP, layanan kepegawaian, dan agenda bidang.</p></div>
   <div class="lad-note"><b>${live?'● Data live':'○ Data ringkasan aman'}</b> • ${live?'tersinkron dengan server':'snapshot terakhir valid '+esc(data.snapshot_at||SNAPSHOT.snapshot_at)}</div>
   ${eduPanel()}
-  <div class="lad-card"><div class="lad-label">Total Satuan Pendidikan</div><div class="lad-value">${fmt(EDU_BATANG.total)}</div><div class="lad-sub">Formal ${fmt(EDU_BATANG.formal.total)} • Nonformal ${fmt(EDU_BATANG.nonformal.total)} • N ${fmt(EDU_BATANG.status.negeri)} • S ${fmt(EDU_BATANG.status.swasta)}</div></div>
+  <div class="lad-card click" role="button" tabindex="0" onclick="__toggleEduUnitsBatang(true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();__toggleEduUnitsBatang(true)}"><div class="lad-label">Total Satuan Pendidikan</div><div class="lad-value">${fmt(EDU_BATANG.total)}</div><div class="lad-sub">Formal ${fmt(EDU_BATANG.formal.total)} • Nonformal ${fmt(EDU_BATANG.nonformal.total)}<br>Negeri ${fmt(EDU_BATANG.status.negeri)} • Swasta ${fmt(EDU_BATANG.status.swasta)}</div><button class="lad-edu-btn" type="button" onclick="event.stopPropagation();__toggleEduUnitsBatang(true)" style="margin-top:7px">Lihat Rincian</button></div>
   <div class="lad-card"><div class="lad-label">GTK Dapodik</div><div class="lad-value">${fmt(num(sc.teachers)+num(sc.staff))}</div><div class="lad-sub">Guru ${fmt(sc.teachers)} • Tendik ${fmt(sc.staff)}</div></div>
   <div class="lad-card"><div class="lad-label">Kebutuhan GTK Riil</div><div class="lad-value">${fmt(n.schools)} sekolah</div><div class="lad-sub">${fmt(n.rows)} entri • Gap Riil ${fmt(n.gap_riil)} • Gap Data ${fmt(n.gap_data)} • Cakupan ${cov}%</div></div>
   <div class="lad-card click" onclick="window.showTab&&window.showTab('kadinMonitoring')"><div class="lad-label">Usulan Aktif</div><div class="lad-value">${fmt(w.active)}</div><div class="lad-sub">Klik untuk melihat agregat dan rincian layanan</div></div>
@@ -116,5 +132,5 @@ function ensure(){ return; }
 for(let i=0;i<240&&!window.__simantabProfile;i++)await wait(50);
 if(!isLeader())return;
 render(SNAPSHOT,false);
-window.__simantabLeaderDashboardAuthoritative={version:4,render,syncLive,stable:true,verifiedNeedsOnly:true,eduUnitsBatang:true};
+window.__simantabLeaderDashboardAuthoritative={version:5,render,syncLive,stable:true,verifiedNeedsOnly:true,eduUnitsBatang:true,compactEduDetails:true};
 })();
