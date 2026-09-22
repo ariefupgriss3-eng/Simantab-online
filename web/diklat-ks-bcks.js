@@ -15,6 +15,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V16_FIXED_KABID_COMMENT */
 /* SIMANTAB_DIKLAT_KS_BCKS_V17_PERSIST_KABID_APPROVAL */
 /* SIMANTAB_DIKLAT_KS_BCKS_V18_TOTAL_PENGUSUL */
+/* SIMANTAB_DIKLAT_KS_BCKS_V19_TOTAL_PENGUSUL_AKTIF */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -248,9 +249,10 @@ function leaderKsbSummary(rows){
   ['PERBAIKAN','Perbaikan'],
   ['SELESAI','Selesai / Naik Level']
  ];
- const totalPengusul=new Set((rows||[]).map(x=>x.user_id).filter(Boolean)).size;
+ const activeRows=(rows||[]).filter(x=>String(x.workflow_state||'').toUpperCase()!=='DRAFT');
+ const totalPengusulAktif=new Set(activeRows.map(x=>x.user_id).filter(Boolean)).size;
  const statusCards=defs.map(([st,label])=>`<div class="card s4"><div class="label">${esc(label)}</div><div class="metric">${rows.filter(x=>x.workflow_state===st).length}</div></div>`).join('');
- const totalCard=`<div class="card s4"><div class="label">TOTAL PENGUSUL</div><div class="metric">${totalPengusul}</div><div class="small">Pengusul unik</div></div>`;
+ const totalCard=`<div class="card s4"><div class="label">TOTAL PENGUSUL AKTIF</div><div class="metric">${totalPengusulAktif}</div><div class="small">Tidak termasuk Draft</div></div>`;
  return `<div class="grid" style="margin-bottom:12px">${statusCards}${totalCard}</div>`;
 }
 
@@ -340,5 +342,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:18,totalPengusulCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:19,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
