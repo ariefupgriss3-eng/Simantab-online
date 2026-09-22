@@ -223,7 +223,7 @@ const modules=[
  ['gtk-needs-progress.js',31],
  ['gtk-needs-student-column-final.js',2],
  ['gtk-redistribution-analysis.js',3],
- ['school-status-access-v1.js',4],
+ ['school-status-access-v1.js',5],
  ['activity-participant-import.js',1],
  ['activity-participant-import-save.js',1],
  ['activity-digital-invite.js',1],
