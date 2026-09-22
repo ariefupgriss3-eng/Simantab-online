@@ -210,7 +210,7 @@ const modules=[
  ['premium-dashboard-theme.js',3],
  ['dashboard-order-fix.js',2],
  ['login-password-toggle.js',2],
- ['gtk-needs-progress.js',28],
+ ['gtk-needs-progress.js',29],
  ['school-status-access-v1.js',4],
  ['activity-participant-import.js',1],
  ['activity-participant-import-save.js',1],
