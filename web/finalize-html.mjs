@@ -111,7 +111,7 @@ await fs.writeFile(path.join(staticDir,leadershipFile),leadershipCode);
 
 const kadinFile='kadin-dashboard-v2.js';
 const kadinCode=await fs.readFile(new URL(`./${kadinFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V13_COMPACT_EDU_DETAILS/.test(kadinCode))throw new Error('Dashboard Dinas V13 rincian satuan pendidikan tidak valid.');
+if(!/SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V14_LEADER_RETURN_LIVE/.test(kadinCode))throw new Error('Dashboard Dinas V14 leader return live tidak valid.');
 await fs.writeFile(path.join(staticDir,kadinFile),kadinCode);
 
 const gtkInfographicDetailFile='gtk-infographic-details.js';
@@ -180,7 +180,7 @@ const modules=[
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',8],
  ['registration-approval.js',2],
- ['kadin-dashboard-v2.js',13],
+ ['kadin-dashboard-v2.js',14],
  ['gtk-infographic-details.js',2],
  ['dinas-login-enhancement.js',2],
  ['private-school-access.js',1],
