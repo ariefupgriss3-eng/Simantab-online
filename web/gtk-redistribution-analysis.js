@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V4 */
+/* SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V5 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -403,8 +403,8 @@ function renderHtml(m){
  return'<div class="gar-wrap">'+
   '<div class="gar-head"><h2>⇄ Analisis Kebutuhan & Redistribusi GTK</h2><p>Analisis deterministik berbasis ABK Regulatif. Surplus hanya dipasangkan dengan kekurangan pada <b>jenjang dan jabatan yang sama</b>; prioritas pertama dalam kecamatan.</p></div>'+
   '<div class="gar-note '+(official?'':'gar-warn')+'"><b>'+(official?'Basis resmi: data sekolah yang sudah diverifikasi.':'Mode simulasi: termasuk data yang belum diverifikasi.')+'</b><br>'+esc(roleNote)+' Indikasi redistribusi bukan keputusan mutasi; verifikasi individu, kompetensi, status kepegawaian, kebutuhan layanan, jarak, dan kondisi sekolah tetap diperlukan.</div>'+
-  '<div class="gar-card gar-wide"><div class="gar-filters"><label>Jenjang<select id="garLevel" '+(fixedLevel()?'disabled':'')+'>'+levelOptions(m.data,m.f.level)+'</select></label><label>Kecamatan<select id="garDistrict">'+districtOptions(m.data,m.f.district,m.f.level)+'</select></label><label>Status Data<select id="garStatus"><option value="VERIFIED" '+(m.f.dataStatus==='VERIFIED'?'selected':'')+'>Hanya Diverifikasi</option><option value="ALL" '+(m.f.dataStatus==='ALL'?'selected':'')+'>Semua Data Input (Simulasi)</option></select></label></div><div class="gar-actions"><button class="gar-btn" id="garRefresh">↻ Refresh Data</button><button class="gar-btn soft" id="garCsv">Unduh CSV</button><button class="gar-btn green" id="garPdf">Unduh PDF</button>'+(m.study?.visible?'<button class="gar-btn soft" id="garStudyFocus">📘 Kajian Penataan SD</button>':'')+(canEditLocation()?'<button class="gar-btn soft" id="garLocations">📍 Kelola Lokasi Sekolah</button>':'')+'</div></div>'+
-  +studySection(m)+
+  '<div class="gar-card gar-wide"><div class="gar-filters"><label>Jenjang<select id="garLevel" '+(fixedLevel()?'disabled':'')+'>'+levelOptions(m.data,m.f.level)+'</select></label><label>Kecamatan<select id="garDistrict">'+districtOptions(m.data,m.f.district,m.f.level)+'</select></label><label>Status Data<select id="garStatus"><option value="VERIFIED" '+(m.f.dataStatus==='VERIFIED'?'selected':'')+'>Hanya Diverifikasi</option><option value="ALL" '+(m.f.dataStatus==='ALL'?'selected':'')+'>Semua Data Input (Simulasi)</option></select></label></div><div class="gar-actions"><button class="gar-btn" id="garRefresh">↻ Refresh Data</button><button class="gar-btn soft" id="garCsv">Unduh CSV</button><button class="gar-btn green" id="garPdf">Unduh PDF</button>'+(m.study?.visible?'<button class="gar-btn soft" id="garStudyFocus">📘 Buka Kajian Penataan SD</button>':'')+(canEditLocation()?'<button class="gar-btn soft" id="garLocations">📍 Kelola Lokasi Sekolah</button>':'')+'</div></div>'+
+  studySection(m)+
   '<div class="gar-card"><div class="gar-label">Sekolah pada Cakupan</div><div class="gar-num">'+fmt(m.schools.length)+'</div><div class="gar-small">Terverifikasi '+fmt(m.verifiedSchools)+' • cakupan '+coverage+'%</div></div>'+
   '<div class="gar-card"><div class="gar-label">Gap Riil</div><div class="gar-num">'+fmt(m.totals.gap)+'</div><div class="gar-small">Σ max(ABK − ASN, 0) per jabatan</div></div>'+
   '<div class="gar-card"><div class="gar-label">Gap Data</div><div class="gar-num">'+fmt(m.totals.gapData)+'</div><div class="gar-small">Σ max(ABK − ASN − Non-ASN, 0)</div></div>'+
@@ -536,7 +536,16 @@ function bind(m){
  $('garRefresh')?.addEventListener('click',()=>{cache=null;cacheAt=0;render(true)});
  $('garCsv')?.addEventListener('click',()=>currentModel&&downloadCsv(currentModel));
  $('garPdf')?.addEventListener('click',()=>currentModel&&downloadPdf(currentModel));
- $('garStudyFocus')?.addEventListener('click',()=>{const level=$('garLevel');if(level&&!fixedLevel()){level.value='SD';const d=$('garDistrict');if(d)d.value='ALL';render(false).then(()=>setTimeout(()=>$('garStudyPanel')?.scrollIntoView({behavior:'smooth',block:'start'}),60));}else $('garStudyPanel')?.scrollIntoView({behavior:'smooth',block:'start'});});
+ $('garStudyFocus')?.addEventListener('click',async()=>{
+  const level=$('garLevel');
+  if(level&&!fixedLevel()){level.value='SD';const d=$('garDistrict');if(d)d.value='ALL';await render(false);}
+  setTimeout(()=>{
+   const panel=$('garStudyPanel');if(!panel)return;
+   panel.scrollIntoView({behavior:'smooth',block:'start'});
+   panel.style.outline='3px solid #1767b3';panel.style.outlineOffset='3px';
+   setTimeout(()=>{panel.style.outline='';panel.style.outlineOffset=''},1600);
+  },80);
+ });
  $('garLocations')?.addEventListener('click',()=>openLocationManager());
 }
 async function render(force=false){
