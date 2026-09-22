@@ -29,7 +29,7 @@ function ensureContainer(){const sec=$('needs');if(!sec)return null;let box=$('s
 function ensureNav(){const mode=roleMode(),nav=$('nav');if(!nav||!['KS','GTK'].includes(mode))return;let btn=nav.querySelector('.navbtn[data-tab="needs"]');if(btn)return;let head=nav.querySelector('[data-sim-needs-head]');if(!head){head=document.createElement('div');head.className='navhead';head.dataset.simNeedsHead='1';head.textContent='Data Sekolah';nav.appendChild(head)}btn=document.createElement('button');btn.className='navbtn';btn.dataset.tab='needs';btn.innerHTML='<span class="ico">◎</span>Kebutuhan GTK Riil';btn.onclick=()=>window.showTab?.('needs');nav.appendChild(btn)}
 function updateTile(text){document.querySelectorAll('.sim-premium-tile').forEach(tile=>{const oc=tile.getAttribute('onclick')||'';if(!oc.includes("'needs'"))return;let b=tile.querySelector('.sim-needs-tile-badge');if(!b){b=document.createElement('span');b.className='sim-needs-tile-badge';tile.appendChild(b)}b.textContent=text})}
 function statusFor(npsn,needsSet,workflow){const w=workflow.get(npsn);if(w?.status)return w.status;return needsSet.has(npsn)?'DRAFT':'NOT_STARTED'}
-function calcRow(r){const abk=num(r.abk),pns=num(r.pns),pppk=num(r.pppk),pw=num(r.pppk_pw),b=num(r.non_asn_before_2024),a=num(r.non_asn_after_2024);const asn=pns+pppk+pw,non=b+a;return{abk,pns,pppk,pw,b,a,asn,non,gap:abk-asn,gapData:abk-asn-non}}
+function calcRow(r){const abk=num(r.abk),pns=num(r.pns),pppk=num(r.pppk),pw=num(r.pppk_pw),b=num(r.non_asn_before_2024),a=num(r.non_asn_after_2024);const asn=pns+pppk+pw,non=b+a,gap=Math.max(0,abk-asn),gapData=Math.max(0,abk-asn-non);return{abk,pns,pppk,pw,b,a,asn,non,gap,gapData}}
 function aggregateRows(rows){return rows.reduce((o,r)=>{const c=calcRow(r);o.abk+=c.abk;o.asn+=c.asn;o.non+=c.non;o.gap+=c.gap;o.gapData+=c.gapData;return o},{abk:0,asn:0,non:0,gap:0,gapData:0})}
 function codeFromName(name){return clean(name).normalize('NFKD').replace(/[^a-zA-Z0-9]+/g,'_').replace(/^_+|_+$/g,'').toUpperCase().slice(0,48)||`JABATAN_${Date.now()}`}
 function curriculumLevel(level){const l=String(level||'').toUpperCase();if(l.includes('PAUD')||l.includes('TK'))return'TK';if(l.includes('SMP'))return'SMP';if(l.includes('SD'))return'SD';return l}
@@ -151,7 +151,7 @@ function curriculumNote(level){
 async function resolvePengawasScope(){const client=sb(),p=profile();const {data:all,error}=await client.from('school_master').select('npsn,school_name,school_status,jenjang,bentuk_pendidikan,kecamatan,rombel,is_active').eq('is_active',true).order('school_name');if(error)throw error;const schools=all||[],districts=[...new Set(schools.map(x=>x.kecamatan).filter(Boolean))];const pos=norm(p.position);let hit=districts.find(d=>pos&&pos.includes(norm(d)));if(hit)return{schools:schools.filter(x=>norm(x.kecamatan)===norm(hit)),label:`Kecamatan ${hit}`,districts:[hit],source:'profil'};if(p.nip){const {data:refs}=await client.from('tcs_sd_dabin_reference').select('district').eq('supervisor_nip',String(p.nip).trim()).eq('is_active',true);const ds=[...new Set((refs||[]).map(x=>x.district).filter(Boolean))];if(ds.length){const normalized=ds.map(d=>districts.find(x=>norm(x)===norm(d))||d);return{schools:schools.filter(x=>normalized.some(d=>norm(d)===norm(x.kecamatan))),label:normalized.map(x=>`Kecamatan ${x}`).join(', '),districts:normalized,source:'wilayah binaan'}}}return{schools:[],label:'Wilayah tugas belum terpetakan',districts:[],source:'none'}}
 
 function editableRow(r,i,canEdit){const c=calcRow(r),id=esc(r.id||''),code=esc(r.job_code||'');return `<tr class="sim-needs-edit-row" data-id="${id}" data-code="${code}"><td>${canEdit?`<input class="sim-needs-position" data-f="position_name" value="${esc(r.position_name||'')}">`:`<b>${esc(r.position_name||'-')}</b>`}<div class="sim-needs-note">${esc(r.job_code||'Jabatan baru')}</div></td>${['abk','pns','pppk','pppk_pw','non_asn_before_2024','non_asn_after_2024'].map(f=>`<td>${canEdit?`<input class="sim-needs-edit" type="number" min="0" step="1" data-f="${f}" value="${num(r[f])}">`:num(r[f])}</td>`).join('')}<td data-c="asn">${c.asn}</td><td data-c="non">${c.non}</td><td data-c="gap"><b>${c.gap}</b></td><td data-c="gapData">${c.gapData}</td>${canEdit?`<td><button class="sim-needs-action red" data-remove-row="${i}">Hapus</button></td>`:''}</tr>`}
-function updateEditorCalcs(){document.querySelectorAll('#simNeedsEditor tbody .sim-needs-edit-row').forEach(tr=>{const get=f=>num(tr.querySelector(`[data-f="${f}"]`)?.value),abk=get('abk'),pns=get('pns'),pppk=get('pppk'),pw=get('pppk_pw'),b=get('non_asn_before_2024'),a=get('non_asn_after_2024'),asn=pns+pppk+pw,non=b+a;tr.querySelector('[data-c="asn"]')?.replaceChildren(document.createTextNode(asn));tr.querySelector('[data-c="non"]')?.replaceChildren(document.createTextNode(non));tr.querySelector('[data-c="gap"]')?.replaceChildren(Object.assign(document.createElement('b'),{textContent:String(abk-asn)}));tr.querySelector('[data-c="gapData"]')?.replaceChildren(document.createTextNode(String(abk-asn-non)))})}
+function updateEditorCalcs(){document.querySelectorAll('#simNeedsEditor tbody .sim-needs-edit-row').forEach(tr=>{const get=f=>num(tr.querySelector(`[data-f="${f}"]`)?.value),abk=get('abk'),pns=get('pns'),pppk=get('pppk'),pw=get('pppk_pw'),b=get('non_asn_before_2024'),a=get('non_asn_after_2024'),asn=pns+pppk+pw,non=b+a;tr.querySelector('[data-c="asn"]')?.replaceChildren(document.createTextNode(asn));tr.querySelector('[data-c="non"]')?.replaceChildren(document.createTextNode(non));tr.querySelector('[data-c="gap"]')?.replaceChildren(Object.assign(document.createElement('b'),{textContent:String(Math.max(0,abk-asn))}));tr.querySelector('[data-c="gapData"]')?.replaceChildren(document.createTextNode(String(Math.max(0,abk-asn-non))))})}
 function validateEditorAbk(){
  const trs=[...document.querySelectorAll('#simNeedsEditor tbody .sim-needs-edit-row')];
  const ks=trs.find(tr=>String(tr.dataset.code||'').toUpperCase()==='KEPALA_SEKOLAH');
@@ -181,6 +181,94 @@ async function render(force=false){const now=Date.now();if(!force&&now-lastRende
 
 window.simGtkNeedsReview=async(npsn,action)=>{const client=sb();if(!client)return;let note=null;if(action==='REVISION'){note=prompt('Catatan perbaikan untuk sekolah:')||'';if(!note.trim())return}if(action==='VERIFIED'&&!confirm('Verifikasi data kebutuhan sekolah ini?'))return;const {error}=await client.rpc('gtk_needs_review',{p_school_npsn:npsn,p_action:action,p_note:note});if(error){alert(error.message);return}await render(true)};
 
+let abkRegulatifBusy=false;
+function abkRuleStatus(hit){
+ if(!hit)return'';
+ if(hit.result_status==='OK')return hit.current_abk===hit.calculated_abk?'Sesuai':'Perlu koreksi';
+ if(hit.result_status==='LOCAL_MANUAL')return'Manual';
+ return hit.result_status||'';
+}
+function abkRuleBadge(hit){
+ const s=abkRuleStatus(hit),ok=s==='Sesuai',manual=s==='Manual';
+ const bg=ok?'#e9f8ef':manual?'#fff4dd':'#ffefec',fg=ok?'#16804f':manual?'#8a5b00':'#b42318';
+ return '<span style="display:inline-block;margin-top:4px;padding:3px 7px;border-radius:999px;background:'+bg+';color:'+fg+';font-size:8px;font-weight:900">'+esc(s)+'</span>';
+}
+function abkRuleDetail(hit){
+ if(!hit)return'';
+ const calc=hit.calculated_abk==null?'Manual':hit.calculated_abk;
+ const raw=hit.abk_raw==null?'-':hit.abk_raw;
+ return '<details class="sim-needs-detail" data-abk-rule-detail><summary>Dasar hitung ABK</summary><div class="sim-needs-note"><b>ABK:</b> '+esc(calc)+' • <b>Raw:</b> '+esc(raw)+'<br><b>Rumus:</b> '+esc(hit.formula_text||'-')+'<br><b>Dasar:</b> '+esc(hit.legal_basis||'-')+'</div></details>';
+}
+async function loadAbkRegulatif(npsn){
+ const client=sb();if(!client||!npsn)return[];
+ const {data,error}=await client.rpc('preview_school_abk_v3',{p_npsn:npsn});
+ if(error){console.warn('ABK regulatif belum dapat dimuat',error);return[]}
+ return data||[];
+}
+async function decorateOwnAbkRegulatif(){
+ if(abkRegulatifBusy)return;
+ const mode=roleMode();if(!['KS','GTK'].includes(mode))return;
+ const table=$('simNeedsEditor'),npsn=clean(profile().school_npsn);if(!table||!npsn)return;
+ if(table.dataset.abkRegulatif==='v1')return;
+ abkRegulatifBusy=true;
+ try{
+  const rows=await loadAbkRegulatif(npsn);if(!rows.length)return;
+  const by=new Map(rows.map(x=>[String(x.job_code||'').toUpperCase(),x]));
+  for(const tr of table.querySelectorAll('tbody .sim-needs-edit-row')){
+   const code=String(tr.dataset.code||'').toUpperCase(),hit=by.get(code);if(!hit)continue;
+   const first=tr.children[0],abkCell=tr.children[1],input=tr.querySelector('[data-f="abk"]');
+   first?.querySelector('[data-abk-rule-detail]')?.remove();
+   first?.querySelector('[data-abk-rule-badge]')?.remove();
+   if(first){
+    const wrap=document.createElement('span');wrap.dataset.abkRuleBadge='1';wrap.innerHTML=abkRuleBadge(hit);first.appendChild(wrap);
+    first.insertAdjacentHTML('beforeend',abkRuleDetail(hit));
+   }
+   if(hit.result_status==='OK'&&hit.calculated_abk!=null){
+    if(input){input.value=String(hit.calculated_abk);input.readOnly=true;input.title='ABK dihitung otomatis berdasarkan rule engine regulatif';input.style.background='#eef7ff';input.style.fontWeight='900'}
+    else if(abkCell){abkCell.innerHTML='<b>'+num(hit.calculated_abk)+'</b><div class="sim-needs-note">ABK regulatif</div>'}
+   }else if(hit.result_status==='LOCAL_MANUAL'&&input){
+    input.readOnly=false;input.title='Parameter lokal/manual';
+   }
+  }
+  updateEditorCalcs();
+  const panel=table.closest('.sim-needs-panel');
+  if(panel&&!panel.querySelector('[data-abk-regulatif-info]')){
+   const info=document.createElement('div');info.dataset.abkRegulatifInfo='1';info.className='sim-needs-scope';
+   info.style.margin='9px 0';
+   info.innerHTML='<b>ABK Regulatif aktif</b><br>Guru dengan norma nasional dihitung otomatis dan dikunci. TAS, Penjaga, serta parameter lokal tetap diisi manual. GAP menunjukkan kekurangan saja: <b>max(ABK − tersedia, 0)</b>.';
+   const toolbar=panel.querySelector('.sim-needs-toolbar');toolbar?.insertAdjacentElement('beforebegin',info);
+  }
+  table.dataset.abkRegulatif='v1';
+ }finally{abkRegulatifBusy=false}
+}
+window.simGtkNeedsShowAbkRegulatif=async npsn=>{
+ const rows=await loadAbkRegulatif(clean(npsn));if(!rows.length){alert('Preview ABK regulatif belum tersedia untuk sekolah ini.');return}
+ document.getElementById('simAbkRegulatifModal')?.remove();
+ const modal=document.createElement('div');modal.id='simAbkRegulatifModal';
+ modal.setAttribute('style','position:fixed;inset:0;z-index:10000;background:rgba(8,26,48,.58);display:flex;align-items:center;justify-content:center;padding:14px');
+ modal.onclick=e=>{if(e.target===modal)modal.remove()};
+ const school=rows[0]||{};
+ const body=rows.map(x=>{
+  const cur=x.current_abk==null?'-':num(x.current_abk),calc=x.calculated_abk==null?'Manual':num(x.calculated_abk);
+  return '<tr><td><b>'+esc(x.position_name||x.job_code||'-')+'</b><div class="sim-needs-note">'+esc(x.job_code||'')+'</div>'+abkRuleBadge(x)+'</td><td>'+num(x.rombel_input)+'</td><td>'+cur+'</td><td><b>'+calc+'</b><div class="sim-needs-note">Raw '+esc(x.abk_raw??'-')+'</div></td><td>'+esc(x.gap_riil_calculated??'-')+'</td><td>'+esc(x.gap_data_calculated??'-')+'</td><td><div class="sim-needs-note">'+esc(x.formula_text||'-')+'<br>'+esc(x.legal_basis||'-')+'</div></td></tr>';
+ }).join('');
+ modal.innerHTML='<div style="width:min(1050px,100%);max-height:88vh;overflow:auto;background:#fff;border-radius:18px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.28)"><div style="display:flex;justify-content:space-between;gap:12px"><div><div class="sim-needs-note">PREVIEW DETERMINISTIK • bukan AI</div><h3 style="margin:3px 0;color:#0a3568">ABK Regulatif — '+esc(school.school_name||npsn)+'</h3><div class="sim-needs-note">Rombel '+num(school.rombel_total)+' • NPSN '+esc(npsn)+'</div></div><button class="sim-needs-action soft" onclick="document.getElementById(\'simAbkRegulatifModal\')?.remove()">✕ Tutup</button></div><div class="sim-needs-table" style="margin-top:12px"><table><thead><tr><th>Jabatan/Mapel</th><th>Rombel Layanan</th><th>ABK Tersimpan</th><th>ABK Regulatif</th><th>Gap Riil</th><th>Gap Data</th><th>Rumus & Dasar</th></tr></thead><tbody>'+body+'</tbody></table></div><div class="sim-needs-note" style="margin-top:9px">Gap Riil = max(ABK − ASN, 0). Gap Data = max(ABK − ASN − Non-ASN, 0). Parameter LOCAL tidak dihitung otomatis.</div></div>';
+ document.body.appendChild(modal);
+};
+function decorateScopedAbkButtons(){
+ const mode=roleMode();if(!['DINAS','PENGAWAS'].includes(mode))return;
+ const table=$('simNeedsSchoolTable');if(!table)return;
+ table.querySelectorAll('tbody>tr').forEach(tr=>{
+  if(tr.querySelector('[data-abk-preview-npsn]'))return;
+  const m=tr.textContent.match(/\b\d{8}\b/);if(!m)return;
+  const btn=document.createElement('button');btn.type='button';btn.className='sim-needs-action soft';btn.dataset.abkPreviewNpsn=m[0];btn.style.marginTop='6px';btn.textContent='ABK Regulatif';
+  btn.onclick=e=>{e.preventDefault();e.stopPropagation();window.simGtkNeedsShowAbkRegulatif(m[0])};
+  tr.children[0]?.appendChild(btn);
+ });
+}
+const abkRegObserver=new MutationObserver(()=>{if(!$('needs')?.classList.contains('active'))return;setTimeout(()=>{decorateOwnAbkRegulatif();decorateScopedAbkButtons()},80)});
+abkRegObserver.observe($('needs')||document.body,{childList:true,subtree:true});
+
 function hook(){ensureNav();if(window.__simGtkNeedsHookedV2)return;const original=window.showTab;if(typeof original!=='function'){setTimeout(hook,250);return}window.__simGtkNeedsHookedV2=true;window.showTab=async function(id){ensureNav();const r=await original.apply(this,arguments);if(id==='needs')setTimeout(()=>render(true),80);return r};const prevRefresh=window.refreshAll;if(prevRefresh)window.refreshAll=async(...args)=>{const r=await prevRefresh(...args);ensureNav();if($('needs')?.classList.contains('active'))await render(true);return r};new MutationObserver(()=>ensureNav()).observe($('nav')||document.body,{childList:true,subtree:true});if($('needs')?.classList.contains('active'))setTimeout(()=>render(true),160)}
-style();(async()=>{for(let i=0;i<200&&!window.__simantabProfile;i++)await wait(50);hook();ensureNav()})();
+style();(async()=>{for(let i=0;i<200&&!window.__simantabProfile;i++)await wait(50);hook();ensureNav();setTimeout(()=>{decorateOwnAbkRegulatif();decorateScopedAbkButtons()},180)})();
 })();
