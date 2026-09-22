@@ -28,9 +28,9 @@ if(code.includes(oldRequirements)) code=code.replace(oldRequirements,newRequirem
 
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=19"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=20"></script>\n`;
 html=html.replace(/<script type="module" src="\.\/diklat-ks-bcks\.js\?v=\d+"><\/script>\s*/g,'');
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({diklatKsBcks:true,version:15,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,levels:4,level4:'PENCATATAN_SERTIFIKAT',certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',adminRequiredFiles:['SKP_1','SKP_2','SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK','PAKTA_INTEGRITAS','SURAT_PERNYATAAN_DIKLAT'],adminRequiredFileCount:7,fileLimitBytes:512000,adminKsps:'kasim',productionUntouched:true}));
+console.log(JSON.stringify({diklatKsBcks:true,version:16,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,levels:4,level4:'PENCATATAN_SERTIFIKAT',certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',adminRequiredFiles:['SKP_1','SKP_2','SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK','PAKTA_INTEGRITAS','SURAT_PERNYATAAN_DIKLAT'],adminRequiredFileCount:7,fileLimitBytes:512000,adminKsps:'kasim',productionUntouched:true}));
