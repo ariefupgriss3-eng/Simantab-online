@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V2 */
+/* SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V3 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -21,6 +21,31 @@ const SCORE_WEIGHT={need:40,service:20,donor:20,proximity:20};
 const CLASS_CAPACITY={PAUD:15,SD:28,SMP:32};
 const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,Number(v)||0));
 const round1=v=>Math.round((Number(v)||0)*10)/10;
+const LOCATION_EDIT_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK']);
+const canEditLocation=()=>LOCATION_EDIT_ROLES.has(role());
+const toRad=v=>Number(v)*Math.PI/180;
+function hasCoord(s){return Number.isFinite(Number(s?.latitude))&&Number.isFinite(Number(s?.longitude))}
+function haversineKm(a,b){
+ if(!hasCoord(a)||!hasCoord(b))return null;
+ const lat1=Number(a.latitude),lon1=Number(a.longitude),lat2=Number(b.latitude),lon2=Number(b.longitude);
+ const dLat=toRad(lat2-lat1),dLon=toRad(lon2-lon1);
+ const q=Math.sin(dLat/2)**2+Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+ return 6371*2*Math.atan2(Math.sqrt(q),Math.sqrt(1-q));
+}
+function parseCoordinates(input){
+ const raw=String(input||'').trim();if(!raw)return null;
+ let m=raw.match(/^\s*(-?\d{1,2}(?:\.\d+)?)\s*[,;]\s*(-?\d{1,3}(?:\.\d+)?)\s*$/);
+ if(!m)m=raw.match(/@(-?\d{1,2}(?:\.\d+)?),(-?\d{1,3}(?:\.\d+)?)/);
+ if(!m)m=raw.match(/[?&](?:q|query|ll)=(-?\d{1,2}(?:\.\d+)?)(?:%2C|,)(-?\d{1,3}(?:\.\d+)?)/i);
+ if(!m){
+  const a=raw.match(/!3d(-?\d{1,2}(?:\.\d+)?)/),b=raw.match(/!4d(-?\d{1,3}(?:\.\d+)?)/);
+  if(a&&b)m=[null,a[1],b[1]];
+ }
+ if(!m)return null;
+ const latitude=Number(m[1]),longitude=Number(m[2]);
+ if(!Number.isFinite(latitude)||!Number.isFinite(longitude)||latitude<-90||latitude>90||longitude<-180||longitude>180)return null;
+ return{latitude,longitude};
+}
 let cache=null,cacheAt=0,currentModel=null,navObserver=null;
 
 function levelOf(v){
@@ -122,7 +147,7 @@ window.openGtkRedistributionAnalysis=activate;
 async function fetchData(force=false){
  if(cache&&!force&&Date.now()-cacheAt<45000)return cache;
  const [schoolsQ,needsQ,wfQ]=await Promise.all([
-  sb.from('school_master').select('npsn,school_name,school_status,jenjang,bentuk_pendidikan,kecamatan,students,rombel,is_active').eq('is_active',true).eq('school_status','NEGERI').order('school_name'),
+  sb.from('school_master').select('npsn,school_name,school_status,jenjang,bentuk_pendidikan,kecamatan,students,rombel,is_active,latitude,longitude,maps_url,location_source,location_verified,location_verified_at').eq('is_active',true).eq('school_status','NEGERI').order('school_name'),
   sb.from('school_gtk_needs').select('school_npsn,school_name,school_level,job_code,position_name,abk,pns,pppk,pppk_pw,non_asn_before_2024,non_asn_after_2024,asn_total,non_asn_total,abk_engine_version').order('school_name'),
   sb.from('school_gtk_needs_workflow').select('school_npsn,status,submitted_at,verified_at,updated_at')
  ]);
@@ -144,7 +169,7 @@ function rowModel(raw,school){
  return{
   school_npsn:raw.school_npsn,school_name:school?.school_name||raw.school_name||'-',
   district:school?.kecamatan||'-',level,code,label:positionLabel(code,raw.position_name,level),
-  students:num(school?.students),rombel:num(school?.rombel),studentsPerRombel:num(school?.rombel)>0?Number(school?.students||0)/Number(school?.rombel||1):0,
+  students:num(school?.students),rombel:num(school?.rombel),studentsPerRombel:num(school?.rombel)>0?Number(school?.students||0)/Number(school?.rombel||1):0,latitude:school?.latitude==null?null:Number(school.latitude),longitude:school?.longitude==null?null:Number(school.longitude),mapsUrl:school?.maps_url||'',locationVerified:!!school?.location_verified,
   key:level+'|'+code,abk,asn,non,gap:Math.max(0,abk-asn),gapData:Math.max(0,abk-asn-non),
   surplus:Math.max(0,asn-abk),localManual:isLocalManual(code),engine:raw.abk_engine_version||''
  };
@@ -166,15 +191,22 @@ function donorSafetyScore(d,qty){
  if(afterAsn<d.abk)return 0;
  return clamp(70+Math.min(30,(remainingSurplus/Math.max(1,d.abk))*100));
 }
-function proximityScore(donor,target){
- return donor.district===target.district?100:40;
+function proximityMetric(donor,target){
+ const km=haversineKm(donor,target);
+ if(km!=null){
+  const score=km<=5?100:km<=10?85:km<=20?65:km<=30?45:km<=40?30:15;
+  return{score,km:round1(km),mode:'DISTANCE',label:'Jarak '+round1(km)+' km'};
+ }
+ const same=donor.district===target.district;
+ return{score:same?75:35,km:null,mode:'DISTRICT_PROXY',label:same?'Proksi kecamatan sama':'Proksi beda kecamatan'};
 }
 function scorePair(donor,target,qty){
+ const proximity=proximityMetric(donor,target);
  const components={
   need:recipientNeedScore(target),
   service:servicePressureScore(target),
   donor:donorSafetyScore(donor,qty),
-  proximity:proximityScore(donor,target)
+  proximity:proximity.score
  };
  const score=round1(
   components.need*SCORE_WEIGHT.need/100+
@@ -183,7 +215,7 @@ function scorePair(donor,target,qty){
   components.proximity*SCORE_WEIGHT.proximity/100
  );
  const tier=score>=80?'Sangat Prioritas':score>=65?'Prioritas':score>=50?'Pertimbangkan':'Verifikasi Lanjut';
- return{score,tier,components};
+ return{score,tier,components,distanceKm:proximity.km,distanceMode:proximity.mode,distanceBasis:proximity.label};
 }
 function recipientBasePriority(r){
  return recipientNeedScore(r)*0.67+servicePressureScore(r)*0.33;
@@ -212,7 +244,7 @@ function buildRedistribution(rows){
       targetStudents:d.students,targetRombel:d.rombel,targetStudentsPerRombel:d.studentsPerRombel,
       priority:within?'Dalam kecamatan':'Lintas kecamatan',
       score:scored.score,tier:scored.tier,components:scored.components,
-      distanceBasis:within?'Proksi wilayah: kecamatan sama':'Proksi wilayah: beda kecamatan'
+      distanceKm:scored.distanceKm,distanceMode:scored.distanceMode,distanceBasis:scored.distanceBasis
     });
     donor.remaining-=qty;d.remaining-=qty;if(within)sameDistrictCovered+=qty;else crossDistrictCovered+=qty;
    }
@@ -255,7 +287,8 @@ function makeModel(data){
  const inputSchools=new Set(raw.map(x=>x.school_npsn)).size;
  const totals=rows.reduce((o,x)=>{o.abk+=x.abk;o.asn+=x.asn;o.non+=x.non;o.gap+=x.gap;o.gapData+=x.gapData;o.surplus+=x.surplus;return o},{abk:0,asn:0,non:0,gap:0,gapData:0,surplus:0});
  const redistribution=buildRedistribution(rows),positions=summarizePositions(rows),districts=summarizeDistricts(rows);
- return{data,f,schools,rows,wf,verifiedSchools,inputSchools,totals,redistribution,positions,districts};
+ const coordinateSchools=schools.filter(hasCoord).length,verifiedCoordinateSchools=schools.filter(s=>hasCoord(s)&&s.location_verified).length;
+ return{data,f,schools,rows,wf,verifiedSchools,inputSchools,totals,redistribution,positions,districts,coordinateSchools,verifiedCoordinateSchools};
 }
 function levelOptions(data,current){
  const fixed=fixedLevel();if(fixed)return'<option value="'+fixed+'">'+(fixed==='PAUD'?'TK/PAUD':fixed)+'</option>';
@@ -288,7 +321,7 @@ function renderHtml(m){
  return'<div class="gar-wrap">'+
   '<div class="gar-head"><h2>⇄ Analisis Kebutuhan & Redistribusi GTK</h2><p>Analisis deterministik berbasis ABK Regulatif. Surplus hanya dipasangkan dengan kekurangan pada <b>jenjang dan jabatan yang sama</b>; prioritas pertama dalam kecamatan.</p></div>'+
   '<div class="gar-note '+(official?'':'gar-warn')+'"><b>'+(official?'Basis resmi: data sekolah yang sudah diverifikasi.':'Mode simulasi: termasuk data yang belum diverifikasi.')+'</b><br>'+esc(roleNote)+' Indikasi redistribusi bukan keputusan mutasi; verifikasi individu, kompetensi, status kepegawaian, kebutuhan layanan, jarak, dan kondisi sekolah tetap diperlukan.</div>'+
-  '<div class="gar-card gar-wide"><div class="gar-filters"><label>Jenjang<select id="garLevel" '+(fixedLevel()?'disabled':'')+'>'+levelOptions(m.data,m.f.level)+'</select></label><label>Kecamatan<select id="garDistrict">'+districtOptions(m.data,m.f.district,m.f.level)+'</select></label><label>Status Data<select id="garStatus"><option value="VERIFIED" '+(m.f.dataStatus==='VERIFIED'?'selected':'')+'>Hanya Diverifikasi</option><option value="ALL" '+(m.f.dataStatus==='ALL'?'selected':'')+'>Semua Data Input (Simulasi)</option></select></label></div><div class="gar-actions"><button class="gar-btn" id="garRefresh">↻ Refresh Data</button><button class="gar-btn soft" id="garCsv">Unduh CSV</button><button class="gar-btn green" id="garPdf">Unduh PDF</button></div></div>'+
+  '<div class="gar-card gar-wide"><div class="gar-filters"><label>Jenjang<select id="garLevel" '+(fixedLevel()?'disabled':'')+'>'+levelOptions(m.data,m.f.level)+'</select></label><label>Kecamatan<select id="garDistrict">'+districtOptions(m.data,m.f.district,m.f.level)+'</select></label><label>Status Data<select id="garStatus"><option value="VERIFIED" '+(m.f.dataStatus==='VERIFIED'?'selected':'')+'>Hanya Diverifikasi</option><option value="ALL" '+(m.f.dataStatus==='ALL'?'selected':'')+'>Semua Data Input (Simulasi)</option></select></label></div><div class="gar-actions"><button class="gar-btn" id="garRefresh">↻ Refresh Data</button><button class="gar-btn soft" id="garCsv">Unduh CSV</button><button class="gar-btn green" id="garPdf">Unduh PDF</button>'+(canEditLocation()?'<button class="gar-btn soft" id="garLocations">📍 Kelola Lokasi Sekolah</button>':'')+'</div></div>'+
   '<div class="gar-card"><div class="gar-label">Sekolah pada Cakupan</div><div class="gar-num">'+fmt(m.schools.length)+'</div><div class="gar-small">Terverifikasi '+fmt(m.verifiedSchools)+' • cakupan '+coverage+'%</div></div>'+
   '<div class="gar-card"><div class="gar-label">Gap Riil</div><div class="gar-num">'+fmt(m.totals.gap)+'</div><div class="gar-small">Σ max(ABK − ASN, 0) per jabatan</div></div>'+
   '<div class="gar-card"><div class="gar-label">Gap Data</div><div class="gar-num">'+fmt(m.totals.gapData)+'</div><div class="gar-small">Σ max(ABK − ASN − Non-ASN, 0)</div></div>'+
@@ -298,7 +331,8 @@ function renderHtml(m){
   '<div class="gar-card"><div class="gar-label">Sisa Kekurangan</div><div class="gar-num">'+fmt(m.redistribution.uncovered)+'</div><div class="gar-small">Belum dapat ditutup oleh surplus ASN pada data ini</div></div>'+
   '<div class="gar-card"><div class="gar-label">Pasangan Indikatif</div><div class="gar-num">'+fmt(m.redistribution.pairs.length)+'</div><div class="gar-small">Donor → penerima, bukan keputusan mutasi</div></div>'+
   '<div class="gar-card"><div class="gar-label">Skor ≥65</div><div class="gar-num">'+fmt(m.redistribution.highPriority)+'</div><div class="gar-small">Prioritas/Sangat Prioritas • skor rata-rata '+m.redistribution.averageScore+'</div></div>'+
-  '<div class="gar-card gar-wide"><div class="gar-note"><b>Formula Skor Prioritas 0–100:</b> Kekurangan penerima 40% + tekanan layanan siswa/rombel 20% + keamanan donor 20% + kedekatan wilayah 20%. Saat ini faktor jarak memakai proksi kecamatan karena koordinat sekolah belum tersedia di master data. Skor bukan keputusan mutasi.</div></div>'+
+  '<div class="gar-card"><div class="gar-label">Koordinat Sekolah</div><div class="gar-num">'+fmt(m.coordinateSchools)+'/'+fmt(m.schools.length)+'</div><div class="gar-small">Terverifikasi '+fmt(m.verifiedCoordinateSchools)+' • '+pct(m.coordinateSchools,m.schools.length)+'% cakupan lokasi</div></div>'+
+  '<div class="gar-card gar-wide"><div class="gar-note"><b>Formula Skor Prioritas 0–100:</b> Kekurangan penerima 40% + tekanan layanan siswa/rombel 20% + keamanan donor 20% + kedekatan 20%. Bila koordinat donor dan penerima tersedia, kedekatan memakai jarak Haversine: ≤5 km=100; ≤10 km=85; ≤20 km=65; ≤30 km=45; ≤40 km=30; >40 km=15. Jika koordinat belum lengkap, digunakan proksi kecamatan (sama=75; berbeda=35) dan diberi label sebagai proksi. Skor bukan keputusan mutasi.</div></div>'+
   '<div class="gar-card gar-half"><div class="gar-label">Kekurangan & Surplus per Jabatan</div><h3 style="margin:5px 0 10px;color:#0f3f76">Peta Jabatan/Mapel</h3><div class="gar-table-wrap"><table class="gar-table"><thead><tr><th>No</th><th>Jenjang</th><th>Jabatan/Mapel</th><th>Gap Riil</th><th>Gap Data</th><th>Surplus ASN</th><th>Sekolah Kurang</th><th>Sekolah Surplus</th></tr></thead><tbody>'+(posRows(m)||'<tr><td colspan="8">Belum ada gap/surplus pada filter ini.</td></tr>')+'</tbody></table></div></div>'+
   '<div class="gar-card gar-half"><div class="gar-label">Sebaran Kecamatan</div><h3 style="margin:5px 0 10px;color:#0f3f76">Peta Kebutuhan Wilayah</h3><div class="gar-table-wrap"><table class="gar-table"><thead><tr><th>No</th><th>Kecamatan</th><th>Sekolah</th><th>Gap Riil</th><th>Gap Data</th><th>Surplus</th><th>Sekolah Kurang</th><th>Sekolah Surplus</th></tr></thead><tbody>'+(districtRows(m)||'<tr><td colspan="8">Belum ada data pada filter ini.</td></tr>')+'</tbody></table></div></div>'+
   '<div class="gar-card gar-wide"><div class="gar-label">Indikasi Redistribusi</div><h3 style="margin:5px 0 4px;color:#0f3f76">Kandidat Donor → Penerima berdasarkan Skor Prioritas</h3><div class="gar-small" style="margin-bottom:10px">Mesin hanya memasangkan surplus ASN dengan kekurangan pada kode jabatan dan jenjang yang sama. Kepala Sekolah tidak dipasangkan otomatis. Urutan tabel berdasarkan skor tertinggi.</div><div class="gar-table-wrap"><table class="gar-table"><thead><tr><th>No</th><th>Skor</th><th>Wilayah</th><th>Jabatan</th><th>Sekolah Donor</th><th></th><th>Sekolah Penerima</th><th>Jumlah & Komponen</th></tr></thead><tbody>'+(candidateRows(m)||'<tr><td colspan="8">Belum ada pasangan redistribusi yang dapat dibentuk dari data dan filter ini.</td></tr>')+'</tbody></table></div></div>'+
@@ -308,8 +342,8 @@ function csvCell(v){const s=String(v??'');return'"'+s.replaceAll('"','""')+'"'}
 function downloadCsv(m){
  const lines=[['ANALISIS KEBUTUHAN DAN REDISTRIBUSI GTK'],['Tanggal',new Date().toLocaleString('id-ID')],['Jenjang',m.f.level],['Kecamatan',m.f.district],['Status Data',m.f.dataStatus],[],['RINGKASAN'],['Sekolah Cakupan',m.schools.length],['Sekolah Terverifikasi',m.verifiedSchools],['Gap Riil',m.totals.gap],['Gap Data',m.totals.gapData],['Surplus ASN',m.totals.surplus],['Potensi Dalam Kecamatan',m.redistribution.sameDistrictCovered],['Potensi Lintas Kecamatan',m.redistribution.crossDistrictCovered],['Sisa Kekurangan',m.redistribution.uncovered],[],['PER JABATAN'],['Jenjang','Kode','Jabatan','Gap Riil','Gap Data','Surplus ASN','Sekolah Kurang','Sekolah Surplus']];
  m.positions.forEach(x=>lines.push([x.level,x.code,x.label,x.gap,x.gapData,x.surplus,x.shortSchools.size,x.surplusSchools.size]));
- lines.push([],['INDIKASI REDISTRIBUSI BERDASARKAN SKOR'],['Skor','Tier','Prioritas Wilayah','Jenjang','Jabatan','Donor','NPSN Donor','Kecamatan Donor','Penerima','NPSN Penerima','Kecamatan Penerima','Jumlah','Skor Kekurangan','Skor Layanan','Skor Donor','Skor Kedekatan']);
- m.redistribution.pairs.forEach(x=>lines.push([x.score,x.tier,x.priority,x.level,x.label,x.donorSchool,x.donorNpsn,x.donorDistrict,x.targetSchool,x.targetNpsn,x.targetDistrict,x.qty,round1(x.components.need),round1(x.components.service),round1(x.components.donor),round1(x.components.proximity)]));
+ lines.push([],['INDIKASI REDISTRIBUSI BERDASARKAN SKOR'],['Skor','Tier','Prioritas Wilayah','Jenjang','Jabatan','Donor','NPSN Donor','Kecamatan Donor','Penerima','NPSN Penerima','Kecamatan Penerima','Jumlah','Jarak KM','Basis Jarak','Skor Kekurangan','Skor Layanan','Skor Donor','Skor Kedekatan']);
+ m.redistribution.pairs.forEach(x=>lines.push([x.score,x.tier,x.priority,x.level,x.label,x.donorSchool,x.donorNpsn,x.donorDistrict,x.targetSchool,x.targetNpsn,x.targetDistrict,x.qty,x.distanceKm??'',x.distanceBasis,round1(x.components.need),round1(x.components.service),round1(x.components.donor),round1(x.components.proximity)]));
  const blob=new Blob(['\ufeff'+lines.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='analisis_redistribusi_gtk_'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
@@ -326,9 +360,80 @@ function downloadPdf(m){
  y=(doc.lastAutoTable?.finalY||y+20)+6;
  if(y>175){doc.addPage();y=14}
  doc.setFontSize(10);doc.text('Indikasi Redistribusi Donor → Penerima',14,y);
- doc.autoTable({startY:y+3,head:[['Skor','Tier','Wilayah','Jenjang','Jabatan','Donor','Kec. Donor','Penerima','Kec. Penerima','Jumlah']],body:m.redistribution.pairs.map(x=>[x.score,x.tier,x.priority,x.level,x.label,x.donorSchool,x.donorDistrict,x.targetSchool,x.targetDistrict,x.qty]),styles:{fontSize:6.2},headStyles:{fontSize:6.2}});
+ doc.autoTable({startY:y+3,head:[['Skor','Tier','Wilayah/Jarak','Jenjang','Jabatan','Donor','Penerima','Jumlah']],body:m.redistribution.pairs.map(x=>[x.score,x.tier,x.distanceBasis,x.level,x.label,x.donorSchool,x.targetSchool,x.qty]),styles:{fontSize:6.2},headStyles:{fontSize:6.2}});
  doc.setFontSize(7);doc.text('Catatan: indikasi redistribusi bukan keputusan mutasi; verifikasi individu, kompetensi, status kepegawaian, jarak, dan kebutuhan layanan tetap diperlukan.',14,200);
  doc.save('analisis_redistribusi_gtk_'+new Date().toISOString().slice(0,10)+'.pdf');
+}
+function schoolSearchUrl(s){
+ return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent((s.school_name||'')+' '+(s.kecamatan||'')+' Kabupaten Batang Jawa Tengah');
+}
+function locationOption(s){
+ const ok=hasCoord(s),v=s.location_verified?' ✓':'';
+ return '<option value="'+esc(s.npsn)+'">'+esc(s.school_name)+' — '+esc(s.kecamatan||'-')+(ok?' • '+round1(s.latitude)+','+round1(s.longitude)+v:' • belum ada koordinat')+'</option>';
+}
+function fillLocationForm(){
+ const npsn=$('garLocSchool')?.value,s=currentModel?.data?.schools?.find(x=>x.npsn===npsn);if(!s)return;
+ $('garLocLat').value=s.latitude??'';
+ $('garLocLng').value=s.longitude??'';
+ $('garLocUrl').value=s.maps_url||'';
+ $('garLocVerified').checked=!!s.location_verified;
+ const info=$('garLocInfo');if(info)info.innerHTML='<b>'+esc(s.school_name)+'</b><br>NPSN '+esc(s.npsn)+' • '+esc(s.kecamatan||'-')+(hasCoord(s)?'<br>Koordinat: '+esc(s.latitude)+', '+esc(s.longitude):'<br>Koordinat belum tersedia');
+}
+function parseLocationForm(){
+ const raw=$('garLocPaste')?.value||'',parsed=parseCoordinates(raw);
+ if(!parsed){alert('Koordinat belum terbaca. Gunakan format latitude,longitude atau link Google Maps panjang yang memuat koordinat. Link pendek maps.app.goo.gl perlu dibuka dulu lalu salin koordinat/link panjangnya.');return}
+ $('garLocLat').value=parsed.latitude;$('garLocLng').value=parsed.longitude;
+ if(/^https?:\/\//i.test(raw))$('garLocUrl').value=raw;
+}
+async function saveLocation(){
+ const npsn=$('garLocSchool')?.value;if(!npsn)return;
+ const latRaw=$('garLocLat')?.value,lngRaw=$('garLocLng')?.value;
+ const hasLat=String(latRaw||'').trim()!=='',hasLng=String(lngRaw||'').trim()!=='';
+ if(hasLat!==hasLng){alert('Latitude dan longitude harus diisi berpasangan.');return}
+ const lat=hasLat?Number(latRaw):null,lng=hasLng?Number(lngRaw):null;
+ if(hasLat&&(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<-90||lat>90||lng<-180||lng>180)){alert('Koordinat tidak valid.');return}
+ const mapsUrl=String($('garLocUrl')?.value||'').trim()||null,verified=!!$('garLocVerified')?.checked,now=new Date().toISOString();
+ const source=mapsUrl?'GOOGLE_MAPS':'MANUAL';
+ const payload={latitude:lat,longitude:lng,maps_url:mapsUrl,location_source:(lat!=null||mapsUrl)?source:null,location_verified:verified&&lat!=null,location_verified_by:verified&&lat!=null?(profile().id||null):null,location_verified_at:verified&&lat!=null?now:null,location_updated_at:now,updated_at:now};
+ const {error}=await sb.from('school_master').update(payload).eq('npsn',npsn);if(error){alert('Gagal menyimpan lokasi: '+error.message);return}
+ cache=null;cacheAt=0;await render(true);setTimeout(()=>openLocationManager(npsn),120);
+}
+function exportMissingLocations(){
+ const rows=(currentModel?.data?.schools||[]).filter(s=>!hasCoord(s));
+ const lines=[['NPSN','Latitude','Longitude','Google Maps URL','Nama Sekolah','Kecamatan'],...rows.map(s=>[s.npsn,'','', '',s.school_name,s.kecamatan||''])];
+ const blob=new Blob(['\ufeff'+lines.map(r=>r.map(v=>String(v??'').replaceAll(';',',')).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='template_lokasi_sekolah_belum_lengkap.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
+async function importLocationBulk(){
+ const raw=$('garLocBulk')?.value||'';const lines=raw.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);if(!lines.length){alert('Belum ada data impor.');return}
+ const parsed=[];const errors=[];
+ for(let i=0;i<lines.length;i++){
+  const sep=lines[i].includes(';')?';':',',p=lines[i].split(sep).map(x=>x.trim());
+  if(i===0&&/npsn/i.test(p[0]))continue;
+  const [npsn,latS,lngS,url='']=p,lat=Number(latS),lng=Number(lngS);
+  if(!/^\d{8}$/.test(npsn||'')||!Number.isFinite(lat)||!Number.isFinite(lng)||lat<-90||lat>90||lng<-180||lng>180){errors.push('Baris '+(i+1));continue}
+  parsed.push({npsn,lat,lng,url});
+ }
+ if(errors.length){alert('Ada data tidak valid: '+errors.slice(0,10).join(', ')+(errors.length>10?'…':''));return}
+ for(let i=0;i<parsed.length;i+=20){
+  const chunk=parsed.slice(i,i+20);
+  const results=await Promise.all(chunk.map(x=>sb.from('school_master').update({latitude:x.lat,longitude:x.lng,maps_url:x.url||null,location_source:'IMPORT',location_verified:false,location_verified_by:null,location_verified_at:null,location_updated_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('npsn',x.npsn)));
+  const err=results.find(x=>x.error)?.error;if(err){alert('Impor berhenti: '+err.message);return}
+ }
+ alert('Impor lokasi selesai: '+parsed.length+' sekolah. Koordinat impor belum otomatis ditandai terverifikasi.');
+ cache=null;cacheAt=0;await render(true);
+}
+function openLocationManager(selectedNpsn){
+ if(!canEditLocation()||!currentModel)return;
+ document.getElementById('garLocationModal')?.remove();
+ const schools=[...(currentModel.data.schools||[])].sort((a,b)=>String(a.school_name).localeCompare(String(b.school_name),'id'));
+ const modal=document.createElement('div');modal.id='garLocationModal';modal.setAttribute('style','position:fixed;inset:0;z-index:10002;background:rgba(8,26,48,.62);display:flex;align-items:center;justify-content:center;padding:14px');
+ modal.onclick=e=>{if(e.target===modal)modal.remove()};
+ modal.innerHTML='<div style="width:min(980px,100%);max-height:92vh;overflow:auto;background:#fff;border-radius:18px;padding:18px;box-shadow:0 24px 60px rgba(0,0,0,.3)"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><div class="gar-label">MASTER LOKASI SEKOLAH</div><h3 style="margin:4px 0;color:#0f3f76">Koordinat untuk Jarak Redistribusi</h3><div class="gar-small">Tidak ada koordinat yang dibuat otomatis. Masukkan titik dari sumber yang Anda verifikasi.</div></div><button class="gar-btn soft" onclick="document.getElementById(\'garLocationModal\')?.remove()">✕ Tutup</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px"><div><label class="gar-small"><b>Sekolah</b></label><select id="garLocSchool" style="width:100%;padding:9px;border:1px solid #cfdae5;border-radius:10px">'+schools.map(locationOption).join('')+'</select><div id="garLocInfo" class="gar-note" style="margin-top:8px"></div><div class="gar-actions"><button id="garLocSearchMaps" class="gar-btn soft">Buka Pencarian Google Maps</button><button id="garLocMissing" class="gar-btn soft">Unduh Template Belum Ada Lokasi</button></div></div><div><label class="gar-small"><b>Paste koordinat / link Google Maps panjang</b></label><textarea id="garLocPaste" rows="3" style="width:100%;padding:9px;border:1px solid #cfdae5;border-radius:10px" placeholder="-6.912345, 109.765432 atau URL yang mengandung @lat,lng"></textarea><div class="gar-actions"><button id="garLocParse" class="gar-btn soft">Ambil Koordinat</button></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><label class="gar-small">Latitude<input id="garLocLat" type="number" step="0.000001" style="width:100%;padding:8px;border:1px solid #cfdae5;border-radius:9px"></label><label class="gar-small">Longitude<input id="garLocLng" type="number" step="0.000001" style="width:100%;padding:8px;border:1px solid #cfdae5;border-radius:9px"></label></div><label class="gar-small" style="display:block;margin-top:8px">Google Maps URL<input id="garLocUrl" style="width:100%;padding:8px;border:1px solid #cfdae5;border-radius:9px"></label><label class="gar-small" style="display:block;margin-top:8px"><input id="garLocVerified" type="checkbox"> Lokasi sudah diverifikasi</label><div class="gar-actions"><button id="garLocSave" class="gar-btn green">Simpan Lokasi</button></div></div></div><hr style="border:0;border-top:1px solid #e3ebf2;margin:16px 0"><div class="gar-label">IMPOR MASSAL</div><div class="gar-small">Format per baris: <b>NPSN;Latitude;Longitude;Google Maps URL</b>. Baris header boleh disertakan. Hasil impor belum otomatis berstatus terverifikasi.</div><textarea id="garLocBulk" rows="6" style="width:100%;margin-top:8px;padding:9px;border:1px solid #cfdae5;border-radius:10px" placeholder="203xxxxx;-6.90;109.75;https://..."></textarea><div class="gar-actions"><button id="garLocImport" class="gar-btn">Impor Koordinat</button></div></div>';
+ document.body.appendChild(modal);
+ const sel=$('garLocSchool');if(selectedNpsn&&schools.some(s=>s.npsn===selectedNpsn))sel.value=selectedNpsn;fillLocationForm();
+ sel.onchange=fillLocationForm;$('garLocParse').onclick=parseLocationForm;$('garLocSave').onclick=saveLocation;$('garLocMissing').onclick=exportMissingLocations;$('garLocImport').onclick=importLocationBulk;
+ $('garLocSearchMaps').onclick=()=>{const s=currentModel.data.schools.find(x=>x.npsn===sel.value);if(s)window.open(schoolSearchUrl(s),'_blank','noopener')};
 }
 function bind(m){
  const rerender=()=>render(false);
@@ -338,6 +443,7 @@ function bind(m){
  $('garRefresh')?.addEventListener('click',()=>{cache=null;cacheAt=0;render(true)});
  $('garCsv')?.addEventListener('click',()=>currentModel&&downloadCsv(currentModel));
  $('garPdf')?.addEventListener('click',()=>currentModel&&downloadPdf(currentModel));
+ $('garLocations')?.addEventListener('click',()=>openLocationManager());
 }
 async function render(force=false){
  const body=$('gtkRedistributionBody')||ensureSection()?.querySelector('#gtkRedistributionBody');if(!body)return;
