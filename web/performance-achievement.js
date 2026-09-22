@@ -161,7 +161,7 @@ function model(data){
  const baseContrib=contributionMap(allCompleted,data.assignees);
  const today=new Date(),year=today.getFullYear();
  const startInput=$('paStart')?.value||`${year}-01-01`,endInput=$('paEnd')?.value||today.toISOString().slice(0,10);
- const service=$('paService')?.value||'ALL',scope=$('paScope')?.value||'ALL',person=$('paPerson')?.value||'ALL';
+ const service=$('paService')?.value||'ALL',scope=$('paScope')?.value||'ALL',person=canSeeAllPersonal()?($('paPerson')?.value||'ALL'):'ALL';
  const start=new Date(startInput+'T00:00:00'),end=new Date(endInput+'T23:59:59.999');
  let rows=allCompleted.filter(s=>{const done=dt(s.workflow_completed_at||s.updated_at);return done&&done>=start&&done<=end});
  if(service!=='ALL')rows=rows.filter(s=>String(s.service_type||'')===service);
@@ -174,16 +174,17 @@ function model(data){
  const serviceMap=new Map;
  for(const s of rows){const k=s.service_type||'LAINNYA';if(!serviceMap.has(k))serviceMap.set(k,{service:k,count:0,durations:[]});const x=serviceMap.get(k);x.count++;const h=hours(s.submitted_at,s.workflow_completed_at||s.updated_at);if(h!=null)x.durations.push(h)}
  const services=[...serviceMap.values()].map(x=>({...x,avg:x.durations.length?x.durations.reduce((a,b)=>a+b,0)/x.durations.length:null})).sort((a,b)=>String(serviceLabel(a.service)).localeCompare(serviceLabel(b.service),'id'));
- let personal=eligibleProfiles.map(p=>{const x=contrib.get(p.id)||{handled:new Set,assign:new Set,verify:new Set,coord:new Set,kabid:new Set,response:new Set,last:null};return{
+ const personalAll=eligibleProfiles.map(p=>{const x=contrib.get(p.id)||{handled:new Set,assign:new Set,verify:new Set,coord:new Set,kabid:new Set,response:new Set,last:null};return{
    id:p.id,name:p.full_name||'-',role:p.role,position:p.position||roleLabel(p.role),unit:p.unit||'-',
    handled:x.handled.size,assign:x.assign.size,verify:x.verify.size,coord:x.coord.size,kabid:x.kabid.size,response:x.response.size,
    actions:x.assign.size+x.verify.size+x.coord.size+x.kabid.size+x.response.size,last:x.last
  }});
- if(!canSeeAllPersonal())personal=personal.filter(x=>x.id===profile().id);
- else personal=personal.filter(x=>x.handled||x.actions||['KABID','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(x.role));
+ const contributors=personalAll.filter(x=>x.handled>0).length;
+ let personal=canSeeAllPersonal()
+   ?personalAll.filter(x=>x.handled||x.actions||['KABID','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(x.role))
+   :personalAll.filter(x=>x.id===profile().id);
  const roleOrder={KABID:1,KASI_SD:2,KASI_SMP:3,SUBKOOR_TK:4};
  personal.sort((a,b)=>(roleOrder[a.role]||10)-(roleOrder[b.role]||10)||a.name.localeCompare(b.name,'id'));
- const contributors=personal.filter(x=>x.handled>0).length;
  return {rows,profiles,contrib,services,personal,avgDuration,contributors,startInput,endInput,service,scope,person,allCompleted,baseContrib};
 }
 
