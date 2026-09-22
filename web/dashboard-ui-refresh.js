@@ -141,7 +141,7 @@ function ensureSearch(){
   const refresh=()=>{
     const q=normalize(input.value);results.innerHTML='';
     if(q.length<2){box.classList.remove('open');return}
-    const matches=qsa('.navbtn').map(btn=>({btn,label:btn.textContent.replace(/\s+/g,' ').trim()})).filter(x=>normalize(x.label).includes(q)).slice(0,8);
+    const matches=qsa('.navbtn').filter(btn=>!btn.hidden&&btn.style.display!=='none'&&btn.getAttribute('aria-hidden')!=='true'&&getComputedStyle(btn).display!=='none'&&getComputedStyle(btn).visibility!=='hidden').map(btn=>({btn,label:btn.textContent.replace(/\s+/g,' ').trim()})).filter(x=>normalize(x.label).includes(q)).slice(0,8);
     if(!matches.length){results.innerHTML='<div class="sim-ui-search-empty">Menu tidak ditemukan.</div>';box.classList.add('open');return}
     matches.forEach(({btn,label})=>{const b=document.createElement('button');b.type='button';b.className='sim-ui-search-result';b.textContent=label;b.addEventListener('click',()=>{input.value='';box.classList.remove('open');btn.click()});results.appendChild(b)});
     box.classList.add('open');
