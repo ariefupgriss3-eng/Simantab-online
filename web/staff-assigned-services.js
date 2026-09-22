@@ -4,6 +4,7 @@
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V4 */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V5 */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V6 */
+/* SIMANTAB_STAFF_ASSIGNED_SERVICES_V7_VERIFY_ACTION_VISIBLE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -101,7 +102,10 @@ window.staffOpenSubmissionDetail=async id=>{
   const approvalNotes=(cycle?.coordinator_note||cycle?.kabid_note)?'<div class="notice" style="margin-top:10px"><b>Catatan Approval Internal</b><div style="margin-top:6px">'+(cycle?.coordinator_note?'Kasi/Subkoor: '+esc(cycle.coordinator_note)+'<br>':'')+(cycle?.kabid_note?'Kabid: '+esc(cycle.kabid_note):'')+'</div></div>':'';
   const defaultResponse=cycle?.staff_response||sub.staff_response||'Yth. Bpk Ibu, mohon untuk \n\nMohon masukan,kritik,dan saran terbaik pada layanan kami. Terimakasih🤝';
   const responseEditor=sub.service_type==='DIKLAT_KS_BCKS'?'':('<div class="card" style="margin:12px 0;background:#f8fbff;border-color:#cfe0f2"><div class="label">RESPON / JAWABAN ADMIN-STAF</div><div class="field"><label>Jawaban untuk GTK</label><textarea id="staffResponseText" '+(canRespond?'':'readonly')+' placeholder="Tuliskan isi jawaban di antara salam pembuka dan penutup...">'+esc(defaultResponse)+'</textarea><div class="small" style="margin-top:5px">Respon tidak langsung dikirim ke GTK. Setelah disimpan, respon harus di-approve Kasi/Subkoor dan disetujui Kabid.</div></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+(canRespond?'<button class="btn primary" onclick="staffSaveResponse(\''+sub.id+'\')">💬 Simpan Respon & Ajukan ke Kasi/Subkoor</button>':'<span class="chip">Respon sedang pada tahap '+esc(FLOW[sub.workflow_state]||sub.workflow_state||'-')+'</span>')+'<span id="staffResponseMsg" class="small">'+((cycle?.staff_response_at||sub.staff_response_at)?'Terakhir disimpan '+fmt(cycle?.staff_response_at||sub.staff_response_at)+(responder?.full_name?' oleh '+esc(responder.full_name):''):'Belum ada respon')+'</span></div></div>');
-  m.innerHTML='<div class="card" style="width:min(820px,100%);max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="label">ISI USULAN GTK</div><h3 style="margin:3px 0">'+esc(sub.title||labelService(sub.service_type))+'</h3><div class="small">'+esc(pr.data?.full_name||'-')+' • '+esc(pr.data?.unit||'-')+'</div></div><button class="btn soft" onclick="document.getElementById(\'staffSubmissionDetailModal\')?.remove()">✕</button></div><div class="info" style="margin-top:12px"><b>Maksud/Keterangan GTK</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.description||'-')+'</div></div><div class="notice" style="margin-top:10px"><b>Catatan penugasan Kasi/Subkoor</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.assignment_note||'-')+'</div></div>'+followup+approvalNotes+'<div class="small" style="margin:10px 0"><b>Jenjang:</b> '+esc(sub.scope_level||'-')+' • <b>Status:</b> '+esc(FLOW[sub.workflow_state]||sub.workflow_state||'-')+' • <b>Diajukan:</b> '+fmt(sub.submitted_at)+'</div>'+responseEditor+'<h3>Berkas Pendukung</h3>'+files+'</div>';
+  const verifyEditor=(sub.service_type==='DIKLAT_KS_BCKS'&&sub.workflow_state==='VERIFIKASI_STAF')
+   ?'<div class="card" style="margin:12px 0;background:#f4fbf6;border:1px solid #b7dfc3"><div class="label">EKSEKUSI VERIFIKASI ADMIN/STAF</div><div class="small" style="margin:5px 0 10px">Periksa seluruh berkas terlebih dahulu. Jika lengkap dan sesuai, klik <b>Verifikasi</b>. Jika ada kekurangan, klik <b>Perlu Perbaikan</b> dan tuliskan catatan.</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn success" style="font-weight:900" onclick="staffVerifyAssigned(\''+sub.id+'\',true)">✓ Verifikasi</button><button class="btn danger" style="font-weight:900" onclick="staffVerifyAssigned(\''+sub.id+'\',false)">↺ Perlu Perbaikan</button></div><div class="small" style="margin-top:8px">Setelah berhasil diverifikasi, usulan langsung masuk ke <b>Persetujuan Kabid</b>.</div></div>'
+   :'';
+  m.innerHTML='<div class="card" style="width:min(820px,100%);max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="label">ISI USULAN GTK</div><h3 style="margin:3px 0">'+esc(sub.title||labelService(sub.service_type))+'</h3><div class="small">'+esc(pr.data?.full_name||'-')+' • '+esc(pr.data?.unit||'-')+'</div></div><button class="btn soft" onclick="document.getElementById(\'staffSubmissionDetailModal\')?.remove()">✕</button></div><div class="info" style="margin-top:12px"><b>Maksud/Keterangan GTK</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.description||'-')+'</div></div><div class="notice" style="margin-top:10px"><b>Catatan penugasan Kasi/Subkoor</b><div style="margin-top:6px;white-space:pre-wrap">'+esc(sub.assignment_note||'-')+'</div></div>'+followup+approvalNotes+'<div class="small" style="margin:10px 0"><b>Jenjang:</b> '+esc(sub.scope_level||'-')+' • <b>Status:</b> '+esc(FLOW[sub.workflow_state]||sub.workflow_state||'-')+' • <b>Diajukan:</b> '+fmt(sub.submitted_at)+'</div>'+responseEditor+verifyEditor+'<h3>Berkas Pendukung</h3>'+files+'</div>';
   document.body.appendChild(m);
  }catch(e){alert(e.message||String(e))}
 };
@@ -116,10 +120,13 @@ window.staffSaveResponse=async id=>{
 };
 window.staffOpenAssignedFile=async encoded=>{const path=decodeURIComponent(encoded);const {data,error}=await sb.storage.from('simantab-documents').createSignedUrl(path,120);if(error)alert(error.message);else window.open(data.signedUrl,'_blank','noopener')};
 window.staffVerifyAssigned=async(id,ok)=>{
+ if(ok&&!confirm('Nyatakan berkas administrasi peserta ini sudah diverifikasi dan teruskan ke Persetujuan Kabid?'))return;
  const note=prompt(ok?'Catatan hasil verifikasi (opsional):':'Tuliskan kekurangan/perbaikan yang harus dilakukan GTK:')||'';
  if(!ok&&!note.trim()){alert('Catatan wajib diisi jika mengembalikan untuk perbaikan.');return}
  const {error}=await sb.rpc('submission_staff_verify',{p_submission_id:id,p_approve:ok,p_note:note.trim()||null});
  if(error){alert(error.message);return}
+ document.getElementById('staffSubmissionDetailModal')?.remove();
+ alert(ok?'Verifikasi berhasil. Usulan diteruskan ke Persetujuan Kabid.':'Usulan dikembalikan untuk perbaikan.');
  await renderStaffServices();
 };
 const priorShow=window.showTab;
@@ -129,5 +136,5 @@ window.showTab=async function(id){
  return r;
 };
 if(document.querySelector('#services.active'))await renderStaffServices();
-window.__simantabStaffAssignedServices={version:6,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
+window.__simantabStaffAssignedServices={version:7,verifyActionInDetail:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
 })();
