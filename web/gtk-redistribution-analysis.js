@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V1 */
+/* SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -17,6 +17,10 @@ const fmt=n=>Number(n||0).toLocaleString('id-ID');
 const safe=s=>clean(s).replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||'analisis_gtk';
 const statusLabel=s=>({VERIFIED:'Diverifikasi',APPROVED:'Diverifikasi',SUBMITTED:'Diajukan',REVISION:'Perlu Perbaikan',DRAFT:'Draft',NOT_STARTED:'Belum Input'})[s]||s||'-';
 const fixedLevel=()=>role()==='KASI_SD'?'SD':role()==='KASI_SMP'?'SMP':role()==='SUBKOOR_TK'?'PAUD':'';
+const SCORE_WEIGHT={need:40,service:20,donor:20,proximity:20};
+const CLASS_CAPACITY={PAUD:15,SD:28,SMP:32};
+const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,Number(v)||0));
+const round1=v=>Math.round((Number(v)||0)*10)/10;
 let cache=null,cacheAt=0,currentModel=null,navObserver=null;
 
 function levelOf(v){
@@ -118,7 +122,7 @@ window.openGtkRedistributionAnalysis=activate;
 async function fetchData(force=false){
  if(cache&&!force&&Date.now()-cacheAt<45000)return cache;
  const [schoolsQ,needsQ,wfQ]=await Promise.all([
-  sb.from('school_master').select('npsn,school_name,school_status,jenjang,bentuk_pendidikan,kecamatan,rombel,is_active').eq('is_active',true).eq('school_status','NEGERI').order('school_name'),
+  sb.from('school_master').select('npsn,school_name,school_status,jenjang,bentuk_pendidikan,kecamatan,students,rombel,is_active').eq('is_active',true).eq('school_status','NEGERI').order('school_name'),
   sb.from('school_gtk_needs').select('school_npsn,school_name,school_level,job_code,position_name,abk,pns,pppk,pppk_pw,non_asn_before_2024,non_asn_after_2024,asn_total,non_asn_total,abk_engine_version').order('school_name'),
   sb.from('school_gtk_needs_workflow').select('school_npsn,status,submitted_at,verified_at,updated_at')
  ]);
@@ -140,6 +144,7 @@ function rowModel(raw,school){
  return{
   school_npsn:raw.school_npsn,school_name:school?.school_name||raw.school_name||'-',
   district:school?.kecamatan||'-',level,code,label:positionLabel(code,raw.position_name,level),
+  students:num(school?.students),rombel:num(school?.rombel),studentsPerRombel:num(school?.rombel)>0?Number(school?.students||0)/Number(school?.rombel||1):0,
   key:level+'|'+code,abk,asn,non,gap:Math.max(0,abk-asn),gapData:Math.max(0,abk-asn-non),
   surplus:Math.max(0,asn-abk),localManual:isLocalManual(code),engine:raw.abk_engine_version||''
  };
@@ -148,26 +153,80 @@ function filtersBase(data){
  const fixed=fixedLevel(),level=$('garLevel')?.value||fixed||'ALL',district=$('garDistrict')?.value||'ALL',dataStatus=$('garStatus')?.value||'VERIFIED';
  return{level:fixed||level,district,dataStatus};
 }
+function recipientNeedScore(r){
+ const ratio=r.abk>0?r.gap/r.abk:(r.gap>0?1:0);
+ return clamp(ratio*100);
+}
+function servicePressureScore(r){
+ const cap=CLASS_CAPACITY[r.level]||32;
+ return clamp((r.studentsPerRombel/cap)*100);
+}
+function donorSafetyScore(d,qty){
+ const afterAsn=Math.max(0,d.asn-qty),remainingSurplus=Math.max(0,afterAsn-d.abk);
+ if(afterAsn<d.abk)return 0;
+ return clamp(70+Math.min(30,(remainingSurplus/Math.max(1,d.abk))*100));
+}
+function proximityScore(donor,target){
+ return donor.district===target.district?100:40;
+}
+function scorePair(donor,target,qty){
+ const components={
+  need:recipientNeedScore(target),
+  service:servicePressureScore(target),
+  donor:donorSafetyScore(donor,qty),
+  proximity:proximityScore(donor,target)
+ };
+ const score=round1(
+  components.need*SCORE_WEIGHT.need/100+
+  components.service*SCORE_WEIGHT.service/100+
+  components.donor*SCORE_WEIGHT.donor/100+
+  components.proximity*SCORE_WEIGHT.proximity/100
+ );
+ const tier=score>=80?'Sangat Prioritas':score>=65?'Prioritas':score>=50?'Pertimbangkan':'Verifikasi Lanjut';
+ return{score,tier,components};
+}
+function recipientBasePriority(r){
+ return recipientNeedScore(r)*0.67+servicePressureScore(r)*0.33;
+}
 function buildRedistribution(rows){
  const donors=rows.filter(x=>x.surplus>0&&x.code!=='KEPALA_SEKOLAH').map(x=>({...x,remaining:x.surplus}));
  const deficits=rows.filter(x=>x.gap>0&&x.code!=='KEPALA_SEKOLAH').map(x=>({...x,remaining:x.gap}))
-  .sort((a,b)=>String(a.district).localeCompare(String(b.district),'id')||b.gap-a.gap||String(a.school_name).localeCompare(String(b.school_name),'id'));
+   .sort((a,b)=>recipientBasePriority(b)-recipientBasePriority(a)||b.gap-a.gap||String(a.school_name).localeCompare(String(b.school_name),'id'));
  const pairs=[];let sameDistrictCovered=0,crossDistrictCovered=0;
- for(const d of deficits){
-  const same=donors.filter(x=>x.key===d.key&&x.remaining>0&&x.school_npsn!==d.school_npsn&&x.district===d.district).sort((a,b)=>b.remaining-a.remaining);
-  const cross=donors.filter(x=>x.key===d.key&&x.remaining>0&&x.school_npsn!==d.school_npsn&&x.district!==d.district).sort((a,b)=>b.remaining-a.remaining);
-  for(const donor of [...same,...cross]){
-   if(d.remaining<=0)break;
-   const qty=Math.min(d.remaining,donor.remaining);if(qty<=0)continue;
-   const within=donor.district===d.district;
-   pairs.push({level:d.level,code:d.code,label:d.label,qty,donorSchool:donor.school_name,donorNpsn:donor.school_npsn,donorDistrict:donor.district,
-    targetSchool:d.school_name,targetNpsn:d.school_npsn,targetDistrict:d.district,priority:within?'Dalam kecamatan':'Lintas kecamatan'});
-   donor.remaining-=qty;d.remaining-=qty;if(within)sameDistrictCovered+=qty;else crossDistrictCovered+=qty;
+ const allocate=(within)=>{
+  for(const d of deficits){
+   if(d.remaining<=0)continue;
+   const candidates=donors.filter(x=>x.key===d.key&&x.remaining>0&&x.school_npsn!==d.school_npsn&&((x.district===d.district)===within))
+     .sort((a,b)=>{
+       const sa=scorePair(a,d,Math.min(d.remaining,a.remaining)).score,sb=scorePair(b,d,Math.min(d.remaining,b.remaining)).score;
+       return sb-sa||b.remaining-a.remaining||String(a.school_name).localeCompare(String(b.school_name),'id');
+     });
+   for(const donor of candidates){
+    if(d.remaining<=0)break;
+    const qty=Math.min(d.remaining,donor.remaining);if(qty<=0)continue;
+    const scored=scorePair(donor,d,qty);
+    pairs.push({
+      level:d.level,code:d.code,label:d.label,qty,
+      donorSchool:donor.school_name,donorNpsn:donor.school_npsn,donorDistrict:donor.district,donorAbk:donor.abk,donorAsn:donor.asn,donorSurplusBefore:donor.remaining,
+      targetSchool:d.school_name,targetNpsn:d.school_npsn,targetDistrict:d.district,targetAbk:d.abk,targetAsn:d.asn,targetGapBefore:d.remaining,
+      targetStudents:d.students,targetRombel:d.rombel,targetStudentsPerRombel:d.studentsPerRombel,
+      priority:within?'Dalam kecamatan':'Lintas kecamatan',
+      score:scored.score,tier:scored.tier,components:scored.components,
+      distanceBasis:within?'Proksi wilayah: kecamatan sama':'Proksi wilayah: beda kecamatan'
+    });
+    donor.remaining-=qty;d.remaining-=qty;if(within)sameDistrictCovered+=qty;else crossDistrictCovered+=qty;
+   }
   }
- }
+ };
+ allocate(true);
+ allocate(false);
+ pairs.sort((a,b)=>b.score-a.score||(a.priority===b.priority?0:(a.priority==='Dalam kecamatan'?-1:1))||b.qty-a.qty||String(a.targetSchool).localeCompare(String(b.targetSchool),'id'));
  const totalGap=rows.reduce((n,x)=>n+x.gap,0),totalSurplus=rows.reduce((n,x)=>n+x.surplus,0);
+ const highPriority=pairs.filter(x=>x.score>=65).length;
+ const veryHighPriority=pairs.filter(x=>x.score>=80).length;
+ const averageScore=pairs.length?round1(pairs.reduce((n,x)=>n+x.score,0)/pairs.length):0;
  return{pairs,sameDistrictCovered,crossDistrictCovered,covered:sameDistrictCovered+crossDistrictCovered,
-  uncovered:Math.max(0,totalGap-sameDistrictCovered-crossDistrictCovered),totalGap,totalSurplus};
+  uncovered:Math.max(0,totalGap-sameDistrictCovered-crossDistrictCovered),totalGap,totalSurplus,highPriority,veryHighPriority,averageScore};
 }
 function summarizePositions(rows){
  const m=new Map;
@@ -216,7 +275,12 @@ function districtRows(m){
  return m.districts.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+esc(x.district)+'</b><div class="gar-bar"><i style="width:'+Math.round(x.gap/max*100)+'%"></i></div></td><td>'+x.schools.size+'</td><td><b>'+fmt(x.gap)+'</b></td><td>'+fmt(x.gapData)+'</td><td>'+fmt(x.surplus)+'</td><td>'+x.shortSchools.size+'</td><td>'+x.surplusSchools.size+'</td></tr>').join('');
 }
 function candidateRows(m){
- return m.redistribution.pairs.map((x,i)=>'<tr><td>'+(i+1)+'</td><td><span class="gar-pill '+(x.priority==='Dalam kecamatan'?'green':'orange')+'">'+esc(x.priority)+'</span></td><td><b>'+esc(x.label)+'</b><div class="gar-small">'+esc(x.level==='PAUD'?'TK/PAUD':x.level)+'</div></td><td><b>'+esc(x.donorSchool)+'</b><div class="gar-small">'+esc(x.donorNpsn)+' • '+esc(x.donorDistrict)+'</div></td><td>→</td><td><b>'+esc(x.targetSchool)+'</b><div class="gar-small">'+esc(x.targetNpsn)+' • '+esc(x.targetDistrict)+'</div></td><td><b>'+fmt(x.qty)+'</b></td></tr>').join('');
+ return m.redistribution.pairs.map((x,i)=>{
+ const tierClass=x.score>=80?'green':x.score>=65?'green':x.score>=50?'orange':'red';
+ const comp='Kekurangan '+round1(x.components.need)+' • Layanan '+round1(x.components.service)+' • Donor '+round1(x.components.donor)+' • Kedekatan '+round1(x.components.proximity);
+ const pressure=round1(x.targetStudentsPerRombel);
+ return '<tr><td>'+(i+1)+'</td><td><span class="gar-pill '+tierClass+'">'+esc(x.tier)+'</span><div class="gar-small"><b>Skor '+x.score+'</b>/100</div></td><td><span class="gar-pill '+(x.priority==='Dalam kecamatan'?'green':'orange')+'">'+esc(x.priority)+'</span><div class="gar-small">'+esc(x.distanceBasis)+'</div></td><td><b>'+esc(x.label)+'</b><div class="gar-small">'+esc(x.level==='PAUD'?'TK/PAUD':x.level)+'</div></td><td><b>'+esc(x.donorSchool)+'</b><div class="gar-small">'+esc(x.donorNpsn)+' • '+esc(x.donorDistrict)+'<br>ABK '+x.donorAbk+' • ASN '+x.donorAsn+'</div></td><td>→</td><td><b>'+esc(x.targetSchool)+'</b><div class="gar-small">'+esc(x.targetNpsn)+' • '+esc(x.targetDistrict)+'<br>'+fmt(x.targetStudents)+' siswa • '+fmt(x.targetRombel)+' rombel • '+pressure+' siswa/rombel</div></td><td><b>'+fmt(x.qty)+'</b><div class="gar-small">'+esc(comp)+'</div></td></tr>';
+ }).join('');
 }
 function renderHtml(m){
  const official=m.f.dataStatus==='VERIFIED',coverage=pct(m.verifiedSchools,m.schools.length);
@@ -233,17 +297,19 @@ function renderHtml(m){
   '<div class="gar-card"><div class="gar-label">Potensi Lintas Kecamatan</div><div class="gar-num">'+fmt(m.redistribution.crossDistrictCovered)+'</div><div class="gar-small">Perlu kajian jarak dan kelayakan lapangan</div></div>'+
   '<div class="gar-card"><div class="gar-label">Sisa Kekurangan</div><div class="gar-num">'+fmt(m.redistribution.uncovered)+'</div><div class="gar-small">Belum dapat ditutup oleh surplus ASN pada data ini</div></div>'+
   '<div class="gar-card"><div class="gar-label">Pasangan Indikatif</div><div class="gar-num">'+fmt(m.redistribution.pairs.length)+'</div><div class="gar-small">Donor → penerima, bukan keputusan mutasi</div></div>'+
+  '<div class="gar-card"><div class="gar-label">Skor ≥65</div><div class="gar-num">'+fmt(m.redistribution.highPriority)+'</div><div class="gar-small">Prioritas/Sangat Prioritas • skor rata-rata '+m.redistribution.averageScore+'</div></div>'+
+  '<div class="gar-card gar-wide"><div class="gar-note"><b>Formula Skor Prioritas 0–100:</b> Kekurangan penerima 40% + tekanan layanan siswa/rombel 20% + keamanan donor 20% + kedekatan wilayah 20%. Saat ini faktor jarak memakai proksi kecamatan karena koordinat sekolah belum tersedia di master data. Skor bukan keputusan mutasi.</div></div>'+
   '<div class="gar-card gar-half"><div class="gar-label">Kekurangan & Surplus per Jabatan</div><h3 style="margin:5px 0 10px;color:#0f3f76">Peta Jabatan/Mapel</h3><div class="gar-table-wrap"><table class="gar-table"><thead><tr><th>No</th><th>Jenjang</th><th>Jabatan/Mapel</th><th>Gap Riil</th><th>Gap Data</th><th>Surplus ASN</th><th>Sekolah Kurang</th><th>Sekolah Surplus</th></tr></thead><tbody>'+(posRows(m)||'<tr><td colspan="8">Belum ada gap/surplus pada filter ini.</td></tr>')+'</tbody></table></div></div>'+
   '<div class="gar-card gar-half"><div class="gar-label">Sebaran Kecamatan</div><h3 style="margin:5px 0 10px;color:#0f3f76">Peta Kebutuhan Wilayah</h3><div class="gar-table-wrap"><table class="gar-table"><thead><tr><th>No</th><th>Kecamatan</th><th>Sekolah</th><th>Gap Riil</th><th>Gap Data</th><th>Surplus</th><th>Sekolah Kurang</th><th>Sekolah Surplus</th></tr></thead><tbody>'+(districtRows(m)||'<tr><td colspan="8">Belum ada data pada filter ini.</td></tr>')+'</tbody></table></div></div>'+
-  '<div class="gar-card gar-wide"><div class="gar-label">Indikasi Redistribusi</div><h3 style="margin:5px 0 4px;color:#0f3f76">Kandidat Donor → Penerima</h3><div class="gar-small" style="margin-bottom:10px">Mesin hanya memasangkan surplus ASN dengan kekurangan pada kode jabatan dan jenjang yang sama. Kepala Sekolah tidak dipasangkan otomatis karena mekanisme penugasannya berbeda.</div><div class="gar-table-wrap"><table class="gar-table"><thead><tr><th>No</th><th>Prioritas</th><th>Jabatan</th><th>Sekolah Donor</th><th></th><th>Sekolah Penerima</th><th>Jumlah</th></tr></thead><tbody>'+(candidateRows(m)||'<tr><td colspan="7">Belum ada pasangan redistribusi yang dapat dibentuk dari data dan filter ini.</td></tr>')+'</tbody></table></div></div>'+
+  '<div class="gar-card gar-wide"><div class="gar-label">Indikasi Redistribusi</div><h3 style="margin:5px 0 4px;color:#0f3f76">Kandidat Donor → Penerima berdasarkan Skor Prioritas</h3><div class="gar-small" style="margin-bottom:10px">Mesin hanya memasangkan surplus ASN dengan kekurangan pada kode jabatan dan jenjang yang sama. Kepala Sekolah tidak dipasangkan otomatis. Urutan tabel berdasarkan skor tertinggi.</div><div class="gar-table-wrap"><table class="gar-table"><thead><tr><th>No</th><th>Skor</th><th>Wilayah</th><th>Jabatan</th><th>Sekolah Donor</th><th></th><th>Sekolah Penerima</th><th>Jumlah & Komponen</th></tr></thead><tbody>'+(candidateRows(m)||'<tr><td colspan="8">Belum ada pasangan redistribusi yang dapat dibentuk dari data dan filter ini.</td></tr>')+'</tbody></table></div></div>'+
  '</div>';
 }
 function csvCell(v){const s=String(v??'');return'"'+s.replaceAll('"','""')+'"'}
 function downloadCsv(m){
  const lines=[['ANALISIS KEBUTUHAN DAN REDISTRIBUSI GTK'],['Tanggal',new Date().toLocaleString('id-ID')],['Jenjang',m.f.level],['Kecamatan',m.f.district],['Status Data',m.f.dataStatus],[],['RINGKASAN'],['Sekolah Cakupan',m.schools.length],['Sekolah Terverifikasi',m.verifiedSchools],['Gap Riil',m.totals.gap],['Gap Data',m.totals.gapData],['Surplus ASN',m.totals.surplus],['Potensi Dalam Kecamatan',m.redistribution.sameDistrictCovered],['Potensi Lintas Kecamatan',m.redistribution.crossDistrictCovered],['Sisa Kekurangan',m.redistribution.uncovered],[],['PER JABATAN'],['Jenjang','Kode','Jabatan','Gap Riil','Gap Data','Surplus ASN','Sekolah Kurang','Sekolah Surplus']];
  m.positions.forEach(x=>lines.push([x.level,x.code,x.label,x.gap,x.gapData,x.surplus,x.shortSchools.size,x.surplusSchools.size]));
- lines.push([],['INDIKASI REDISTRIBUSI'],['Prioritas','Jenjang','Jabatan','Donor','NPSN Donor','Kecamatan Donor','Penerima','NPSN Penerima','Kecamatan Penerima','Jumlah']);
- m.redistribution.pairs.forEach(x=>lines.push([x.priority,x.level,x.label,x.donorSchool,x.donorNpsn,x.donorDistrict,x.targetSchool,x.targetNpsn,x.targetDistrict,x.qty]));
+ lines.push([],['INDIKASI REDISTRIBUSI BERDASARKAN SKOR'],['Skor','Tier','Prioritas Wilayah','Jenjang','Jabatan','Donor','NPSN Donor','Kecamatan Donor','Penerima','NPSN Penerima','Kecamatan Penerima','Jumlah','Skor Kekurangan','Skor Layanan','Skor Donor','Skor Kedekatan']);
+ m.redistribution.pairs.forEach(x=>lines.push([x.score,x.tier,x.priority,x.level,x.label,x.donorSchool,x.donorNpsn,x.donorDistrict,x.targetSchool,x.targetNpsn,x.targetDistrict,x.qty,round1(x.components.need),round1(x.components.service),round1(x.components.donor),round1(x.components.proximity)]));
  const blob=new Blob(['\ufeff'+lines.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='analisis_redistribusi_gtk_'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
 }
@@ -260,7 +326,7 @@ function downloadPdf(m){
  y=(doc.lastAutoTable?.finalY||y+20)+6;
  if(y>175){doc.addPage();y=14}
  doc.setFontSize(10);doc.text('Indikasi Redistribusi Donor → Penerima',14,y);
- doc.autoTable({startY:y+3,head:[['Prioritas','Jenjang','Jabatan','Donor','Kec. Donor','Penerima','Kec. Penerima','Jumlah']],body:m.redistribution.pairs.map(x=>[x.priority,x.level,x.label,x.donorSchool,x.donorDistrict,x.targetSchool,x.targetDistrict,x.qty]),styles:{fontSize:6.5},headStyles:{fontSize:6.5}});
+ doc.autoTable({startY:y+3,head:[['Skor','Tier','Wilayah','Jenjang','Jabatan','Donor','Kec. Donor','Penerima','Kec. Penerima','Jumlah']],body:m.redistribution.pairs.map(x=>[x.score,x.tier,x.priority,x.level,x.label,x.donorSchool,x.donorDistrict,x.targetSchool,x.targetDistrict,x.qty]),styles:{fontSize:6.2},headStyles:{fontSize:6.2}});
  doc.setFontSize(7);doc.text('Catatan: indikasi redistribusi bukan keputusan mutasi; verifikasi individu, kompetensi, status kepegawaian, jarak, dan kebutuhan layanan tetap diperlukan.',14,200);
  doc.save('analisis_redistribusi_gtk_'+new Date().toISOString().slice(0,10)+'.pdf');
 }
