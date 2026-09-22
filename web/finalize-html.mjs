@@ -178,7 +178,7 @@ const modules=[
  ['registration-approval.js',2],
  ['kadin-dashboard-v2.js',11],
  ['gtk-infographic-details.js',2],
- ['dinas-login-enhancement.js',1],
+ ['dinas-login-enhancement.js',2],
  ['private-school-access.js',1],
  ['staff-service-roles.js',1],
  ['team-workflow-authority.js',1],
