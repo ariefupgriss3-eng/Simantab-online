@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V3 */
+/* SIMANTAB_GTK_REDISTRIBUTION_ANALYSIS_V4 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -23,6 +23,27 @@ const clamp=(v,min=0,max=100)=>Math.max(min,Math.min(max,Number(v)||0));
 const round1=v=>Math.round((Number(v)||0)*10)/10;
 const LOCATION_EDIT_ROLES=new Set(['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK']);
 const canEditLocation=()=>LOCATION_EDIT_ROLES.has(role());
+const SD_STUDY={
+ title:'Kajian Kebijakan Penataan dan Potensi Penggabungan SD Negeri Kabupaten Batang',
+ version:'V2',date:'13 September 2026',studentCutoff:'11–13 September 2026',
+ baselineSchools:445,baselineStudents:58670,low90:137,
+ buckets:[['≤60',44],['61–90',93],['91–120',87],['>120',221]],
+ rsdm:{abk:5801,asn:4280,displayGap:-1522,cutoff:'30 Juni 2025'},
+ legalGate:[
+  ['L1','Evaluasi satuan pendidikan menunjukkan ketidakmampuan menyelenggarakan pembelajaran','Belum — perlu dokumen evaluasi'],
+  ['L2','SD berada pada satu lokasi yang sama','Sebagian/indikatif — perlu survei lapangan'],
+  ['L3','Persetujuan dan rekomendasi Pemerintah Desa','Belum'],
+  ['L4','Audiensi masyarakat','Belum'],
+  ['L5','Studi kelayakan Dinas menyatakan layak','Belum'],
+  ['L6','Bukan satu-satunya SD dalam desa','Perlu validasi seluruh SD aktif negeri/swasta']
+ ],
+ clusters:[
+  {district:'Subah',label:'SDN Gondang 03 + SDN Gondang 04',schools:[{name:'GONDANG 03',students:48},{name:'GONDANG 04',students:83}],studyDistanceKm:0.26,access:'Keduanya berada di Dukuh Temanggal; ukur rute aktual dan sebaran rumah murid.'},
+  {district:'Reban',label:'SDN Tambakboyo 01 + SDN Tambakboyo 02',schools:[{name:'TAMBAKBOYO 01',students:42},{name:'TAMBAKBOYO 02',students:54}],studyDistanceKm:0.31,access:'Alamat sama-sama Tambakboyo; verifikasi rute, keselamatan, dan kapasitas sekolah penerima.'},
+  {district:'Limpung',label:'SDN Dlisen 01 + SDN Dlisen 02',schools:[{name:'DLISEN 01',students:45},{name:'DLISEN 02',students:65}],studyDistanceKm:0.51,access:'Keduanya di kawasan Gunung Tumpeng; koordinat publik perlu direkonsiliasi.'},
+  {district:'Reban',label:'SDN Padomasan 01 + SDN Padomasan 02',schools:[{name:'PADOMASAN 01',students:44},{name:'PADOMASAN 02',students:61}],studyDistanceKm:0.52,access:'Satu desa tetapi koridor jalan berbeda; makna “satu lokasi yang sama” wajib diverifikasi.'}
+ ]
+};
 const toRad=v=>Number(v)*Math.PI/180;
 function hasCoord(s){return Number.isFinite(Number(s?.latitude))&&Number.isFinite(Number(s?.longitude))}
 function haversineKm(a,b){
@@ -94,6 +115,36 @@ function roleScopeSchool(s){
  if(role()==='SUBKOOR_TK')return lvl==='PAUD';
  return true;
 }
+function normalizeSchoolName(v){
+ return clean(v).toUpperCase().replace(/\bSD\s*NEGERI\b/g,'').replace(/\bSDN\b/g,'').replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+}
+function findStudySchool(data,spec,district){
+ const key=normalizeSchoolName(spec.name),d=clean(district).toLowerCase();
+ const pool=(data.schools||[]).filter(s=>levelOf(s.jenjang||s.bentuk_pendidikan)==='SD'&&clean(s.kecamatan).toLowerCase()===d);
+ return pool.find(s=>normalizeSchoolName(s.school_name)===key)||pool.find(s=>normalizeSchoolName(s.school_name).includes(key))||null;
+}
+function buildStudyModel(data){
+ const visible=!['KASI_SMP','SUBKOOR_TK'].includes(role());
+ if(!visible)return{visible:false};
+ const sdSchools=(data.schools||[]).filter(s=>levelOf(s.jenjang||s.bentuk_pendidikan)==='SD');
+ const districtWide=['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD'].includes(role());
+ const buckets={le60:0,b61_90:0,b91_120:0,gt120:0,le90:0};
+ for(const s of sdSchools){const n=num(s.students);if(n<=60)buckets.le60++;else if(n<=90)buckets.b61_90++;else if(n<=120)buckets.b91_120++;else buckets.gt120++;if(n<=90)buckets.le90++}
+ const wf=statusMap(data),schoolBy=new Map(sdSchools.map(s=>[s.npsn,s]));
+ const allRows=(data.needs||[]).map(r=>rowModel(r,schoolBy.get(r.school_npsn))).filter(r=>r&&r.level==='SD');
+ const clusters=SD_STUDY.clusters.map(base=>{
+  const matches=base.schools.map(spec=>({spec,school:findStudySchool(data,spec,base.district)}));
+  const found=matches.map(x=>x.school).filter(Boolean);
+  const foundNpsn=new Set(found.map(x=>x.npsn));
+  const bothFound=found.length===2;
+  const bothVerified=bothFound&&found.every(s=>['VERIFIED','APPROVED'].includes(wf.get(s.npsn)||''));
+  const rows=bothVerified?allRows.filter(r=>foundNpsn.has(r.school_npsn)):[];
+  const metrics=bothVerified?rows.reduce((o,r)=>{o.abk+=r.abk;o.asn+=r.asn;o.gap+=r.gap;o.surplus+=r.surplus;return o},{abk:0,asn:0,gap:0,surplus:0}):null;
+  const liveDistance=bothFound?haversineKm(found[0],found[1]):null;
+  return{...base,matches,found,bothFound,bothVerified,metrics,liveDistance:liveDistance==null?null:round1(liveDistance)};
+ });
+ return{visible,sdSchools,districtWide,buckets,clusters,scopeLabel:districtWide?'Kabupaten':'Cakupan akun'};
+}
 
 function addStyle(){
  if($('gtkRedistributionStyle'))return;
@@ -109,7 +160,8 @@ function addStyle(){
  '.gar-table-wrap{overflow:auto;max-height:520px;border:1px solid #e3ebf2;border-radius:12px}.gar-table{width:100%;border-collapse:collapse;font-size:10px}.gar-table th,.gar-table td{padding:8px;border-bottom:1px solid #e6edf3;text-align:left;vertical-align:top}.gar-table th{font-size:9px;text-transform:uppercase;color:#6f8294;white-space:nowrap;background:#fafcfe;position:sticky;top:0;z-index:1}'+
  '.gar-pill{display:inline-block;padding:4px 7px;border-radius:999px;background:#edf5ff;color:#175ea7;font-size:8px;font-weight:900}.gar-pill.green{background:#e9f8ef;color:#16804f}.gar-pill.orange{background:#fff4dd;color:#8a5b00}.gar-pill.red{background:#ffefec;color:#b42318}'+
  '.gar-bar{height:7px;background:#edf2f7;border-radius:99px;overflow:hidden;margin-top:6px}.gar-bar i{display:block;height:100%;background:#1767b3;border-radius:99px}'+
- '@media(max-width:980px){.gar-card{grid-column:span 6}.gar-half{grid-column:span 12}}@media(max-width:620px){.gar-card{grid-column:span 12}.gar-filters{grid-template-columns:1fr}.gar-head h2{font-size:19px}}';
+ '.gar-study-kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:10px 0}.gar-study-kpi{padding:10px;border:1px solid #dce7f0;border-radius:12px;background:#fbfdff}.gar-study-kpi b{display:block;font-size:18px;color:#0f3f76}.gar-study-kpi span{font-size:9px;color:#647b8f}.gar-study-title{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.gar-study-flag{display:inline-block;padding:5px 8px;border-radius:999px;background:#fff4dd;color:#805500;font-size:9px;font-weight:900}.gar-study-ok{background:#e9f8ef;color:#176f49}.gar-study-nd{color:#8a5b00;font-weight:800}.gar-study-source{font-size:9px;color:#71869a;line-height:1.45}'+
+ '@media(max-width:980px){.gar-card{grid-column:span 6}.gar-half{grid-column:span 12}.gar-study-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:620px){.gar-card{grid-column:span 12}.gar-filters{grid-template-columns:1fr}.gar-head h2{font-size:19px}.gar-study-kpis{grid-template-columns:1fr}}';
  document.head.appendChild(st);
 }
 function ensureSection(){
@@ -288,7 +340,8 @@ function makeModel(data){
  const totals=rows.reduce((o,x)=>{o.abk+=x.abk;o.asn+=x.asn;o.non+=x.non;o.gap+=x.gap;o.gapData+=x.gapData;o.surplus+=x.surplus;return o},{abk:0,asn:0,non:0,gap:0,gapData:0,surplus:0});
  const redistribution=buildRedistribution(rows),positions=summarizePositions(rows),districts=summarizeDistricts(rows);
  const coordinateSchools=schools.filter(hasCoord).length,verifiedCoordinateSchools=schools.filter(s=>hasCoord(s)&&s.location_verified).length;
- return{data,f,schools,rows,wf,verifiedSchools,inputSchools,totals,redistribution,positions,districts,coordinateSchools,verifiedCoordinateSchools};
+ const study=buildStudyModel(data);
+ return{data,f,schools,rows,wf,verifiedSchools,inputSchools,totals,redistribution,positions,districts,coordinateSchools,verifiedCoordinateSchools,study};
 }
 function levelOptions(data,current){
  const fixed=fixedLevel();if(fixed)return'<option value="'+fixed+'">'+(fixed==='PAUD'?'TK/PAUD':fixed)+'</option>';
@@ -315,13 +368,43 @@ function candidateRows(m){
  return '<tr><td>'+(i+1)+'</td><td><span class="gar-pill '+tierClass+'">'+esc(x.tier)+'</span><div class="gar-small"><b>Skor '+x.score+'</b>/100</div></td><td><span class="gar-pill '+(x.priority==='Dalam kecamatan'?'green':'orange')+'">'+esc(x.priority)+'</span><div class="gar-small">'+esc(x.distanceBasis)+'</div></td><td><b>'+esc(x.label)+'</b><div class="gar-small">'+esc(x.level==='PAUD'?'TK/PAUD':x.level)+'</div></td><td><b>'+esc(x.donorSchool)+'</b><div class="gar-small">'+esc(x.donorNpsn)+' • '+esc(x.donorDistrict)+'<br>ABK '+x.donorAbk+' • ASN '+x.donorAsn+'</div></td><td>→</td><td><b>'+esc(x.targetSchool)+'</b><div class="gar-small">'+esc(x.targetNpsn)+' • '+esc(x.targetDistrict)+'<br>'+fmt(x.targetStudents)+' siswa • '+fmt(x.targetRombel)+' rombel • '+pressure+' siswa/rombel</div></td><td><b>'+fmt(x.qty)+'</b><div class="gar-small">'+esc(comp)+'</div></td></tr>';
  }).join('');
 }
+
+function studyLegalRows(){
+ return SD_STUDY.legalGate.map(x=>'<tr><td><b>'+esc(x[0])+'</b></td><td>'+esc(x[1])+'</td><td>'+esc(x[2])+'</td></tr>').join('');
+}
+function studyClusterRows(study){
+ return study.clusters.map((x,i)=>{
+  const baseline=x.schools.map(s=>fmt(s.students)).join(' + ')+' = '+fmt(x.schools.reduce((n,s)=>n+s.students,0));
+  const current=x.bothFound?x.found.map(s=>fmt(num(s.students))).join(' + ')+' = '+fmt(x.found.reduce((n,s)=>n+num(s.students),0)):'Belum lengkap di master';
+  const live=x.liveDistance==null?'Koordinat belum lengkap':x.liveDistance+' km (garis lurus)';
+  const gtk=x.bothVerified?'2/2 sekolah terverifikasi':'Belum resmi ('+x.found.filter(s=>['VERIFIED','APPROVED'].includes((study.wf?.get?.(s.npsn)||''))).length+'/2 terverifikasi)';
+  const abk=x.metrics?'ABK '+fmt(x.metrics.abk)+' • ASN '+fmt(x.metrics.asn):'<span class="gar-study-nd">ND</span>';
+  const gap=x.metrics?'Gap '+fmt(x.metrics.gap)+' • Surplus berjalan '+fmt(x.metrics.surplus):'<span class="gar-study-nd">ND</span>';
+  return'<tr><td>'+(i+1)+'</td><td><b>'+esc(x.label)+'</b><div class="gar-small">'+esc(x.access)+'</div></td><td>'+esc(x.district)+'</td><td>'+baseline+'</td><td>'+current+'</td><td>±'+String(x.studyDistanceKm).replace('.',',')+' km<div class="gar-small">indikatif kajian</div></td><td>'+esc(live)+'</td><td>'+gtk+'</td><td>'+abk+'</td><td>'+gap+'</td><td><span class="gar-study-nd">ND</span><div class="gar-small">Butuh murid per kelas I–VI, kapasitas ruang, dan linearitas.</div></td><td><span class="gar-pill orange">Studi kelayakan</span><div class="gar-small">Belum keputusan merger.</div></td></tr>';
+ }).join('');
+}
+function studySection(m){
+ const s=m.study;if(!s?.visible)return'';
+ s.wf=m.wf;
+ const currentCount=s.sdSchools.length,currentLow=s.buckets.le90;
+ const mismatch=s.districtWide&&currentCount!==SD_STUDY.baselineSchools;
+ return'<div id="garStudyPanel" class="gar-card gar-wide"><div class="gar-study-title"><div><div class="gar-label">INTEGRASI KAJIAN PENATAAN SD</div><h3 style="margin:5px 0 4px;color:#0f3f76">Penataan SD ↔ Redistribusi GTK</h3><div class="gar-small">Kajian V2 dipakai sebagai <b>decision-support</b>. Empat klaster Tahap I tetap objek studi kelayakan, bukan keputusan penggabungan. SIMANTAB <b>tidak menambah surplus guru dari skenario merger</b> sebelum legal gate terpenuhi dan ABK sesudah skenario dapat dihitung.</div></div><span class="gar-study-flag">'+esc(SD_STUDY.version)+' • '+esc(SD_STUDY.date)+'</span></div>'+
+ '<div class="gar-study-kpis"><div class="gar-study-kpi"><span>Baseline kajian SD Negeri</span><b>'+fmt(SD_STUDY.baselineSchools)+'</b></div><div class="gar-study-kpi"><span>'+esc(s.scopeLabel)+' aktif di SIMANTAB</span><b>'+fmt(currentCount)+'</b></div><div class="gar-study-kpi"><span>Baseline ≤90 peserta didik</span><b>'+fmt(SD_STUDY.low90)+'</b></div><div class="gar-study-kpi"><span>'+esc(s.scopeLabel)+' ≤90 peserta didik</span><b>'+fmt(currentLow)+'</b></div><div class="gar-study-kpi"><span>Klaster Tahap I kajian</span><b>'+fmt(SD_STUDY.clusters.length)+'</b></div></div>'+
+ (mismatch?'<div class="gar-note gar-warn"><b>Rekonsiliasi master data diperlukan.</b> Kajian memakai baseline 445 SD Negeri, sedangkan SIMANTAB saat ini membaca '+fmt(currentCount)+' pada cakupan kabupaten. Selisih harus ditelusuri berbasis NPSN/status aktif sebelum keputusan formal.</div>':'')+
+ '<div class="gar-note"><b>Interlock redistribusi:</b> redistribusi reguler tetap memakai ABK dan ASN berjalan. Untuk skenario penggabungan, urutannya: legal/access/psikososial → kapasitas per kelas → ABK sesudah → surplus potensial → surplus redistributable → penempatan ke sekolah yang memiliki gap terverifikasi. Nilai pasca-merger ditampilkan <b>ND</b> sampai data prasyarat lengkap.</div>'+
+ '<div class="gar-note"><b>Baseline R-SDM dalam dokumen kajian:</b> kebutuhan/ABK 5.801 guru • ASN 4.280 • selisih dashboard -1.522 • cut-off 30 Juni 2025. Angka ini ditampilkan sebagai baseline dokumen dan tidak menggantikan data SIMANTAB yang lebih mutakhir.</div>'+
+ '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px"><div><div class="gar-label">LEGAL GATE PASAL 24</div><div class="gar-table-wrap" style="max-height:360px"><table class="gar-table"><thead><tr><th>Kode</th><th>Syarat</th><th>Status Kajian V2</th></tr></thead><tbody>'+studyLegalRows()+'</tbody></table></div></div><div><div class="gar-label">SCREENING KUANTITATIF</div><div class="gar-table-wrap" style="max-height:360px"><table class="gar-table"><thead><tr><th>Kategori</th><th>Baseline Kajian</th><th>'+esc(s.scopeLabel)+' SIMANTAB</th></tr></thead><tbody><tr><td>≤60</td><td>'+fmt(44)+'</td><td>'+fmt(s.buckets.le60)+'</td></tr><tr><td>61–90</td><td>'+fmt(93)+'</td><td>'+fmt(s.buckets.b61_90)+'</td></tr><tr><td>91–120</td><td>'+fmt(87)+'</td><td>'+fmt(s.buckets.b91_120)+'</td></tr><tr><td>&gt;120</td><td>'+fmt(221)+'</td><td>'+fmt(s.buckets.gt120)+'</td></tr></tbody></table></div><div class="gar-small" style="margin-top:7px">Kategori adalah alat screening, bukan syarat hukum penggabungan.</div></div></div>'+
+ '<div style="margin-top:12px"><div class="gar-label">EMPAT KLASTER TAHAP I — TANPA PERINGKAT</div><div class="gar-table-wrap"><table class="gar-table"><thead><tr><th>No</th><th>Klaster</th><th>Kec.</th><th>PD Kajian</th><th>PD SIMANTAB</th><th>Jarak Kajian</th><th>Jarak SIMANTAB</th><th>Status GTK</th><th>ABK/ASN berjalan</th><th>Gap/Surplus berjalan</th><th>ABK sesudah skenario</th><th>Status</th></tr></thead><tbody>'+studyClusterRows(s)+'</tbody></table></div></div>'+
+ '<div class="gar-study-source" style="margin-top:10px">Sumber internal: '+esc(SD_STUDY.title)+' — '+esc(SD_STUDY.version)+', '+esc(SD_STUDY.date)+'; cut-off peserta didik '+esc(SD_STUDY.studentCutoff)+'. Jarak kajian bersifat indikatif dan tidak sama dengan rute murid.</div></div>';
+}
 function renderHtml(m){
  const official=m.f.dataStatus==='VERIFIED',coverage=pct(m.verifiedSchools,m.schools.length);
  const roleNote=['PENGAWAS','KORWIL'].includes(role())?'Cakupan Pengawas mengikuti data sekolah yang dapat dibaca oleh hak akses akun.':'Cakupan sesuai kewenangan jenjang akun.';
  return'<div class="gar-wrap">'+
   '<div class="gar-head"><h2>⇄ Analisis Kebutuhan & Redistribusi GTK</h2><p>Analisis deterministik berbasis ABK Regulatif. Surplus hanya dipasangkan dengan kekurangan pada <b>jenjang dan jabatan yang sama</b>; prioritas pertama dalam kecamatan.</p></div>'+
   '<div class="gar-note '+(official?'':'gar-warn')+'"><b>'+(official?'Basis resmi: data sekolah yang sudah diverifikasi.':'Mode simulasi: termasuk data yang belum diverifikasi.')+'</b><br>'+esc(roleNote)+' Indikasi redistribusi bukan keputusan mutasi; verifikasi individu, kompetensi, status kepegawaian, kebutuhan layanan, jarak, dan kondisi sekolah tetap diperlukan.</div>'+
-  '<div class="gar-card gar-wide"><div class="gar-filters"><label>Jenjang<select id="garLevel" '+(fixedLevel()?'disabled':'')+'>'+levelOptions(m.data,m.f.level)+'</select></label><label>Kecamatan<select id="garDistrict">'+districtOptions(m.data,m.f.district,m.f.level)+'</select></label><label>Status Data<select id="garStatus"><option value="VERIFIED" '+(m.f.dataStatus==='VERIFIED'?'selected':'')+'>Hanya Diverifikasi</option><option value="ALL" '+(m.f.dataStatus==='ALL'?'selected':'')+'>Semua Data Input (Simulasi)</option></select></label></div><div class="gar-actions"><button class="gar-btn" id="garRefresh">↻ Refresh Data</button><button class="gar-btn soft" id="garCsv">Unduh CSV</button><button class="gar-btn green" id="garPdf">Unduh PDF</button>'+(canEditLocation()?'<button class="gar-btn soft" id="garLocations">📍 Kelola Lokasi Sekolah</button>':'')+'</div></div>'+
+  '<div class="gar-card gar-wide"><div class="gar-filters"><label>Jenjang<select id="garLevel" '+(fixedLevel()?'disabled':'')+'>'+levelOptions(m.data,m.f.level)+'</select></label><label>Kecamatan<select id="garDistrict">'+districtOptions(m.data,m.f.district,m.f.level)+'</select></label><label>Status Data<select id="garStatus"><option value="VERIFIED" '+(m.f.dataStatus==='VERIFIED'?'selected':'')+'>Hanya Diverifikasi</option><option value="ALL" '+(m.f.dataStatus==='ALL'?'selected':'')+'>Semua Data Input (Simulasi)</option></select></label></div><div class="gar-actions"><button class="gar-btn" id="garRefresh">↻ Refresh Data</button><button class="gar-btn soft" id="garCsv">Unduh CSV</button><button class="gar-btn green" id="garPdf">Unduh PDF</button>'+(m.study?.visible?'<button class="gar-btn soft" id="garStudyFocus">📘 Kajian Penataan SD</button>':'')+(canEditLocation()?'<button class="gar-btn soft" id="garLocations">📍 Kelola Lokasi Sekolah</button>':'')+'</div></div>'+
+  +studySection(m)+
   '<div class="gar-card"><div class="gar-label">Sekolah pada Cakupan</div><div class="gar-num">'+fmt(m.schools.length)+'</div><div class="gar-small">Terverifikasi '+fmt(m.verifiedSchools)+' • cakupan '+coverage+'%</div></div>'+
   '<div class="gar-card"><div class="gar-label">Gap Riil</div><div class="gar-num">'+fmt(m.totals.gap)+'</div><div class="gar-small">Σ max(ABK − ASN, 0) per jabatan</div></div>'+
   '<div class="gar-card"><div class="gar-label">Gap Data</div><div class="gar-num">'+fmt(m.totals.gapData)+'</div><div class="gar-small">Σ max(ABK − ASN − Non-ASN, 0)</div></div>'+
@@ -341,7 +424,11 @@ function renderHtml(m){
 function csvCell(v){const s=String(v??'');return'"'+s.replaceAll('"','""')+'"'}
 function downloadCsv(m){
  const lines=[['ANALISIS KEBUTUHAN DAN REDISTRIBUSI GTK'],['Tanggal',new Date().toLocaleString('id-ID')],['Jenjang',m.f.level],['Kecamatan',m.f.district],['Status Data',m.f.dataStatus],[],['RINGKASAN'],['Sekolah Cakupan',m.schools.length],['Sekolah Terverifikasi',m.verifiedSchools],['Gap Riil',m.totals.gap],['Gap Data',m.totals.gapData],['Surplus ASN',m.totals.surplus],['Potensi Dalam Kecamatan',m.redistribution.sameDistrictCovered],['Potensi Lintas Kecamatan',m.redistribution.crossDistrictCovered],['Sisa Kekurangan',m.redistribution.uncovered],[],['PER JABATAN'],['Jenjang','Kode','Jabatan','Gap Riil','Gap Data','Surplus ASN','Sekolah Kurang','Sekolah Surplus']];
- m.positions.forEach(x=>lines.push([x.level,x.code,x.label,x.gap,x.gapData,x.surplus,x.shortSchools.size,x.surplusSchools.size]));
+ if(m.study?.visible){
+  lines.push([],['KAJIAN PENATAAN SD V2'],['Dokumen',SD_STUDY.title],['Tanggal Kajian',SD_STUDY.date],['Baseline SD Negeri',SD_STUDY.baselineSchools],['Baseline ≤90 peserta didik',SD_STUDY.low90],['SD pada cakupan SIMANTAB',m.study.sdSchools.length],['SD ≤90 pada cakupan SIMANTAB',m.study.buckets.le90],['R-SDM baseline ABK',SD_STUDY.rsdm.abk],['R-SDM baseline ASN',SD_STUDY.rsdm.asn],['Selisih dashboard R-SDM',SD_STUDY.rsdm.displayGap],['Cut-off R-SDM',SD_STUDY.rsdm.cutoff],[],['KLASTER TAHAP I — STUDI KELAYAKAN, BUKAN KEPUTUSAN MERGER'],['Klaster','Kecamatan','PD Baseline Kajian','PD SIMANTAB','Jarak Kajian km','Jarak SIMANTAB km','Status GTK','ABK Berjalan','ASN Berjalan','Gap Berjalan','Surplus Berjalan','ABK Sesudah Skenario','Status']);
+  m.study.clusters.forEach(x=>lines.push([x.label,x.district,x.schools.reduce((n,s)=>n+s.students,0),x.bothFound?x.found.reduce((n,s)=>n+num(s.students),0):'Belum lengkap',x.studyDistanceKm,x.liveDistance??'Belum ada',x.bothVerified?'2/2 terverifikasi':'Belum resmi',x.metrics?.abk??'ND',x.metrics?.asn??'ND',x.metrics?.gap??'ND',x.metrics?.surplus??'ND','ND — butuh data kelas I–VI/kapasitas/linearitas','Studi kelayakan; belum keputusan merger']));
+ }
+  m.positions.forEach(x=>lines.push([x.level,x.code,x.label,x.gap,x.gapData,x.surplus,x.shortSchools.size,x.surplusSchools.size]));
  lines.push([],['INDIKASI REDISTRIBUSI BERDASARKAN SKOR'],['Skor','Tier','Prioritas Wilayah','Jenjang','Jabatan','Donor','NPSN Donor','Kecamatan Donor','Penerima','NPSN Penerima','Kecamatan Penerima','Jumlah','Jarak KM','Basis Jarak','Skor Kekurangan','Skor Layanan','Skor Donor','Skor Kedekatan']);
  m.redistribution.pairs.forEach(x=>lines.push([x.score,x.tier,x.priority,x.level,x.label,x.donorSchool,x.donorNpsn,x.donorDistrict,x.targetSchool,x.targetNpsn,x.targetDistrict,x.qty,x.distanceKm??'',x.distanceBasis,round1(x.components.need),round1(x.components.service),round1(x.components.donor),round1(x.components.proximity)]));
  const blob=new Blob(['\ufeff'+lines.map(r=>r.map(csvCell).join(',')).join('\r\n')],{type:'text/csv;charset=utf-8'});
@@ -355,6 +442,12 @@ function downloadPdf(m){
  doc.setFontSize(8);doc.text('Filter: '+(m.f.level==='ALL'?'Semua Jenjang':m.f.level)+' • '+(m.f.district==='ALL'?'Semua Kecamatan':m.f.district)+' • '+(m.f.dataStatus==='VERIFIED'?'Data Diverifikasi':'Semua Data Input'),14,25);
  doc.autoTable({startY:30,head:[['Sekolah','Terverifikasi','Gap Riil','Gap Data','Surplus ASN','Potensi Dalam Kec.','Potensi Lintas Kec.','Sisa']],body:[[m.schools.length,m.verifiedSchools,m.totals.gap,m.totals.gapData,m.totals.surplus,m.redistribution.sameDistrictCovered,m.redistribution.crossDistrictCovered,m.redistribution.uncovered]],styles:{fontSize:8}});
  let y=(doc.lastAutoTable?.finalY||40)+6;
+ if(m.study?.visible){
+  doc.setFontSize(10);doc.text('Kajian Penataan SD V2 — integrasi redistribusi',14,y);
+  doc.setFontSize(7);doc.text('Klaster Tahap I adalah objek studi kelayakan; ABK/surplus pasca-merger tidak dihitung sebelum legal gate dan data kelas I–VI lengkap.',14,y+4);
+  doc.autoTable({startY:y+7,head:[['Klaster','Kec.','PD Kajian','PD SIMANTAB','Jarak Kajian','Jarak SIMANTAB','GTK','ABK/ASN berjalan','ABK sesudah']],body:m.study.clusters.map(x=>[x.label,x.district,x.schools.reduce((n,s)=>n+s.students,0),x.bothFound?x.found.reduce((n,s)=>n+num(s.students),0):'Belum lengkap','±'+x.studyDistanceKm+' km',x.liveDistance==null?'Belum ada':x.liveDistance+' km',x.bothVerified?'2/2 terverifikasi':'Belum resmi',x.metrics?(x.metrics.abk+'/'+x.metrics.asn):'ND','ND']),styles:{fontSize:6},headStyles:{fontSize:6}});
+  y=(doc.lastAutoTable?.finalY||y+25)+6;if(y>175){doc.addPage();y=14}
+ }
  doc.setFontSize(10);doc.text('Peta Jabatan/Mapel',14,y);
  doc.autoTable({startY:y+3,head:[['Jenjang','Jabatan/Mapel','Gap Riil','Gap Data','Surplus ASN','Sekolah Kurang','Sekolah Surplus']],body:m.positions.map(x=>[x.level,x.label,x.gap,x.gapData,x.surplus,x.shortSchools.size,x.surplusSchools.size]),styles:{fontSize:7},headStyles:{fontSize:7}});
  y=(doc.lastAutoTable?.finalY||y+20)+6;
@@ -443,6 +536,7 @@ function bind(m){
  $('garRefresh')?.addEventListener('click',()=>{cache=null;cacheAt=0;render(true)});
  $('garCsv')?.addEventListener('click',()=>currentModel&&downloadCsv(currentModel));
  $('garPdf')?.addEventListener('click',()=>currentModel&&downloadPdf(currentModel));
+ $('garStudyFocus')?.addEventListener('click',()=>{const level=$('garLevel');if(level&&!fixedLevel()){level.value='SD';const d=$('garDistrict');if(d)d.value='ALL';render(false).then(()=>setTimeout(()=>$('garStudyPanel')?.scrollIntoView({behavior:'smooth',block:'start'}),60));}else $('garStudyPanel')?.scrollIntoView({behavior:'smooth',block:'start'});});
  $('garLocations')?.addEventListener('click',()=>openLocationManager());
 }
 async function render(force=false){
