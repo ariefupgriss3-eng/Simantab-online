@@ -236,7 +236,7 @@ async function decorateOwnAbkRegulatif(){
   if(panel&&!panel.querySelector('[data-abk-regulatif-info]')){
    const info=document.createElement('div');info.dataset.abkRegulatifInfo='1';info.className='sim-needs-scope';
    info.style.margin='9px 0';
-   info.innerHTML='<b>ABK Otomatis aktif</b><br>Guru dihitung dengan norma regulatif nasional. <b>TAS dan Penjaga dihitung otomatis sebagai parameter daerah berbasis Anjab/ABK</b>: siswa &lt; 200 → TAS 1; siswa ≥ 200 → ceil(rombel ÷ 2); Penjaga 1 per satuan pendidikan. Parameter lokal lain yang berstatus manual tetap dapat diisi. GAP menunjukkan kekurangan saja: <b>max(ABK − tersedia, 0)</b>.';
+   info.innerHTML='<b>ABK Otomatis aktif</b><br>Guru dihitung dengan norma regulatif nasional. <b>TAS dan Penjaga dihitung otomatis sebagai parameter daerah berbasis Anjab/ABK</b>: TK/PAUD dan SD → TAS 1 per satuan pendidikan; SMP → siswa &lt; 200 TAS 1, siswa ≥ 200 ceil(rombel ÷ 2); Penjaga 1 per satuan pendidikan. Parameter lokal lain yang berstatus manual tetap dapat diisi. GAP menunjukkan kekurangan saja: <b>max(ABK − tersedia, 0)</b>.';
    const toolbar=panel.querySelector('.sim-needs-toolbar');toolbar?.insertAdjacentElement('beforebegin',info);
   }
   table.dataset.abkRegulatif='v2';
