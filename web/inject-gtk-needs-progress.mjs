@@ -25,7 +25,7 @@ const breakdownHelpers=`function canonicalPositionName(r){
  const raw=clean(r?.position_name)||'Jabatan lainnya';
  const lvl=curriculumLevel(r?.school_level||'');
  if(lvl==='TK'&&code==='GURU_TK')return'Guru Kelas TK/PAUD';
- if(lvl==='TK'&&['PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'].includes(code))return'Penjaga';
+ if(['PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'].includes(code))return'Penjaga Sekolah';
  const map={
   KEPALA_SEKOLAH:'Kepala Sekolah',
   GURU_KELAS:'Guru Kelas',
@@ -205,13 +205,13 @@ code=code.replace(
  "if(l==='SD')return'SD berbasis Guru Kelas. Kebutuhan yang dicatat adalah Kepala Sekolah, Guru Kelas, Guru Pendidikan Agama dan Budi Pekerti, Guru PJOK, Tenaga Administrasi Sekolah, dan Penjaga.';"
 );
 
-if(!code.includes('<th>Jumlah Siswa</th>')||!code.includes('students,rombel,is_active')||!code.includes('<th>Gap Data</th>')||!code.includes('ABK Otomatis aktif')||!code.includes("['PENJAGA_SEKOLAH','Penjaga Sekolah',0]")||!code.includes('✓ Diverifikasi')||!code.includes("eq('school_status','NEGERI')")||!code.includes('simGtkNeedsShowBreakdown')||!code.includes('renderSurplusPanel')||!code.includes('Kelebihan Guru, TAS, dan Penjaga'))throw new Error('Core V21 gagal menanam scope negeri/Gap Data/Verifikasi/rincian jabatan/daftar kelebihan.');
+if(!code.includes('<th>Jumlah Siswa</th>')||!code.includes('students,rombel,is_active')||!code.includes('<th>Gap Data</th>')||!code.includes('ABK Otomatis aktif')||!code.includes("['PENJAGA_SEKOLAH','Penjaga Sekolah',0]")||!code.includes("return'Penjaga Sekolah'")||!code.includes('✓ Diverifikasi')||!code.includes("eq('school_status','NEGERI')")||!code.includes('simGtkNeedsShowBreakdown')||!code.includes('renderSurplusPanel')||!code.includes('Kelebihan Guru, TAS, dan Penjaga'))throw new Error('Core V21 gagal menanam scope negeri/Gap Data/Verifikasi/rincian jabatan/daftar kelebihan.');
 
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=34"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=35"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:34,aiVerifierPilot:false,aiVerifierDisabled:true,sdPenjagaStandard:true,sdPenjagaAliasNormalized:true,canonicalAssetVersion:true,roleLevelScope:true,surplusApprovedOnly:true,surplusAsnOnly:true,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,studentColumn:true,rombelColumn:true,abkTendikOtomatis:true,smpPenjagaStandard:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',kabid:'district-wide-negeri',kasiSd:'sd-negeri-only',kasiSmp:'smp-negeri-only',subkoorTk:'tk-paud-negeri-only',pimpinan:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:35,aiVerifierPilot:false,aiVerifierDisabled:true,sdPenjagaStandard:true,sdPenjagaAliasNormalized:true,canonicalAssetVersion:true,roleLevelScope:true,surplusApprovedOnly:true,surplusAsnOnly:true,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,gapFormulaPerPosition:true,studentColumn:true,rombelColumn:true,abkTendikOtomatis:true,smpPenjagaStandard:true,unifiedPenjagaLabel:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',kabid:'district-wide-negeri',kasiSd:'sd-negeri-only',kasiSmp:'smp-negeri-only',subkoorTk:'tk-paud-negeri-only',pimpinan:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
