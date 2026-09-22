@@ -3,9 +3,11 @@
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V3 */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V4_EDU_UNITS_BATANG */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V5_COMPACT_EDU_DETAILS */
+/* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V6_VERIFIED_LIVE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const $=id=>document.getElementById(id);
+const getSb=()=>window.__simantabSb;
 const SNAPSHOT={
  schools:{sd:455,tk:323,pnf:0,smp:76,staff:1709,total:854,teachers:5272},
  needs:{abk:119,asn:97,pns:37,pppk:47,rows:54,levels:{SD:{abk:119,asn:97,non_asn:14,gap_data:8,gap_riil:22},TK:{abk:0,asn:0,non_asn:0,gap_data:0,gap_riil:0},SMP:{abk:0,asn:0,non_asn:0,gap_data:0,gap_riil:0}},non_asn:14,pppk_pw:13,schools:10,gap_data:8,gap_riil:22},
@@ -112,11 +114,11 @@ function render(data=SNAPSHOT,live=false){
  if(desc)desc.textContent='Ringkasan strategis ketenagaan dan layanan. Klik agregat untuk melihat rincian.';
  body.innerHTML=`<div class="lad-grid">
   <div class="lad-hero"><h2>Command Center Ketenagaan</h2><p>${esc(roleTitle())} • agregat TK/PAUD, SD, SMP, layanan kepegawaian, dan agenda bidang.</p></div>
-  <div class="lad-note"><b>${live?'● Data live':'○ Data ringkasan aman'}</b> • ${live?'tersinkron dengan server':'snapshot terakhir valid '+esc(data.snapshot_at||SNAPSHOT.snapshot_at)}</div>
+  <div class="lad-note"><b>${live?'● Data live VERIFIED/APPROVED':'○ Data cadangan'}</b> • ${live?'tersinkron dengan database SIMANTAB':'snapshot cadangan '+esc(data.snapshot_at||SNAPSHOT.snapshot_at)}</div>
   ${eduPanel()}
   <div class="lad-card click" role="button" tabindex="0" onclick="__toggleEduUnitsBatang(true)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();__toggleEduUnitsBatang(true)}"><div class="lad-label">Total Satuan Pendidikan</div><div class="lad-value">${fmt(EDU_BATANG.total)}</div><div class="lad-sub">Formal ${fmt(EDU_BATANG.formal.total)} • Nonformal ${fmt(EDU_BATANG.nonformal.total)}<br>Negeri ${fmt(EDU_BATANG.status.negeri)} • Swasta ${fmt(EDU_BATANG.status.swasta)}</div><button class="lad-edu-btn" type="button" onclick="event.stopPropagation();__toggleEduUnitsBatang(true)" style="margin-top:7px">Lihat Rincian</button></div>
   <div class="lad-card"><div class="lad-label">GTK Dapodik</div><div class="lad-value">${fmt(num(sc.teachers)+num(sc.staff))}</div><div class="lad-sub">Guru ${fmt(sc.teachers)} • Tendik ${fmt(sc.staff)}</div></div>
-  <div class="lad-card"><div class="lad-label">Kebutuhan GTK Riil</div><div class="lad-value">${fmt(n.schools)} sekolah</div><div class="lad-sub">${fmt(n.rows)} entri • Gap Riil ${fmt(n.gap_riil)} • Gap Data ${fmt(n.gap_data)} • Cakupan ${cov}%</div></div>
+  <div class="lad-card"><div class="lad-label">Kebutuhan GTK Riil</div><div class="lad-value">${fmt(n.schools)} sekolah</div><div class="lad-sub">VERIFIED/APPROVED • ${fmt(n.rows)} entri • Gap Riil ${fmt(n.gap_riil)} • Gap Data ${fmt(n.gap_data)} • Cakupan ${cov}%</div></div>
   <div class="lad-card click" onclick="window.showTab&&window.showTab('kadinMonitoring')"><div class="lad-label">Usulan Aktif</div><div class="lad-value">${fmt(w.active)}</div><div class="lad-sub">Klik untuk melihat agregat dan rincian layanan</div></div>
   <div class="lad-card click" onclick="window.showTab&&window.showTab('kadinActivities')"><div class="lad-label">Agenda Mendatang</div><div class="lad-value">${fmt(ac.upcoming)}</div><div class="lad-sub">Total kegiatan ${fmt(ac.total)} • klik untuk melihat agenda</div></div>
   <div class="lad-card"><div class="lad-label">Perhatian</div><div class="lad-value">${fmt(num(n.gap_riil)+num(w.perbaikan))}</div><div class="lad-sub">Kekurangan GTK ${fmt(n.gap_riil)} • Perlu perbaikan ${fmt(w.perbaikan)}</div></div>
@@ -127,10 +129,67 @@ function render(data=SNAPSHOT,live=false){
  </div>`;
  body.dataset.authoritativeLeader='1'; lastRender=Date.now();
 }
-async function syncLive(){ return; }
-function ensure(){ return; }
-for(let i=0;i<240&&!window.__simantabProfile;i++)await wait(50);
+async function syncLive(){
+ if(syncing)return false;
+ syncing=true;
+ try{
+  const sb=getSb();if(!sb)throw new Error('Supabase client belum siap.');
+  const [sm,nr,wf,sr,ar]=await Promise.all([
+   sb.from('school_master').select('npsn,bentuk_pendidikan,jenjang,teachers,staff').eq('is_active',true),
+   sb.from('school_gtk_needs').select('school_npsn,school_level,abk,pns,pppk,pppk_pw,asn_total,non_asn_total'),
+   sb.from('school_gtk_needs_workflow').select('school_npsn,status'),
+   sb.from('submissions').select('status,workflow_state'),
+   sb.from('field_activities').select('activity_date')
+  ]);
+  const er=sm.error||nr.error||wf.error||sr.error||ar.error;if(er)throw er;
+  const schools=(sm.data||[]).filter(x=>['TK','SD','SMP'].includes(String(x.bentuk_pendidikan||x.jenjang||'').toUpperCase()));
+  const verified=new Set((wf.data||[]).filter(x=>['VERIFIED','APPROVED'].includes(String(x.status||'').toUpperCase())).map(x=>String(x.school_npsn||'')));
+  const rows=(nr.data||[]).filter(x=>verified.has(String(x.school_npsn||'')));
+  const level=()=>({abk:0,asn:0,non_asn:0,gap_riil:0,gap_data:0});
+  const levels={TK:level(),SD:level(),SMP:level()};
+  const needs={abk:0,asn:0,pns:0,pppk:0,pppk_pw:0,non_asn:0,rows:rows.length,schools:new Set(rows.map(x=>x.school_npsn)).size,gap_riil:0,gap_data:0,levels};
+  for(const x of rows){
+   const abk=num(x.abk),asn=num(x.asn_total),non=num(x.non_asn_total),gr=Math.max(0,abk-asn),gd=Math.max(0,abk-asn-non);
+   needs.abk+=abk;needs.asn+=asn;needs.pns+=num(x.pns);needs.pppk+=num(x.pppk);needs.pppk_pw+=num(x.pppk_pw);needs.non_asn+=non;needs.gap_riil+=gr;needs.gap_data+=gd;
+   let l=String(x.school_level||'').toUpperCase();if(l==='PAUD')l='TK';
+   if(levels[l]){levels[l].abk+=abk;levels[l].asn+=asn;levels[l].non_asn+=non;levels[l].gap_riil+=gr;levels[l].gap_data+=gd}
+  }
+  const subs=(sr.data||[]).filter(x=>String(x.status||'').toUpperCase()!=='DRAFT');
+  const countW=s=>subs.filter(x=>String(x.workflow_state||'').toUpperCase()===s).length;
+  const workflow={
+   total:subs.length,
+   active:subs.filter(x=>String(x.workflow_state||'').toUpperCase()!=='SELESAI'&&!['COMPLETED','REJECTED'].includes(String(x.status||'').toUpperCase())).length,
+   selesai:countW('SELESAI'),
+   perbaikan:countW('PERBAIKAN')+subs.filter(x=>String(x.status||'').toUpperCase()==='REVISION'&&String(x.workflow_state||'').toUpperCase()!=='PERBAIKAN').length,
+   menunggu_kabid:countW('MENUNGGU_PERSETUJUAN_KABID'),
+   verifikasi_staf:countW('VERIFIKASI_STAF'),
+   menunggu_disposisi:countW('MENUNGGU_DISPOSISI_KOORDINATOR'),
+   menunggu_koordinator:countW('MENUNGGU_APPROVAL_KOORDINATOR')
+  };
+  const acts=ar.data||[],today=new Date().toISOString().slice(0,10),up=acts.filter(x=>String(x.activity_date||'')>=today).sort((a,b)=>String(a.activity_date||'').localeCompare(String(b.activity_date||'')));
+  const live={
+   schools:{
+    tk:schools.filter(x=>String(x.bentuk_pendidikan||x.jenjang||'').toUpperCase()==='TK').length,
+    sd:schools.filter(x=>String(x.bentuk_pendidikan||x.jenjang||'').toUpperCase()==='SD').length,
+    smp:schools.filter(x=>String(x.bentuk_pendidikan||x.jenjang||'').toUpperCase()==='SMP').length,
+    pnf:0,total:schools.length,
+    teachers:schools.reduce((s,x)=>s+num(x.teachers),0),
+    staff:schools.reduce((s,x)=>s+num(x.staff),0)
+   },
+   needs,workflow,
+   activities:{total:acts.length,upcoming:up.length,next_date:up[0]?.activity_date||null},
+   snapshot_at:new Date().toLocaleString('id-ID')
+  };
+  current=live;render(live,true);return true;
+ }catch(e){
+  console.error('Leader dashboard live sync gagal:',e);
+  return false;
+ }finally{syncing=false}
+}
+function ensure(){return syncLive()}
+for(let i=0;i<240&&(!window.__simantabProfile||!getSb());i++)await wait(50);
 if(!isLeader())return;
-render(SNAPSHOT,false);
-window.__simantabLeaderDashboardAuthoritative={version:5,render,syncLive,stable:true,verifiedNeedsOnly:true,eduUnitsBatang:true,compactEduDetails:true};
+const ok=await syncLive();
+if(!ok)render(SNAPSHOT,false);
+window.__simantabLeaderDashboardAuthoritative={version:6,render,syncLive,stable:true,verifiedNeedsOnly:true,eduUnitsBatang:true,compactEduDetails:true,liveVerified:true};
 })();
