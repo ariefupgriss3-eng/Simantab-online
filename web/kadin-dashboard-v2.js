@@ -10,6 +10,7 @@
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V11_GLOBAL_REQUESTER_SEARCH */
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V12_EDU_UNITS_BATANG */
 /* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V13_COMPACT_EDU_DETAILS */
+/* SIMANTAB_KEPALA_DINAS_INFOGRAPHIC_V14_LEADER_RETURN_LIVE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<600&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
@@ -260,6 +261,11 @@ async function leaderDash(force=false){
  const rt=roleTitle();
  $('dashTitle').textContent=`Dashboard ${rt}`;
  $('dashDesc').textContent='Ringkasan strategis ketenagaan dan layanan. Klik agregat untuk melihat rincian.';
+ const auth=window.__simantabLeaderDashboardAuthoritative;
+ if(auth?.syncLive){
+  const ok=await auth.syncLive();
+  if(ok)return;
+ }
  renderLeaderSummary(LEADER_SAFE_SNAPSHOT,false);
 }
 async function dash(force=false){
