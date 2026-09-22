@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_STUDENT_COLUMN_FINAL_V1 */
+/* SIMANTAB_GTK_STUDENT_COLUMN_FINAL_V2 */
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
@@ -41,13 +41,29 @@ async function patchTable(force=false){
   for(const tr of table.querySelectorAll('tbody>tr')){
    const npsn=(String(tr.cells?.[0]?.textContent||tr.textContent||'').match(/\b\d{8}\b/)||[])[0];
    if(!npsn)continue;
-   while(tr.cells.length<headRow.children.length)insertCellAt(tr,studentIndex);
-   const rec=map.get(npsn);
-   const cells=[...tr.cells];
-   const studentCell=cells[studentIndex];
-   const rombelCell=cells[rombelIndex];
-   if(studentCell){studentCell.dataset.studentFinal='1';studentCell.innerHTML='<b>'+String(rec?.students??0)+'</b>'}
-   if(rombelCell&&rec)rombelCell.textContent=String(rec.rombel);
+   const rec=map.get(npsn);if(!rec)continue;
+
+   let cells=[...tr.cells];
+   let studentCell=cells[studentIndex],rombelCell=cells[rombelIndex];
+   const studentNow=num(String(studentCell?.textContent||'').replace(/[^0-9-]/g,'')),
+         rombelNow=num(String(rombelCell?.textContent||'').replace(/[^0-9-]/g,''));
+
+   const rowAlreadyCorrect=studentNow===num(rec.students)&&rombelNow===num(rec.rombel);
+   const looksShifted=studentNow===num(rec.rombel)&&rombelNow!==num(rec.rombel);
+
+   if(!rowAlreadyCorrect&&(looksShifted||tr.cells.length<headRow.children.length)){
+    insertCellAt(tr,studentIndex);
+    cells=[...tr.cells];
+    studentCell=cells[studentIndex];
+    rombelCell=cells[rombelIndex];
+   }else{
+    cells=[...tr.cells];
+    studentCell=cells[studentIndex];
+    rombelCell=cells[rombelIndex];
+   }
+
+   if(studentCell){studentCell.dataset.studentFinal='1';studentCell.innerHTML='<b>'+String(num(rec.students))+'</b>'}
+   if(rombelCell)rombelCell.textContent=String(num(rec.rombel));
   }
   return true;
  }catch(e){console.error('GTK student final column',e);return false}
@@ -92,5 +108,5 @@ function boot(attempt=0){
  setTimeout(()=>boot(attempt+1),150);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>boot(),{once:true});else boot();
-window.__simantabGtkStudentColumnFinal={version:1,authoritative:true,source:'school_master.students'};
+window.__simantabGtkStudentColumnFinal={version:2,authoritative:true,source:'school_master.students'};
 })();
