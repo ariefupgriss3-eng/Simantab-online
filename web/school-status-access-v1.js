@@ -1,5 +1,5 @@
 /* SIMANTAB_SCHOOL_STATUS_ACCESS_V1 */
-/* SIMANTAB_SCHOOL_STATUS_ACCESS_V5 */
+/* SIMANTAB_SCHOOL_STATUS_ACCESS_V6 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.__simantabProfile||!window.showTab);i++)await wait(50);
@@ -36,7 +36,7 @@ async function renderNegeriNeeds(){
  const role=String(p().role||'').toUpperCase();if(!(CENTRAL.has(role)||role==='PENGAWAS'||role==='KORWIL'))return;
  const box=$('simGtkNeedsProgress');if(!box)return;
  let schools=[],scope='Kabupaten Batang',mode='DINAS';
- if(role==='PENGAWAS'||role==='KORWIL'){mode='PENGAWAS';const x=await resolvePengawasNegeri();schools=x.schools;scope=x.label}else{const {data,error}=await sb.from('school_master').select('npsn,school_name,school_status,jenjang,bentuk_pendidikan,kecamatan,is_active').eq('is_active',true).eq('school_status','NEGERI').order('school_name');if(error)throw error;schools=data||[]}
+ if(role==='PENGAWAS'||role==='KORWIL'){mode='PENGAWAS';const x=await resolvePengawasNegeri();schools=x.schools;scope=x.label}else{const {data,error}=await sb.from('school_master').select('npsn,school_name,school_status,jenjang,bentuk_pendidikan,kecamatan,students,rombel,is_active').eq('is_active',true).eq('school_status','NEGERI').order('school_name');if(error)throw error;schools=data||[]}
  const [{data:needs,error:ne},{data:wfs,error:we}]=await Promise.all([sb.from('school_gtk_needs').select('school_npsn,position_name,abk,asn_total,non_asn_total,gap_riil,gap_data').order('school_npsn'),sb.from('school_gtk_needs_workflow').select('school_npsn,status,note')]);if(ne)throw ne;if(we)throw we;
  const allowed=new Set(schools.map(s=>s.npsn)),nr=(needs||[]).filter(r=>allowed.has(r.school_npsn)),wf=new Map((wfs||[]).filter(r=>allowed.has(r.school_npsn)).map(r=>[r.school_npsn,r])),by=new Map();nr.forEach(r=>{if(!by.has(r.school_npsn))by.set(r.school_npsn,[]);by.get(r.school_npsn).push(r)});const input=schools.filter(s=>by.has(s.npsn)).length,total=schools.length,tot=aggRows(nr),submitted=schools.filter(s=>wf.get(s.npsn)?.status==='SUBMITTED').length,verified=schools.filter(s=>wf.get(s.npsn)?.status==='VERIFIED').length;
  const statusLabel={SUBMITTED:'Perlu Verifikasi',VERIFIED:'Diverifikasi',APPROVED:'Diverifikasi',REVISION:'Perlu Perbaikan',DRAFT:'Draft',NOT_STARTED:'Belum Input'};
@@ -49,8 +49,8 @@ async function renderNegeriNeeds(){
 }
 
 const priorOpen=window.openSubmission;if(priorOpen&&!window.__schoolStatusOpenWrapped){window.__schoolStatusOpenWrapped=true;window.openSubmission=(type,name)=>{if(isPrivate&&type!=='TPG_KONSULTASI'){alert('Sekolah swasta hanya dapat menggunakan layanan TPG.');return window.showTab('tpg')}return priorOpen(type,name)}}
-const priorShow=window.showTab;window.showTab=async id=>{await resolveMySchool();if(isPrivate&&!PRIVATE_ALLOWED_TABS.has(id))id='tpg';const r=await priorShow(id);await wait(140);if(isPrivate){enforcePrivateNav();if(id==='dashboard')await renderPrivateDashboard();if(id==='tpg')enforcePrivateTpg()}else if(id==='needs'){await wait(120);await renderNegeriNeeds()}return r};
-const priorRefresh=window.refreshAll;if(priorRefresh)window.refreshAll=async(...args)=>{const r=await priorRefresh(...args);await resolveMySchool(true);await wait(100);if(isPrivate){enforcePrivateNav();if($('dashboard')?.classList.contains('active'))await renderPrivateDashboard();if($('tpg')?.classList.contains('active'))enforcePrivateTpg()}else if($('needs')?.classList.contains('active'))await renderNegeriNeeds();return r};
+const priorShow=window.showTab;window.showTab=async id=>{await resolveMySchool();if(isPrivate&&!PRIVATE_ALLOWED_TABS.has(id))id='tpg';const r=await priorShow(id);await wait(140);if(isPrivate){enforcePrivateNav();if(id==='dashboard')await renderPrivateDashboard();if(id==='tpg')enforcePrivateTpg()}return r};
+const priorRefresh=window.refreshAll;if(priorRefresh)window.refreshAll=async(...args)=>{const r=await priorRefresh(...args);await resolveMySchool(true);await wait(100);if(isPrivate){enforcePrivateNav();if($('dashboard')?.classList.contains('active'))await renderPrivateDashboard();if($('tpg')?.classList.contains('active'))enforcePrivateTpg()}return r};
 await resolveMySchool(true);if(isPrivate){enforcePrivateNav();const active=document.querySelector('.section.active')?.id||'dashboard';if(!PRIVATE_ALLOWED_TABS.has(active))await window.showTab('tpg');else if(active==='dashboard')await renderPrivateDashboard();else if(active==='tpg')enforcePrivateTpg();const nav=$('nav');if(nav)new MutationObserver(()=>enforcePrivateNav()).observe(nav,{childList:true,subtree:false})}
-window.__simantabSchoolStatusAccess={version:5,isPrivate,negeriNeedsOnly:true,statusPriority:['SUBMITTED','REVISION','DRAFT','NOT_STARTED','VERIFIED'],privateServices:['TPG_KONSULTASI']};
+window.__simantabSchoolStatusAccess={version:6,needsRenderer:'gtk-needs-progress-v32',legacyNeedsOverrideDisabled:true,isPrivate,negeriNeedsOnly:true,statusPriority:['SUBMITTED','REVISION','DRAFT','NOT_STARTED','VERIFIED'],privateServices:['TPG_KONSULTASI']};
 })();
