@@ -149,7 +149,7 @@ begin
     '#diklatKsBcks'
   );
 end;
-$function$
+$function$;
 
 revoke all on function public.ks_bcks_reset_to_draft(uuid, text) from public;
 revoke all on function public.ks_bcks_reset_to_draft(uuid, text) from anon;
