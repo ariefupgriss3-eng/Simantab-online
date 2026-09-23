@@ -20,6 +20,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V21_PERSONAL_KABID_NOTE */
 /* SIMANTAB_DIKLAT_KS_BCKS_V22_HIDE_INACTIVE_PARTICIPANTS */
 /* SIMANTAB_DIKLAT_KS_BCKS_V23_AI_ADMIN_VERIFIER */
+/* SIMANTAB_DIKLAT_KS_BCKS_V24_FIX_VERIFIER_REFERENCE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -337,7 +338,7 @@ async function renderLeadershipDiklat(){
    ${isKabidView?'':'<div style="margin-top:10px"><button class="btn soft" onclick="showTab(\'leadershipDirections\')">📝 Buka Arahan Pimpinan</button></div>'}
   </div>
   ${leaderKsbSummary(rows)}
-  <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Status / Proses</th><th>AI Verifikator</th>${isKabidView?'<th>Persetujuan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}</td><td>${verifier.full_name?`<b>${esc(verifier.full_name)}</b><div class="small">${ai?'🤖 AI • ':''}${s.staff_verified_at?esc(fmtDateTime(s.staff_verified_at)):'Ditugaskan'}</div>`:'—'}</td>${isKabidView?`<td>${kabidKsbAction(s,names)||'—'}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
+  <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Status / Proses</th><th>AI Verifikator</th>${isKabidView?'<th>Persetujuan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{},verifier=names.get(s.staff_verified_by||s.assigned_user_id)||{},ai=String(s.staff_verification_note||'').startsWith('AI Verifikator:');return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}</td><td>${verifier.full_name?`<b>${esc(verifier.full_name)}</b><div class="small">${ai?'🤖 AI • ':''}${s.staff_verified_at?esc(fmtDateTime(s.staff_verified_at)):'Ditugaskan'}</div>`:'—'}</td>${isKabidView?`<td>${kabidKsbAction(s,names)||'—'}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 async function reviewerData(){
@@ -390,5 +391,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:22,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:24,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
