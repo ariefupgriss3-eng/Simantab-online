@@ -17,6 +17,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V18_TOTAL_PENGUSUL */
 /* SIMANTAB_DIKLAT_KS_BCKS_V19_TOTAL_PENGUSUL_AKTIF */
 /* SIMANTAB_DIKLAT_KS_BCKS_V20_MULTI_ROLE_RESET_DRAFT */
+/* SIMANTAB_DIKLAT_KS_BCKS_V21_PERSONAL_KABID_NOTE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -272,14 +273,22 @@ function leaderKsbSummary(rows){
  return `<div class="grid" style="margin-bottom:12px">${statusCards}${totalCard}</div>`;
 }
 
-const KABID_SUCCESS_NOTE='Selamat naik Level Bpk/Ibu Peserta Diklat, Sukses👍🙏';
+const kabidSuccessNoteForName=name=>{
+ const n=String(name||'Peserta').trim()||'Peserta';
+ return `Selamat naik level Bpk/Ibu KS ${n}, Calon Peserta Diklat KS 2026. Sukses👍🤲💪🙏`;
+};
+function kabidSuccessNote(s,names){
+ const applicant=names?.get(s?.user_id)||{};
+ return kabidSuccessNoteForName(applicant.full_name||'Peserta');
+}
 function kabidKsbAction(s,names){
  if(!isKabid())return'';
  const reset=resetDraftButton(s.id,s.workflow_state);
+ const successNote=kabidSuccessNote(s,names);
  if(s.workflow_state==='MENUNGGU_PERSETUJUAN_KABID')return `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
   <button class="btn" onclick="ksbKabidApprove('${s.id}',true)">✓ Setujui</button>
   <button class="btn secondary" onclick="ksbKabidApprove('${s.id}',false)">↺ Kembalikan</button>
-  <div class="small" style="width:100%;margin-top:4px"><b>Komentar persetujuan:</b> ${esc(KABID_SUCCESS_NOTE)}</div>
+  <div class="small" style="width:100%;margin-top:4px"><b>Komentar persetujuan:</b> ${esc(successNote)}</div>
   ${reset}
  </div>`;
  if(s.kabid_approved_at){
@@ -293,9 +302,18 @@ function kabidKsbAction(s,names){
  return reset;
 }
 window.ksbKabidApprove=async(id,approve)=>{
- const note=approve?KABID_SUCCESS_NOTE:(prompt('Alasan dikembalikan ke staf/admin verifikator:')||'');
+ let note='';
+ if(approve){
+  const subRes=await sb.from('submissions').select('user_id').eq('id',id).single();
+  if(subRes.error){alert(subRes.error.message);return}
+  const userRes=await sb.from('profiles').select('full_name').eq('id',subRes.data.user_id).maybeSingle();
+  if(userRes.error){alert(userRes.error.message);return}
+  note=kabidSuccessNoteForName(userRes.data?.full_name||'Peserta');
+ }else{
+  note=(prompt('Alasan dikembalikan ke staf/admin verifikator:')||'');
+ }
  if(!approve&&!note.trim()){alert('Alasan pengembalian wajib diisi.');return}
- if(approve&&!confirm('Setujui peserta dan naikkan ke Level Seleksi Substansi?\n\nKomentar: '+KABID_SUCCESS_NOTE))return;
+ if(approve&&!confirm('Setujui peserta dan naikkan ke Level Seleksi Substansi?\n\nKomentar: '+note))return;
  const {error}=await sb.rpc('submission_kabid_approve',{p_submission_id:id,p_approve:approve,p_note:note});
  if(error){alert(error.message);return}
  toast(approve?'Usulan disetujui Kabid.':'Usulan dikembalikan untuk perbaikan.');
@@ -360,5 +378,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:20,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:21,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
