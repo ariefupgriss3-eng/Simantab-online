@@ -25,6 +25,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V26_KABID_PRIORITY_ORDER */
 /* SIMANTAB_DIKLAT_KS_BCKS_V28_FINAL_RENDER_SORT */
 /* SIMANTAB_DIKLAT_KS_BCKS_V29_KABID_CELEBRATION */
+/* SIMANTAB_DIKLAT_KS_BCKS_V30_APPLICANT_KABID_NOTE_SOURCE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -114,7 +115,14 @@ function ensureNav(){const nav=$('nav');if(!nav||nav.querySelector('[data-tab="d
 const stageIndex=s=>({ADMINISTRASI:0,SUBSTANSI:1,DIKLAT:2,SERTIFIKAT:3}[s]??0);
 const stateLabel=(d,i)=>i===0?(d?.admin_status||'BELUM'):i===1?(d?.substansi_status||'TERKUNCI'):i===2?(d?.diklat_status||'TERKUNCI'):(d?.sertifikat_status||'TERKUNCI');
 function progressHtml(d){const cur=stageIndex(d?.workflow_stage||'ADMINISTRASI');const labels=['1. Seleksi Administrasi','2. Seleksi Substansi','3. Diklat','4. Pencatatan Sertifikat Diklat'];return `<div class="servicegrid" style="margin-bottom:14px">${labels.map((x,i)=>{const unlocked=i<=cur,active=i===cur;return `<div class="service" style="border:${active?'2px solid #2563eb':'1px solid #dbe3ec'};opacity:${unlocked?1:.6}"><div class="small">LEVEL ${i+1}${active?' • AKTIF':''}</div><h3>${esc(x)}</h3><p>${esc(unlocked?stateLabel(d,i):'TERKUNCI')}</p></div>`}).join('')}</div>`}
-async function myDetail(){const {data,error}=await sb.from('ks_bcks_submission_details').select('*').eq('user_id',profile().id).maybeSingle();if(error)throw error;return data}
+async function myDetail(){
+ const {data,error}=await sb.from('ks_bcks_submission_details').select('*').eq('user_id',profile().id).maybeSingle();
+ if(error)throw error;
+ if(!data?.submission_id)return data;
+ const approval=await sb.from('submissions').select('kabid_approved_at,kabid_approval_note,kabid_approved_by').eq('id',data.submission_id).maybeSingle();
+ if(approval.error)throw approval.error;
+ return {...data,...(approval.data||{})};
+}
 async function filesFor(id){if(!id)return[];const {data,error}=await sb.from('submission_files').select('*').eq('submission_id',id).order('created_at');if(error)throw error;return data||[]}
 function kabidCelebrationHtml(d){
  const note=String(d?.kabid_approval_note||'').trim();
@@ -411,5 +419,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:29,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:30,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
