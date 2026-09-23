@@ -1,4 +1,5 @@
 /* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V1 */
+/* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V2_STRICT_COMPLETION_DEDUPE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -43,7 +44,13 @@ const fmtDateTime=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',ti
 const hours=(a,b)=>{const x=dt(a),y=dt(b);return x&&y&&y>=x?(y-x)/36e5:null};
 const fmtDuration=h=>h==null?'-':h<24?Math.round(h*10)/10+' jam':Math.round(h/24*10)/10+' hari';
 const fileSafe=s=>clean(s).replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||'laporan';
-const completed=s=>String(s.workflow_state||'')==='SELESAI'||String(s.status||'')==='COMPLETED';
+const completed=s=>{
+ const workflow=String(s.workflow_state||'').trim().toUpperCase();
+ const status=String(s.status||'').trim().toUpperCase();
+ // Jika workflow tersedia, ia menjadi sumber kebenaran. Status umum COMPLETED
+ // tidak boleh membuat usulan yang sudah diturunkan ke DRAFT tetap terhitung selesai.
+ return workflow?workflow==='SELESAI':status==='COMPLETED';
+};
 
 let cache=null,cacheAt=0,currentModel=null,navObserver=null;
 
@@ -179,6 +186,18 @@ function model(data){
    handled:x.handled.size,assign:x.assign.size,verify:x.verify.size,coord:x.coord.size,kabid:x.kabid.size,response:x.response.size,
    actions:x.assign.size+x.verify.size+x.coord.size+x.kabid.size+x.response.size,last:x.last
  }});
+ const mergedPersonal=new Map;
+ for(const x of personalAll){
+  const key=clean(x.name).toLocaleLowerCase('id-ID');
+  const prev=mergedPersonal.get(key);
+  if(!prev){mergedPersonal.set(key,{...x,ids:[x.id]});continue}
+  prev.ids.push(x.id);
+  prev.id=prev.ids.join(',');
+  prev.position=[...new Set([prev.position,x.position].filter(Boolean))].join(' / ');
+  prev.handled+=x.handled;prev.assign+=x.assign;prev.verify+=x.verify;prev.coord+=x.coord;prev.kabid+=x.kabid;prev.response+=x.response;prev.actions+=x.actions;
+  if(x.last&&(!prev.last||x.last>prev.last))prev.last=x.last;
+ }
+ personalAll.splice(0,personalAll.length,...mergedPersonal.values());
  const contributors=personalAll.filter(x=>x.handled>0).length;
  let personal=canSeeAllPersonal()
    ?personalAll.filter(x=>x.handled||x.actions||['KABID','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(x.role))
@@ -320,5 +339,5 @@ function downloadPdf(){
 }
 
 addStyle();ensureSection();ensureNav();installNavObserver();
-window.__simantabPerformanceAchievement={version:1,open:activate,refresh:()=>render(true),completionRule:'workflow_state=SELESAI OR status=COMPLETED',downloads:['PDF','CSV']};
+window.__simantabPerformanceAchievement={version:2,open:activate,refresh:()=>render(true),completionRule:'workflow_state=SELESAI OR status=COMPLETED',downloads:['PDF','CSV']};
 })();
