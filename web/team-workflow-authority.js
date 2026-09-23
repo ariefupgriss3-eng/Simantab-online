@@ -1,4 +1,5 @@
 /* SIMANTAB_TEAM_WORKFLOW_AUTHORITY_V1 */
+/* SIMANTAB_TEAM_WORKFLOW_AUTHORITY_V2_SUCIPTO_ACTIVITY_ADMIN */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
@@ -38,7 +39,7 @@ function renderTeamMap(){
   <div class="service"><h3>Kasim</h3><p>Promosi KSPSTK.</p></div>
   <div class="service"><h3>Wartono</h3><p>Pensiun/Pemberhentian.</p></div>
   <div class="service"><h3>Danny Khairunnisa</h3><p>Izin Cuti, Sakit, Umroh.</p></div>
-  <div class="service"><h3>Sucipto</h3><p>TPG/Tamsil.</p></div>
+  <div class="service"><h3>Sucipto</h3><p>TPG/Tamsil • Admin Kegiatan Bidang.</p></div>
   <div class="service"><h3>Ika Oktaviana Dewi</h3><p>Simtendik dan Super Admin SIMANTAB.</p></div>
   <div class="service"><h3>Rina Ratnawati</h3><p>Kenaikan Gaji Berkala.</p></div>
   <div class="service"><h3>Imam Prabowo</h3><p>Usul Penerbitan SK.</p></div>
