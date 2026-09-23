@@ -139,5 +139,60 @@ window.simantabAdminSendPasswordReset=async(id,name)=>{
 };
 const usersBody=$('usersBody');if(usersBody&&!window.__simantabResetPasswordObserver){window.__simantabResetPasswordObserver=true;new MutationObserver(()=>installPasswordResetActions()).observe(usersBody,{childList:true})}
 
-const old=window.showTab;window.showTab=async id=>{await old(id);await w(40);if(id==='services')await svc();if(id==='users'){installPasswordResetActions();await installMissingDinasAccounts();await installNewDinasAccounts()}};for(let i=0;i<60&&!window.__simantabProfile;i++)await w(100);if(sa()&&document.querySelector('.section.active')?.id==='services')await svc();if(sa()&&document.querySelector('.section.active')?.id==='users'){installPasswordResetActions();await installMissingDinasAccounts();await installNewDinasAccounts();}
+
+/* SIMANTAB_SUPER_ADMIN_USER_DATA_CONTROL_V1 */
+function escAdmin(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function focusExistingUserRow(id){
+ const btn=[...document.querySelectorAll('#usersBody button')].find(b=>(b.getAttribute('onclick')||'').includes("saveUser('"+id+"')"));
+ const tr=btn?.closest('tr');
+ if(!tr)return alert('Baris pengguna belum tampil. Gunakan pencarian pada tabel Kelola Pengguna.');
+ tr.scrollIntoView({behavior:'smooth',block:'center'});tr.style.outline='3px solid #f59e0b';setTimeout(()=>tr.style.outline='',2600);
+ tr.querySelector('input,select')?.focus();
+}
+async function installUserDataManagement(){
+ if(!sa())return;const body=$('usersBody');if(!body)return;
+ body.querySelector('[data-user-data-management]')?.remove();
+ const card=document.createElement('div');card.className='card';card.dataset.userDataManagement='1';card.style.marginBottom='12px';
+ card.innerHTML='<h3 style="margin-top:0">Kelola Data dan Status Pengguna</h3><div class="small">Memuat akun dan jumlah data input…</div>';body.prepend(card);
+ try{
+  const [pr,su]=await Promise.all([
+   sb.from('profiles').select('id,full_name,username,role,position,unit,is_active').order('full_name').limit(1000),
+   sb.from('submissions').select('id,user_id').limit(5000)
+  ]);
+  if(pr.error||su.error)throw pr.error||su.error;
+  const counts=new Map;for(const x of su.data||[])counts.set(x.user_id,(counts.get(x.user_id)||0)+1);
+  const rows=(pr.data||[]).map(x=>({...x,input_count:counts.get(x.id)||0}));
+  card.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:start;flex-wrap:wrap"><div><h3 style="margin:0">Kelola Data dan Status Pengguna</h3><div class="small">Ubah profil melalui tombol <b>Ubah Profil</b>. Aktif/nonaktif memengaruhi akses akun. Hapus Input menghapus seluruh usulan beserta riwayat workflow pengguna, tetapi tidak menghapus akun.</div></div><button class="btn soft" id="simRefreshUserData">↻ Segarkan</button></div>
+  <input id="simUserDataSearch" placeholder="Cari nama, username, jabatan, atau role…" style="width:100%;margin:12px 0;padding:10px;border:1px solid #d4dee8;border-radius:10px">
+  <div style="overflow:auto;max-height:520px;border:1px solid #e2e8f0;border-radius:12px"><table style="width:100%;border-collapse:collapse;font-size:11px"><thead><tr><th style="text-align:left;padding:8px">Pengguna</th><th style="text-align:left;padding:8px">Role/Jabatan</th><th style="text-align:center;padding:8px">Status</th><th style="text-align:center;padding:8px">Input</th><th style="text-align:left;padding:8px">Tindakan Super Admin</th></tr></thead><tbody id="simUserDataRows"></tbody></table></div>`;
+  const renderRows=(term='')=>{
+   const q=String(term).toLowerCase().trim();
+   const filtered=rows.filter(x=>!q||[x.full_name,x.username,x.role,x.position,x.unit].some(v=>String(v||'').toLowerCase().includes(q)));
+   $('simUserDataRows').innerHTML=filtered.map(x=>`<tr style="border-top:1px solid #e8eef4"><td style="padding:8px"><b>${escAdmin(x.full_name||'-')}</b><div class="small">${escAdmin(x.username||'-')} • ${escAdmin(x.unit||'-')}</div></td><td style="padding:8px">${escAdmin(x.position||x.role||'-')}<div class="small">${escAdmin(x.role||'-')}</div></td><td style="padding:8px;text-align:center"><b style="color:${x.is_active===false?'#b91c1c':'#166534'}">${x.is_active===false?'NONAKTIF':'AKTIF'}</b></td><td style="padding:8px;text-align:center"><b>${x.input_count}</b></td><td style="padding:8px;white-space:nowrap"><button class="btn soft" data-edit-user="${x.id}">✏️ Ubah Profil</button> <button class="btn soft" data-toggle-user="${x.id}">${x.is_active===false?'▶ Aktifkan':'⏸ Nonaktifkan'}</button> <button class="btn" style="background:#b91c1c" data-delete-inputs="${x.id}" ${x.input_count?'':'disabled'}>🗑 Hapus Input</button></td></tr>`).join('')||'<tr><td colspan="5" style="padding:18px;text-align:center">Pengguna tidak ditemukan.</td></tr>';
+   for(const x of filtered){
+    document.querySelector(`[data-edit-user="${x.id}"]`)?.addEventListener('click',()=>focusExistingUserRow(x.id));
+    document.querySelector(`[data-toggle-user="${x.id}"]`)?.addEventListener('click',()=>window.simantabSetUserActive(x.id,x.full_name,x.is_active===false));
+    document.querySelector(`[data-delete-inputs="${x.id}"]`)?.addEventListener('click',()=>window.simantabDeleteUserInputs(x.id,x.full_name,x.input_count));
+   }
+  };
+  renderRows();$('simUserDataSearch').oninput=e=>renderRows(e.target.value);$('simRefreshUserData').onclick=()=>installUserDataManagement();
+ }catch(e){card.innerHTML=`<h3 style="margin-top:0">Kelola Data dan Status Pengguna</h3><div class="err">${escAdmin(e?.message||'Gagal memuat data pengguna.')}</div>`}
+}
+window.simantabSetUserActive=async(id,name,activate)=>{
+ if(!sa())return alert('Hanya Super Admin.');
+ const verb=activate?'mengaktifkan':'menonaktifkan';
+ if(!confirm(`Yakin ${verb} akun ${name}?\n\nData pengguna tidak dihapus.`))return;
+ const {data,error}=await sb.rpc('super_admin_manage_user_data',{p_user_id:id,p_action:'SET_ACTIVE',p_active:activate});
+ if(error)return alert(error.message);alert(`Akun ${data?.full_name||name} berhasil ${activate?'diaktifkan':'dinonaktifkan'}.`);await installUserDataManagement();
+};
+window.simantabDeleteUserInputs=async(id,name,count)=>{
+ if(!sa())return alert('Hanya Super Admin.');
+ if(!confirm(`PERINGATAN: hapus permanen seluruh ${count} data input/usulan milik ${name}?\n\nRiwayat workflow dan data turunan juga ikut terhapus. Akun pengguna tetap tersedia.`))return;
+ const typed=prompt(`Ketik HAPUS untuk mengonfirmasi penghapusan seluruh input milik ${name}:`);
+ if(typed!=='HAPUS')return alert('Penghapusan dibatalkan.');
+ const {data,error}=await sb.rpc('super_admin_manage_user_data',{p_user_id:id,p_action:'DELETE_INPUTS',p_active:null});
+ if(error)return alert(error.message);alert(`${data?.deleted_submissions||0} data input milik ${data?.full_name||name} berhasil dihapus permanen.`);await installUserDataManagement();await svc();
+};
+
+const old=window.showTab;window.showTab=async id=>{await old(id);await w(40);if(id==='services')await svc();if(id==='users'){installPasswordResetActions();await installMissingDinasAccounts();await installNewDinasAccounts();await installUserDataManagement()}};for(let i=0;i<60&&!window.__simantabProfile;i++)await w(100);if(sa()&&document.querySelector('.section.active')?.id==='services')await svc();if(sa()&&document.querySelector('.section.active')?.id==='users'){installPasswordResetActions();await installMissingDinasAccounts();await installNewDinasAccounts();await installUserDataManagement();}
 })();
