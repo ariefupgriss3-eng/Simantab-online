@@ -1,5 +1,6 @@
 /* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V1 */
 /* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V2_STRICT_COMPLETION_DEDUPE */
+/* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V3_QUALITATIVE_SCORE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -43,6 +44,8 @@ const fmtDate=v=>v?new Date(v).toLocaleDateString('id-ID',{day:'2-digit',month:'
 const fmtDateTime=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 const hours=(a,b)=>{const x=dt(a),y=dt(b);return x&&y&&y>=x?(y-x)/36e5:null};
 const fmtDuration=h=>h==null?'-':h<24?Math.round(h*10)/10+' jam':Math.round(h/24*10)/10+' hari';
+const pct=(done,total)=>total>0?Math.round(done/total*1000)/10:0;
+const fmtPct=v=>(Math.round(Number(v||0)*10)/10).toLocaleString('id-ID',{maximumFractionDigits:1})+'%';
 const fileSafe=s=>clean(s).replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,80)||'laporan';
 const completed=s=>{
  const workflow=String(s.workflow_state||'').trim().toUpperCase();
@@ -160,6 +163,21 @@ function contributorIdsForSubmission(s,contrib){
  for(const [uid,x] of contrib)if(x.handled.has(s.id))ids.push(uid);
  return ids;
 }
+function personScopeAllowed(p,s){
+ const role=String(p?.role||'');
+ const scope=String(s?.scope_level||'');
+ if(role==='KASI_SD')return scope==='SD';
+ if(role==='KASI_SMP')return scope==='SMP';
+ if(role==='SUBKOOR_TK')return ['TK_PAUD_PNF','TK','PAUD','PNF'].includes(scope);
+ return true;
+}
+function assignedTaskMap(rows,assignees){
+ const allowed=new Set(rows.map(s=>s.id)),map=new Map;
+ const add=(uid,sid)=>{if(!uid||!allowed.has(sid))return;if(!map.has(uid))map.set(uid,new Set);map.get(uid).add(sid)};
+ for(const s of rows)add(s.assigned_user_id,s.id);
+ for(const a of assignees)add(a.user_id,a.submission_id);
+ return map;
+}
 
 function model(data){
  const allCompleted=data.subs.filter(completed).filter(roleScopeAllowed);
@@ -170,6 +188,13 @@ function model(data){
  const startInput=$('paStart')?.value||`${year}-01-01`,endInput=$('paEnd')?.value||today.toISOString().slice(0,10);
  const service=$('paService')?.value||'ALL',scope=$('paScope')?.value||'ALL',person=canSeeAllPersonal()?($('paPerson')?.value||'ALL'):'ALL';
  const start=new Date(startInput+'T00:00:00'),end=new Date(endInput+'T23:59:59.999');
+ let proposalRows=data.subs.filter(roleScopeAllowed).filter(s=>{const entered=dt(s.submitted_at||s.updated_at);return entered&&entered>=start&&entered<=end});
+ if(service!=='ALL')proposalRows=proposalRows.filter(s=>String(s.service_type||'')===service);
+ if(scope!=='ALL')proposalRows=proposalRows.filter(s=>String(s.scope_level||'')===scope);
+ const fieldCompleted=proposalRows.filter(completed);
+ const fieldScore=pct(fieldCompleted.length,proposalRows.length);
+ const taskMap=assignedTaskMap(proposalRows,data.assignees);
+ const completedProposalIds=new Set(fieldCompleted.map(s=>s.id));
  let rows=allCompleted.filter(s=>{const done=dt(s.workflow_completed_at||s.updated_at);return done&&done>=start&&done<=end});
  if(service!=='ALL')rows=rows.filter(s=>String(s.service_type||'')===service);
  if(scope!=='ALL')rows=rows.filter(s=>String(s.scope_level||'')===scope);
@@ -181,10 +206,18 @@ function model(data){
  const serviceMap=new Map;
  for(const s of rows){const k=s.service_type||'LAINNYA';if(!serviceMap.has(k))serviceMap.set(k,{service:k,count:0,durations:[]});const x=serviceMap.get(k);x.count++;const h=hours(s.submitted_at,s.workflow_completed_at||s.updated_at);if(h!=null)x.durations.push(h)}
  const services=[...serviceMap.values()].map(x=>({...x,avg:x.durations.length?x.durations.reduce((a,b)=>a+b,0)/x.durations.length:null})).sort((a,b)=>String(serviceLabel(a.service)).localeCompare(serviceLabel(b.service),'id'));
- const personalAll=eligibleProfiles.map(p=>{const x=contrib.get(p.id)||{handled:new Set,assign:new Set,verify:new Set,coord:new Set,kabid:new Set,response:new Set,last:null};return{
+ const personalAll=eligibleProfiles.map(p=>{const x=contrib.get(p.id)||{handled:new Set,assign:new Set,verify:new Set,coord:new Set,kabid:new Set,response:new Set,last:null};
+   const staff=isStaffRole(p.role);
+   const scopedProposals=proposalRows.filter(s=>personScopeAllowed(p,s));
+   const assigned=taskMap.get(p.id)||new Set;
+   const qualitativeTotal=staff?assigned.size:scopedProposals.length;
+   const qualitativeDone=staff?[...assigned].filter(id=>completedProposalIds.has(id)).length:scopedProposals.filter(completed).length;
+   return{
    id:p.id,name:p.full_name||'-',role:p.role,position:p.position||roleLabel(p.role),unit:p.unit||'-',
    handled:x.handled.size,assign:x.assign.size,verify:x.verify.size,coord:x.coord.size,kabid:x.kabid.size,response:x.response.size,
-   actions:x.assign.size+x.verify.size+x.coord.size+x.kabid.size+x.response.size,last:x.last
+   actions:x.assign.size+x.verify.size+x.coord.size+x.kabid.size+x.response.size,last:x.last,
+   qualitativeDone,qualitativeTotal,qualitativeScore:pct(qualitativeDone,qualitativeTotal),
+   qualitativeBasis:staff?'Selesai ÷ tugas dibagi':'Selesai ÷ usulan jenjang'
  }});
  const mergedPersonal=new Map;
  for(const x of personalAll){
@@ -195,6 +228,7 @@ function model(data){
   prev.id=prev.ids.join(',');
   prev.position=[...new Set([prev.position,x.position].filter(Boolean))].join(' / ');
   prev.handled+=x.handled;prev.assign+=x.assign;prev.verify+=x.verify;prev.coord+=x.coord;prev.kabid+=x.kabid;prev.response+=x.response;prev.actions+=x.actions;
+  prev.qualitativeDone+=x.qualitativeDone;prev.qualitativeTotal+=x.qualitativeTotal;prev.qualitativeScore=pct(prev.qualitativeDone,prev.qualitativeTotal);
   if(x.last&&(!prev.last||x.last>prev.last))prev.last=x.last;
  }
  personalAll.splice(0,personalAll.length,...mergedPersonal.values());
@@ -204,7 +238,7 @@ function model(data){
    :personalAll.filter(x=>x.id===profile().id);
  const roleOrder={KABID:1,KASI_SD:2,KASI_SMP:3,SUBKOOR_TK:4};
  personal.sort((a,b)=>(roleOrder[a.role]||10)-(roleOrder[b.role]||10)||a.name.localeCompare(b.name,'id'));
- return {rows,profiles,contrib,services,personal,avgDuration,contributors,startInput,endInput,service,scope,person,allCompleted,baseContrib};
+ return {rows,profiles,contrib,services,personal,avgDuration,contributors,startInput,endInput,service,scope,person,allCompleted,baseContrib,proposalRows,fieldCompleted,fieldScore};
 }
 
 function optionHtml(value,label,selected){return `<option value="${esc(value)}"${String(value)===String(selected)?' selected':''}>${esc(label)}</option>`}
@@ -234,7 +268,7 @@ function serviceBarsHtml(services,total){
 
 function personalTableHtml(rows){
  if(!rows.length)return'<div class="pa-empty">Belum ada capaian personal pada filter ini.</div>';
- return `<div class="pa-scroll"><table class="pa-table"><thead><tr><th>Nama</th><th>Jabatan</th><th>Layanan Selesai Ditangani</th><th>Bagi Tugas</th><th>Verifikasi</th><th>Approve Kasi/Subkoor</th><th>Persetujuan Kabid</th><th>Respon Staf</th><th>Total Aksi</th><th>Aksi Terakhir</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><div class="pa-small">${esc(x.unit)}</div></td><td>${esc(x.position)}</td><td><b>${x.handled}</b></td><td>${x.assign}</td><td>${x.verify}</td><td>${x.coord}</td><td>${x.kabid}</td><td>${x.response}</td><td><b>${x.actions}</b></td><td>${esc(x.last?fmtDateTime(x.last):'-')}</td></tr>`).join('')}</tbody></table></div>`;
+ return `<div class="pa-scroll"><table class="pa-table"><thead><tr><th>Nama</th><th>Jabatan</th><th>Layanan Selesai Ditangani</th><th>Bagi Tugas</th><th>Verifikasi</th><th>Approve Kasi/Subkoor</th><th>Persetujuan Kabid</th><th>Respon Staf</th><th>Total Aksi</th><th>Aksi Terakhir</th><th>Skor Kualitatif</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><div class="pa-small">${esc(x.unit)}</div></td><td>${esc(x.position)}</td><td><b>${x.handled}</b></td><td>${x.assign}</td><td>${x.verify}</td><td>${x.coord}</td><td>${x.kabid}</td><td>${x.response}</td><td><b>${x.actions}</b></td><td>${esc(x.last?fmtDateTime(x.last):'-')}</td><td><b>${esc(fmtPct(x.qualitativeScore))}</b><div class="pa-small">${x.qualitativeDone}/${x.qualitativeTotal} • ${esc(x.qualitativeBasis)}</div></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function detailRows(m){
@@ -261,6 +295,7 @@ function renderModel(m,data){
  <div class="pa-card"><div class="pa-label">Jenis Layanan Selesai</div><div class="pa-num">${m.services.length}</div><div class="pa-small">Jenis layanan dengan hasil selesai pada periode terpilih</div></div>
  <div class="pa-card"><div class="pa-label">Rata-rata Penyelesaian</div><div class="pa-num" style="font-size:23px">${esc(fmtDuration(m.avgDuration))}</div><div class="pa-small">Dari waktu pengajuan sampai status selesai</div></div>
  <div class="pa-card"><div class="pa-label">Personel Berkontribusi</div><div class="pa-num">${m.contributors}</div><div class="pa-small">Kabid, Kasi/Subkoor, dan Staf/Admin dengan jejak pada layanan selesai</div></div>
+ <div class="pa-card"><div class="pa-label">Capaian Kinerja Bidang</div><div class="pa-num">${esc(fmtPct(m.fieldScore))}</div><div class="pa-small">${m.fieldCompleted.length} selesai ÷ ${m.proposalRows.length} total usulan × 100</div></div>
  <div class="pa-card pa-half"><div class="pa-label">CAPAIAN PER JENIS LAYANAN</div><div style="margin-top:8px">${serviceBarsHtml(m.services,m.rows.length)}</div></div>
  <div class="pa-card pa-half"><div class="pa-label">CATATAN PENGUKURAN</div><div class="pa-note" style="margin-top:8px"><b>Total bidang tidak dihitung ganda.</b> Satu layanan selesai dihitung satu kali untuk capaian bidang. Pada capaian personal, satu layanan dapat tercatat pada beberapa orang sesuai perannya dalam workflow: Bagi Tugas, Verifikasi, Approval Kasi/Subkoor, Persetujuan Kabid, atau Respon Staf/Admin.<br><br>Data ini mengukur pekerjaan yang tercatat di SIMANTAB dan tidak otomatis mewakili pekerjaan manual di luar aplikasi.</div></div>
  <div class="pa-card pa-wide"><div class="pa-label">CAPAIAN PERSONAL</div><div style="height:8px"></div>${personalTableHtml(m.personal)}</div>
@@ -295,14 +330,15 @@ function downloadCsv(){
  lines.push(['Jenis layanan selesai',m.services.length].map(csvCell).join(sep));
  lines.push(['Rata-rata penyelesaian',fmtDuration(m.avgDuration)].map(csvCell).join(sep));
  lines.push(['Personel berkontribusi',m.contributors].map(csvCell).join(sep));
+ lines.push(['Capaian kinerja bidang',fmtPct(m.fieldScore),m.fieldCompleted.length+' selesai / '+m.proposalRows.length+' total usulan'].map(csvCell).join(sep));
  lines.push('');
  lines.push(['CAPAIAN PER JENIS LAYANAN'].map(csvCell).join(sep));
  lines.push(['Jenis Layanan','Jumlah Selesai','Rata-rata Durasi'].map(csvCell).join(sep));
  for(const x of m.services)lines.push([serviceLabel(x.service),x.count,fmtDuration(x.avg)].map(csvCell).join(sep));
  lines.push('');
  lines.push(['CAPAIAN PERSONAL'].map(csvCell).join(sep));
- lines.push(['Nama','Jabatan','Unit','Layanan Selesai Ditangani','Bagi Tugas','Verifikasi','Approve Kasi/Subkoor','Persetujuan Kabid','Respon Staf','Total Aksi','Aksi Terakhir'].map(csvCell).join(sep));
- for(const x of m.personal)lines.push([x.name,x.position,x.unit,x.handled,x.assign,x.verify,x.coord,x.kabid,x.response,x.actions,x.last?fmtDateTime(x.last):'-'].map(csvCell).join(sep));
+ lines.push(['Nama','Jabatan','Unit','Layanan Selesai Ditangani','Bagi Tugas','Verifikasi','Approve Kasi/Subkoor','Persetujuan Kabid','Respon Staf','Total Aksi','Aksi Terakhir','Skor Kualitatif','Rasio'].map(csvCell).join(sep));
+ for(const x of m.personal)lines.push([x.name,x.position,x.unit,x.handled,x.assign,x.verify,x.coord,x.kabid,x.response,x.actions,x.last?fmtDateTime(x.last):'-',fmtPct(x.qualitativeScore),x.qualitativeDone+'/'+x.qualitativeTotal+' - '+x.qualitativeBasis].map(csvCell).join(sep));
  lines.push('');
  lines.push(['RINCIAN LAYANAN SELESAI'].map(csvCell).join(sep));
  lines.push(['Pengusul','Unit','Layanan','Jenjang','Masuk','Selesai','Durasi','Kontributor Internal'].map(csvCell).join(sep));
@@ -322,13 +358,13 @@ function downloadPdf(){
   doc.setFontSize(9);doc.text('BIDANG PEMBINAAN KETENAGAAN',w/2,20,{align:'center'});doc.setLineWidth(.4);doc.line(10,23,w-10,23);
   doc.setFontSize(12);doc.text('CAPAIAN KINERJA BIDANG KETENAGAAN',w/2,29,{align:'center'});
   doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.text(`Periode: ${clean(fmtDate(m.startInput))} - ${clean(fmtDate(m.endInput))}`,10,35);
-  doc.text(`Layanan selesai: ${m.rows.length} | Jenis layanan: ${m.services.length} | Rata-rata penyelesaian: ${clean(fmtDuration(m.avgDuration))} | Personel berkontribusi: ${m.contributors}`,10,39);
+  doc.text(`Layanan selesai: ${m.rows.length} | Jenis layanan: ${m.services.length} | Rata-rata: ${clean(fmtDuration(m.avgDuration))} | Capaian bidang: ${clean(fmtPct(m.fieldScore))} (${m.fieldCompleted.length}/${m.proposalRows.length})`,10,39);
   const svcBody=m.services.map((x,i)=>[String(i+1),clean(serviceLabel(x.service)),String(x.count),clean(fmtDuration(x.avg))]);
   doc.autoTable({startY:43,head:[['No','Jenis Layanan','Selesai','Rata-rata Durasi']],body:svcBody,theme:'grid',styles:{font:'helvetica',fontSize:7,cellPadding:1.5},headStyles:{fillColor:[230,235,240],textColor:[20,20,20],fontStyle:'bold'},columnStyles:{0:{cellWidth:10,halign:'center'},1:{cellWidth:105},2:{cellWidth:25,halign:'center'},3:{cellWidth:38}}});
   let y=(doc.lastAutoTable?.finalY||43)+6;
   doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('Capaian Personal',10,y);y+=3;
-  const pBody=m.personal.map((x,i)=>[String(i+1),clean(x.name),clean(x.position),String(x.handled),String(x.assign),String(x.verify),String(x.coord),String(x.kabid),String(x.response),String(x.actions)]);
-  doc.autoTable({startY:y,head:[['No','Nama','Jabatan','Tuntas','Bagi Tugas','Verifikasi','Approve Koord.','Perset. Kabid','Respon','Total Aksi']],body:pBody,theme:'grid',styles:{font:'helvetica',fontSize:6.2,cellPadding:1.2},headStyles:{fillColor:[230,235,240],textColor:[20,20,20],fontStyle:'bold'},columnStyles:{0:{cellWidth:8,halign:'center'},1:{cellWidth:42},2:{cellWidth:45},3:{cellWidth:17,halign:'center'},4:{cellWidth:20,halign:'center'},5:{cellWidth:18,halign:'center'},6:{cellWidth:22,halign:'center'},7:{cellWidth:22,halign:'center'},8:{cellWidth:18,halign:'center'},9:{cellWidth:18,halign:'center'}}});
+  const pBody=m.personal.map((x,i)=>[String(i+1),clean(x.name),clean(x.position),String(x.handled),String(x.assign),String(x.verify),String(x.coord),String(x.kabid),String(x.response),String(x.actions),clean(fmtPct(x.qualitativeScore))]);
+  doc.autoTable({startY:y,head:[['No','Nama','Jabatan','Tuntas','Bagi Tugas','Verifikasi','Approve Koord.','Perset. Kabid','Respon','Total Aksi','Skor']],body:pBody,theme:'grid',styles:{font:'helvetica',fontSize:6.2,cellPadding:1.2},headStyles:{fillColor:[230,235,240],textColor:[20,20,20],fontStyle:'bold'},columnStyles:{0:{cellWidth:8,halign:'center'},1:{cellWidth:42},2:{cellWidth:45},3:{cellWidth:17,halign:'center'},4:{cellWidth:20,halign:'center'},5:{cellWidth:18,halign:'center'},6:{cellWidth:22,halign:'center'},7:{cellWidth:22,halign:'center'},8:{cellWidth:18,halign:'center'},9:{cellWidth:18,halign:'center'},10:{cellWidth:18,halign:'center'}}});
   y=(doc.lastAutoTable?.finalY||y)+6;
   doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('Rincian Layanan Selesai',10,y);y+=3;
   const dBody=detailRows(m).map((x,i)=>[String(i+1),clean(x.applicant),clean(serviceLabel(x.s.service_type)),clean(scopeLabel(x.s.scope_level)),clean(fmtDateTime(x.s.submitted_at)),clean(fmtDateTime(x.s.workflow_completed_at||x.s.updated_at)),clean(fmtDuration(x.duration)),clean(x.people||'-')]);
@@ -339,5 +375,5 @@ function downloadPdf(){
 }
 
 addStyle();ensureSection();ensureNav();installNavObserver();
-window.__simantabPerformanceAchievement={version:2,open:activate,refresh:()=>render(true),completionRule:'workflow_state=SELESAI OR status=COMPLETED',downloads:['PDF','CSV']};
+window.__simantabPerformanceAchievement={version:3,open:activate,refresh:()=>render(true),completionRule:'workflow_state=SELESAI OR status=COMPLETED',downloads:['PDF','CSV']};
 })();
