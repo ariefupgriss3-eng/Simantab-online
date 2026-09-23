@@ -1,6 +1,7 @@
 /* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V1 */
 /* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V2_STRICT_COMPLETION_DEDUPE */
 /* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V3_QUALITATIVE_SCORE */
+/* SIMANTAB_PERFORMANCE_ACHIEVEMENT_V4_COMPACT_TABLE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -71,8 +72,11 @@ function addStyle(){
  .pa-filter input,.pa-filter select{width:100%;margin-top:4px;padding:9px 10px;border:1px solid #cfdae5;border-radius:10px;background:#fff}
  .pa-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pa-btn{border:0;border-radius:10px;padding:9px 12px;font-weight:850;cursor:pointer;background:#0f3f76;color:#fff}
  .pa-btn.soft{background:#edf5ff;color:#0f3f76;border:1px solid #c9dff3}.pa-btn.green{background:#16784d}
- .pa-table{width:100%;border-collapse:collapse;font-size:10px}.pa-table th,.pa-table td{padding:8px;border-bottom:1px solid #e6edf3;text-align:left;vertical-align:top}
- .pa-table th{font-size:9px;text-transform:uppercase;color:#6f8294;white-space:nowrap;background:#fafcfe;position:sticky;top:0}
+ .pa-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:9px}
+ .pa-table th,.pa-table td{padding:6px 4px;border-bottom:1px solid #e6edf3;text-align:left;vertical-align:top;line-height:1.25;overflow-wrap:anywhere}
+ .pa-table th{font-size:7.5px;text-transform:uppercase;color:#6f8294;white-space:normal;background:#fafcfe;position:sticky;top:0;vertical-align:middle}
+ .pa-table td:nth-child(n+3){text-align:center}.pa-table th:nth-child(n+3){text-align:center}
+ .pa-personal-scroll{overflow-x:hidden}.pa-personal-table .pa-small{font-size:8px;line-height:1.25}
  .pa-scroll{overflow:auto;max-height:520px;border:1px solid #e3ebf2;border-radius:12px}
  .pa-pill{display:inline-block;padding:4px 7px;border-radius:999px;background:#edf5ff;color:#175ea7;font-size:9px;font-weight:900}
  .pa-note{padding:10px 12px;border-radius:11px;background:#f7fbff;border:1px solid #d8e8f6;font-size:10px;color:#496176;line-height:1.55}
@@ -268,7 +272,7 @@ function serviceBarsHtml(services,total){
 
 function personalTableHtml(rows){
  if(!rows.length)return'<div class="pa-empty">Belum ada capaian personal pada filter ini.</div>';
- return `<div class="pa-scroll"><table class="pa-table"><thead><tr><th>Nama</th><th>Jabatan</th><th>Layanan Selesai Ditangani</th><th>Bagi Tugas</th><th>Verifikasi</th><th>Approve Kasi/Subkoor</th><th>Persetujuan Kabid</th><th>Respon Staf</th><th>Total Aksi</th><th>Aksi Terakhir</th><th>Skor Kualitatif</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><div class="pa-small">${esc(x.unit)}</div></td><td>${esc(x.position)}</td><td><b>${x.handled}</b></td><td>${x.assign}</td><td>${x.verify}</td><td>${x.coord}</td><td>${x.kabid}</td><td>${x.response}</td><td><b>${x.actions}</b></td><td>${esc(x.last?fmtDateTime(x.last):'-')}</td><td><b>${esc(fmtPct(x.qualitativeScore))}</b><div class="pa-small">${x.qualitativeDone}/${x.qualitativeTotal} • ${esc(x.qualitativeBasis)}</div></td></tr>`).join('')}</tbody></table></div>`;
+ return `<div class="pa-scroll pa-personal-scroll"><table class="pa-table pa-personal-table"><colgroup><col style="width:16%"><col style="width:11%"><col style="width:9%"><col style="width:6%"><col style="width:6%"><col style="width:9%"><col style="width:9%"><col style="width:6%"><col style="width:6%"><col style="width:9%"><col style="width:13%"></colgroup><thead><tr><th>Nama / Unit</th><th>Jabatan</th><th>Layanan<br>Selesai</th><th>Bagi<br>Tugas</th><th>Verifikasi</th><th>Approve<br>Kasi/Subkoor</th><th>Persetujuan<br>Kabid</th><th>Respon<br>Staf</th><th>Total<br>Aksi</th><th>Aksi<br>Terakhir</th><th>Skor<br>Kualitatif</th></tr></thead><tbody>${rows.map(x=>`<tr><td><b>${esc(x.name)}</b><div class="pa-small">${esc(x.unit)}</div></td><td>${esc(x.position)}</td><td><b>${x.handled}</b></td><td>${x.assign}</td><td>${x.verify}</td><td>${x.coord}</td><td>${x.kabid}</td><td>${x.response}</td><td><b>${x.actions}</b></td><td>${esc(x.last?fmtDateTime(x.last):'-')}</td><td><b>${esc(fmtPct(x.qualitativeScore))}</b><div class="pa-small">${x.qualitativeDone}/${x.qualitativeTotal}<br>${esc(x.qualitativeBasis)}</div></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function detailRows(m){
@@ -375,5 +379,5 @@ function downloadPdf(){
 }
 
 addStyle();ensureSection();ensureNav();installNavObserver();
-window.__simantabPerformanceAchievement={version:3,open:activate,refresh:()=>render(true),completionRule:'workflow_state=SELESAI OR status=COMPLETED',downloads:['PDF','CSV']};
+window.__simantabPerformanceAchievement={version:4,open:activate,refresh:()=>render(true),completionRule:'workflow_state=SELESAI OR status=COMPLETED',downloads:['PDF','CSV']};
 })();

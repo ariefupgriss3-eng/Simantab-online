@@ -235,7 +235,7 @@ const modules=[
  ['session-boundary-hardening.js',1],
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],
- ['performance-achievement.js',3]
+ ['performance-achievement.js',4]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
