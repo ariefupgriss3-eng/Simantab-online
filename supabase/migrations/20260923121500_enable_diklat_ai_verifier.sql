@@ -45,7 +45,7 @@ begin
   end if;
 
   select
-    coalesce(new.assigned_user_id,min(a.user_id)),
+    coalesce(new.assigned_user_id,(array_agg(a.user_id order by a.user_id))[1]),
     string_agg(coalesce(p.full_name,a.user_id::text),', ' order by coalesce(p.full_name,a.user_id::text))
   into v_primary_verifier,v_verifier_names
   from public.submission_assignees a
