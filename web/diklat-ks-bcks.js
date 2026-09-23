@@ -21,6 +21,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V22_HIDE_INACTIVE_PARTICIPANTS */
 /* SIMANTAB_DIKLAT_KS_BCKS_V23_AI_ADMIN_VERIFIER */
 /* SIMANTAB_DIKLAT_KS_BCKS_V24_FIX_VERIFIER_REFERENCE */
+/* SIMANTAB_DIKLAT_KS_BCKS_V25_DRAFT_LAST */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -56,6 +57,7 @@ const isApplicant=()=>['GTK','KEPALA_SEKOLAH'].includes(profile().role);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmtDate=v=>v?new Date(v).toLocaleDateString('id-ID'):'-';
 const fmtDateTime=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
+const draftLast=(a,b)=>Number((a.workflow_state||a.admin_status)==='DRAFT')-Number((b.workflow_state||b.admin_status)==='DRAFT');
 const canResetDraftRole=()=>['SUPER_ADMIN','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(profile().role);
 function resetDraftButton(id,state,label='↩ Turunkan ke Draft'){
  if(state==='DRAFT')return '';
@@ -190,7 +192,7 @@ async function renderCoordinatorDiklat(){
   window.__ksbCoordData=d;
   const names=new Map(d.profiles.map(x=>[x.id,x]));
   const scope=COORD_SCOPE[profile().role],scopeLabel=scope==='TK_PAUD_PNF'?'TK/PAUD/PNF':scope;
-  const rows=d.subs;
+  const rows=[...d.subs].sort(draftLast);
   const pendingCount=rows.filter(x=>x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR').length;
   const bulk=pendingCount>=2?`<div class="ksb-bulkbox"><div><div class="label">PEMBAGIAN TUGAS AGREGAT</div><div class="small">${pendingCount} peserta menunggu pembagian tugas. Sistem membagi satu peserta ke satu petugas secara merata.</div></div><button class="btn" onclick="ksbOpenBulkAssign()">⚖️ Bagi Tugas Agregat (${pendingCount})</button></div>`:'';
   body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Pada level Kasi/Subkoor, berkas administrasi peserta tidak ditampilkan. Berkas hanya diperiksa oleh admin/staf yang ditugaskan. Kasi/Subkoor memantau agregat dan melakukan Bagi Tugas. Setelah staf/admin menyelesaikan verifikasi, usulan langsung diteruskan ke Kabid untuk persetujuan.</div></div>${coordKsbSummary(rows)}${bulk}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{},verifier=names.get(s.staff_verified_by||s.assigned_user_id)||{},ai=String(s.staff_verification_note||'').startsWith('AI Verifikator');return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
@@ -348,7 +350,7 @@ async function reviewerData(){
  ]);
  const err=det.error||pf.error;if(err)throw err;
  const activeIds=new Set((pf.data||[]).filter(x=>x.is_active!==false).map(x=>x.id));
- return (det.data||[]).filter(x=>activeIds.has(x.user_id));
+ return (det.data||[]).filter(x=>activeIds.has(x.user_id)).sort(draftLast);
 }
 function certSummary(d){return `<div class="info" style="margin-top:10px"><b>Data Sertifikat dari Peserta</b><br>Lembaga/Pihak Penerbit: ${esc(d.sertifikat_penerbit||'-')}<br>Nomor: ${esc(d.sertifikat_nomor||'-')}<br>Tanggal: ${fmtDate(d.sertifikat_tanggal)}${d.sertifikat_submitted_at?`<br>Diajukan: ${fmtDateTime(d.sertifikat_submitted_at)}`:''}</div>`}
 function superAdminDraftAction(d){
@@ -391,5 +393,5 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
 async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:24,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:25,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
