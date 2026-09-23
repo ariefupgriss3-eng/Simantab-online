@@ -9,7 +9,7 @@ const MODS=[
  ['team-display-fix.js','SIMANTAB_TEAM_DISPLAY_FIX_V1',2],
  ['admin-data-summary-fix.js','SIMANTAB_ADMIN_DATA_SUMMARY_FIX_V1',1],
  ['team-multi-capability.js','SIMANTAB_TEAM_MULTI_CAPABILITY_V1',1],
- ['activity-input-access.js','SIMANTAB_ACTIVITY_INPUT_ACCESS_V1',1],
+ ['activity-input-access.js','SIMANTAB_ACTIVITY_INPUT_ACCESS_V1',2],
  ['tpg-consultation.js','SIMANTAB_TPG_CONSULTATION_INFO_V1',1],
  ['sk-plt-enhancement.js','SIMANTAB_SK_PLT_KS_V1',1],
  ['activity-schedule-committee.js','SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V1',1],
