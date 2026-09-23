@@ -212,7 +212,7 @@ const modules=[
  ['korwil-dashboard-title.js',1],
  ['cuti-requirements.js',1],
  ['super-admin-merge-pengawas.js',1],
- ['diklat-ks-bcks-v31.js',2],
+ ['diklat-ks-bcks-v31.js',3],
  ['ui-branding-icons.js',3],
  ['kasim-role-label.js',1],
  ['login-developer-branding.js',1],
