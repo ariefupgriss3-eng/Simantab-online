@@ -5,6 +5,7 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V7 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V8 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V9 */
+/* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V10_HIDE_INACTIVE_REQUESTERS */
 /* SIMANTAB_COORDINATOR_SERVICE_AGGREGATE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -57,7 +58,17 @@ async function fetchWorkflowData(scopeOnly=null){
   sb.from('submission_response_cycles').select('id,submission_id,cycle_no,staff_response,staff_response_by,staff_response_at,coordinator_status,coordinator_note,kabid_status,kabid_note,delivered_at,gtk_reply,gtk_replied_at,cycle_status,closed_at').order('cycle_no',{ascending:false}).limit(3000)
  ]);
  const e=s.error||u.error||t.error||a.error||cx.error;if(e)throw e;
- return{subs:s.data||[],profiles:u.data||[],tasks:t.data||[],assignees:a.data||[],cycles:cx.data||[]};
+ const profiles=u.data||[];
+ const activeRequesterIds=new Set(profiles.filter(x=>x.is_active!==false).map(x=>x.id));
+ const subs=(s.data||[]).filter(x=>activeRequesterIds.has(x.user_id));
+ const visibleSubmissionIds=new Set(subs.map(x=>x.id));
+ return{
+  subs,
+  profiles,
+  tasks:t.data||[],
+  assignees:(a.data||[]).filter(x=>visibleSubmissionIds.has(x.submission_id)),
+  cycles:(cx.data||[]).filter(x=>visibleSubmissionIds.has(x.submission_id))
+ };
 }
 function maps(d){return{names:new Map(d.profiles.map(x=>[x.id,x.full_name||'-'])),prof:new Map(d.profiles.map(x=>[x.id,x]))}}
 function latestCycle(d,submissionId){
@@ -276,5 +287,5 @@ window.showTab=async function(id){
  return r;
 };
 style();
-window.__simantabLayeredWorkflow={version:9,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true};
+window.__simantabLayeredWorkflow={version:10,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true,hideInactiveRequesters:true};
 })();
