@@ -23,7 +23,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V24_FIX_VERIFIER_REFERENCE */
 /* SIMANTAB_DIKLAT_KS_BCKS_V25_DRAFT_LAST */
 /* SIMANTAB_DIKLAT_KS_BCKS_V26_KABID_PRIORITY_ORDER */
-/* SIMANTAB_DIKLAT_KS_BCKS_V27_FORCE_FRESH_MODULE */
+/* SIMANTAB_DIKLAT_KS_BCKS_V28_FINAL_RENDER_SORT */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -335,7 +335,7 @@ async function renderLeadershipDiklat(){
  try{
   const d=await leadershipDiklatData();
   const names=new Map(d.profiles.map(x=>[x.id,x]));
-  const rows=d.subs;
+  const rows=[...d.subs].sort(leadershipOrder);
   const leaderLabel=profile().role==='KEPALA_DINAS'?'Kepala Disdikbud':profile().role==='SEKRETARIS_DINAS'?'Sekretaris Disdikbud':'Kabid Ketenagaan';
   const isKabidView=isKabid();
   body.innerHTML=`<div class="card" style="margin-bottom:12px">
