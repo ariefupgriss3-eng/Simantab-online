@@ -178,7 +178,7 @@ await fs.writeFile(path.join(staticDir,performanceAchievementFile),performanceAc
 const modules=[
  ['kp-enhancement.js',4],
  ['ptk-swasta-enhancement.js',1],
- ['super-admin-enhancement.js',8],
+ ['super-admin-enhancement.js',9],
  ['registration-approval.js',2],
  ['kadin-dashboard-v2.js',14],
  ['gtk-infographic-details.js',2],
