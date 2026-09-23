@@ -19,6 +19,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V20_MULTI_ROLE_RESET_DRAFT */
 /* SIMANTAB_DIKLAT_KS_BCKS_V21_PERSONAL_KABID_NOTE */
 /* SIMANTAB_DIKLAT_KS_BCKS_V22_HIDE_INACTIVE_PARTICIPANTS */
+/* SIMANTAB_DIKLAT_KS_BCKS_V23_AI_ADMIN_VERIFIER */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -191,7 +192,7 @@ async function renderCoordinatorDiklat(){
   const rows=d.subs;
   const pendingCount=rows.filter(x=>x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR').length;
   const bulk=pendingCount>=2?`<div class="ksb-bulkbox"><div><div class="label">PEMBAGIAN TUGAS AGREGAT</div><div class="small">${pendingCount} peserta menunggu pembagian tugas. Sistem membagi satu peserta ke satu petugas secara merata.</div></div><button class="btn" onclick="ksbOpenBulkAssign()">⚖️ Bagi Tugas Agregat (${pendingCount})</button></div>`:'';
-  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Pada level Kasi/Subkoor, berkas administrasi peserta tidak ditampilkan. Berkas hanya diperiksa oleh admin/staf yang ditugaskan. Kasi/Subkoor memantau agregat dan melakukan Bagi Tugas. Setelah staf/admin menyelesaikan verifikasi, usulan langsung diteruskan ke Kabid untuk persetujuan.</div></div>${coordKsbSummary(rows)}${bulk}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Pada level Kasi/Subkoor, berkas administrasi peserta tidak ditampilkan. Berkas hanya diperiksa oleh admin/staf yang ditugaskan. Kasi/Subkoor memantau agregat dan melakukan Bagi Tugas. Setelah staf/admin menyelesaikan verifikasi, usulan langsung diteruskan ke Kabid untuk persetujuan.</div></div>${coordKsbSummary(rows)}${bulk}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Status / Proses</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{},verifier=names.get(s.staff_verified_by||s.assigned_user_id)||{},ai=String(s.staff_verification_note||'').startsWith('AI Verifikator');return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 window.ksbCoordOpenAssign=async id=>{
@@ -246,7 +247,7 @@ window.ksbSaveBulkAssign=async()=>{
 async function leadershipDiklatData(){
  const [s,pf]=await Promise.all([
   sb.from('submissions')
-   .select('id,user_id,service_type,title,scope_level,workflow_state,status,updated_at,submitted_at,kabid_approved_by,kabid_approved_at,kabid_approval_note')
+   .select('id,user_id,service_type,title,scope_level,workflow_state,status,updated_at,submitted_at,assigned_user_id,staff_verified_by,staff_verified_at,staff_verification_note,kabid_approved_by,kabid_approved_at,kabid_approval_note')
    .eq('service_type','DIKLAT_KS_BCKS')
    .order('submitted_at',{ascending:false})
    .limit(1000),
@@ -332,11 +333,11 @@ async function renderLeadershipDiklat(){
   const leaderLabel=profile().role==='KEPALA_DINAS'?'Kepala Disdikbud':profile().role==='SEKRETARIS_DINAS'?'Sekretaris Disdikbud':'Kabid Ketenagaan';
   const isKabidView=isKabid();
   body.innerHTML=`<div class="card" style="margin-bottom:12px">
-   <div class="info"><b>Monitoring ${esc(leaderLabel)}.</b> Tampilan hanya memuat agregat, identitas pengusul, jenjang, dan status proses. Berkas unggahan peserta tidak ditampilkan dan tetap diperiksa oleh admin/staf verifikator.${isKabidView?' Kabid memberikan persetujuan akhir administrasi dari tampilan ringkas ini.':''}</div>
+   <div class="info"><b>Monitoring ${esc(leaderLabel)}.</b> Tampilan hanya memuat agregat, identitas pengusul, jenjang, dan status proses. AI Verifikator memeriksa kelengkapan administratif berkas secara otomatis; admin/staf yang ditugaskan tetap menjadi verifikator penanggung jawab. Berkas unggahan peserta tidak ditampilkan pada dashboard pimpinan.${isKabidView?' Kabid memberikan persetujuan akhir administrasi dari tampilan ringkas ini.':''}</div>
    ${isKabidView?'':'<div style="margin-top:10px"><button class="btn soft" onclick="showTab(\'leadershipDirections\')">📝 Buka Arahan Pimpinan</button></div>'}
   </div>
   ${leaderKsbSummary(rows)}
-  <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Status / Proses</th>${isKabidView?'<th>Persetujuan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}</td>${isKabidView?`<td>${kabidKsbAction(s,names)||'—'}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
+  <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>Nama</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Status / Proses</th><th>AI Verifikator</th>${isKabidView?'<th>Persetujuan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{};return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${coordKsbPill(s.workflow_state)}</td><td>${verifier.full_name?`<b>${esc(verifier.full_name)}</b><div class="small">${ai?'🤖 AI • ':''}${s.staff_verified_at?esc(fmtDateTime(s.staff_verified_at)):'Ditugaskan'}</div>`:'—'}</td>${isKabidView?`<td>${kabidKsbAction(s,names)||'—'}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 async function reviewerData(){
