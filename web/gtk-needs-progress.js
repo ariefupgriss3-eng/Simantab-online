@@ -151,14 +151,31 @@ function curriculumNote(level){
 
 async function resolvePengawasScope(){const client=sb(),p=profile();const {data:all,error}=await client.from('school_master').select('npsn,school_name,school_status,jenjang,bentuk_pendidikan,kecamatan,students,rombel,is_active').eq('is_active',true).eq('school_status','NEGERI').order('school_name');if(error)throw error;const schools=all||[],districts=[...new Set(schools.map(x=>x.kecamatan).filter(Boolean))];const pos=norm(p.position);let hit=districts.find(d=>pos&&pos.includes(norm(d)));if(hit)return{schools:schools.filter(x=>norm(x.kecamatan)===norm(hit)),label:`Kecamatan ${hit}`,districts:[hit],source:'profil'};if(p.nip){const {data:refs}=await client.from('tcs_sd_dabin_reference').select('district').eq('supervisor_nip',String(p.nip).trim()).eq('is_active',true);const ds=[...new Set((refs||[]).map(x=>x.district).filter(Boolean))];if(ds.length){const normalized=ds.map(d=>districts.find(x=>norm(x)===norm(d))||d);return{schools:schools.filter(x=>normalized.some(d=>norm(d)===norm(x.kecamatan))),label:normalized.map(x=>`Kecamatan ${x}`).join(', '),districts:normalized,source:'wilayah binaan'}}}return{schools:[],label:'Wilayah tugas belum terpetakan',districts:[],source:'none'}}
 
-function editableRow(r,i,canEdit){const c=calcRow(r),id=esc(r.id||''),code=esc(r.job_code||'');return `<tr class="sim-needs-edit-row" data-id="${id}" data-code="${code}"><td>${canEdit?`<input class="sim-needs-position" data-f="position_name" value="${esc(r.position_name||'')}">`:`<b>${esc(r.position_name||'-')}</b>`}<div class="sim-needs-note">${esc(r.job_code||'Jabatan baru')}</div></td>${['abk','pns','pppk','pppk_pw','non_asn_before_2024','non_asn_after_2024'].map(f=>`<td>${canEdit?`<input class="sim-needs-edit" type="number" min="0" step="1" data-f="${f}" value="${num(r[f])}">`:num(r[f])}</td>`).join('')}<td data-c="asn">${c.asn}</td><td data-c="non">${c.non}</td><td data-c="gap"><b>${c.gap}</b></td><td data-c="gapData">${c.gapData}</td>${canEdit?`<td><button class="sim-needs-action red" data-remove-row="${i}">Hapus</button></td>`:''}</tr>`}
+function editableRow(r,i,canEdit){
+ const c=calcRow(r),id=esc(r.id||''),code=esc(r.job_code||''),isKs=String(r.job_code||'').toUpperCase()==='KEPALA_SEKOLAH';
+ const fields=['abk','pns','pppk','pppk_pw','non_asn_before_2024','non_asn_after_2024'];
+ const cells=fields.map(f=>{
+  if(!canEdit)return `<td>${num(r[f])}</td>`;
+  const isKsAsn=isKs&&['pns','pppk','pppk_pw'].includes(f);
+  const isKsNon=isKs&&['non_asn_before_2024','non_asn_after_2024'].includes(f);
+  const attrs=isKsAsn?' max="1" title="Kepala Sekolah: pilih tepat satu kategori ASN dengan nilai 1"':isKsNon?' max="0" readonly title="Kepala Sekolah sekolah negeri tidak diisi sebagai Non-ASN"':'';
+  const value=isKsNon?0:num(r[f]);
+  return `<td><input class="sim-needs-edit" type="number" min="0" step="1"${attrs} data-f="${f}" value="${value}"></td>`;
+ }).join('');
+ const ksNote=isKs?'<div class="sim-needs-note"><b>Riil KS wajib tepat 1 ASN:</b> pilih salah satu PNS / PPPK / PPPK PW = 1.</div>':'';
+ return `<tr class="sim-needs-edit-row" data-id="${id}" data-code="${code}"><td>${canEdit?`<input class="sim-needs-position" data-f="position_name" value="${esc(r.position_name||'')}">`:`<b>${esc(r.position_name||'-')}</b>`}<div class="sim-needs-note">${esc(r.job_code||'Jabatan baru')}</div>${ksNote}</td>${cells}<td data-c="asn">${c.asn}</td><td data-c="non">${c.non}</td><td data-c="gap"><b>${c.gap}</b></td><td data-c="gapData">${c.gapData}</td>${canEdit?`<td><button class="sim-needs-action red" data-remove-row="${i}">Hapus</button></td>`:''}</tr>`;
+}
 function updateEditorCalcs(){document.querySelectorAll('#simNeedsEditor tbody .sim-needs-edit-row').forEach(tr=>{const get=f=>num(tr.querySelector(`[data-f="${f}"]`)?.value),abk=get('abk'),pns=get('pns'),pppk=get('pppk'),pw=get('pppk_pw'),b=get('non_asn_before_2024'),a=get('non_asn_after_2024'),asn=pns+pppk+pw,non=b+a;tr.querySelector('[data-c="asn"]')?.replaceChildren(document.createTextNode(asn));tr.querySelector('[data-c="non"]')?.replaceChildren(document.createTextNode(non));tr.querySelector('[data-c="gap"]')?.replaceChildren(Object.assign(document.createElement('b'),{textContent:String(Math.max(0,abk-asn))}));tr.querySelector('[data-c="gapData"]')?.replaceChildren(document.createTextNode(String(Math.max(0,abk-asn-non))))})}
 function validateEditorAbk(){
  const trs=[...document.querySelectorAll('#simNeedsEditor tbody .sim-needs-edit-row')];
  const ks=trs.find(tr=>String(tr.dataset.code||'').toUpperCase()==='KEPALA_SEKOLAH');
  if(!ks)return'Baris Kepala Sekolah wajib tersedia.';
  const ksAbk=num(ks.querySelector('[data-f="abk"]')?.value);
- if(ksAbk!==1)return'ABK Kepala Sekolah wajib 1. Distribusikan ABK ke masing-masing jabatan/mapel, jangan memasukkan total ABK sekolah pada baris Kepala Sekolah.';
+ if(ksAbk!==1)return'ABK Kepala Sekolah wajib 1.';
+ const ksAsn=['pns','pppk','pppk_pw'].reduce((n,f)=>n+num(ks.querySelector(`[data-f="${f}"]`)?.value),0);
+ const ksNon=['non_asn_before_2024','non_asn_after_2024'].reduce((n,f)=>n+num(ks.querySelector(`[data-f="${f}"]`)?.value),0);
+ if(ksAsn!==1)return'Isian riil Kepala Sekolah wajib tepat 1 ASN. Pilih salah satu: PNS, PPPK, atau PPPK PW = 1. Tidak boleh 0 atau lebih dari 1.';
+ if(ksNon!==0)return'Kepala Sekolah sekolah negeri tidak boleh diisi pada kolom Non-ASN.';
  return'';
 }
 
