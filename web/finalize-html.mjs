@@ -219,7 +219,7 @@ const modules=[
  ['premium-dashboard-theme.js',3],
  ['dashboard-order-fix.js',2],
  ['login-password-toggle.js',2],
- ['gtk-needs-progress.js',36],
+ ['gtk-needs-progress.js',37],
  ['gtk-redistribution-analysis.js',8],
  ['school-status-access-v1.js',6],
  ['activity-participant-import.js',1],
