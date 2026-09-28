@@ -1,4 +1,5 @@
 /* SIMANTAB_SERVICE_ACCESS_POLICY_V1 */
+/* SIMANTAB_SERVICE_ACCESS_POLICY_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<180&&(!window.__simantabProfile||!window.showTab);i++)await wait(50);
@@ -7,7 +8,8 @@ const p=()=>window.__simantabProfile||{};
 const role=()=>String(p().role||'').toUpperCase();
 const TPG_ROLES=new Set(['STAFF_TPG','ADMIN_TPG','STAFF_TPG_TAMSIL','ADMIN_TPG_TAMSIL']);
 const PENSION_ROLES=new Set(['STAFF_PENSIUN','ADMIN_PENSIUN']);
-const canTpg=()=>TPG_ROLES.has(role());
+const isSchoolApplicant=()=>['GTK','KEPALA_SEKOLAH'].includes(role());
+const canTpg=()=>isSchoolApplicant()||TPG_ROLES.has(role());
 const canPension=()=>PENSION_ROLES.has(role());
 
 function ensureStyle(){
@@ -29,7 +31,7 @@ function removeServiceTiles(root,matcher,keepId){
 function applyTpgPolicy(){
  const body=document.getElementById('servicesBody');
  const nav=document.querySelector('#nav .navbtn[data-tab="tpg"]');
- if(nav)nav.style.display='none';
+ if(nav)nav.style.display=isSchoolApplicant()?'':'none';
 
  // The authoritative TPG/Tamsil entry is the dedicated card inside Layanan Kepegawaian.
  // Generic/legacy tiles are removed to avoid duplicate or leaked access.
@@ -105,10 +107,10 @@ if(active==='tpg'&&!canTpg())await window.showTab('services');
 if(active==='newSubmission'&&!canPension()&&/pensiun/i.test(document.getElementById('newSubmission')?.textContent||''))await window.showTab('services');
 
 window.__simantabServiceAccessPolicy={
- version:1,
+ version:2,
  tpgRoles:[...TPG_ROLES],
  pensionRoles:[...PENSION_ROLES],
- tpgLocation:'services-only',
+ tpgLocation:'school-menu + services-staff',
  pensionLocation:'services-only'
 };
 })();
