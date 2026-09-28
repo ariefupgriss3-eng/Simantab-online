@@ -29,6 +29,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V33_AI_BAGI_TUGAS */
 /* SIMANTAB_DIKLAT_KS_BCKS_V34_ARCHIVE_TMS */
 /* SIMANTAB_DIKLAT_KS_BCKS_V35_NEGERI_APPLICANT_ONLY */
+/* SIMANTAB_DIKLAT_KS_BCKS_V36_PRIVATE_NAV_LOOP_FIX */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -72,7 +73,7 @@ async function resolveApplicantSchoolStatus(){
  if(!error)applicantSchoolStatus=String(data?.school_status||'').toUpperCase();
  return applicantSchoolStatus
 }
-const isPrivateApplicant=()=>isApplicant()&&String(applicantSchoolStatus||window.__simantabSchoolAccess?.school?.school_status||'').toUpperCase()==='SWASTA';
+const isPrivateApplicant=()=>isApplicant()&&(window.__simantabSchoolAccess?.isPrivate===true||String(applicantSchoolStatus||window.__simantabSchoolAccess?.school?.school_status||'').toUpperCase()==='SWASTA');
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmtDate=v=>v?new Date(v).toLocaleDateString('id-ID'):'-';
 const fmtDateTime=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
@@ -437,5 +438,5 @@ async function render(){ensureSection();ensureNav();if(isPrivateApplicant()){awa
 await resolveApplicantSchoolStatus();
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{await resolveApplicantSchoolStatus();if(id==='diklatKsBcks'&&isPrivateApplicant())return priorShow('profile');ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:35,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+window.__simantabDiklatKsBcks={version:36,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
