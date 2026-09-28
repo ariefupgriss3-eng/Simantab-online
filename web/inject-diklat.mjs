@@ -11,7 +11,7 @@ if(!code.includes("certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE'"))throw new 
 // Seleksi Administrasi: 7 dokumen wajib, termasuk Surat Pernyataan Bermeterai.
 const oldRequirements=`const REQUIREMENTS=[
  ['IJAZAH_TERAKHIR','Ijazah terakhir'],['SERTIFIKAT_PENDIDIK','Sertifikat Pendidik'],['SK_PNS','SK PNS'],
- ['SKP_1','SKP 1'],['SKP_2','SKP 2'],['SK_PENGALAMAN_MANAJERIAL','SK pengalaman Manajerial'],
+ ['SKP_1','SKP 2024'],['SKP_2','SKP 2025'],['SK_PENGALAMAN_MANAJERIAL','SK pengalaman Manajerial'],
  ['SK_HUDIS','SK Hudis'],['SKCK','SKCK'],['PAKTA_INTEGRITAS','Pakta Integritas']
 ];`;
 const newRequirements=`const REQUIREMENTS=[
