@@ -1,5 +1,5 @@
 /* SIMANTAB_PREMIUM_DASHBOARD_THEME_V2 */
-/* SIMANTAB_PREMIUM_DASHBOARD_THEME_V3 */
+/* SIMANTAB_PREMIUM_DASHBOARD_THEME_V4 */
 (()=>{
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -38,7 +38,7 @@ function decorateStatic(){
  const hero=document.querySelector('.hero');
  if(hero&&!hero.querySelector('.sim-institution')){
   const institution=document.createElement('div');institution.className='sim-institution';institution.innerHTML='<b>PEMERINTAH KABUPATEN BATANG</b><br>DINAS PENDIDIKAN DAN KEBUDAYAAN';hero.insertBefore(institution,hero.firstChild);
-  const badge=hero.querySelector('.hero-badge');if(badge)badge.textContent='BATANG';
+  const badge=hero.querySelector('.hero-badge');if(badge)badge.innerHTML='<img src="./simantab-icon-192.png?v=4" alt="SIMANTAB" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">';
   const slogan=document.createElement('div');slogan.className='sim-hero-slogan';slogan.textContent='Bergerak Bersama untuk Pendidikan yang Lebih Baik';hero.appendChild(slogan);
   const vals=document.createElement('div');vals.className='sim-hero-values';vals.innerHTML='<span>✓ Data Akurat</span><span>✓ Layanan Terpadu</span><span>✓ GTK Profesional</span>';hero.appendChild(vals);
  }
@@ -50,7 +50,7 @@ function decorateStatic(){
  }
  const title=document.querySelector('.top .btitle');if(title)title.innerHTML='SIMANTAB<span class="sim-top-accent">-ONLINE</span>';
  const sub=document.querySelector('.top .bsub');if(sub)sub.textContent='Dinas Pendidikan dan Kebudayaan Kab. Batang';
- const mark=document.querySelector('.top .mark');if(mark)mark.textContent='BATANG';
+ const mark=document.querySelector('.top .mark');if(mark)mark.innerHTML='<img src="./simantab-icon-192.png?v=4" alt="SIMANTAB" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">';
 }
 function enhance(){
  decorateStatic();
@@ -72,7 +72,7 @@ decorateStatic();
   const role=String(window.__simantabProfile?.role||'');
   const leader=['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(role);
   if(leader){
-    window.__simantabPremiumDashboard={version:3,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true};
+    window.__simantabPremiumDashboard={version:4,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true};
     return;
   }
   let t;
