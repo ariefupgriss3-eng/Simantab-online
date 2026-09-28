@@ -2,6 +2,7 @@
 /* SIMANTAB_SCHOOL_STATUS_ACCESS_V6 */
 /* SIMANTAB_SCHOOL_STATUS_ACCESS_V7 */
 /* SIMANTAB_SCHOOL_STATUS_ACCESS_V8 */
+/* SIMANTAB_SCHOOL_STATUS_ACCESS_V9_NAV_LOOP_GUARD */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.__simantabProfile||!window.showTab);i++)await wait(50);
@@ -53,6 +54,6 @@ async function renderNegeriNeeds(){
 const priorOpen=window.openSubmission;if(priorOpen&&!window.__schoolStatusOpenWrapped){window.__schoolStatusOpenWrapped=true;window.openSubmission=(type,name)=>{if(isPrivate&&!['TPG_KONSULTASI','PTK_BARU_SWASTA'].includes(type)){alert('Sekolah swasta hanya dapat menggunakan layanan TPG dan Usul PTK Baru.');return window.showTab('tpg')}return priorOpen(type,name)}}
 const priorShow=window.showTab;window.showTab=async id=>{await resolveMySchool();let target=id;const schoolSide=['GTK','KEPALA_SEKOLAH'].includes(String(p().role||'').toUpperCase());if(schoolSide&&target==='needs'&&!isNegeri)target='profile';if(isPrivate&&!PRIVATE_ALLOWED_TABS.has(target))target='profile';const r=await priorShow(target);await wait(140);if(isPrivate){enforcePrivateNav();if(target==='tpg')enforcePrivateTpg()}return r};
 const priorRefresh=window.refreshAll;if(priorRefresh)window.refreshAll=async(...args)=>{const r=await priorRefresh(...args);await resolveMySchool(true);await wait(100);if(isPrivate){enforcePrivateNav();if($('dashboard')?.classList.contains('active'))await renderPrivateDashboard();if($('tpg')?.classList.contains('active'))enforcePrivateTpg()}return r};
-await resolveMySchool(true);if(isPrivate){enforcePrivateNav();const active=document.querySelector('.section.active')?.id||'profile';if(!PRIVATE_ALLOWED_TABS.has(active))await window.showTab('profile');else if(active==='tpg')enforcePrivateTpg();const nav=$('nav');if(nav)new MutationObserver(()=>enforcePrivateNav()).observe(nav,{childList:true,subtree:false})}
-window.__simantabSchoolStatusAccess={version:8,needsRenderer:'gtk-needs-progress-v38',legacyNeedsOverrideDisabled:true,isPrivate,isNegeri,negeriNeedsOnly:true,skbNegeriIncluded:true,statusPriority:['SUBMITTED','REVISION','DRAFT','NOT_STARTED','VERIFIED'],privateServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],privateMenu:['profile','tpg','ptkBaruSwasta','attendance','offlineConsultation','status','docs','notifications'],ptkBaruSwastaOnly:true};
+await resolveMySchool(true);if(isPrivate){enforcePrivateNav();const active=document.querySelector('.section.active')?.id||'profile';if(!PRIVATE_ALLOWED_TABS.has(active))await window.showTab('profile');else if(active==='tpg')enforcePrivateTpg();const nav=$('nav');if(nav){let navSync=false;new MutationObserver(()=>{if(navSync)return;navSync=true;queueMicrotask(()=>{try{enforcePrivateNav()}finally{navSync=false}})}).observe(nav,{childList:true,subtree:false})}}
+window.__simantabSchoolStatusAccess={version:9,needsRenderer:'gtk-needs-progress-v38',legacyNeedsOverrideDisabled:true,isPrivate,isNegeri,negeriNeedsOnly:true,skbNegeriIncluded:true,statusPriority:['SUBMITTED','REVISION','DRAFT','NOT_STARTED','VERIFIED'],privateServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],privateMenu:['profile','tpg','ptkBaruSwasta','attendance','offlineConsultation','status','docs','notifications'],ptkBaruSwastaOnly:true,navLoopGuard:true};
 })();
