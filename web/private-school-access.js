@@ -1,5 +1,6 @@
 /* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V1 */
 /* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V2 */
+/* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V3 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
@@ -8,7 +9,7 @@ const p=()=>window.__simantabProfile||{};
 const SCHOOL_ROLES=new Set(['GTK','KEPALA_SEKOLAH']);
 const isSchoolSide=()=>SCHOOL_ROLES.has(String(p().role||'').toUpperCase());
 const ALLOWED_TABS=new Set(['profile','tpg','attendance','offlineConsultation','status','docs','notifications','newSubmission']);
-const ALLOWED_SERVICES=new Set(['TPG_KONSULTASI']);
+const ALLOWED_SERVICES=new Set(['TPG_KONSULTASI','PTK_BARU_SWASTA']);
 let school=null,isPrivate=false,isNegeri=false;
 
 async function resolveSchool(force=false){
@@ -30,6 +31,7 @@ function privateNav(){
  <button class="navbtn" data-tab="profile" onclick="showTab('profile')"><span class="ico">♙</span>Profil</button>
  <div class="navhead">Layanan</div>
  <button class="navbtn" data-tab="tpg" onclick="showTab('tpg')"><span class="ico">◉</span>TPG</button>
+ <button class="navbtn" onclick="openSubmission('PTK_BARU_SWASTA','Usul PTK Baru Swasta')"><span class="ico">🧑‍🏫</span>Usul PTK Baru</button>
  <button class="navbtn" data-tab="attendance" onclick="showTab('attendance')"><span class="ico">✍️</span>Daftar Hadir Kegiatan</button>
  <button class="navbtn" data-tab="offlineConsultation" onclick="showTab('offlineConsultation')"><span class="ico">🎟️</span>Daftar Konsultasi Luring</button>
  <button class="navbtn" data-tab="status" onclick="showTab('status')"><span class="ico">⌛</span>Status Usulan</button>
@@ -47,7 +49,7 @@ const oldOpen=window.openSubmission;
 if(oldOpen&&!window.__privateSchoolOpenWrap){
  window.__privateSchoolOpenWrap=true;
  window.openSubmission=(type,name)=>{
-  if(isPrivate&&!ALLOWED_SERVICES.has(type)){alert('Satuan pendidikan swasta hanya dapat menggunakan layanan TPG.');return window.showTab('tpg')}
+  if(isPrivate&&!ALLOWED_SERVICES.has(type)){alert('Satuan pendidikan swasta hanya dapat menggunakan layanan TPG dan Usul PTK Baru.');return window.showTab('tpg')}
   return oldOpen(type,name);
  };
 }
@@ -77,5 +79,5 @@ if(isPrivate){
  if(!ALLOWED_TABS.has(active))await window.showTab('profile');
  else if(active==='tpg')enforceTpg();
 }
-window.__simantabPrivateSchoolPolicy={version:2,negeriNeedsOnly:true,skbNegeriIncluded:true,privateMenu:['profile','tpg','attendance','offlineConsultation','status','docs','notifications'],privateServices:['TPG_KONSULTASI']};
+window.__simantabPrivateSchoolPolicy={version:3,negeriNeedsOnly:true,skbNegeriIncluded:true,privateMenu:['profile','tpg','ptkBaruSwasta','attendance','offlineConsultation','status','docs','notifications'],privateServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruSwastaOnly:true};
 })();
