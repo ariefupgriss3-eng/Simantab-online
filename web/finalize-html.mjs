@@ -42,6 +42,28 @@ try{
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest SIMANTAB icon tidak diperbarui:',e?.message||e)}
 
+// LOGIN_BROWSER_AUTOFILL_V1
+// Normalize any previous wrapper first, then make the credential controls a real
+// form so Chrome/Edge Password Manager can offer saved accounts on focus.
+html=html.replace(/<form id="simLoginCredentialForm"[^>]*>/gi,'');
+html=html.replace(/<\/form><!--SIM_LOGIN_CREDENTIAL_FORM-->/gi,'');
+html=html.replace(
+  /<input id="email"([^>]*)>/i,
+  (m,attrs)=>'<input id="email"'+attrs.replace(/\sname="[^"]*"/gi,'').replace(/\sform="[^"]*"/gi,'').replace(/\sautocomplete="[^"]*"/gi,'')+' name="username" form="simLoginCredentialForm" autocomplete="username" autocapitalize="none" spellcheck="false">'
+);
+html=html.replace(
+  /<input id="password"([^>]*)>/i,
+  (m,attrs)=>'<input id="password"'+attrs.replace(/\sname="[^"]*"/gi,'').replace(/\sform="[^"]*"/gi,'').replace(/\sautocomplete="[^"]*"/gi,'')+' name="password" form="simLoginCredentialForm" autocomplete="current-password">'
+);
+html=html.replace(
+  /(<div id="nameWrap" class="field hidden">)/i,
+  '<form id="simLoginCredentialForm" autocomplete="on" method="post" action="javascript:void(0)">$1'
+);
+html=html.replace(
+  /<button id="authBtn"([^>]*)>Masuk<\/button>/i,
+  (m,attrs)=>'<button id="authBtn" type="button"'+attrs.replace(/\stype="[^"]*"/gi,'')+'>Masuk</button></form><!--SIM_LOGIN_CREDENTIAL_FORM-->'
+);
+
 // Remove obsolete maintenance announcement from login, including builds bootstrapped from older production.
 html=html.replace(/<style id="simMaintenanceStyle">[\s\S]*?<\/style>\s*/g,'');
 const maintenanceBannerStart=html.indexOf('<div id="simMaintenanceBanner"');
