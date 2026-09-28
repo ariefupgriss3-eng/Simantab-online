@@ -223,7 +223,7 @@ const modules=[
  ['gtk-service-response-cycle.js',1],
  ['sekdin-role-option-fix.js',1],
  ['legacy-shell-restore.js',3],
- ['school-master-restore-fix.js',2],
+ ['school-master-restore-fix.js',3],
  ['team-display-fix.js',2],
  ['admin-data-summary-fix.js',1],
  ['team-multi-capability.js',1],
