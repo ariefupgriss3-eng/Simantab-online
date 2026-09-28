@@ -230,7 +230,7 @@ const modules=[
  ['activity-input-access.js',2],
  ['tpg-consultation.js',1],
  ['sk-plt-enhancement.js',1],
- ['activity-schedule-committee.js',1],
+ ['activity-schedule-committee.js',2],
  ['activity-responsible-signatory-fix.js',1],
  ['activity-report-signatory-fix.js',1],
  ['discipline-evidence.js',4],
