@@ -20,7 +20,25 @@ async function sha256Hex(buf){const h=await crypto.subtle.digest('SHA-256',buf);
 export default async function handler(req){
  if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});
  const gateway=process.env.AI_GATEWAY_API_KEY||process.env.VERCEL_OIDC_TOKEN||'';
- if(req.method==='GET')return J({ok:true,configured:!!gateway,engine:'DIKLAT_DOC_AI_V2',model:'openai/gpt-5.6-sol'});
+ if(req.method==='GET'){
+  const u=new URL(req.url),probe=u.searchParams.get('probe');
+  if(probe==='text'){
+   if(!gateway)return J({ok:false,configured:false,error:'AI Gateway belum tersedia.'},503);
+   try{
+    const pr=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'openai/gpt-5.6-sol',input:'Balas tepat: OK',max_output_tokens:32})});
+    const pj=await pr.json().catch(()=>({}));
+    return J({ok:pr.ok,status:pr.status,model:'openai/gpt-5.6-sol',output:txt(pj).slice(0,200),error:pj?.error||null},pr.ok?200:502);
+   }catch(e){return J({ok:false,error:e?.message||String(e)},502)}
+  }
+  if(probe==='model'){
+   try{
+    const mr=await fetch('https://ai-gateway.vercel.sh/v1/models'),mj=await mr.json();
+    const m=(mj?.data||[]).find(x=>x.id==='openai/gpt-5.6-sol')||null;
+    return J({ok:true,model:m});
+   }catch(e){return J({ok:false,error:e?.message||String(e)},502)}
+  }
+  return J({ok:true,configured:!!gateway,engine:'DIKLAT_DOC_AI_V2',model:'openai/gpt-5.6-sol'});
+ }
  if(req.method!=='POST')return J({error:'Method not allowed'},405);
  try{
   const token=(req.headers.get('authorization')||'').replace(/^Bearer\s+/,'');
@@ -49,7 +67,7 @@ export default async function handler(req){
    else content.push({type:'input_file',filename:String(d.file_name||spec.code+'.pdf'),file_data:'data:application/pdf;base64,'+toB64(buf)});
   }
   const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'openai/gpt-5.6-sol',input:[{type:'message',role:'user',content}],reasoning:{effort:'high'},max_output_tokens:5000})});
-  const aj=await ar.json();if(!ar.ok)throw new Error(aj?.error?.message||('AI Gateway '+ar.status));
+  const aj=await ar.json();if(!ar.ok){console.error('DIKLAT_AI_GATEWAY_ERROR',ar.status,JSON.stringify(aj).slice(0,1500));throw new Error(aj?.error?.message||aj?.error||('AI Gateway '+ar.status));}
   const parsed=parse(txt(aj)),got=new Map((parsed?.documents||[]).map(x=>[x.requirement_code,x]));
   const results=REQUIRED.map(spec=>{const x=got.get(spec.code)||{};let status=['SESUAI','PERLU_PERBAIKAN','TIDAK_SESUAI'].includes(x.status)?x.status:'PERLU_PERBAIKAN';const year=x.detected_year==null?null:Number(x.detected_year),read=clamp(x.readability_score),conf=clamp(x.confidence);if(spec.year&&year!==spec.year)status=year==null?'PERLU_PERBAIKAN':'TIDAK_SESUAI';if((read<.8||conf<.8)&&status==='SESUAI')status='PERLU_PERBAIKAN';return{requirement_code:spec.code,status,detected_document_type:x.detected_document_type??null,detected_year:Number.isFinite(year)?year:null,detected_name:x.detected_name??null,detected_nip:x.detected_nip??null,readability_score:read,confidence:conf,evidence:String(x.evidence||'').slice(0,500),note:String(x.note||'').slice(0,500)}});
   const dup=hashes.SKP_1&&hashes.SKP_1===hashes.SKP_2;
@@ -57,5 +75,5 @@ export default async function handler(req){
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length};
   const overall_status=counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI';
   return J({ok:true,engine:'DIKLAT_DOC_AI_V2',model:'openai/gpt-5.6-sol',overall_status,duplicate_skp:dup,counts,results});
- }catch(e){return J({error:e?.message||String(e)},400)}
+ }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
