@@ -26,6 +26,10 @@ html=html.replace('</head>',`<link rel="icon" type="image/png" href="${simantabI
 // the stale placeholder.
 html=html.replace(/<div class="hero-badge"[^>]*>[\s\S]*?<\/div>/g,`<div class="hero-badge"><img src="${simantabIconHref}" alt="SIMANTAB"></div>`);
 html=html.replace(/<div class="mark"[^>]*>[\s\S]*?<\/div>/g,`<div class="mark"><img src="${simantabIconHref}" alt="SIMANTAB"></div>`);
+html=html.replace(/<div([^>]*)>Dinas Pendidikan dan Kebudayaan Kabupaten Batang<\/div>/i,(m,attrs)=>{
+ if(m.includes('sim-login-unit-division'))return m;
+ return `<div${attrs}>Dinas Pendidikan dan Kebudayaan Kabupaten Batang</div><div class="sim-login-unit-division" style="margin-top:6px;font-size:clamp(22px,2.4vw,30px);line-height:1.08;font-weight:900;letter-spacing:.025em;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.18)">Bidang Ketenagaan</div>`;
+});
 
 try{
  const manifestPath=path.join(staticDir,'manifest.json');
