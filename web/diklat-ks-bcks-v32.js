@@ -28,6 +28,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V31_VISIBLE_KABID_CELEBRATION */
 /* SIMANTAB_DIKLAT_KS_BCKS_V33_AI_BAGI_TUGAS */
 /* SIMANTAB_DIKLAT_KS_BCKS_V34_ARCHIVE_TMS */
+/* SIMANTAB_DIKLAT_KS_BCKS_V35_NEGERI_APPLICANT_ONLY */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -60,6 +61,18 @@ const isLeader=()=>LEADER_ROLES.has(profile().role);
 const isKabid=()=>profile().role==='KABID';
 const isCoordinator=()=>COORD_ROLES.has(profile().role);
 const isApplicant=()=>['GTK','KEPALA_SEKOLAH'].includes(profile().role);
+let applicantSchoolStatus='';
+async function resolveApplicantSchoolStatus(){
+ if(!isApplicant()){applicantSchoolStatus='';return applicantSchoolStatus}
+ const known=String(window.__simantabSchoolAccess?.school?.school_status||'').toUpperCase();
+ if(known){applicantSchoolStatus=known;return applicantSchoolStatus}
+ const npsn=String(profile().school_npsn||'').trim();
+ if(!npsn){applicantSchoolStatus='';return applicantSchoolStatus}
+ const {data,error}=await sb.from('school_master').select('school_status').eq('npsn',npsn).eq('is_active',true).maybeSingle();
+ if(!error)applicantSchoolStatus=String(data?.school_status||'').toUpperCase();
+ return applicantSchoolStatus
+}
+const isPrivateApplicant=()=>isApplicant()&&String(applicantSchoolStatus||window.__simantabSchoolAccess?.school?.school_status||'').toUpperCase()==='SWASTA';
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmtDate=v=>v?new Date(v).toLocaleDateString('id-ID'):'-';
 const fmtDateTime=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
@@ -113,7 +126,7 @@ const toast=(msg,bad=false)=>{let t=$('ksBcksToast');if(!t){t=document.createEle
 function mainEl(){return document.querySelector('main.content')}
 function ensureSection(){if($('diklatKsBcks'))return;const main=mainEl();if(!main)return;const sec=document.createElement('section');sec.id='diklatKsBcks';sec.className='section';sec.innerHTML='<div class="head"><div><h2>Diklat KS/BCKS</h2><p>Workflow seleksi administrasi, seleksi substansi, Diklat, dan pencatatan sertifikat dari pihak berwenang.</p></div></div><div id="diklatKsBcksBody"></div>';const footer=main.querySelector('.footer');if(footer)main.insertBefore(sec,footer);else main.appendChild(sec)}
 function navButton(){const b=document.createElement('button');b.className='navbtn';b.dataset.tab='diklatKsBcks';b.setAttribute('onclick',"showTab('diklatKsBcks')");b.innerHTML='<span class="ico">🎓</span>Diklat KS/BCKS';return b}
-function ensureNav(){const nav=$('nav');if(!nav||nav.querySelector('[data-tab="diklatKsBcks"]'))return;if(!(isApplicant()||isReviewer()))return;const b=navButton();if(isReviewer()){const p=nav.querySelector('[data-tab="promotion"]');p?p.after(b):nav.appendChild(b)}else{const s=nav.querySelector('[data-tab="services"]')||nav.querySelector('[data-tab="status"]');s?s.after(b):nav.appendChild(b)}}
+function ensureNav(){const nav=$('nav');if(!nav)return;if(isPrivateApplicant()){nav.querySelector('[data-tab="diklatKsBcks"]')?.remove();return}if(nav.querySelector('[data-tab="diklatKsBcks"]'))return;if(!(isApplicant()||isReviewer()))return;const b=navButton();if(isReviewer()){const p=nav.querySelector('[data-tab="promotion"]');p?p.after(b):nav.appendChild(b)}else{const s=nav.querySelector('[data-tab="services"]')||nav.querySelector('[data-tab="status"]');s?s.after(b):nav.appendChild(b)}}
 const stageIndex=s=>({ADMINISTRASI:0,SUBSTANSI:1,DIKLAT:2,SERTIFIKAT:3}[s]??0);
 const stateLabel=(d,i)=>i===0?(d?.admin_status||'BELUM'):i===1?(d?.substansi_status||'TERKUNCI'):i===2?(d?.diklat_status||'TERKUNCI'):(d?.sertifikat_status||'TERKUNCI');
 function progressHtml(d){const cur=stageIndex(d?.workflow_stage||'ADMINISTRASI');const labels=['1. Seleksi Administrasi','2. Seleksi Substansi','3. Diklat','4. Pencatatan Sertifikat Diklat'];return `<div class="servicegrid" style="margin-bottom:14px">${labels.map((x,i)=>{const unlocked=i<=cur,active=i===cur;return `<div class="service" style="border:${active?'2px solid #2563eb':'1px solid #dbe3ec'};opacity:${unlocked?1:.6}"><div class="small">LEVEL ${i+1}${active?' • AKTIF':''}</div><h3>${esc(x)}</h3><p>${esc(unlocked?stateLabel(d,i):'TERKUNCI')}</p></div>`}).join('')}</div>`}
@@ -420,8 +433,9 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
   return;
  }
  let res;if(a==='admin-ok'||a==='admin-no')res=await sb.rpc('ks_bcks_review_administrasi',{p_submission_id:id,p_approve:a==='admin-ok',p_note:noteFor(id)});else if(a==='sub-ok'||a==='sub-no')res=await sb.rpc('ks_bcks_set_substansi_result',{p_submission_id:id,p_lulus:a==='sub-ok',p_note:noteFor(id)});else if(a==='dik-ok'||a==='dik-no')res=await sb.rpc('ks_bcks_set_diklat_result',{p_submission_id:id,p_lulus:a==='dik-ok',p_note:noteFor(id)});else if(a==='cert-ok'||a==='cert-no')res=await sb.rpc('ks_bcks_review_certificate',{p_submission_id:id,p_approve:a==='cert-ok',p_note:noteFor(id)});if(res?.error)throw res.error;toast('Status berhasil diperbarui.');await renderReviewer()}catch(e){toast(e.message||String(e),true)}}))}
-async function render(){ensureSection();ensureNav();if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
+async function render(){ensureSection();ensureNav();if(isPrivateApplicant()){await window.showTab?.('profile');return}if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant())return renderApplicant();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
+await resolveApplicantSchoolStatus();
 ensureSection();ensureNav();const nav=$('nav');if(nav){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
-const priorShow=window.showTab;window.showTab=async id=>{ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:34,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
+const priorShow=window.showTab;window.showTab=async id=>{await resolveApplicantSchoolStatus();if(id==='diklatKsBcks'&&isPrivateApplicant())return priorShow('profile');ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
+window.__simantabDiklatKsBcks={version:35,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true};
 })();
