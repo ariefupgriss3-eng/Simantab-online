@@ -33,11 +33,11 @@ export default async function handler(req){
   if(probe==='model'){
    try{
     const mr=await fetch('https://ai-gateway.vercel.sh/v1/models'),mj=await mr.json();
-    const m=(mj?.data||[]).find(x=>x.id==='openai/gpt-5.6-sol')||null;
+    const m=(mj?.data||[]).find(x=>x.id==='google/gemini-2.5-flash-lite')||null;
     return J({ok:true,model:m});
    }catch(e){return J({ok:false,error:e?.message||String(e)},502)}
   }
-  return J({ok:true,configured:!!gateway,engine:'DIKLAT_DOC_AI_V2',model:'openai/gpt-5.6-sol'});
+  return J({ok:true,configured:!!gateway,engine:'DIKLAT_DOC_AI_V2',model:'google/gemini-2.5-flash-lite'});
  }
  if(req.method!=='POST')return J({error:'Method not allowed'},405);
  try{
@@ -66,7 +66,7 @@ export default async function handler(req){
    if(mime.startsWith('image/'))content.push({type:'input_image',image_url:'data:'+mime+';base64,'+toB64(buf),detail:'high'});
    else content.push({type:'input_file',filename:String(d.file_name||spec.code+'.pdf'),file_data:'data:application/pdf;base64,'+toB64(buf)});
   }
-  const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'openai/gpt-5.6-sol',input:[{type:'message',role:'user',content}],reasoning:{effort:'high'},max_output_tokens:5000})});
+  const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-2.5-flash-lite',input:[{type:'message',role:'user',content}],reasoning:{effort:'high'},max_output_tokens:5000})});
   const aj=await ar.json();if(!ar.ok){console.error('DIKLAT_AI_GATEWAY_ERROR',ar.status,JSON.stringify(aj).slice(0,1500));throw new Error(aj?.error?.message||aj?.error||('AI Gateway '+ar.status));}
   const parsed=parse(txt(aj)),got=new Map((parsed?.documents||[]).map(x=>[x.requirement_code,x]));
   const results=REQUIRED.map(spec=>{const x=got.get(spec.code)||{};let status=['SESUAI','PERLU_PERBAIKAN','TIDAK_SESUAI'].includes(x.status)?x.status:'PERLU_PERBAIKAN';const year=x.detected_year==null?null:Number(x.detected_year),read=clamp(x.readability_score),conf=clamp(x.confidence);if(spec.year&&year!==spec.year)status=year==null?'PERLU_PERBAIKAN':'TIDAK_SESUAI';if((read<.8||conf<.8)&&status==='SESUAI')status='PERLU_PERBAIKAN';return{requirement_code:spec.code,status,detected_document_type:x.detected_document_type??null,detected_year:Number.isFinite(year)?year:null,detected_name:x.detected_name??null,detected_nip:x.detected_nip??null,readability_score:read,confidence:conf,evidence:String(x.evidence||'').slice(0,500),note:String(x.note||'').slice(0,500)}});
@@ -74,6 +74,6 @@ export default async function handler(req){
   if(dup)for(const x of results)if(x.requirement_code==='SKP_1'||x.requirement_code==='SKP_2'){x.status='TIDAK_SESUAI';x.note='SKP 2024 dan SKP 2025 menggunakan berkas yang sama.'}
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length};
   const overall_status=counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI';
-  return J({ok:true,engine:'DIKLAT_DOC_AI_V2',model:'openai/gpt-5.6-sol',overall_status,duplicate_skp:dup,counts,results});
+  return J({ok:true,engine:'DIKLAT_DOC_AI_V2',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
  }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
