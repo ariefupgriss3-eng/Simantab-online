@@ -1,3 +1,4 @@
+/* SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V1 */
 /* SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
