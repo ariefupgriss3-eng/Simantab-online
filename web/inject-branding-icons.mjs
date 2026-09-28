@@ -21,7 +21,7 @@ const dashboardOrderCode=await fs.readFile(dashboardOrderPath,'utf8');
 
 if(!brandingCode.includes('SIMANTAB_UI_BRANDING_ICONS_V1'))throw new Error('Modul branding/icon SIMANTAB tidak valid.');
 if(!kasimCode.includes('SIMANTAB_KASIM_ROLE_LABEL_V1'))throw new Error('Modul label Admin KSPS Kasim tidak valid.');
-if(!loginBrandingCode.includes('SIMANTAB_LOGIN_DEVELOPER_BRANDING_V1'))throw new Error('Modul branding login SIMANTAB tidak valid.');
+if(!loginBrandingCode.includes('SIMANTAB_LOGIN_DEVELOPER_BRANDING_V2'))throw new Error('Modul branding login SIMANTAB V2 tidak valid.');
 if(!premiumDashboardCode.includes('SIMANTAB_PREMIUM_DASHBOARD_THEME_V2'))throw new Error('Modul premium dashboard SIMANTAB tidak valid.');
 if(!dashboardOrderCode.includes('SIMANTAB_DASHBOARD_ORDER_FIX_V1'))throw new Error('Modul urutan dashboard SIMANTAB tidak valid.');
 
@@ -34,7 +34,7 @@ html=html.replace(/<script type="module" src="\.\/login-developer-branding\.js\?
 html=html.replace(/<script type="module" src="\.\/premium-dashboard-theme\.js\?v=\d+"><\/script>\s*/g,'');
 html=html.replace(/<script type="module" src="\.\/dashboard-order-fix\.js\?v=\d+"><\/script>\s*/g,'');
 
-const tags=`<script type="module" src="./${brandingName}?v=2"></script>\n<script type="module" src="./${kasimName}?v=1"></script>\n<script type="module" src="./${loginBrandingName}?v=1"></script>\n<script type="module" src="./${premiumDashboardName}?v=2"></script>\n<script type="module" src="./${dashboardOrderName}?v=1"></script>\n`;
+const tags=`<script type="module" src="./${brandingName}?v=2"></script>\n<script type="module" src="./${kasimName}?v=1"></script>\n<script type="module" src="./${loginBrandingName}?v=2"></script>\n<script type="module" src="./${premiumDashboardName}?v=2"></script>\n<script type="module" src="./${dashboardOrderName}?v=1"></script>\n`;
 html=html.slice(0,bodyClose)+tags+html.slice(bodyClose);
 
 await fs.writeFile(outputPath,html);
