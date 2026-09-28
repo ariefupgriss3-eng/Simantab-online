@@ -4,6 +4,7 @@
 /* SIMANTAB_SCHOOL_STATUS_ACCESS_V8 */
 /* SIMANTAB_SCHOOL_STATUS_ACCESS_V9_NAV_LOOP_GUARD */
 /* SIMANTAB_SCHOOL_STATUS_ACCESS_V10_NO_PRIVATE_NAV_OBSERVER */
+/* SIMANTAB_SCHOOL_STATUS_ACCESS_V11_STABLE_SINGLE_OWNER */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.__simantabProfile||!window.showTab);i++)await wait(50);
@@ -56,5 +57,5 @@ const priorOpen=window.openSubmission;if(priorOpen&&!window.__schoolStatusOpenWr
 const priorShow=window.showTab;window.showTab=async id=>{await resolveMySchool();let target=id;const schoolSide=['GTK','KEPALA_SEKOLAH'].includes(String(p().role||'').toUpperCase());if(schoolSide&&target==='needs'&&!isNegeri)target='profile';if(isPrivate&&!PRIVATE_ALLOWED_TABS.has(target))target='profile';const r=await priorShow(target);await wait(140);if(isPrivate){enforcePrivateNav();if(target==='tpg')enforcePrivateTpg()}return r};
 const priorRefresh=window.refreshAll;if(priorRefresh)window.refreshAll=async(...args)=>{const r=await priorRefresh(...args);await resolveMySchool(true);await wait(100);if(isPrivate){enforcePrivateNav();if($('dashboard')?.classList.contains('active'))await renderPrivateDashboard();if($('tpg')?.classList.contains('active'))enforcePrivateTpg()}return r};
 await resolveMySchool(true);if(isPrivate){enforcePrivateNav();const active=document.querySelector('.section.active')?.id||'profile';if(!PRIVATE_ALLOWED_TABS.has(active))await window.showTab('profile');else if(active==='tpg')enforcePrivateTpg();const nav=$('nav');if(nav)enforcePrivateNav()}
-window.__simantabSchoolStatusAccess={version:10,needsRenderer:'gtk-needs-progress-v38',legacyNeedsOverrideDisabled:true,isPrivate,isNegeri,negeriNeedsOnly:true,skbNegeriIncluded:true,statusPriority:['SUBMITTED','REVISION','DRAFT','NOT_STARTED','VERIFIED'],privateServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],privateMenu:['profile','tpg','ptkBaruSwasta','attendance','offlineConsultation','status','docs','notifications'],ptkBaruSwastaOnly:true,navLoopGuard:true,privateNavObserver:false};
+window.__simantabSchoolStatusAccess={version:11,needsRenderer:'gtk-needs-progress-v38',legacyNeedsOverrideDisabled:true,isPrivate,isNegeri,negeriNeedsOnly:true,skbNegeriIncluded:true,statusPriority:['SUBMITTED','REVISION','DRAFT','NOT_STARTED','VERIFIED'],privateServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],privateMenu:['profile','tpg','ptkBaruSwasta','attendance','offlineConsultation','status','docs','notifications'],ptkBaruSwastaOnly:true,navLoopGuard:true,privateNavObserver:false,singleOwnerStable:true};
 })();
