@@ -18,12 +18,12 @@ await fs.writeFile(path.join(staticDir,icon512),svg512);
 await fs.writeFile(path.join(staticDir,iconMask),svgMask);
 
 const manifest={
-  id:'./',
+  id:'/',
   name:'SIMANTAB Online',
   short_name:'SIMANTAB',
   description:'Sistem Informasi Manajemen Guru dan Tenaga Kependidikan Kabupaten Batang',
-  start_url:'./',
-  scope:'./',
+  start_url:'/?source=pwa&v=4',
+  scope:'/',
   display:'standalone',
   display_override:['window-controls-overlay','standalone'],
   orientation:'any',
@@ -31,18 +31,23 @@ const manifest={
   theme_color:'#0f3f76',
   lang:'id-ID',
   categories:['education','government','productivity'],
+  prefer_related_applications:false,
+  shortcuts:[
+    {name:'Buka SIMANTAB',short_name:'Buka',url:'/?source=pwa-shortcut',icons:[{src:'./simantab-icon-192.png?v=4',sizes:'192x192',type:'image/png'}]},
+    {name:'Pasang / Perbarui',short_name:'Perbarui',url:'./install.html',icons:[{src:'./simantab-icon-192.png?v=4',sizes:'192x192',type:'image/png'}]}
+  ],
   icons:[
-    {src:'./simantab-icon-192.png?v=3',sizes:'192x192',type:'image/png',purpose:'any'},
-    {src:'./simantab-icon-512.svg?v=3',sizes:'512x512',type:'image/svg+xml',purpose:'any'},
-    {src:'./simantab-icon-maskable.svg?v=3',sizes:'512x512',type:'image/svg+xml',purpose:'maskable'}
+    {src:'./simantab-icon-192.png?v=4',sizes:'192x192',type:'image/png',purpose:'any'},
+    {src:'./simantab-icon-512.svg?v=4',sizes:'512x512',type:'image/svg+xml',purpose:'any'},
+    {src:'./simantab-icon-maskable.svg?v=4',sizes:'512x512',type:'image/svg+xml',purpose:'maskable'}
   ]
 };
 await fs.writeFile(path.join(staticDir,'manifest.json'),JSON.stringify(manifest,null,2));
 
-const sw=`const CACHE='simantab-pwa-v3';
-const SHELL=['./','./manifest.json','./simantab-icon-192.png?v=3','./simantab-icon-512.svg?v=3','./simantab-icon-maskable.svg?v=3','./pwa-install.js?v=3','./install.html'];
+const sw=`const CACHE='simantab-pwa-v4';\nconst VERSION='4';
+const SHELL=['./','./manifest.json','./simantab-icon-192.png?v=4','./simantab-icon-512.svg?v=4','./simantab-icon-maskable.svg?v=4','./pwa-install.js?v=4','./install.html'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}).then(()=>self.skipWaiting()))});
-self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()).then(()=>self.clients.matchAll({type:'window'})).then(clients=>clients.forEach(client=>client.postMessage({type:'SIMANTAB_PWA_UPDATED',version:VERSION}))))});
 self.addEventListener('fetch',event=>{
  if(event.request.method!=='GET')return;
  const url=new URL(event.request.url);
@@ -58,8 +63,8 @@ await fs.writeFile(path.join(staticDir,'sw.js'),sw);
 
 const installHtml=`<!doctype html>
 <html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Pasang SIMANTAB Online</title><meta name="theme-color" content="#0f3f76"><meta name="description" content="Pasang SIMANTAB Online sebagai aplikasi di HP atau laptop.">
-<link rel="manifest" href="./manifest.json"><link rel="icon" type="image/png" href="./simantab-icon-192.png?v=3"><link rel="apple-touch-icon" href="./simantab-icon-192.png?v=3">
+<title>Pasang SIMANTAB Online v4</title><meta name="theme-color" content="#0f3f76"><meta name="description" content="Pasang SIMANTAB Online sebagai aplikasi di HP atau laptop.">
+<link rel="manifest" href="./manifest.json"><link rel="icon" type="image/png" href="./simantab-icon-192.png?v=4"><link rel="apple-touch-icon" href="./simantab-icon-192.png?v=4">
 <style>
 *{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:linear-gradient(145deg,#071d3a,#0f3f76 55%,#1767b3);color:#0f172a;display:grid;place-items:center;padding:20px}
 .card{width:min(720px,100%);background:#fff;border-radius:26px;padding:30px;box-shadow:0 26px 70px rgba(0,0,0,.28)}
@@ -70,31 +75,31 @@ button,.link{display:inline-flex;align-items:center;justify-content:center;borde
 .steps{margin-top:24px;padding-top:20px;border-top:1px solid #e2e8f0}.steps b{color:#0f3f76}.steps p{margin:8px 0;color:#475569;line-height:1.5}.foot{margin-top:22px;color:#64748b;font-size:13px;font-weight:700}
 @media(max-width:560px){.card{padding:22px}.brand img{width:68px;height:68px}.link{margin:8px 0 0;width:100%}.primary{width:100%}}
 </style></head><body><main class="card">
-<div class="brand"><img src="./simantab-icon-192.png?v=3" alt="Ikon SIMANTAB"><div><h1>SIMANTAB Online</h1><div class="sub">Dinas Pendidikan dan Kebudayaan Kabupaten Batang</div></div></div>
-<p class="lead">Pasang SIMANTAB sebagai aplikasi di <b>HP Android, laptop, atau PC</b>. Setelah terpasang, SIMANTAB dapat dibuka dari ikon aplikasi tanpa mengetik alamat web lagi.</p>
+<div class="brand"><img src="./simantab-icon-192.png?v=4" alt="Ikon SIMANTAB"><div><h1>SIMANTAB Online v4</h1><div class="sub">Dinas Pendidikan dan Kebudayaan Kabupaten Batang</div></div></div>
+<p class="lead">Pasang versi terbaru SIMANTAB sebagai aplikasi di <b>HP Android, laptop, atau PC</b>. Setelah terpasang, SIMANTAB dapat dibuka dari ikon aplikasi tanpa mengetik alamat web lagi.</p>
 <button id="simPwaInstallMain" class="primary" type="button" disabled>Menyiapkan instalasi…</button><a class="link" href="./">Buka SIMANTAB</a>
 <div id="simPwaInstallStatus">Menyiapkan opsi instalasi…</div>
 <div class="steps"><p><b>Android (Chrome):</b> tekan “Pasang SIMANTAB”. Jika tombol belum aktif, pilih menu ⋮ → <b>Install app / Tambahkan ke layar utama</b>.</p><p><b>Laptop/PC (Chrome/Edge):</b> tekan “Pasang SIMANTAB” atau gunakan ikon instalasi di sisi kanan address bar.</p><p><b>iPhone/iPad (Safari):</b> pilih <b>Bagikan → Tambahkan ke Layar Utama</b>.</p></div>
-<div class="foot">SIMANTAB Online • Bidang Ketenagaan • 2026</div>
-</main><script src="./pwa-install.js?v=3"></script></body></html>`;
+<div class="foot">SIMANTAB Online v4 • Bidang Ketenagaan • 2026</div>
+</main><script src="./pwa-install.js?v=4"></script></body></html>`;
 await fs.writeFile(path.join(staticDir,'install.html'),installHtml);
 
 const installScript=await fs.readFile(new URL('./pwa-install.js',import.meta.url),'utf8');
-if(!installScript.includes('SIMANTAB_PWA_INSTALL_V2'))throw new Error('PWA install script tidak valid.');
+if(!installScript.includes('SIMANTAB_PWA_INSTALL_V4'))throw new Error('PWA install script v4 tidak valid.');
 await fs.writeFile(path.join(staticDir,pwaScript),installScript);
 
 html=html.replace(/<link rel="manifest"[^>]*>\s*/gi,'');
 html=html.replace(/<meta name="theme-color"[^>]*>\s*/gi,'');
 html=html.replace(/<script[^>]+src="\.\/pwa-install\.js\?v=\d+"[^>]*><\/script>\s*/gi,'');
-html=html.replace('</head>',`<link rel="manifest" href="./manifest.json?v=3">
+html=html.replace('</head>',`<link rel="manifest" href="./manifest.json?v=4">
 <meta name="theme-color" content="#0f3f76">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="SIMANTAB">
 </head>`);
-html=html.replace('</body>',`<script src="./pwa-install.js?v=3"></script>
+html=html.replace('</body>',`<script src="./pwa-install.js?v=4"></script>
 </body>`);
 await fs.writeFile(indexPath,html);
 
-console.log(JSON.stringify({pwa:true,version:3,installPage:'install.html',manifest:'manifest.json',serviceWorker:'sw.js',icons:['simantab-icon-192.png','simantab-icon-512.svg','simantab-icon-maskable.svg'],installTargets:['Android','Windows','macOS','ChromeOS','iOS-home-screen']}));
+console.log(JSON.stringify({pwa:true,version:4,installPage:'install.html',manifest:'manifest.json',serviceWorker:'sw.js',icons:['simantab-icon-192.png','simantab-icon-512.svg','simantab-icon-maskable.svg'],installTargets:['Android','Windows','macOS','ChromeOS','iOS-home-screen']}));
