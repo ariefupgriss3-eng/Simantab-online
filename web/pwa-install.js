@@ -1,8 +1,10 @@
-/* SIMANTAB_PWA_INSTALL_V2 */
+/* SIMANTAB_PWA_INSTALL_V4 */
 (()=>{
+  const VERSION='4';
   const isStandalone=()=>window.matchMedia?.('(display-mode: standalone)').matches===true||window.navigator.standalone===true;
   const isIos=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
   let deferredPrompt=null;
+  let swRegistration=null;
 
   function setStatus(msg,type=''){
     const el=document.getElementById('simPwaInstallStatus');
@@ -10,9 +12,23 @@
     el.textContent=msg;
     el.dataset.type=type;
   }
-  function mainButton(){
-    return document.getElementById('simPwaInstallMain');
+
+  function updateToast(msg){
+    let el=document.getElementById('simPwaUpdateToast');
+    if(!el){
+      el=document.createElement('div');
+      el.id='simPwaUpdateToast';
+      el.style.cssText='position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:10000;max-width:min(92vw,560px);background:#0f3f76;color:#fff;border-radius:14px;padding:12px 16px;font:800 13px system-ui,-apple-system,Segoe UI,sans-serif;box-shadow:0 12px 34px rgba(15,63,118,.32);display:none';
+      document.body.appendChild(el);
+    }
+    el.textContent=msg;
+    el.style.display='block';
+    clearTimeout(updateToast._timer);
+    updateToast._timer=setTimeout(()=>{el.style.display='none'},7000);
   }
+
+  function mainButton(){return document.getElementById('simPwaInstallMain')}
+
   function floatingButton(){
     let b=document.getElementById('simPwaInstallFloating');
     if(b||isStandalone())return b;
@@ -26,51 +42,77 @@
     document.body.appendChild(b);
     return b;
   }
+
   async function promptInstall(){
     if(isStandalone()){
-      setStatus('SIMANTAB sudah terpasang di perangkat ini.','ok');
+      setStatus('SIMANTAB v4 sudah terpasang di perangkat ini.','ok');
       return;
     }
     if(!deferredPrompt){
-      if(isIos()){
-        setStatus('Di iPhone/iPad: buka menu Bagikan di Safari lalu pilih “Tambahkan ke Layar Utama”.','info');
-      }else{
-        setStatus('Jika tombol instalasi belum tersedia, buka menu browser lalu pilih “Install app” / “Pasang aplikasi”.','info');
-      }
+      if(isIos())setStatus('Di iPhone/iPad: buka menu Bagikan di Safari lalu pilih “Tambahkan ke Layar Utama”.','info');
+      else setStatus('Jika tombol instalasi belum tersedia, buka menu browser lalu pilih “Install app” / “Pasang aplikasi”.','info');
       return;
     }
     deferredPrompt.prompt();
     const choice=await deferredPrompt.userChoice;
-    setStatus(choice?.outcome==='accepted'?'SIMANTAB sedang dipasang.':'Instalasi dibatalkan.',choice?.outcome==='accepted'?'ok':'');
+    setStatus(choice?.outcome==='accepted'?'SIMANTAB v4 sedang dipasang.':'Instalasi dibatalkan.',choice?.outcome==='accepted'?'ok':'');
     deferredPrompt=null;
     const b=floatingButton(); if(b)b.style.display='none';
     const m=mainButton(); if(m)m.disabled=true;
   }
+
   function readyPrompt(e){
     e.preventDefault();
     deferredPrompt=e;
     const b=floatingButton(); if(b)b.style.display='block';
     const m=mainButton();
-    if(m){m.disabled=false;m.textContent='⬇ Pasang SIMANTAB';}
-    setStatus('Perangkat siap memasang SIMANTAB sebagai aplikasi.','ok');
+    if(m){m.disabled=false;m.textContent='⬇ Pasang SIMANTAB v4'}
+    setStatus('Perangkat siap memasang SIMANTAB v4 sebagai aplikasi.','ok');
+  }
+
+  async function registerServiceWorker(){
+    if(!('serviceWorker' in navigator))return;
+    try{
+      swRegistration=await navigator.serviceWorker.register('./sw.js?v=4',{scope:'./',updateViaCache:'none'});
+      await swRegistration.update().catch(()=>{});
+
+      if(swRegistration.waiting){
+        updateToast('Pembaruan SIMANTAB v4 tersedia. Tutup lalu buka kembali aplikasi.');
+      }
+
+      swRegistration.addEventListener('updatefound',()=>{
+        const worker=swRegistration.installing;
+        if(!worker)return;
+        worker.addEventListener('statechange',()=>{
+          if(worker.state==='installed'&&navigator.serviceWorker.controller){
+            updateToast('Versi SIMANTAB terbaru sudah siap. Tutup lalu buka kembali aplikasi.');
+          }
+        });
+      });
+
+      navigator.serviceWorker.addEventListener('controllerchange',()=>{
+        updateToast('SIMANTAB telah diperbarui ke versi terbaru.');
+      });
+
+      setInterval(()=>swRegistration?.update().catch(()=>{}),30*60*1000);
+    }catch(e){
+      console.warn('PWA service worker gagal didaftarkan:',e);
+    }
   }
 
   window.addEventListener('beforeinstallprompt',readyPrompt);
   window.addEventListener('appinstalled',()=>{
     deferredPrompt=null;
     const b=document.getElementById('simPwaInstallFloating'); if(b)b.remove();
-    const m=mainButton(); if(m){m.disabled=true;m.textContent='✓ SIMANTAB Terpasang';}
-    setStatus('SIMANTAB berhasil dipasang.','ok');
+    const m=mainButton(); if(m){m.disabled=true;m.textContent='✓ SIMANTAB v4 Terpasang'}
+    setStatus('SIMANTAB v4 berhasil dipasang.','ok');
   });
 
-  if('serviceWorker' in navigator){
-    window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js',{scope:'./'}).catch(()=>{}),{once:true});
-  }
-
   function init(){
+    registerServiceWorker();
     if(isStandalone()){
-      const m=mainButton(); if(m){m.disabled=true;m.textContent='✓ SIMANTAB Terpasang';}
-      setStatus('SIMANTAB sudah berjalan sebagai aplikasi.','ok');
+      const m=mainButton(); if(m){m.disabled=true;m.textContent='✓ SIMANTAB v4 Terpasang'}
+      setStatus('SIMANTAB v4 sudah berjalan sebagai aplikasi.','ok');
     }else{
       floatingButton();
       const m=mainButton();
@@ -82,11 +124,12 @@
           setStatus('Safari iPhone/iPad menggunakan menu Bagikan → Tambahkan ke Layar Utama.','info');
         }else{
           m.disabled=!deferredPrompt;
-          if(!deferredPrompt)setStatus('Menunggu browser menyiapkan opsi instalasi…','info');
+          if(!deferredPrompt)setStatus('Menunggu browser menyiapkan opsi instalasi SIMANTAB v4…','info');
         }
       }
     }
   }
+
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init,{once:true});else init();
-  window.__simantabPwaInstall={version:2,promptInstall,isStandalone};
+  window.__simantabPwaInstall={version:4,promptInstall,isStandalone,checkUpdate:()=>swRegistration?.update()};
 })();
