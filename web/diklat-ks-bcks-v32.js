@@ -383,7 +383,7 @@ async function renderLeadershipDiklat(){
   const leaderLabel=profile().role==='KEPALA_DINAS'?'Kepala Disdikbud':profile().role==='SEKRETARIS_DINAS'?'Sekretaris Disdikbud':'Kabid Ketenagaan';
   const isKabidView=isKabid();
   body.innerHTML=`<div class="card" style="margin-bottom:12px">
-   <div class="info"><b>Monitoring ${esc(leaderLabel)}.</b> Tampilan hanya memuat agregat, identitas pengusul, jenjang, dan status proses. AI Verifikator memeriksa kelengkapan administratif berkas secara otomatis; admin/staf yang ditugaskan tetap menjadi verifikator penanggung jawab. Berkas unggahan peserta tidak ditampilkan pada dashboard pimpinan.${isKabidView?' Kabid memberikan persetujuan akhir administrasi dari tampilan ringkas ini.':''}</div>
+   <div class="info"><b>Monitoring ${esc(leaderLabel)}.</b> Tampilan hanya memuat agregat, identitas pengusul, jenjang, dan status proses. Precheck otomatis menandai indikasi salah tahun SKP dan duplikasi berkas; pemeriksaan isi dan keputusan administrasi tetap dikonfirmasi admin/staf yang ditugaskan. Berkas unggahan peserta tidak ditampilkan pada dashboard pimpinan.${isKabidView?' Kabid memberikan persetujuan akhir administrasi dari tampilan ringkas ini.':''}</div>
    ${isKabidView?'':'<div style="margin-top:10px"><button class="btn soft" onclick="showTab(\'leadershipDirections\')">📝 Buka Arahan Pimpinan</button></div>'}
   </div>
   ${leaderKsbSummary(rows)}
