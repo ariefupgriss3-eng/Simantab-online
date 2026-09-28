@@ -1,5 +1,6 @@
 /* SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V1 */
 /* SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V2 */
+/* SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V3 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<180&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
