@@ -2,6 +2,7 @@
 /* SIMANTAB_PREMIUM_DASHBOARD_THEME_V6 */
 /* SIMANTAB_PREMIUM_DASHBOARD_THEME_V7_LOGIN_ELEGANT */
 /* SIMANTAB_PREMIUM_DASHBOARD_THEME_V8_LOGIN_VERTICAL_CENTER */
+/* SIMANTAB_PREMIUM_DASHBOARD_THEME_V9_FOOTER_LIFT */
 (()=>{
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -11,7 +12,7 @@ body{background:linear-gradient(180deg,#edf4fb 0,#f8fbfe 36%,#f2f6fa 100%)}
 .login{min-height:100vh;display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr)!important;background:radial-gradient(circle at 31% 10%,rgba(52,171,255,.34),transparent 27%),radial-gradient(circle at 72% 42%,rgba(21,121,224,.22),transparent 32%),linear-gradient(135deg,#061a3a 0%,#0a4386 43%,#0868c4 100%)!important;position:relative;overflow:hidden}
 .login:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 15% 80%,rgba(255,255,255,.10),transparent 24%),linear-gradient(145deg,transparent 0 74%,rgba(4,44,104,.42) 74% 82%,transparent 82%);pointer-events:none}
 .login:after{content:'';position:absolute;left:-85px;bottom:66px;width:430px;height:14px;border-radius:999px;background:linear-gradient(90deg,#ff9f2f,#ffc35a);transform:rotate(19deg);box-shadow:0 0 28px rgba(255,159,47,.22);pointer-events:none}
-.hero{position:relative;padding:24px 54px 22px!important;justify-content:flex-start!important;align-items:stretch!important;text-align:center;min-height:100vh;z-index:1}.sim-login-hero-main{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;width:100%;padding:20px 0 8px}
+.hero{position:relative;padding:24px 54px 22px!important;justify-content:flex-start!important;align-items:stretch!important;text-align:center;min-height:100vh;z-index:1}.sim-login-hero-main{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;width:100%;padding:20px 0 150px}
 .sim-institution{margin:0 0 13px!important;font-size:clamp(13px,1.25vw,18px)!important;font-weight:800!important;line-height:1.5!important;letter-spacing:.06em!important;text-transform:uppercase;color:#edf6ff!important;text-align:center}
 .sim-institution b{display:block;color:#fff!important;font-size:1.08em;letter-spacing:.07em}
 .hero-badge{width:92px!important;height:92px!important;margin:0 auto 16px!important;background:linear-gradient(145deg,#fff,#eaf2f8)!important;border:4px solid rgba(255,255,255,.82)!important;border-radius:24px!important;box-shadow:0 15px 38px rgba(0,19,50,.38)!important;color:var(--navy)!important;overflow:hidden}
@@ -23,9 +24,9 @@ body{background:linear-gradient(180deg,#edf4fb 0,#f8fbfe 36%,#f2f6fa 100%)}
 .sim-hero-values{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;margin-top:26px;padding:10px 18px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(6,48,103,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);max-width:100%}
 .sim-hero-values span{position:relative;font-size:11px;font-weight:850;padding:0 18px;color:#f7fbff;white-space:nowrap}
 .sim-hero-values span+span:before{content:'';position:absolute;left:0;top:50%;width:1px;height:18px;background:rgba(255,255,255,.32);transform:translateY(-50%)}
-.sim-login-division-footer{flex:0 0 auto;margin-top:0;padding:10px 0 2px;width:100%;display:flex;align-items:center;justify-content:center;gap:18px;color:#fff;font-size:clamp(20px,2.2vw,30px);font-weight:950;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,22,55,.35)}
+.sim-login-division-footer{position:absolute;left:0;right:0;bottom:112px;margin:0;padding:0;width:100%;display:flex;align-items:center;justify-content:center;gap:18px;color:#fff;font-size:clamp(20px,2.2vw,30px);font-weight:950;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,22,55,.35)}
 .sim-login-division-footer:before,.sim-login-division-footer:after{content:'';width:78px;max-width:14%;height:3px;border-radius:999px;background:#ffad3b;box-shadow:0 0 14px rgba(255,173,59,.28)}
-@media(max-height:760px) and (min-width:981px){.hero{padding:14px 48px 14px!important}.sim-login-hero-main{padding:8px 0 4px}.sim-institution{font-size:12px!important;margin-bottom:8px!important}.hero-badge{width:76px!important;height:76px!important;margin-bottom:10px!important;border-radius:20px!important}.hero h1{font-size:44px!important;margin-bottom:8px!important}.hero p{font-size:16px!important}.sim-hero-values{margin-top:18px;padding:8px 14px}.sim-login-division-footer{padding-top:8px;font-size:20px!important}}
+@media(max-height:760px) and (min-width:981px){.hero{padding:14px 48px 14px!important}.sim-login-hero-main{padding:8px 0 110px}.sim-institution{font-size:12px!important;margin-bottom:8px!important}.hero-badge{width:76px!important;height:76px!important;margin-bottom:10px!important;border-radius:20px!important}.hero h1{font-size:44px!important;margin-bottom:8px!important}.hero p{font-size:16px!important}.sim-hero-values{margin-top:18px;padding:8px 14px}.sim-login-division-footer{bottom:80px;font-size:20px!important}}
 .loginpane{position:relative;z-index:1}.loginbox{border:0!important;border-radius:24px!important;box-shadow:0 22px 60px rgba(8,42,84,.20)!important;padding:30px!important}.loginbox h2{color:var(--navy)!important;font-size:25px!important}.loginbox>.small{font-size:11px!important}.tabs button{transition:.18s}.tabs button.active{background:linear-gradient(135deg,var(--orange),#f28a1c)!important;border-color:transparent!important}.btn.primary{background:linear-gradient(135deg,var(--orange),#ef6d00)!important;box-shadow:0 8px 18px rgba(255,122,0,.18)}.sim-login-seal{margin-top:16px;padding-top:14px;border-top:1px solid #e8eef4;display:flex;gap:9px;align-items:center;color:#647b90;font-size:10px;font-weight:750}.sim-login-seal strong{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#e9f2fa;color:var(--navy)}
 .top{height:76px!important;background:linear-gradient(90deg,var(--navy2),var(--navy))!important;border:0!important;color:#fff!important;box-shadow:0 3px 16px rgba(5,31,61,.18)}.top .btitle{font-size:17px;color:#fff}.top .bsub,.top .small{color:#d9e7f4!important}.top .mark{width:46px!important;background:linear-gradient(145deg,#fff,#e5eef7)!important;color:var(--navy)!important;border:2px solid rgba(255,255,255,.55);font-size:9px!important;letter-spacing:.05em}.top .chip{background:rgba(255,255,255,.14)!important;color:#fff!important}.top .avatar{background:#fff!important;color:var(--navy)!important}.top .btn.soft{background:rgba(255,255,255,.12)!important;color:#fff!important}.sim-top-accent{color:#ff922f}
 .layout{grid-template-columns:255px 1fr!important}.side{top:76px!important;height:calc(100vh - 76px)!important;background:linear-gradient(180deg,#0a3568 0%,#08284e 100%)!important;padding:18px 12px!important;box-shadow:8px 0 28px rgba(8,42,84,.08)}.side:after{content:'PROFESIONAL  •  KOLABORATIF  •  BERDAMPAK';display:block;margin:20px 9px 5px;padding-top:15px;border-top:1px solid rgba(255,255,255,.09);font-size:8px;line-height:1.6;letter-spacing:.08em;color:#81a7c8}
@@ -143,7 +144,7 @@ decorateStatic();
   const role=String(window.__simantabProfile?.role||'');
   const leader=['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(role);
   if(leader){
-    window.__simantabPremiumDashboard={version:8,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true,dashboardAgenda:true,loginHero:'elegant-v8-vertical-center'};
+    window.__simantabPremiumDashboard={version:9,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true,dashboardAgenda:true,loginHero:'elegant-v9-footer-lift'};
     return;
   }
   let t;
@@ -151,6 +152,6 @@ decorateStatic();
   const target=$('dashboardBody');if(target)ob.observe(target,{childList:true,subtree:false});
   const prior=window.showTab;if(prior)window.showTab=async id=>{const r=await prior(id);if(id==='dashboard')setTimeout(enhance,50);return r};
   setTimeout(enhance,500);
-  window.__simantabPremiumDashboard={version:8,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:false,dashboardAgenda:true,loginHero:'elegant-v8-vertical-center'};
+  window.__simantabPremiumDashboard={version:9,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:false,dashboardAgenda:true,loginHero:'elegant-v9-footer-lift'};
 })();
 })();
