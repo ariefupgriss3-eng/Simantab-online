@@ -1,5 +1,5 @@
 /* SIMANTAB_PREMIUM_DASHBOARD_THEME_V2 */
-/* SIMANTAB_PREMIUM_DASHBOARD_THEME_V5 */
+/* SIMANTAB_PREMIUM_DASHBOARD_THEME_V6 */
 (()=>{
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -34,8 +34,7 @@ const defs=[
  ['monitoring','📊','Monitoring & Laporan','Pantau progres dan verifikasi']
 ];
 function available(tab){return !!document.querySelector(`.navbtn[data-tab="${tab}"]`)}
-const GTK_ACCOUNT_ROLES=new Set(['GTK','KEPALA_SEKOLAH','PENGAWAS']);
-const isGtkAccount=()=>GTK_ACCOUNT_ROLES.has(String(window.__simantabProfile?.role||'').toUpperCase());
+const isAgendaViewer=()=>!!window.__simantabProfile;
 function jakartaNowKey(){
  const parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
@@ -60,8 +59,8 @@ function agendaItem(a,kind){
  const scope=String(a.scope_level||'ALL').replace('TK_PAUD_PNF','TK/PAUD/PNF');
  return `<div class="sim-gtk-agenda-item"><span class="sim-gtk-agenda-status ${kind}">${kind==='past'?'✓':kind==='now'?'●':'→'} ${labels[kind]}</span><strong>${esc(a.activity_name||'Kegiatan Bidang')}</strong><div class="sim-gtk-agenda-meta">${esc(fmtAgendaDate(a))}${a.place?` • ${esc(a.place)}`:''}${scope?` • ${esc(scope)}`:''}</div></div>`;
 }
-async function loadGtkAgenda(){
- if(!isGtkAccount())return;
+async function loadDashboardAgenda(){
+ if(!isAgendaViewer())return;
  const host=$('simGtkAgendaBody');if(!host)return;
  const sb=window.__simantabSb;if(!sb){host.innerHTML='<div class="sim-gtk-agenda-empty">Agenda belum dapat dimuat.</div>';return}
  host.innerHTML='<div class="sim-gtk-agenda-empty">Memuat agenda bidang…</div>';
@@ -86,7 +85,7 @@ async function loadGtkAgenda(){
    return `<div class="sim-gtk-agenda-group"><div class="sim-gtk-agenda-head"><b>${title}</b><span class="sim-gtk-agenda-count">${groups[k].length}</span></div>${rows.length?rows.map(a=>agendaItem(a,k)).join(''):'<div class="sim-gtk-agenda-empty">Belum ada agenda.</div>'}</div>`;
   }).join('');
  }catch(e){
-  console.error('Agenda GTK gagal dimuat',e);
+  console.error('Agenda dashboard gagal dimuat',e);
   host.innerHTML='<div class="sim-gtk-agenda-empty">Agenda bidang belum dapat dimuat. Silakan segarkan halaman.</div>';
  }
 }
@@ -118,11 +117,9 @@ function enhance(){
  const items=defs.filter(d=>available(d[0])).slice(0,8);
  if(items.length){
   const sec=document.createElement('div');sec.className='sim-premium-section';
-  const agendaPanel=isGtkAccount()
-   ?'<div class="sim-premium-panel"><h4>🗓️ Agenda Bidang</h4><div class="small" style="margin-bottom:8px">Agenda kegiatan Bidang Ketenagaan: sudah, sedang, dan akan dilaksanakan.</div><div id="simGtkAgendaBody" class="sim-gtk-agenda-wrap"><div class="sim-gtk-agenda-empty">Memuat agenda bidang…</div></div></div>'
-   :'<div class="sim-premium-panel"><h4>🗓️ Agenda</h4><div class="sim-premium-row"><span class="sim-premium-date">NOW</span><b>Kegiatan Bidang</b><br><span class="small">Lihat agenda terbaru pada menu Kegiatan Bidang.</span></div></div>';
+  const agendaPanel='<div class="sim-premium-panel"><h4>🗓️ Agenda Bidang</h4><div class="small" style="margin-bottom:8px">Agenda kegiatan Bidang Ketenagaan: sudah, sedang, dan akan dilaksanakan.</div><div id="simGtkAgendaBody" class="sim-gtk-agenda-wrap"><div class="sim-gtk-agenda-empty">Memuat agenda bidang…</div></div></div>';
   sec.innerHTML=`<div class="sim-premium-section-title"><h3>Menu Layanan Utama</h3><span>Pilih menu untuk membuka layanan</span></div><div class="sim-premium-tiles">${items.map(d=>`<button class="sim-premium-tile" data-premium-tab="${d[0]}"><div class="ico2">${d[1]}</div><b>${d[2]}</b><small>${d[3]}</small><span class="arrow">→</span></button>`).join('')}</div><div class="sim-premium-bottom"><div class="sim-premium-panel"><h4>📣 Pengumuman</h4><div class="sim-premium-row"><b>SIMANTAB aktif</b><br>Gunakan modul sesuai kewenangan dan alur verifikasi yang berlaku.</div><div class="sim-premium-row"><b>Data & dokumen</b><br>Pastikan data dan berkas yang diunggah benar sebelum dikirim.</div></div>${agendaPanel}</div><div class="sim-premium-motto">SDM PENDIDIKAN UNGGUL, <b>BATANG SEMAKIN MAJU</b></div>`;
-  body.appendChild(sec);sec.querySelectorAll('[data-premium-tab]').forEach(b=>b.addEventListener('click',()=>window.showTab?.(b.dataset.premiumTab)));if(isGtkAccount())setTimeout(loadGtkAgenda,0);
+  body.appendChild(sec);sec.querySelectorAll('[data-premium-tab]').forEach(b=>b.addEventListener('click',()=>window.showTab?.(b.dataset.premiumTab)));if(isAgendaViewer())setTimeout(loadDashboardAgenda,0);
  }
 }
 decorateStatic();
@@ -131,7 +128,7 @@ decorateStatic();
   const role=String(window.__simantabProfile?.role||'');
   const leader=['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(role);
   if(leader){
-    window.__simantabPremiumDashboard={version:5,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true,gtkAgenda:true};
+    window.__simantabPremiumDashboard={version:6,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true,dashboardAgenda:true};
     return;
   }
   let t;
@@ -139,6 +136,6 @@ decorateStatic();
   const target=$('dashboardBody');if(target)ob.observe(target,{childList:true,subtree:false});
   const prior=window.showTab;if(prior)window.showTab=async id=>{const r=await prior(id);if(id==='dashboard')setTimeout(enhance,50);return r};
   setTimeout(enhance,500);
-  window.__simantabPremiumDashboard={version:5,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:false,gtkAgenda:true};
+  window.__simantabPremiumDashboard={version:6,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:false,dashboardAgenda:true};
 })();
 })();

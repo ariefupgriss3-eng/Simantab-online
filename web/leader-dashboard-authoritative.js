@@ -4,6 +4,7 @@
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V4_EDU_UNITS_BATANG */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V5_COMPACT_EDU_DETAILS */
 /* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V6_VERIFIED_LIVE */
+/* SIMANTAB_LEADER_DASHBOARD_AUTHORITATIVE_V7_FIELD_AGENDA */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const $=id=>document.getElementById(id);
@@ -52,6 +53,17 @@ function style(){
  #dashboardBody .lad-state{display:grid;grid-template-columns:1fr auto;gap:6px;padding:8px 0;border-bottom:1px solid #eef2f6;font-size:11px}
  #dashboardBody .lad-state:last-child{border-bottom:0}
  #dashboardBody .lad-note{grid-column:span 12;background:#f8fbff;border:1px solid #dce8f5;border-radius:12px;padding:10px 12px;font-size:10px;color:#58708a}
+ #dashboardBody .lad-agenda{grid-column:span 12;background:#fff;border:1px solid var(--line,#dde6ef);border-radius:16px;padding:14px}
+ #dashboardBody .lad-agenda h3{margin:0 0 10px;color:#173b60}
+ #dashboardBody .lad-agenda-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+ #dashboardBody .lad-agenda-group{border:1px solid #e4edf5;border-radius:13px;padding:10px;background:#fbfdff}
+ #dashboardBody .lad-agenda-head{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:6px;font-size:10px;font-weight:900;color:#173b60}
+ #dashboardBody .lad-agenda-count{display:inline-flex;min-width:22px;height:22px;padding:0 7px;border-radius:999px;align-items:center;justify-content:center;background:#edf5fc;color:#0f5ca8;font-size:9px;font-weight:900}
+ #dashboardBody .lad-agenda-item{padding:8px 0;border-top:1px solid #edf2f6;font-size:10px;color:#516a80}
+ #dashboardBody .lad-agenda-item:first-of-type{border-top:0}
+ #dashboardBody .lad-agenda-item b{display:block;color:#294965;line-height:1.35;margin-bottom:3px}
+ #dashboardBody .lad-agenda-meta{font-size:9px;color:#6f8294;line-height:1.4}
+ #dashboardBody .lad-agenda-empty{font-size:9px;color:#7f91a2;padding:5px 0}
  #dashboardBody .lad-edu{grid-column:span 12;background:#fff;border:1px solid var(--line,#dde6ef);border-radius:16px;padding:14px}
  #dashboardBody .lad-edu-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}
  #dashboardBody .lad-edu-total{font-size:29px;font-weight:950;color:#0f3f76}
@@ -70,7 +82,7 @@ function style(){
  #dashboardBody .lad-edu-dialog-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;position:sticky;top:-16px;background:#fff;padding:4px 0 10px;z-index:2;border-bottom:1px solid #edf2f7}
  #dashboardBody .lad-edu-close,#dashboardBody .lad-edu-btn{border:1px solid #cbd9e8;background:#f7fbff;color:#0f3f76;border-radius:9px;padding:6px 9px;font-size:10px;font-weight:900;cursor:pointer}
  #dashboardBody .lad-edu-close{background:#fff;color:#173b60}
- @media(max-width:760px){#dashboardBody .lad-card,#dashboardBody .lad-wide{grid-column:span 12}#dashboardBody .lad-edu-grid{grid-template-columns:1fr}}
+ @media(max-width:760px){#dashboardBody .lad-card,#dashboardBody .lad-wide{grid-column:span 12}#dashboardBody .lad-edu-grid,#dashboardBody .lad-agenda-grid{grid-template-columns:1fr}}
  `;document.head.appendChild(s);
 }
 function levelRows(levelObj){
@@ -87,6 +99,33 @@ function workflowRows(w){
   ['Selesai',w.selesai]
  ];
  return rows.map(([l,v])=>`<div class="lad-state"><span>${esc(l)}</span><b>${fmt(v)}</b></div>`).join('');
+}
+function leaderNowKey(){
+ const parts=Object.fromEntries(new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Jakarta',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).filter(x=>x.type!=='literal').map(x=>[x.type,x.value]));
+ return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`;
+}
+const leaderAgendaKey=(d,t,fallback)=>`${String(d||'').slice(0,10)}T${String(t||fallback||'00:00').slice(0,5)}`;
+function leaderAgendaKind(a,nowKey){
+ const start=leaderAgendaKey(a.activity_date,a.activity_time,'00:00');
+ const end=leaderAgendaKey(a.activity_end_date||a.activity_date,a.activity_end_time,'23:59');
+ if(nowKey<start)return'next';if(nowKey>end)return'past';return'now';
+}
+function leaderAgendaDate(a){
+ const f=d=>{if(!d)return'';const [y,m,day]=String(d).slice(0,10).split('-');return `${day}/${m}/${y}`};
+ const d1=f(a.activity_date),d2=f(a.activity_end_date),dates=d2&&d2!==d1?`${d1}–${d2}`:d1;
+ const t1=String(a.activity_time||'').slice(0,5),t2=String(a.activity_end_time||'').slice(0,5);
+ return [dates,t1&&t2?`${t1}–${t2}`:t1].filter(Boolean).join(' • ');
+}
+function leaderAgendaPanel(ac){
+ const rows=Array.isArray(ac?.rows)?ac.rows:[];
+ const groups={past:[],now:[],next:[]},nowKey=leaderNowKey();
+ rows.forEach(a=>groups[leaderAgendaKind(a,nowKey)].push(a));
+ groups.past.sort((a,b)=>leaderAgendaKey(b.activity_end_date||b.activity_date,b.activity_end_time,'23:59').localeCompare(leaderAgendaKey(a.activity_end_date||a.activity_date,a.activity_end_time,'23:59')));
+ groups.now.sort((a,b)=>leaderAgendaKey(a.activity_date,a.activity_time,'00:00').localeCompare(leaderAgendaKey(b.activity_date,b.activity_time,'00:00')));
+ groups.next.sort((a,b)=>leaderAgendaKey(a.activity_date,a.activity_time,'00:00').localeCompare(leaderAgendaKey(b.activity_date,b.activity_time,'00:00')));
+ const item=(a)=>`<div class="lad-agenda-item"><b>${esc(a.activity_name||'Kegiatan Bidang')}</b><div class="lad-agenda-meta">${esc(leaderAgendaDate(a))}${a.place?` • ${esc(a.place)}`:''}${a.scope_level?` • ${esc(String(a.scope_level).replace('TK_PAUD_PNF','TK/PAUD/PNF'))}`:''}</div></div>`;
+ const cfg=[['past','✓ Sudah Dilaksanakan'],['now','● Sedang Berlangsung'],['next','→ Akan Dilaksanakan']];
+ return `<div class="lad-agenda"><h3>Agenda Kegiatan Bidang</h3><div class="lad-agenda-grid">${cfg.map(([k,title])=>`<div class="lad-agenda-group"><div class="lad-agenda-head"><span>${title}</span><span class="lad-agenda-count">${groups[k].length}</span></div>${groups[k].length?groups[k].slice(0,5).map(item).join(''):'<div class="lad-agenda-empty">Belum ada agenda.</div>'}</div>`).join('')}</div></div>`;
 }
 function eduPanel(){
  const e=EDU_BATANG;
@@ -122,6 +161,7 @@ function render(data=SNAPSHOT,live=false){
   <div class="lad-card click" onclick="window.showTab&&window.showTab('kadinMonitoring')"><div class="lad-label">Usulan Aktif</div><div class="lad-value">${fmt(w.active)}</div><div class="lad-sub">Klik untuk melihat agregat dan rincian layanan</div></div>
   <div class="lad-card click" onclick="window.showTab&&window.showTab('kadinActivities')"><div class="lad-label">Agenda Mendatang</div><div class="lad-value">${fmt(ac.upcoming)}</div><div class="lad-sub">Total kegiatan ${fmt(ac.total)} • klik untuk melihat agenda</div></div>
   <div class="lad-card"><div class="lad-label">Perhatian</div><div class="lad-value">${fmt(num(n.gap_riil)+num(w.perbaikan))}</div><div class="lad-sub">Kekurangan GTK ${fmt(n.gap_riil)} • Perlu perbaikan ${fmt(w.perbaikan)}</div></div>
+  ${leaderAgendaPanel(ac)}
   <div class="lad-wide"><h3>Kebutuhan GTK per Jenjang</h3>${levelRows(n.levels||{})}</div>
   <div class="lad-wide"><h3>Workflow Layanan</h3>${workflowRows(w)}<button class="btn soft" style="margin-top:10px" onclick="window.showTab&&window.showTab('kadinMonitoring')">Lihat rincian layanan</button></div>
   <div class="lad-wide"><h3>Komposisi GTK</h3><div class="lad-state"><span>PNS</span><b>${fmt(n.pns)}</b></div><div class="lad-state"><span>PPPK</span><b>${fmt(n.pppk)}</b></div><div class="lad-state"><span>PPPK Paruh Waktu</span><b>${fmt(n.pppk_pw)}</b></div><div class="lad-state"><span>Non-ASN</span><b>${fmt(n.non_asn)}</b></div></div>
@@ -139,7 +179,7 @@ async function syncLive(){
    sb.from('school_gtk_needs').select('school_npsn,school_level,abk,pns,pppk,pppk_pw,asn_total,non_asn_total'),
    sb.from('school_gtk_needs_workflow').select('school_npsn,status'),
    sb.from('submissions').select('status,workflow_state'),
-   sb.from('field_activities').select('activity_date')
+   sb.from('field_activities').select('id,scope_level,activity_name,activity_date,activity_end_date,activity_time,activity_end_time,place')
   ]);
   const er=sm.error||nr.error||wf.error||sr.error||ar.error;if(er)throw er;
   const schools=(sm.data||[]).filter(x=>['TK','SD','SMP'].includes(String(x.bentuk_pendidikan||x.jenjang||'').toUpperCase()));
@@ -177,7 +217,7 @@ async function syncLive(){
     staff:schools.reduce((s,x)=>s+num(x.staff),0)
    },
    needs,workflow,
-   activities:{total:acts.length,upcoming:up.length,next_date:up[0]?.activity_date||null},
+   activities:{total:acts.length,upcoming:up.length,next_date:up[0]?.activity_date||null,rows:acts},
    snapshot_at:new Date().toLocaleString('id-ID')
   };
   current=live;render(live,true);return true;
@@ -191,5 +231,5 @@ for(let i=0;i<240&&(!window.__simantabProfile||!getSb());i++)await wait(50);
 if(!isLeader())return;
 const ok=await syncLive();
 if(!ok)render(SNAPSHOT,false);
-window.__simantabLeaderDashboardAuthoritative={version:6,render,syncLive,stable:true,verifiedNeedsOnly:true,eduUnitsBatang:true,compactEduDetails:true,liveVerified:true};
+window.__simantabLeaderDashboardAuthoritative={version:7,render,syncLive,stable:true,verifiedNeedsOnly:true,eduUnitsBatang:true,compactEduDetails:true,liveVerified:true,fieldAgenda:true};
 })();
