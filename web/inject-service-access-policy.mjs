@@ -14,7 +14,7 @@ if(!html.includes('</body>'))throw new Error('Tag </body> tidak ditemukan.');
 html=html.replace('</body>',`<script type="module" src="./service-access-policy.js?v=2"></script>
 </body>`);
 
-const refs=html.match(/\.\/service-access-policy\.js\?v=1/g)||[];
+const refs=html.match(/\.\/service-access-policy\.js\?v=2/g)||[];
 if(refs.length!==1)throw new Error(`Service access policy harus tepat 1 kali, ditemukan ${refs.length}.`);
 await fs.writeFile(outputPath,html);
 
