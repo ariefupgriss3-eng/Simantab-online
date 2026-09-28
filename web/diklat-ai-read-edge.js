@@ -25,9 +25,9 @@ export default async function handler(req){
   if(probe==='text'){
    if(!gateway)return J({ok:false,configured:false,error:'AI Gateway belum tersedia.'},503);
    try{
-    const pr=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'openai/gpt-5.6-sol',input:'Balas tepat: OK',max_output_tokens:32})});
+    const pr=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-2.5-flash-lite',input:'Balas tepat: OK',max_output_tokens:32})});
     const pj=await pr.json().catch(()=>({}));
-    return J({ok:pr.ok,status:pr.status,model:'openai/gpt-5.6-sol',output:txt(pj).slice(0,200),error:pj?.error||null},pr.ok?200:502);
+    return J({ok:pr.ok,status:pr.status,model:'google/gemini-2.5-flash-lite',output:txt(pj).slice(0,200),error:pj?.error||null},pr.ok?200:502);
    }catch(e){return J({ok:false,error:e?.message||String(e)},502)}
   }
   if(probe==='model'){
