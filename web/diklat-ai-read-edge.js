@@ -30,6 +30,16 @@ export default async function handler(req){
     return J({ok:pr.ok,status:pr.status,model:'google/gemini-2.5-flash-lite',output:txt(pj).slice(0,200),error:pj?.error||null},pr.ok?200:502);
    }catch(e){return J({ok:false,error:e?.message||String(e)},502)}
   }
+  if(probe==='pdf'){
+   if(!gateway)return J({ok:false,configured:false,error:'AI Gateway belum tersedia.'},503);
+   try{
+    const pdf='%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 200]/Contents 4 0 R/Resources<</Font<</F1 5 0 R>>>>>>endobj\n4 0 obj<</Length 44>>stream\nBT /F1 18 Tf 40 120 Td (SKP Tahun 2025) Tj ET\nendstream endobj\n5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\nxref\n0 6\n0000000000 65535 f \ntrailer<</Root 1 0 R/Size 6>>\nstartxref\n0\n%%EOF';
+    const b64=btoa(pdf);
+    const pr=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-2.5-flash-lite',input:[{role:'user',content:[{type:'input_text',text:'Baca PDF ini. Tahun SKP berapa? Balas hanya tahunnya.'},{type:'input_file',filename:'uji.pdf',file_data:'data:application/pdf;base64,'+b64}]}],max_output_tokens:64})});
+    const pj=await pr.json().catch(()=>({}));
+    return J({ok:pr.ok,status:pr.status,output:txt(pj).slice(0,300),error:pj?.error||null},pr.ok?200:502);
+   }catch(e){return J({ok:false,error:e?.message||String(e)},502)}
+  }
   if(probe==='model'){
    try{
     const mr=await fetch('https://ai-gateway.vercel.sh/v1/models'),mj=await mr.json();
@@ -66,7 +76,7 @@ export default async function handler(req){
    if(mime.startsWith('image/'))content.push({type:'input_image',image_url:'data:'+mime+';base64,'+toB64(buf),detail:'high'});
    else content.push({type:'input_file',filename:String(d.file_name||spec.code+'.pdf'),file_data:'data:application/pdf;base64,'+toB64(buf)});
   }
-  const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-2.5-flash-lite',input:[{type:'message',role:'user',content}],reasoning:{effort:'high'},max_output_tokens:5000})});
+  const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},body:JSON.stringify({model:'google/gemini-2.5-flash-lite',input:[{type:'message',role:'user',content}],max_output_tokens:5000})});
   const aj=await ar.json();if(!ar.ok){console.error('DIKLAT_AI_GATEWAY_ERROR',ar.status,JSON.stringify(aj).slice(0,1500));throw new Error(aj?.error?.message||aj?.error||('AI Gateway '+ar.status));}
   const parsed=parse(txt(aj)),got=new Map((parsed?.documents||[]).map(x=>[x.requirement_code,x]));
   const results=REQUIRED.map(spec=>{const x=got.get(spec.code)||{};let status=['SESUAI','PERLU_PERBAIKAN','TIDAK_SESUAI'].includes(x.status)?x.status:'PERLU_PERBAIKAN';const year=x.detected_year==null?null:Number(x.detected_year),read=clamp(x.readability_score),conf=clamp(x.confidence);if(spec.year&&year!==spec.year)status=year==null?'PERLU_PERBAIKAN':'TIDAK_SESUAI';if((read<.8||conf<.8)&&status==='SESUAI')status='PERLU_PERBAIKAN';return{requirement_code:spec.code,status,detected_document_type:x.detected_document_type??null,detected_year:Number.isFinite(year)?year:null,detected_name:x.detected_name??null,detected_nip:x.detected_nip??null,readability_score:read,confidence:conf,evidence:String(x.evidence||'').slice(0,500),note:String(x.note||'').slice(0,500)}});
