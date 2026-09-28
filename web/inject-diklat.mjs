@@ -5,7 +5,7 @@ const moduleName='diklat-ks-bcks-v32.js';
 const modulePath=new URL('./diklat-ks-bcks-v32.js',import.meta.url);
 let html=await fs.readFile(outputPath,'utf8');
 let code=await fs.readFile(modulePath,'utf8');
-if(!code.includes('SIMANTAB_DIKLAT_KS_BCKS_V2'))throw new Error('Modul Diklat KS/BCKS V2 tidak valid.');
+if(!code.includes('SIMANTAB_DIKLAT_KS_BCKS_V2')||!code.includes('SIMANTAB_DIKLAT_KS_BCKS_V35_NEGERI_APPLICANT_ONLY'))throw new Error('Modul Diklat KS/BCKS V35 tidak valid.');
 if(!code.includes("certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE'"))throw new Error('Workflow sertifikat peserta/admin KSPS tidak ditemukan.');
 
 // Seleksi Administrasi: 7 dokumen wajib, termasuk Surat Pernyataan Bermeterai.
@@ -33,4 +33,4 @@ html=html.replace(/<script type="module" src="\.\/diklat-ks-bcks(?:-v31)?\.js\?v
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({diklatKsBcks:true,version:34,archiveTms:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,levels:4,level4:'PENCATATAN_SERTIFIKAT',certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',adminRequiredFiles:['SKP_1','SKP_2','SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK','PAKTA_INTEGRITAS','SURAT_PERNYATAAN_DIKLAT'],adminRequiredFileCount:7,fileLimitBytes:512000,adminKsps:'kasim',productionUntouched:true}));
+console.log(JSON.stringify({diklatKsBcks:true,version:35,archiveTms:true,adminFlow:'KOORDINATOR_ASSIGN_STAFF_VERIFY_DIRECT_KABID',superAdminResetDraft:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,levels:4,level4:'PENCATATAN_SERTIFIKAT',certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',adminRequiredFiles:['SKP_1','SKP_2','SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK','PAKTA_INTEGRITAS','SURAT_PERNYATAAN_DIKLAT'],adminRequiredFileCount:7,fileLimitBytes:512000,adminKsps:'kasim',applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,productionUntouched:true}));
