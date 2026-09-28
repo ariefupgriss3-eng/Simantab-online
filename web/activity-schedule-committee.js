@@ -1,4 +1,5 @@
 /* SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V1 */
+/* SIMANTAB_ACTIVITY_SCHEDULE_COMMITTEE_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<180&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -18,10 +19,10 @@ function decorateForm(){
  if(time){const f=time.closest('.field');if(f){f.classList.remove('s4');f.classList.add('s3');const l=f.querySelector('label');if(l)l.textContent='Jam Mulai';}}
  if(place){const f=place.closest('.field');if(f){f.classList.remove('s4');f.classList.add('s12');}}
  if(!$('activityEndFields')&&time?.closest('.field')){
-  const wrap=document.createElement('div');wrap.id='activityEndFields';wrap.style.display='contents';wrap.innerHTML='<div class="field s3"><label>2B. Selesai — Hari, tanggal</label><input id="actEndDate" type="date"></div><div class="field s3"><label>Jam Selesai</label><input id="actEndTime" type="time"></div>';
+  const wrap=document.createElement('div');wrap.id='activityEndFields';wrap.style.display='contents';wrap.innerHTML='<div class="field s3"><label>Tanggal Selesai Kegiatan</label><input id="actEndDate" type="date" required></div><div class="field s3"><label>Jam Selesai</label><input id="actEndTime" type="time"></div>';
   time.closest('.field').after(wrap);
-  if(date?.value&&!$('actEndDate').value)$('actEndDate').value=date.value;
-  date?.addEventListener('change',()=>{if($('actEndDate')&&!$('actEndDate').value)$('actEndDate').value=date.value},{once:false});
+  if(date?.value&&!$('actEndDate').value)$('actEndDate').value=date.value;if($('actEndDate'))$('actEndDate').min=date?.value||'';
+  date?.addEventListener('change',()=>{if($('actEndDate')){if(!$('actEndDate').value||$('actEndDate').value<date.value)$('actEndDate').value=date.value;$('actEndDate').min=date.value}},{once:false});
  }
  if(!$('activityCommitteeFields')){
   const officials=$('actOfficials')?.closest('.field');
