@@ -1,14 +1,30 @@
 /* SIMANTAB_PREMIUM_DASHBOARD_THEME_V2 */
 /* SIMANTAB_PREMIUM_DASHBOARD_THEME_V6 */
+/* SIMANTAB_PREMIUM_DASHBOARD_THEME_V7_LOGIN_ELEGANT */
 (()=>{
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const css=`
 :root{--navy:#0a3568;--navy2:#06284f;--navy3:#0e477e;--blue:#1769b0;--orange:#ff7a00;--orange2:#ff9f2f;--soft:#f4f8fc;--ink:#15304d;--muted:#6d7f92;--line:#dce8f2;--card:#fff;--shadow:0 10px 28px rgba(8,42,84,.10)}
 body{background:linear-gradient(180deg,#edf4fb 0,#f8fbfe 36%,#f2f6fa 100%)}
-.login{background:linear-gradient(132deg,#062b57 0%,#0d4b85 53%,#eaf3fb 53%,#f9fbfd 100%)!important;position:relative;overflow:hidden}
-.login:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 12% 17%,rgba(255,122,0,.24),transparent 18%),radial-gradient(circle at 37% 90%,rgba(255,255,255,.12),transparent 22%),radial-gradient(circle at 83% 9%,rgba(255,255,255,.16),transparent 20%);pointer-events:none}
-.hero{position:relative;padding:56px!important;justify-content:center!important;z-index:1}.hero-badge{width:78px!important;height:78px!important;background:linear-gradient(145deg,#fff,#eaf2f8)!important;border:3px solid rgba(255,255,255,.7);box-shadow:0 15px 35px #001a3655!important;color:var(--navy)!important;font-size:12px!important;letter-spacing:.08em}.hero h1{font-size:50px!important;letter-spacing:-1.5px;margin-top:18px!important}.hero h1:after{content:'-ONLINE';color:var(--orange);margin-left:4px}.hero p{font-size:16px!important;max-width:590px}.hero:after{content:'DATA AKURAT  •  LAYANAN TERPADU  •  KINERJA LEBIH BAIK';display:inline-block;margin-top:24px;padding:11px 16px;border:1px solid rgba(255,255,255,.34);border-radius:999px;font-size:10px;font-weight:900;letter-spacing:.07em;background:rgba(255,255,255,.08);width:max-content;max-width:100%}.sim-institution{font-size:11px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:#dbeafa;margin-bottom:14px}.sim-institution b{color:#fff}.sim-hero-slogan{margin-top:22px;font-size:13px;font-weight:800;color:#fff;max-width:480px;line-height:1.5}.sim-hero-slogan:after{content:'';display:block;width:72px;height:4px;border-radius:99px;background:var(--orange);margin-top:10px}.sim-hero-values{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}.sim-hero-values span{font-size:10px;font-weight:850;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16)}
+.login{min-height:100vh;display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr)!important;background:radial-gradient(circle at 31% 10%,rgba(52,171,255,.34),transparent 27%),radial-gradient(circle at 72% 42%,rgba(21,121,224,.22),transparent 32%),linear-gradient(135deg,#061a3a 0%,#0a4386 43%,#0868c4 100%)!important;position:relative;overflow:hidden}
+.login:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 15% 80%,rgba(255,255,255,.10),transparent 24%),linear-gradient(145deg,transparent 0 74%,rgba(4,44,104,.42) 74% 82%,transparent 82%);pointer-events:none}
+.login:after{content:'';position:absolute;left:-85px;bottom:66px;width:430px;height:14px;border-radius:999px;background:linear-gradient(90deg,#ff9f2f,#ffc35a);transform:rotate(19deg);box-shadow:0 0 28px rgba(255,159,47,.22);pointer-events:none}
+.hero{position:relative;padding:clamp(28px,4.2vh,48px) 54px 24px!important;justify-content:flex-start!important;align-items:center!important;text-align:center;min-height:100vh;z-index:1}
+.sim-institution{margin:0 0 13px!important;font-size:clamp(13px,1.25vw,18px)!important;font-weight:800!important;line-height:1.5!important;letter-spacing:.06em!important;text-transform:uppercase;color:#edf6ff!important;text-align:center}
+.sim-institution b{display:block;color:#fff!important;font-size:1.08em;letter-spacing:.07em}
+.hero-badge{width:92px!important;height:92px!important;margin:0 auto 16px!important;background:linear-gradient(145deg,#fff,#eaf2f8)!important;border:4px solid rgba(255,255,255,.82)!important;border-radius:24px!important;box-shadow:0 15px 38px rgba(0,19,50,.38)!important;color:var(--navy)!important;overflow:hidden}
+.hero-badge img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+.hero h1{font-size:clamp(42px,4.5vw,64px)!important;line-height:1!important;letter-spacing:-1.8px!important;margin:0 0 12px!important;white-space:nowrap;text-align:center}
+.hero h1:after{content:'-ONLINE';color:#ffad3b;margin-left:5px;text-shadow:0 5px 18px rgba(255,153,0,.18)}
+.hero p{font-size:clamp(16px,1.65vw,22px)!important;max-width:720px!important;margin:0!important;line-height:1.42!important;opacity:1!important;text-align:center}
+.hero p b{font-weight:850}
+.sim-hero-values{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;margin-top:26px;padding:10px 18px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(6,48,103,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.08);max-width:100%}
+.sim-hero-values span{position:relative;font-size:11px;font-weight:850;padding:0 18px;color:#f7fbff;white-space:nowrap}
+.sim-hero-values span+span:before{content:'';position:absolute;left:0;top:50%;width:1px;height:18px;background:rgba(255,255,255,.32);transform:translateY(-50%)}
+.sim-login-division-footer{margin-top:auto;padding:28px 0 4px;width:100%;display:flex;align-items:center;justify-content:center;gap:18px;color:#fff;font-size:clamp(20px,2.2vw,30px);font-weight:950;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,22,55,.35)}
+.sim-login-division-footer:before,.sim-login-division-footer:after{content:'';width:78px;max-width:14%;height:3px;border-radius:999px;background:#ffad3b;box-shadow:0 0 14px rgba(255,173,59,.28)}
+@media(max-height:760px) and (min-width:981px){.hero{padding-top:22px!important;padding-bottom:18px!important}.sim-institution{font-size:12px!important;margin-bottom:8px!important}.hero-badge{width:76px!important;height:76px!important;margin-bottom:10px!important;border-radius:20px!important}.hero h1{font-size:44px!important;margin-bottom:8px!important}.hero p{font-size:16px!important}.sim-hero-values{margin-top:18px;padding:8px 14px}.sim-login-division-footer{padding-top:18px;font-size:20px!important}}
 .loginpane{position:relative;z-index:1}.loginbox{border:0!important;border-radius:24px!important;box-shadow:0 22px 60px rgba(8,42,84,.20)!important;padding:30px!important}.loginbox h2{color:var(--navy)!important;font-size:25px!important}.loginbox>.small{font-size:11px!important}.tabs button{transition:.18s}.tabs button.active{background:linear-gradient(135deg,var(--orange),#f28a1c)!important;border-color:transparent!important}.btn.primary{background:linear-gradient(135deg,var(--orange),#ef6d00)!important;box-shadow:0 8px 18px rgba(255,122,0,.18)}.sim-login-seal{margin-top:16px;padding-top:14px;border-top:1px solid #e8eef4;display:flex;gap:9px;align-items:center;color:#647b90;font-size:10px;font-weight:750}.sim-login-seal strong{display:grid;place-items:center;width:30px;height:30px;border-radius:9px;background:#e9f2fa;color:var(--navy)}
 .top{height:76px!important;background:linear-gradient(90deg,var(--navy2),var(--navy))!important;border:0!important;color:#fff!important;box-shadow:0 3px 16px rgba(5,31,61,.18)}.top .btitle{font-size:17px;color:#fff}.top .bsub,.top .small{color:#d9e7f4!important}.top .mark{width:46px!important;background:linear-gradient(145deg,#fff,#e5eef7)!important;color:var(--navy)!important;border:2px solid rgba(255,255,255,.55);font-size:9px!important;letter-spacing:.05em}.top .chip{background:rgba(255,255,255,.14)!important;color:#fff!important}.top .avatar{background:#fff!important;color:var(--navy)!important}.top .btn.soft{background:rgba(255,255,255,.12)!important;color:#fff!important}.sim-top-accent{color:#ff922f}
 .layout{grid-template-columns:255px 1fr!important}.side{top:76px!important;height:calc(100vh - 76px)!important;background:linear-gradient(180deg,#0a3568 0%,#08284e 100%)!important;padding:18px 12px!important;box-shadow:8px 0 28px rgba(8,42,84,.08)}.side:after{content:'PROFESIONAL  •  KOLABORATIF  •  BERDAMPAK';display:block;margin:20px 9px 5px;padding-top:15px;border-top:1px solid rgba(255,255,255,.09);font-size:8px;line-height:1.6;letter-spacing:.08em;color:#81a7c8}
@@ -91,11 +107,9 @@ async function loadDashboardAgenda(){
 }
 function decorateStatic(){
  const hero=document.querySelector('.hero');
- if(hero&&!hero.querySelector('.sim-institution')){
-  const institution=document.createElement('div');institution.className='sim-institution';institution.innerHTML='<b>PEMERINTAH KABUPATEN BATANG</b><br>DINAS PENDIDIKAN DAN KEBUDAYAAN';hero.insertBefore(institution,hero.firstChild);
-  const badge=hero.querySelector('.hero-badge');if(badge)badge.innerHTML='<img src="./simantab-icon-192.png?v=4" alt="SIMANTAB" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:block">';
-  const slogan=document.createElement('div');slogan.className='sim-hero-slogan';slogan.textContent='Bergerak Bersama untuk Pendidikan yang Lebih Baik';hero.appendChild(slogan);
-  const vals=document.createElement('div');vals.className='sim-hero-values';vals.innerHTML='<span>✓ Data Akurat</span><span>✓ Layanan Terpadu</span><span>✓ GTK Profesional</span>';hero.appendChild(vals);
+ if(hero&&hero.dataset.loginHeroV7!=='1'){
+  hero.dataset.loginHeroV7='1';
+  hero.innerHTML=`<div class="sim-institution"><b>PEMERINTAH KABUPATEN BATANG</b><span>DINAS PENDIDIKAN DAN KEBUDAYAAN</span></div><div class="hero-badge"><img src="./simantab-icon-192.png?v=5" alt="SIMANTAB"></div><h1>SIMANTAB</h1><p><b>Sistem Informasi Manajemen Ketenagaan Batang</b></p><div class="sim-hero-values"><span>▥&nbsp; Data Akurat</span><span>👥&nbsp; Layanan Terpadu</span><span>⚙&nbsp; Kinerja Lebih Baik</span></div><div class="sim-login-division-footer">Bidang Ketenagaan</div>`;
  }
  const box=document.querySelector('.loginbox');
  if(box&&!box.querySelector('.sim-login-seal')){
@@ -128,7 +142,7 @@ decorateStatic();
   const role=String(window.__simantabProfile?.role||'');
   const leader=['KEPALA_DINAS','SEKRETARIS_DINAS'].includes(role);
   if(leader){
-    window.__simantabPremiumDashboard={version:6,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true,dashboardAgenda:true};
+    window.__simantabPremiumDashboard={version:7,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:true,dashboardAgenda:true,loginHero:'elegant-v7'};
     return;
   }
   let t;
@@ -136,6 +150,6 @@ decorateStatic();
   const target=$('dashboardBody');if(target)ob.observe(target,{childList:true,subtree:false});
   const prior=window.showTab;if(prior)window.showTab=async id=>{const r=await prior(id);if(id==='dashboard')setTimeout(enhance,50);return r};
   setTimeout(enhance,500);
-  window.__simantabPremiumDashboard={version:6,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:false,dashboardAgenda:true};
+  window.__simantabPremiumDashboard={version:7,reference:'navy-orange-executive',productionDataUntouched:true,leaderSafe:false,dashboardAgenda:true,loginHero:'elegant-v7'};
 })();
 })();
