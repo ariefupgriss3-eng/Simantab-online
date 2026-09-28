@@ -46,7 +46,7 @@
     const gov='pemerintah kabupaten batang';
     const candidates=[...document.querySelectorAll('div,p,span,strong,b')].filter(el=>{
       if(el.closest?.('.sim-login-developer'))return false;
-      if(normalizedText(el)!==unit)return false;
+      if(!normalizedText(el).includes(unit))return false;
       let node=el.parentElement;
       for(let i=0;i<6&&node;i++,node=node.parentElement){
         const t=normalizedText(node);
