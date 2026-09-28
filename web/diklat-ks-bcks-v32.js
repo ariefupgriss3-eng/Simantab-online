@@ -39,8 +39,8 @@ const sb=window.__simantabSb,$=id=>document.getElementById(id),profile=()=>windo
 if(!sb||!window.showTab)return;
 const FILE_LIMIT=512000,BUCKET='simantab-documents';
 const REQUIREMENTS=[
- ['SKP_1','SKP 1'],
- ['SKP_2','SKP 2'],
+ ['SKP_1','SKP 2024'],
+ ['SKP_2','SKP 2025'],
  ['SK_PENGALAMAN_MANAJERIAL','SK Pengalaman Manajerial'],
  ['SK_HUDIS','SK Bebas Hudis'],
  ['SKCK','SKCK'],
