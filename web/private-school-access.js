@@ -1,19 +1,81 @@
 /* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V1 */
+/* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V2 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-for(let i=0;i<120&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
+for(let i=0;i<160&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id);if(!sb)return;
-const p=()=>window.__simantabProfile||{},KS=()=>p().role==='KEPALA_SEKOLAH';
-const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[m]));
-const ALLOWED=new Set(['PTK_BARU_SWASTA','TPG_KONSULTASI']);
-const BLOCKED_TABS=new Set(['services','needs','attendance','schoolMaster','distribution','archives','sk','monitoring','activities']);
-let school=null,isPrivate=false;
-async function resolveSchool(force=false){if(!KS()){school=null;isPrivate=false;return null}if(school&&!force)return school;const n=String(p().school_npsn||'');if(!/^\d{8}$/.test(n)){school=null;isPrivate=false;return null}const {data,error}=await sb.from('school_master').select('npsn,school_name,school_status,bentuk_pendidikan,jenjang,kecamatan').eq('npsn',n).eq('is_active',true).maybeSingle();if(error)throw error;school=data||null;isPrivate=String(school?.school_status||'').toUpperCase()==='SWASTA';window.__simantabSchoolAccess={school,isPrivate,allowedServices:[...ALLOWED]};return school}
-function nav(){if(!isPrivate||!$('nav'))return;$('nav').innerHTML=`<div class="navhead">Sekolah Swasta</div><button class="navbtn" data-tab="dashboard" onclick="showTab('dashboard')"><span class="ico">▦</span>Dashboard</button><button class="navbtn" onclick="openSubmission('PTK_BARU_SWASTA','Usul PTK Baru Swasta')"><span class="ico">🧑‍🏫</span>Usul PTK Baru Swasta</button><button class="navbtn" data-tab="tpg" onclick="showTab('tpg')"><span class="ico">💬</span>Konsultasi TPG</button><button class="navbtn" data-tab="status" onclick="showTab('status')"><span class="ico">⌛</span>Status Usulan</button><button class="navbtn" data-tab="docs" onclick="showTab('docs')"><span class="ico">▣</span>Dokumen Saya</button><button class="navbtn" data-tab="notifications" onclick="showTab('notifications')"><span class="ico">🔔</span>Notifikasi</button><div class="navhead">Akun</div><button class="navbtn" data-tab="profile" onclick="showTab('profile')"><span class="ico">♙</span>Profil</button>`}
-async function dash(){if(!isPrivate)return;const b=$('dashboardBody');if(!b)return;$('dashTitle').textContent='Dashboard Sekolah Swasta';$('dashDesc').textContent='Akses layanan hanya Usul PTK Baru Swasta dan Konsultasi TPG.';b.innerHTML='<div class="card">Memuat layanan...</div>';try{const {data,error}=await sb.from('submissions').select('id,service_type,status');if(error)throw error;const rows=(data||[]).filter(x=>ALLOWED.has(x.service_type)),ptk=rows.filter(x=>x.service_type==='PTK_BARU_SWASTA'),tpg=rows.filter(x=>x.service_type==='TPG_KONSULTASI'),active=rows.filter(x=>!['COMPLETED','REJECTED'].includes(x.status)).length,done=rows.filter(x=>x.status==='COMPLETED').length;b.innerHTML=`<div class="grid"><div class="card s12"><div class="info"><b>${esc(school?.school_name||p().unit)}</b><br>NPSN ${esc(school?.npsn||p().school_npsn)} • ${esc(school?.bentuk_pendidikan||school?.jenjang||'-')} • <b>SWASTA</b>${school?.kecamatan?' • '+esc(school.kecamatan):''}<br><br>Akses sekolah swasta dibatasi hanya untuk <b>Usul PTK Baru Swasta</b> dan <b>Konsultasi TPG</b>. Tidak tersedia pengajuan Tamsil, TPG THR, atau TPG Gaji ke-13.</div></div><div class="card s3"><div class="label">Usul PTK Baru</div><div class="metric">${ptk.length}</div><div class="small">Pengajuan PTK baru sekolah swasta.</div></div><div class="card s3"><div class="label">Konsultasi TPG</div><div class="metric">${tpg.length}</div><div class="small">Pertanyaan dan kendala layanan TPG.</div></div><div class="card s3"><div class="label">Usulan Aktif</div><div class="metric">${active}</div></div><div class="card s3"><div class="label">Selesai</div><div class="metric">${done}</div></div><div class="card s12"><h3 style="margin-top:0">Akses Cepat</h3><div class="quick"><button onclick="openSubmission('PTK_BARU_SWASTA','Usul PTK Baru Swasta')">🧑‍🏫<b>Usul PTK Baru</b><span>Pengajuan PTK baru sekolah swasta.</span></button><button onclick="showTab('tpg')">💬<b>Konsultasi TPG</b><span>Informasi dan konsultasi layanan TPG.</span></button><button onclick="showTab('status')">⌛<b>Status Usulan</b><span>Pantau progres layanan yang tersedia.</span></button></div></div></div>`}catch(e){b.innerHTML=`<div class="card err">${esc(e.message)}</div>`}}
-const oldOpen=window.openSubmission;if(oldOpen&&!window.__privateSchoolOpenWrap){window.__privateSchoolOpenWrap=true;window.openSubmission=(type,name)=>{if(isPrivate&&!ALLOWED.has(type)){alert('Sekolah swasta hanya dapat mengakses Usul PTK Baru Swasta dan Konsultasi TPG.');return window.showTab('dashboard')}return oldOpen(type,name)}}
-async function apply(force=false){try{await resolveSchool(force);if(!isPrivate)return;nav();const active=document.querySelector('.section.active')?.id||'dashboard';if(BLOCKED_TABS.has(active)){await window.showTab('dashboard');return}if(active==='dashboard')await dash()}catch(e){console.error('private school access',e)}}
-const oldShow=window.showTab;window.showTab=async id=>{if(KS()){await resolveSchool();if(isPrivate&&BLOCKED_TABS.has(id))id='dashboard'}await oldShow(id);await wait(30);if(isPrivate){nav();if(id==='dashboard')await dash()}};
-const oldRefresh=window.refreshAll;window.refreshAll=async()=>{await oldRefresh();await apply(true)};
-for(let i=0;i<80&&!window.__simantabProfile;i++)await wait(100);await apply(true);
+const p=()=>window.__simantabProfile||{};
+const SCHOOL_ROLES=new Set(['GTK','KEPALA_SEKOLAH']);
+const isSchoolSide=()=>SCHOOL_ROLES.has(String(p().role||'').toUpperCase());
+const ALLOWED_TABS=new Set(['profile','tpg','attendance','offlineConsultation','status','docs','notifications','newSubmission']);
+const ALLOWED_SERVICES=new Set(['TPG_KONSULTASI']);
+let school=null,isPrivate=false,isNegeri=false;
+
+async function resolveSchool(force=false){
+ if(!isSchoolSide()){school=null;isPrivate=false;isNegeri=false;return null}
+ if(school&&!force)return school;
+ const n=String(p().school_npsn||'').trim();
+ if(!n){school=null;isPrivate=false;isNegeri=false;return null}
+ const {data,error}=await sb.from('school_master').select('npsn,school_name,school_status,bentuk_pendidikan,jenjang,kecamatan').eq('npsn',n).eq('is_active',true).maybeSingle();
+ if(error)throw error;
+ school=data||null;
+ const st=String(school?.school_status||'').toUpperCase();
+ isPrivate=st==='SWASTA';isNegeri=st==='NEGERI';
+ window.__simantabSchoolAccess={school,isPrivate,isNegeri,allowedServices:isPrivate?[...ALLOWED_SERVICES]:[],allowedTabs:isPrivate?[...ALLOWED_TABS]:[]};
+ return school;
+}
+function privateNav(){
+ if(!isPrivate||!$('nav'))return;
+ $('nav').innerHTML=`<div class="navhead">Sekolah Swasta</div>
+ <button class="navbtn" data-tab="profile" onclick="showTab('profile')"><span class="ico">♙</span>Profil</button>
+ <div class="navhead">Layanan</div>
+ <button class="navbtn" data-tab="tpg" onclick="showTab('tpg')"><span class="ico">◉</span>TPG</button>
+ <button class="navbtn" data-tab="attendance" onclick="showTab('attendance')"><span class="ico">✍️</span>Daftar Hadir Kegiatan</button>
+ <button class="navbtn" data-tab="offlineConsultation" onclick="showTab('offlineConsultation')"><span class="ico">🎟️</span>Daftar Konsultasi Luring</button>
+ <button class="navbtn" data-tab="status" onclick="showTab('status')"><span class="ico">⌛</span>Status Usulan</button>
+ <button class="navbtn" data-tab="docs" onclick="showTab('docs')"><span class="ico">▣</span>Dokumen Saya</button>
+ <button class="navbtn" data-tab="notifications" onclick="showTab('notifications')"><span class="ico">🔔</span>Notifikasi</button>`;
+}
+function enforceTpg(){
+ if(!isPrivate)return;
+ const body=$('tpgBody');if(!body)return;
+ body.querySelectorAll('button').forEach(btn=>{if(/Tamsil|THR|Gaji\s*ke-?13|PTK Baru/i.test(btn.textContent||''))btn.remove()});
+ body.querySelectorAll('h2,h3,p,.label,.small').forEach(el=>{if(/TPG\s*\/\s*Tamsil/i.test(el.textContent||''))el.textContent=(el.textContent||'').replace(/TPG\s*\/\s*Tamsil/gi,'TPG')});
+ const sec=$('tpg'),h=sec?.querySelector('.head h2'),d=sec?.querySelector('.head p');if(h)h.textContent='TPG';if(d)d.textContent='Layanan TPG untuk satuan pendidikan swasta.';
+}
+const oldOpen=window.openSubmission;
+if(oldOpen&&!window.__privateSchoolOpenWrap){
+ window.__privateSchoolOpenWrap=true;
+ window.openSubmission=(type,name)=>{
+  if(isPrivate&&!ALLOWED_SERVICES.has(type)){alert('Satuan pendidikan swasta hanya dapat menggunakan layanan TPG.');return window.showTab('tpg')}
+  return oldOpen(type,name);
+ };
+}
+const oldShow=window.showTab;
+window.showTab=async id=>{
+ await resolveSchool();
+ let target=id;
+ if(isSchoolSide()&&target==='needs'&&!isNegeri)target='profile';
+ if(isPrivate&&!ALLOWED_TABS.has(target))target='profile';
+ const r=await oldShow(target);
+ await wait(40);
+ if(isPrivate){privateNav();if(target==='tpg')enforceTpg()}
+ return r;
+};
+const oldRefresh=window.refreshAll;
+if(oldRefresh)window.refreshAll=async(...args)=>{
+ const r=await oldRefresh(...args);
+ await resolveSchool(true);await wait(40);
+ if(isPrivate)privateNav();
+ return r;
+};
+for(let i=0;i<100&&!window.__simantabProfile;i++)await wait(80);
+await resolveSchool(true);
+if(isPrivate){
+ privateNav();
+ const active=document.querySelector('.section.active')?.id||'profile';
+ if(!ALLOWED_TABS.has(active))await window.showTab('profile');
+ else if(active==='tpg')enforceTpg();
+}
+window.__simantabPrivateSchoolPolicy={version:2,negeriNeedsOnly:true,skbNegeriIncluded:true,privateMenu:['profile','tpg','attendance','offlineConsultation','status','docs','notifications'],privateServices:['TPG_KONSULTASI']};
 })();
