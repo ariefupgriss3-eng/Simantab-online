@@ -9,7 +9,7 @@ const simantabIconBase64='iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAMAAABlApw1AAAAwFBMVE
 const simantabIconFile='simantab-icon-192.png';
 await fs.writeFile(path.join(staticDir,simantabIconFile),Buffer.from(simantabIconBase64,'base64'));
 
-const simantabIconHref='./'+simantabIconFile+'?v=1';
+const simantabIconHref='./'+simantabIconFile+'?v=3';
 // Bootstrap builds start from current production, so remove every prior icon-style injection first.
 html=html.replace(/\\n\s*(?=<style id="simantabAppIconStyle">)/g,'');
 html=html.replace(/<style id="simantabAppIconStyle">[\s\S]*?<\/style>\s*/g,'');
@@ -21,15 +21,18 @@ html=html.replace('</head>',`<link rel="icon" type="image/png" href="${simantabI
 .hero-badge img,.mark img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
 </style>
 </head>`);
-html=html.replace('<div class="hero-badge">S</div>',`<div class="hero-badge"><img src="${simantabIconHref}" alt="SIMANTAB"></div>`);
-html=html.replace('<div class="mark">S</div>',`<div class="mark"><img src="${simantabIconHref}" alt="SIMANTAB"></div>`);
+// Replace the current landing/header placeholders regardless of their old text
+// ("S", "BATANG", or an inherited image) so production bootstrap cannot keep
+// the stale placeholder.
+html=html.replace(/<div class="hero-badge"[^>]*>[\s\S]*?<\/div>/g,`<div class="hero-badge"><img src="${simantabIconHref}" alt="SIMANTAB"></div>`);
+html=html.replace(/<div class="mark"[^>]*>[\s\S]*?<\/div>/g,`<div class="mark"><img src="${simantabIconHref}" alt="SIMANTAB"></div>`);
 
 try{
  const manifestPath=path.join(staticDir,'manifest.json');
  const manifest=JSON.parse(await fs.readFile(manifestPath,'utf8'));
  manifest.name='SIMANTAB Online';
  manifest.short_name='SIMANTAB';
- manifest.icons=[{src:'./'+simantabIconFile+'?v=1',sizes:'192x192',type:'image/png',purpose:'any maskable'}];
+ manifest.icons=[{src:'./'+simantabIconFile+'?v=3',sizes:'192x192',type:'image/png',purpose:'any maskable'}];
  await fs.writeFile(manifestPath,JSON.stringify(manifest,null,2));
 }catch(e){console.warn('Manifest SIMANTAB icon tidak diperbarui:',e?.message||e)}
 
