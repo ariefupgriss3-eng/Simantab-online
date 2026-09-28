@@ -1,6 +1,7 @@
 /* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V1 */
 /* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V2 */
 /* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V3 */
+/* SIMANTAB_PRIVATE_SCHOOL_SERVICE_ACCESS_V4_NAV_IDEMPOTENT */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
@@ -26,17 +27,9 @@ async function resolveSchool(force=false){
  return school;
 }
 function privateNav(){
- if(!isPrivate||!$('nav'))return;
- $('nav').innerHTML=`<div class="navhead">Sekolah Swasta</div>
- <button class="navbtn" data-tab="profile" onclick="showTab('profile')"><span class="ico">♙</span>Profil</button>
- <div class="navhead">Layanan</div>
- <button class="navbtn" data-tab="tpg" onclick="showTab('tpg')"><span class="ico">◉</span>TPG</button>
- <button class="navbtn" onclick="openSubmission('PTK_BARU_SWASTA','Usul PTK Baru Swasta')"><span class="ico">🧑‍🏫</span>Usul PTK Baru</button>
- <button class="navbtn" data-tab="attendance" onclick="showTab('attendance')"><span class="ico">✍️</span>Daftar Hadir Kegiatan</button>
- <button class="navbtn" data-tab="offlineConsultation" onclick="showTab('offlineConsultation')"><span class="ico">🎟️</span>Daftar Konsultasi Luring</button>
- <button class="navbtn" data-tab="status" onclick="showTab('status')"><span class="ico">⌛</span>Status Usulan</button>
- <button class="navbtn" data-tab="docs" onclick="showTab('docs')"><span class="ico">▣</span>Dokumen Saya</button>
- <button class="navbtn" data-tab="notifications" onclick="showTab('notifications')"><span class="ico">🔔</span>Notifikasi</button>`;
+ const nav=$('nav');if(!isPrivate||!nav)return;
+ const wanted=`<div class="navhead">Sekolah Swasta</div><button class="navbtn" data-tab="profile" onclick="showTab('profile')"><span class="ico">♙</span>Profil</button><div class="navhead">Layanan</div><button class="navbtn" data-tab="tpg" onclick="showTab('tpg')"><span class="ico">◉</span>TPG</button><button class="navbtn" onclick="openSubmission('PTK_BARU_SWASTA','Usul PTK Baru Swasta')"><span class="ico">🧑‍🏫</span>Usul PTK Baru</button><button class="navbtn" data-tab="attendance" onclick="showTab('attendance')"><span class="ico">✍️</span>Daftar Hadir Kegiatan</button><button class="navbtn" data-tab="offlineConsultation" onclick="showTab('offlineConsultation')"><span class="ico">🎟️</span>Daftar Konsultasi Luring</button><button class="navbtn" data-tab="status" onclick="showTab('status')"><span class="ico">⌛</span>Status Usulan</button><button class="navbtn" data-tab="docs" onclick="showTab('docs')"><span class="ico">▣</span>Dokumen Saya</button><button class="navbtn" data-tab="notifications" onclick="showTab('notifications')"><span class="ico">🔔</span>Notifikasi</button>`;
+ if(nav.innerHTML!==wanted)nav.innerHTML=wanted;
 }
 function enforceTpg(){
  if(!isPrivate)return;
@@ -79,5 +72,5 @@ if(isPrivate){
  if(!ALLOWED_TABS.has(active))await window.showTab('profile');
  else if(active==='tpg')enforceTpg();
 }
-window.__simantabPrivateSchoolPolicy={version:3,negeriNeedsOnly:true,skbNegeriIncluded:true,privateMenu:['profile','tpg','ptkBaruSwasta','attendance','offlineConsultation','status','docs','notifications'],privateServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruSwastaOnly:true};
+window.__simantabPrivateSchoolPolicy={version:4,negeriNeedsOnly:true,skbNegeriIncluded:true,privateMenu:['profile','tpg','ptkBaruSwasta','attendance','offlineConsultation','status','docs','notifications'],privateServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruSwastaOnly:true,navIdempotent:true};
 })();
