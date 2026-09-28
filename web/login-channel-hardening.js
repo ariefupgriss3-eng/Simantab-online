@@ -1,4 +1,4 @@
-/* SIMANTAB_LOGIN_CHANNEL_HARDENING_V3 */
+/* SIMANTAB_LOGIN_CHANNEL_HARDENING_V4 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.submitAuth);i++)await wait(50);
@@ -17,7 +17,7 @@ const show=(text,type='err')=>{const m=$('authMsg');if(!m)return;m.className=typ
 function updateUi(){
  const input=$('email'),label=input?.closest('.field')?.querySelector('label'),hint=document.querySelector('.loginbox .hint');
  if(!input||isSignup())return;
- const ch=selectedChannel();input.type='text';input.autocomplete='username';
+ const ch=selectedChannel();input.type='text';input.name='username';input.setAttribute('form','simLoginCredentialForm');input.autocomplete='username';input.autocapitalize='none';input.spellcheck=false;const pw=$('password');if(pw){pw.name='password';pw.setAttribute('form','simLoginCredentialForm');pw.autocomplete='current-password';}
  if(label)label.textContent='Username / Email';
  input.placeholder=ch==='GTK'?'username KS/GTK/Pengawas atau email':'username Dinas atau email';
  if(ch==='GTK'&&hint)hint.innerHTML='<b>Login Sekolah / GTK / Pengawas:</b> gunakan <b>username atau email</b> akun yang sudah terdaftar. Akun Dinas tidak dapat masuk melalui kanal ini.';
