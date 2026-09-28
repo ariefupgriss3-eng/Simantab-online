@@ -1,8 +1,10 @@
-/* SIMANTAB_LOGIN_DEVELOPER_BRANDING_V1 */
+/* SIMANTAB_LOGIN_DEVELOPER_BRANDING_V2 */
 (()=>{
   const DEV_NAME='M. Arief Rohman, S.Pd.SD., M.Si., M.Pd., M.Pd';
   const DEV_UNIT='Dinas Pendidikan dan Kebudayaan';
   const DEV_YEAR='2026';
+  const LOGIN_UNIT='Dinas Pendidikan dan Kebudayaan';
+  const LOGIN_DIVISION='Bidang Ketenagaan';
 
   const icon=`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3h8l1 3 3 1v10l-3 1-1 3H8l-1-3-3-1V7l3-1 1-3Z"/><circle cx="12" cy="12" r="3"/></svg>`;
 
@@ -17,7 +19,8 @@
       .sim-login-developer .sim-login-dev-icon svg{width:15px;height:15px;display:block}
       .sim-login-developer .sim-login-dev-unit{margin-top:2px;font-weight:600}
       .sim-login-developer .sim-login-dev-year{margin-top:1px;color:#0f5f9f;font-weight:800;letter-spacing:.08em}
-      @media(max-width:640px){.sim-login-developer{font-size:11px;margin-top:14px;padding-top:13px}}
+      .sim-login-unit-division{display:block;margin-top:5px;color:#fff;font-size:clamp(20px,2.2vw,28px);line-height:1.08;font-weight:900;letter-spacing:.025em;text-transform:none;text-shadow:0 1px 2px rgba(0,0,0,.18)}
+      @media(max-width:640px){.sim-login-developer{font-size:11px;margin-top:14px;padding-top:13px}.sim-login-unit-division{font-size:19px;margin-top:4px}}
     `;
     document.head.appendChild(style);
   }
@@ -37,8 +40,32 @@
     return heading.parentElement || document.body;
   }
 
+  function decorateUnitHeading(){
+    if(document.querySelector('.sim-login-unit-division'))return;
+    const unit=LOGIN_UNIT.toLowerCase();
+    const gov='pemerintah kabupaten batang';
+    const candidates=[...document.querySelectorAll('div,p,span,strong,b')].filter(el=>{
+      if(el.closest?.('.sim-login-developer'))return false;
+      if(normalizedText(el)!==unit)return false;
+      let node=el.parentElement;
+      for(let i=0;i<6&&node;i++,node=node.parentElement){
+        const t=normalizedText(node);
+        if(t.includes(gov)&&t.includes('simantab'))return true;
+      }
+      return false;
+    });
+    const target=candidates[0]||[...document.querySelectorAll('div,p,span,strong,b')]
+      .find(el=>!el.closest?.('.sim-login-developer')&&normalizedText(el)===unit);
+    if(!target)return;
+    const division=document.createElement('div');
+    division.className='sim-login-unit-division';
+    division.textContent=LOGIN_DIVISION;
+    target.insertAdjacentElement('afterend',division);
+  }
+
   function decorateLogin(){
     ensureStyle();
+    decorateUnitHeading();
     const heading=findLoginHeading();
     if(!heading)return;
     const panel=findLoginPanel(heading);
