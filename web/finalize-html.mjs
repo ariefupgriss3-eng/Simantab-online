@@ -223,7 +223,7 @@ const modules=[
  ['ui-branding-icons.js',3],
  ['kasim-role-label.js',1],
  ['login-developer-branding.js',1],
- ['premium-dashboard-theme.js',3],
+ ['premium-dashboard-theme.js',4],
  ['dashboard-order-fix.js',2],
  ['login-password-toggle.js',2],
  ['gtk-needs-progress.js',37],
