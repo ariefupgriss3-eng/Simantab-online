@@ -32,6 +32,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V36_PRIVATE_NAV_LOOP_FIX */
 /* SIMANTAB_DIKLAT_KS_BCKS_V37_NO_PRIVATE_NAV_OBSERVER */
 /* SIMANTAB_DIKLAT_KS_BCKS_V38_STABLE_PRIVATE_GUARD */
+/* SIMANTAB_DIKLAT_KS_BCKS_V39_CONTENT_AI_PRECHECK */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
