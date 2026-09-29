@@ -112,9 +112,10 @@ export default async function handler(req){
     if(x.mime.startsWith('image/'))content.push({type:'input_image',image_url:'data:'+x.mime+';base64,'+toB64(x.buf),detail:'high'});
     else content.push({type:'input_file',filename:String(x.d.file_name||spec.code+'.pdf'),file_data:'data:application/pdf;base64,'+toB64(x.buf)});
    }
+   const model=specs.every(s=>s.code==='SKP_1'||s.code==='SKP_2')?'google/gemini-2.5-flash':'google/gemini-2.5-flash-lite';
    const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{
     method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},
-    body:JSON.stringify({model:'google/gemini-2.5-flash-lite',input:[{type:'message',role:'user',content}],max_output_tokens:2600})
+    body:JSON.stringify({model,input:[{type:'message',role:'user',content}],max_output_tokens:2600})
    });
    const aj=await ar.json().catch(()=>({}));
    if(!ar.ok){
@@ -122,11 +123,15 @@ export default async function handler(req){
     return specs.map(spec=>({requirement_code:spec.code,status:'PERLU_PERBAIKAN',detected_document_type:null,detected_year:null,detected_name:null,detected_nip:null,readability_score:0,confidence:0,evidence:'',note:'Pemeriksaan AI mengalami kendala teknis; dokumen belum dinilai.',technical_error:true}));
    }
    try{
-    const parsed=parse(txt(aj));
-    let arr=Array.isArray(parsed?.documents)?parsed.documents:[];
-    if(!arr.length&&specs.length===1&&parsed&&typeof parsed==='object'&&parsed.status){
-      arr=[{...parsed,requirement_code:parsed.requirement_code||specs[0].code}];
+    const raw=txt(aj),parsed=parse(raw);
+    let arr=Array.isArray(parsed)?parsed:(Array.isArray(parsed?.documents)?parsed.documents:[]);
+    if(!arr.length&&parsed?.document&&typeof parsed.document==='object')arr=[parsed.document];
+    if(!arr.length&&parsed?.result&&typeof parsed.result==='object'&&!Array.isArray(parsed.result))arr=[parsed.result];
+    if(!arr.length&&specs.length===1&&parsed&&typeof parsed==='object'){
+      const direct=parsed[specs[0].code]||parsed.data||parsed.verification||(parsed.status?parsed:null);
+      if(direct&&typeof direct==='object')arr=[direct];
     }
+    if(!arr.length)console.error('DIKLAT_AI_EMPTY_RESULT',specs.map(s=>s.code).join(','),raw.slice(0,1200));
     return specs.map(spec=>{
      const x=arr.find(z=>z.requirement_code===spec.code)||(specs.length===1&&arr.length===1?arr[0]:null);
      if(!x)return {requirement_code:spec.code,status:'PERLU_PERBAIKAN',detected_document_type:null,detected_year:null,detected_name:null,detected_nip:null,readability_score:0,confidence:0,evidence:'',note:'AI belum mengembalikan hasil untuk berkas ini.',technical_error:true};
@@ -144,15 +149,8 @@ export default async function handler(req){
    REQUIRED.filter(x=>['SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK'].includes(x.code)),
    REQUIRED.filter(x=>['PAKTA_INTEGRITAS','SURAT_PERNYATAAN_DIKLAT'].includes(x.code))
   ];
-  let results=[];
-  const waves=[
-   [primaryGroups[0],primaryGroups[1]],
-   [primaryGroups[2],primaryGroups[3]]
-  ];
-  for(const wave of waves){
-   const wr=await Promise.all(wave.map(analyzeGroup));
-   results.push(...wr.flat());
-  }
+  const groupedResults=await Promise.all(primaryGroups.map(analyzeGroup));
+  let results=groupedResults.flat();
   const dup=hashes.SKP_1&&hashes.SKP_1===hashes.SKP_2;
   if(dup){
    const s1=results.find(x=>x.requirement_code==='SKP_1'),s2=results.find(x=>x.requirement_code==='SKP_2');
@@ -170,6 +168,6 @@ export default async function handler(req){
   }
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length,teknis:results.filter(x=>x.technical_error).length};
   const overall_status=counts.teknis?'GAGAL_TEKNIS':(counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI');
-  return J({ok:true,engine:'DIKLAT_DOC_AI_V7_BOUNDED_PARALLEL',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
+  return J({ok:true,engine:'DIKLAT_DOC_AI_V8_FAST_ROBUST',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
  }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
