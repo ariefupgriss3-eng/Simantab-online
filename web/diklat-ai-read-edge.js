@@ -145,13 +145,13 @@ export default async function handler(req){
    REQUIRED.filter(x=>['PAKTA_INTEGRITAS','SURAT_PERNYATAAN_DIKLAT'].includes(x.code))
   ];
   let results=[];
-  for(const group of primaryGroups)results.push(...await analyzeGroup(group));
-
-  const retrySpecs=REQUIRED.filter(spec=>results.find(x=>x.requirement_code===spec.code)?.technical_error);
-  if(retrySpecs.length){
-   const retry=await analyzeGroup(retrySpecs);
-   const retryBy=new Map(retry.map(x=>[x.requirement_code,x]));
-   results=results.map(x=>retryBy.get(x.requirement_code)||x);
+  const waves=[
+   [primaryGroups[0],primaryGroups[1]],
+   [primaryGroups[2],primaryGroups[3]]
+  ];
+  for(const wave of waves){
+   const wr=await Promise.all(wave.map(analyzeGroup));
+   results.push(...wr.flat());
   }
   const dup=hashes.SKP_1&&hashes.SKP_1===hashes.SKP_2;
   if(dup){
@@ -170,6 +170,6 @@ export default async function handler(req){
   }
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length,teknis:results.filter(x=>x.technical_error).length};
   const overall_status=counts.teknis?'GAGAL_TEKNIS':(counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI');
-  return J({ok:true,engine:'DIKLAT_DOC_AI_V6_SINGLE_RESULT_COMPAT',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
+  return J({ok:true,engine:'DIKLAT_DOC_AI_V7_BOUNDED_PARALLEL',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
  }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
