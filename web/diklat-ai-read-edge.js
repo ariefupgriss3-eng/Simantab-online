@@ -16,6 +16,18 @@ const toB64=buf=>{const b=new Uint8Array(buf);let s='';for(let i=0;i<b.length;i+
 const txt=j=>typeof j?.output_text==='string'?j.output_text:(j?.output||[]).flatMap(x=>x?.content||[]).filter(x=>typeof x?.text==='string').map(x=>x.text).join('\n');
 const parse=s=>{const t=String(s||'').trim().replace(/^```(?:json)?/i,'').replace(/```$/,'').trim();try{return JSON.parse(t)}catch{}const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a>=0&&b>a)return JSON.parse(t.slice(a,b+1));throw new Error('Output AI tidak valid JSON')};
 async function validUser(token){const r=await fetch(SUPABASE_URL+'/auth/v1/user',{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+token}});return r.ok}
+async function validWorkerSecret(secret){
+ if(!secret)return false;
+ try{
+  const r=await fetch(SUPABASE_URL+'/rest/v1/rpc/ks_bcks_validate_aggregate_worker_secret',{
+   method:'POST',
+   headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+SUPABASE_KEY,'Content-Type':'application/json'},
+   body:JSON.stringify({p_secret:secret})
+  });
+  if(!r.ok)return false;
+  return (await r.json())===true;
+ }catch{return false}
+}
 async function sha256Hex(buf){const h=await crypto.subtle.digest('SHA-256',buf);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 export default async function handler(req){
  if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});
@@ -52,7 +64,10 @@ export default async function handler(req){
  if(req.method!=='POST')return J({error:'Method not allowed'},405);
  try{
   const token=(req.headers.get('authorization')||'').replace(/^Bearer\s+/,'');
-  if(!token||!(await validUser(token)))return J({error:'Unauthorized'},401);
+  const workerSecret=req.headers.get('x-simantab-worker-secret')||'';
+  const userOk=token?await validUser(token):false;
+  const workerOk=workerSecret?await validWorkerSecret(workerSecret):false;
+  if(!userOk&&!workerOk)return J({error:'Unauthorized'},401);
   const body=await req.json(),participant=body?.participant||{},docs=Array.isArray(body?.documents)?body.documents:[];
   const by=new Map(docs.map(x=>[x.requirement_code,x]));
   const missing=REQUIRED.filter(x=>!by.get(x.code));
