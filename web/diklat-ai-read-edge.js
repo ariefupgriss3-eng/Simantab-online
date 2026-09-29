@@ -122,9 +122,13 @@ export default async function handler(req){
     return specs.map(spec=>({requirement_code:spec.code,status:'PERLU_PERBAIKAN',detected_document_type:null,detected_year:null,detected_name:null,detected_nip:null,readability_score:0,confidence:0,evidence:'',note:'Pemeriksaan AI mengalami kendala teknis; dokumen belum dinilai.',technical_error:true}));
    }
    try{
-    const parsed=parse(txt(aj)),arr=Array.isArray(parsed?.documents)?parsed.documents:[];
+    const parsed=parse(txt(aj));
+    let arr=Array.isArray(parsed?.documents)?parsed.documents:[];
+    if(!arr.length&&specs.length===1&&parsed&&typeof parsed==='object'&&parsed.status){
+      arr=[{...parsed,requirement_code:parsed.requirement_code||specs[0].code}];
+    }
     return specs.map(spec=>{
-     const x=arr.find(z=>z.requirement_code===spec.code);
+     const x=arr.find(z=>z.requirement_code===spec.code)||(specs.length===1&&arr.length===1?arr[0]:null);
      if(!x)return {requirement_code:spec.code,status:'PERLU_PERBAIKAN',detected_document_type:null,detected_year:null,detected_name:null,detected_nip:null,readability_score:0,confidence:0,evidence:'',note:'AI belum mengembalikan hasil untuk berkas ini.',technical_error:true};
      return normalizeResult(spec,x);
     });
@@ -166,6 +170,6 @@ export default async function handler(req){
   }
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length,teknis:results.filter(x=>x.technical_error).length};
   const overall_status=counts.teknis?'GAGAL_TEKNIS':(counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI');
-  return J({ok:true,engine:'DIKLAT_DOC_AI_V5_ROBUST_GROUPS',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
+  return J({ok:true,engine:'DIKLAT_DOC_AI_V6_SINGLE_RESULT_COMPAT',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
  }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
