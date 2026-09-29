@@ -104,7 +104,7 @@ export default async function handler(req){
     'Baca ISI dokumen, bukan hanya nama file. Periksa jenis dokumen, tahun bila relevan, nama/NIP peserta, keterbacaan, dan kesesuaian substansi. '+
     'Jika jenis/tahun/identitas jelas salah => TIDAK_SESUAI. Jika buram, terpotong, halaman penting hilang, atau informasi kunci tidak cukup terbaca => PERLU_PERBAIKAN. '+
     'SESUAI hanya jika isi terbaca dan memenuhi persyaratan. Jangan menilai keaslian hukum atau motif. '+
-    'Balas HANYA JSON valid: {"documents":[{"requirement_code":"...","status":"SESUAI|PERLU_PERBAIKAN|TIDAK_SESUAI","detected_document_type":null,"detected_year":null,"detected_name":null,"detected_nip":null,"readability_score":0.0,"confidence":0.0,"evidence":"ringkasan isi yang benar-benar terbaca","note":"alasan singkat keputusan"}]}.'
+    'Balas HANYA JSON valid, tanpa markdown dan tanpa teks di luar JSON. Evidence dan note maksimal 120 karakter. Format: {"documents":[{"requirement_code":"...","status":"SESUAI|PERLU_PERBAIKAN|TIDAK_SESUAI","detected_document_type":null,"detected_year":null,"detected_name":null,"detected_nip":null,"readability_score":0.0,"confidence":0.0,"evidence":"maks 120 karakter","note":"maks 120 karakter"}]}.'
    }];
    for(const spec of specs){
     const x=loadedBy.get(spec.code);
@@ -147,7 +147,8 @@ export default async function handler(req){
    REQUIRED.filter(x=>x.code==='SKP_1'),
    REQUIRED.filter(x=>x.code==='SKP_2'),
    REQUIRED.filter(x=>['SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK'].includes(x.code)),
-   REQUIRED.filter(x=>['PAKTA_INTEGRITAS','SURAT_PERNYATAAN_DIKLAT'].includes(x.code))
+   REQUIRED.filter(x=>x.code==='PAKTA_INTEGRITAS'),
+   REQUIRED.filter(x=>x.code==='SURAT_PERNYATAAN_DIKLAT')
   ];
   const groupedResults=await Promise.all(primaryGroups.map(analyzeGroup));
   let results=groupedResults.flat();
@@ -168,6 +169,6 @@ export default async function handler(req){
   }
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length,teknis:results.filter(x=>x.technical_error).length};
   const overall_status=counts.teknis?'GAGAL_TEKNIS':(counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI');
-  return J({ok:true,engine:'DIKLAT_DOC_AI_V8_FAST_ROBUST',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
+  return J({ok:true,engine:'DIKLAT_DOC_AI_V9_SHORT_JSON',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
  }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
