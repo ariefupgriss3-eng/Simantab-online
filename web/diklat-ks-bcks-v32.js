@@ -37,6 +37,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V43_AUTO_AI_ASSIGN */
 /* SIMANTAB_DIKLAT_KS_BCKS_V44_AI_AGGREGATE_VISIBILITY */
 /* SIMANTAB_DIKLAT_KS_BCKS_V45_ACTIVE_AGGREGATE */
+/* SIMANTAB_DIKLAT_KS_BCKS_V46_PARTICIPANT_AGG_VISIBILITY */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -450,33 +451,27 @@ async function loadAiVisibilityMap(ids){
  const list=[...new Set((ids||[]).filter(Boolean))];
  const empty={autoLatest:new Map(),anyLatest:new Map(),aggregateItems:new Map(),aggregateRun:null};
  if(!list.length)return empty;
- const [runsQ,aggQ]=await Promise.all([
+ const [runsQ,itemsQ]=await Promise.all([
   sb.from('ks_bcks_ai_verification_runs')
    .select('id,submission_id,overall_status,verification_source,result,started_at,completed_at,sesuai_count,perbaikan_count,tidak_sesuai_count')
    .in('submission_id',list)
    .order('started_at',{ascending:false})
    .limit(5000),
-  sb.from('ks_bcks_ai_aggregate_runs')
+  sb.from('ks_bcks_ai_aggregate_items')
    .select('*')
+   .in('submission_id',list)
    .order('created_at',{ascending:false})
-   .limit(1)
-   .maybeSingle()
+   .limit(5000)
  ]);
- const autoLatest=new Map(),anyLatest=new Map();
+ const autoLatest=new Map(),anyLatest=new Map(),aggregateItems=new Map();
  for(const r of runsQ.data||[]){
   if(!anyLatest.has(r.submission_id))anyLatest.set(r.submission_id,r);
   if(r.verification_source==='OTOMATIS'&&!autoLatest.has(r.submission_id))autoLatest.set(r.submission_id,r);
  }
- const aggregateRun=aggQ.data||null,aggregateItems=new Map();
- if(aggregateRun?.id){
-  const iq=await sb.from('ks_bcks_ai_aggregate_items')
-   .select('*')
-   .eq('aggregate_run_id',aggregateRun.id)
-   .in('submission_id',list)
-   .limit(5000);
-  for(const x of iq.data||[])aggregateItems.set(x.submission_id,x);
+ for(const x of itemsQ.data||[]){
+  if(!aggregateItems.has(x.submission_id))aggregateItems.set(x.submission_id,x);
  }
- return{autoLatest,anyLatest,aggregateItems,aggregateRun};
+ return{autoLatest,anyLatest,aggregateItems,aggregateRun:null};
 }
 function aiCompactHtml(id,vis){
  const a=vis?.autoLatest?.get(id),g=vis?.aggregateItems?.get(id);
@@ -614,5 +609,5 @@ async function render(){ensureSection();ensureNav();if(isPrivateApplicant()){awa
 await resolveApplicantSchoolStatus();
 ensureSection();ensureNav();const nav=$('nav');if(nav&&!isPrivateApplicant()){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{await resolveApplicantSchoolStatus();if(id==='diklatKsBcks'&&isPrivateApplicant())return priorShow('profile');ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:45,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:46,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
