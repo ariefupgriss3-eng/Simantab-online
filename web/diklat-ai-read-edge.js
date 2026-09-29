@@ -104,7 +104,9 @@ export default async function handler(req){
     'Anda adalah AI Verifikator administrasi Diklat Kepala Sekolah. Periksa SEMUA berkas dalam kelompok ini dan wajib mengembalikan tepat '+specs.length+' hasil, satu untuk setiap requirement_code. '+
     'Peserta: '+(participant.full_name||'-')+'; NIP: '+(participant.nip||'-')+'; Unit: '+(participant.unit_kerja||'-')+'. '+
     'Baca ISI dokumen, bukan hanya nama file. Periksa jenis dokumen, tahun bila relevan, nama/NIP peserta, keterbacaan, dan kesesuaian substansi. '+
-    'Jika jenis/tahun/identitas jelas salah => TIDAK_SESUAI. Jika buram, terpotong, halaman penting hilang, atau informasi kunci tidak cukup terbaca => PERLU_PERBAIKAN. '+
+    'ATURAN PENTING: hanya SKP_1 wajib tahun 2024 dan SKP_2 wajib tahun 2025. Untuk SK Pengalaman Manajerial, SK Bebas Hudis, SKCK, Pakta Integritas, dan Surat Pernyataan Diklat, JANGAN menolak hanya karena tahun 2026; tahun 2026 valid untuk seleksi 2026. '+
+    'Perbedaan unit kerja pada SKP tahun sebelumnya juga BUKAN alasan penolakan jika nama dan NIP peserta cocok, karena peserta dapat berpindah unit kerja. '+
+    'Jika jenis/tahun wajib/identitas utama jelas salah => TIDAK_SESUAI. Jika buram, terpotong, halaman penting hilang, atau informasi kunci tidak cukup terbaca => PERLU_PERBAIKAN. '+
     'SESUAI hanya jika isi terbaca dan memenuhi persyaratan. Jangan menilai keaslian hukum atau motif. '+
     'Balas HANYA JSON valid, tanpa markdown dan tanpa teks di luar JSON. Evidence dan note maksimal 120 karakter. Format: {"documents":[{"requirement_code":"...","status":"SESUAI|PERLU_PERBAIKAN|TIDAK_SESUAI","detected_document_type":null,"detected_year":null,"detected_name":null,"detected_nip":null,"readability_score":0.0,"confidence":0.0,"evidence":"maks 120 karakter","note":"maks 120 karakter"}]}.'
    }];
@@ -171,6 +173,6 @@ export default async function handler(req){
   }
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length,teknis:results.filter(x=>x.technical_error).length};
   const overall_status=counts.teknis?'GAGAL_TEKNIS':(counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI');
-  return J({ok:true,engine:'DIKLAT_DOC_AI_V10_PARTIAL_RETRY',model:'google/gemini-2.5-flash-lite',partial:!!onlyCodes.length,only_codes:onlyCodes,overall_status,duplicate_skp:dup,counts,results});
+  return J({ok:true,engine:'DIKLAT_DOC_AI_V11_RULE_CLARITY',model:'google/gemini-2.5-flash-lite',partial:!!onlyCodes.length,only_codes:onlyCodes,overall_status,duplicate_skp:dup,counts,results});
  }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
