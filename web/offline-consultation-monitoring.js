@@ -1,5 +1,5 @@
 /* SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V1 */
-/* SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V2_GUIDANCE */
+/* SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V3_ALL_SUBMISSIONS */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -73,9 +73,9 @@ function scopeText(){
 }
 
 async function loadRows(){
- const base='id,user_id,full_name,nip,unit_kerja,participant_jenjang,service_label,service_code,topic,queue_no,consultation_date,consultation_time,officer_id,officer_name,status,completed_at,updated_at';
+ const base='id,user_id,full_name,nip,unit_kerja,participant_jenjang,service_label,service_code,topic,queue_no,consultation_date,consultation_time,officer_id,officer_name,status,completed_at,updated_at,created_at';
  const requests=[
-   sb.from('offline_consultation_queue').select(base).eq('status','SELESAI').order('completed_at',{ascending:false}).limit(300),
+   sb.from('offline_consultation_queue').select(base).in('status',['TERJADWAL','DILAYANI','SELESAI']).order('created_at',{ascending:false}).limit(500),
    sb.from('offline_consultation_queue').select(base).eq('officer_id',p().id).in('status',['TERJADWAL','DILAYANI']).order('consultation_date',{ascending:true}).order('consultation_time',{ascending:true}).limit(100),
    sb.from('offline_consultation_actions').select('id,queue_id,action_type,message,author_id,author_name,author_role,target_user_id,target_name,created_at').order('created_at',{ascending:true}).limit(2000)
  ];
@@ -103,17 +103,23 @@ function activeHtml(rows){
  rows.map(x=>'<tr><td><b>'+String(x.queue_no||0).padStart(3,'0')+'</b></td><td>'+esc(fmtDate(x.consultation_date))+'<div class="small">'+esc(fmtTime(x.consultation_time))+' WIB</div></td><td><b>'+esc(x.full_name)+'</b><div class="small">'+esc(x.unit_kerja||'-')+'</div></td><td>'+esc(x.participant_jenjang||'-')+'</td><td>'+esc(x.service_label||x.service_code||'-')+'</td><td><div style="max-width:320px;white-space:normal">'+esc(x.topic||'-')+'</div></td><td><button class="btn success" onclick="completeOfflineConsultation(\''+x.id+'\')">✓ Tandai Selesai</button></td></tr>').join('')+
  '</tbody></table></div></div>';
 }
+function statusBadge(v){
+ const s=String(v||'').toUpperCase();
+ if(s==='SELESAI')return '<span class="ocm-badge ocm-badge-respon">✅ SELESAI</span>';
+ if(s==='DILAYANI')return '<span class="ocm-badge ocm-badge-tl">🟣 DILAYANI</span>';
+ return '<span class="ocm-badge ocm-badge-arahan">🗓️ TERJADWAL</span>';
+}
 function doneHtml(rows,actions){
- const now=new Date(),today=dateKey(now),ym=monthKey(now);
- const todayCount=rows.filter(x=>dateKey(x.completed_at||x.updated_at)===today).length;
- const monthCount=rows.filter(x=>monthKey(x.completed_at||x.updated_at)===ym).length;
+ const scheduled=rows.filter(x=>String(x.status).toUpperCase()==='TERJADWAL').length;
+ const serving=rows.filter(x=>String(x.status).toUpperCase()==='DILAYANI').length;
+ const completed=rows.filter(x=>String(x.status).toUpperCase()==='SELESAI').length;
  const byQueue=new Map();
  for(const a of actions){if(!byQueue.has(a.queue_id))byQueue.set(a.queue_id,[]);byQueue.get(a.queue_id).push(a)}
- return '<div class="card" id="offlineConsultationMonitoringCard"><div class="head"><div><div class="label">MONITORING DINAS</div><h3 style="margin:3px 0">📚 Rekam Konsultasi Luring • Monitoring & Arahan</h3><div class="small">'+esc(scopeText())+' Riwayat tetap dapat dilihat seluruh akun Dinas sesuai kewenangan jenjang.</div></div><button class="btn soft" onclick="refreshOfflineConsultationMonitoring()">↻ Refresh</button></div>'+
- '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><div class="small">SELESAI HARI INI</div><h3>'+todayCount+'</h3></div><div class="service"><div class="small">SELESAI BULAN INI</div><h3>'+monthCount+'</h3></div><div class="service"><div class="small">TOTAL TEREKAM</div><h3>'+rows.length+'</h3></div></div>'+
- (rows.length?'<div class="tablewrap"><table><thead><tr><th>Selesai</th><th>No.</th><th>Peserta</th><th>Jenjang</th><th>Layanan</th><th>Topik Konsultasi</th><th>Petugas</th><th>Arahan / Tindak Lanjut</th></tr></thead><tbody>'+
- rows.map(x=>{const aa=byQueue.get(x.id)||[];return '<tr><td>'+esc(fmtDateTime(x.completed_at||x.updated_at))+'</td><td><b>'+String(x.queue_no||0).padStart(3,'0')+'</b></td><td><b>'+esc(x.full_name)+'</b><div class="small">NIP '+esc(x.nip||'-')+'<br>'+esc(x.unit_kerja||'-')+'</div></td><td><b>'+esc(x.participant_jenjang||'-')+'</b></td><td>'+esc(x.service_label||x.service_code||'-')+'</td><td><div style="max-width:300px;white-space:normal">'+esc(x.topic||'-')+'</div></td><td>'+esc(x.officer_name||'-')+'</td><td>'+actionBadge(aa)+'<button class="btn soft" style="margin-top:6px" onclick="openOfflineConsultationRecord(\''+x.id+'\')">🧭 Buka Rekam</button></td></tr>'}).join('')+
- '</tbody></table></div>':'<div class="empty">Belum ada konsultasi luring yang berstatus selesai.</div>')+'</div>';
+ return '<div class="card" id="offlineConsultationMonitoringCard"><div class="head"><div><div class="label">MONITORING DINAS</div><h3 style="margin:3px 0">📚 Rekam Usulan Konsultasi Luring • Monitoring & Arahan</h3><div class="small">'+esc(scopeText())+' Semua usulan ditampilkan sejak TERJADWAL, selama DILAYANI, sampai SELESAI.</div></div><button class="btn soft" onclick="refreshOfflineConsultationMonitoring()">↻ Refresh</button></div>'+
+ '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><div class="small">TERJADWAL</div><h3>'+scheduled+'</h3></div><div class="service"><div class="small">DILAYANI</div><h3>'+serving+'</h3></div><div class="service"><div class="small">SELESAI</div><h3>'+completed+'</h3></div><div class="service"><div class="small">TOTAL USULAN</div><h3>'+rows.length+'</h3></div></div>'+
+ (rows.length?'<div class="tablewrap"><table><thead><tr><th>Status</th><th>Jadwal</th><th>No.</th><th>Peserta</th><th>Jenjang</th><th>Layanan</th><th>Topik Konsultasi</th><th>Petugas</th><th>Arahan / Tindak Lanjut</th></tr></thead><tbody>'+
+ rows.map(x=>{const aa=byQueue.get(x.id)||[];return '<tr><td>'+statusBadge(x.status)+'</td><td>'+esc(fmtDate(x.consultation_date))+'<div class="small">'+esc(fmtTime(x.consultation_time))+' WIB</div></td><td><b>'+String(x.queue_no||0).padStart(3,'0')+'</b></td><td><b>'+esc(x.full_name)+'</b><div class="small">NIP '+esc(x.nip||'-')+'<br>'+esc(x.unit_kerja||'-')+'</div></td><td><b>'+esc(x.participant_jenjang||'-')+'</b></td><td>'+esc(x.service_label||x.service_code||'-')+'</td><td><div style="max-width:300px;white-space:normal">'+esc(x.topic||'-')+'</div></td><td>'+esc(x.officer_name||'-')+'</td><td>'+actionBadge(aa)+'<button class="btn soft" style="margin-top:6px" onclick="openOfflineConsultationRecord(\''+x.id+'\')">🧭 Buka Rekam</button></td></tr>'}).join('')+
+ '</tbody></table></div>':'<div class="empty">Belum ada usulan konsultasi luring.</div>')+'</div>';
 }
 function typeLabel(t){return t==='ARAHAN'?'🧭 ARAHAN PIMPINAN':t==='RESPON'?'💬 RESPONS STAF':'✅ TINDAK LANJUT'}
 function actionHtml(a){
@@ -214,5 +220,5 @@ window.showTab=async function(id){
 ensureStyle();ensureMonitoringEntry();
 for(const ms of [120,400,1000])setTimeout(()=>ensureMonitoringEntry(),ms);
 if(document.querySelector('#monitoring.active'))await render();
-window.__simantabOfflineConsultationMonitoring={version:2,dinasRead:true,leaderGuidance:true,scopedKasiSubkoor:true,staffResponse:true};
+window.__simantabOfflineConsultationMonitoring={version:3,dinasRead:true,allSubmissions:true,leaderGuidance:true,scopedKasiSubkoor:true,staffResponse:true};
 })();
