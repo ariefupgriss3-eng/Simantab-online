@@ -173,7 +173,18 @@ function ensurePaktaUploadSlot(d,files){
  const statement=uploadGrid.querySelector('[data-ksb-requirement="SURAT_PERNYATAAN_DIKLAT"]');
  statement?uploadGrid.insertBefore(card,statement):uploadGrid.appendChild(card);
 }
-async function renderApplicant(){const body=$('diklatKsBcksBody');if(!body)return;ensureKsbAssignStyle();body.innerHTML='<div class="card"><div class="small">Memuat modul Diklat KS/BCKS…</div></div>';try{const d=await myDetail(),files=await filesFor(d?.submission_id);body.innerHTML=progressHtml(d)+applicantForm(d,files)+applicantNextLevels(d)+certificateApplicantCard(d);ensurePaktaUploadSlot(d,files);bindApplicant(d,files)}catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}}
+async function renderApplicant(){
+ const body=$('diklatKsBcksBody');if(!body)return;
+ ensureKsbAssignStyle();
+ body.innerHTML='<div class="card"><div class="small">Memuat modul Diklat KS/BCKS…</div></div>';
+ try{
+  const d=await myDetail(),files=await filesFor(d?.submission_id);
+  const vis=d?.submission_id?await loadAiVisibilityMap([d.submission_id]):null;
+  body.innerHTML=progressHtml(d)+(d?.submission_id?aiOwnPanel(d.submission_id,vis):'')+applicantForm(d,files)+applicantNextLevels(d)+certificateApplicantCard(d);
+  ensurePaktaUploadSlot(d,files);
+  bindApplicant(d,files);
+ }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
+}
 function formVals(){return {p_full_name:$('ksbFullName')?.value.trim(),p_nip:$('ksbNip')?.value.trim(),p_pangkat_golruang:$('ksbPangkat')?.value.trim(),p_unit_kerja:$('ksbUnit')?.value.trim(),p_tmt_penugasan_ks:$('ksbTmt')?.value||null}}
 function downloadStatementTemplate(d){
  const nama=$('ksbFullName')?.value?.trim()||d?.full_name||profile().full_name||'';
