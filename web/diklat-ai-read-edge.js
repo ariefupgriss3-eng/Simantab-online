@@ -69,9 +69,11 @@ export default async function handler(req){
   const workerOk=workerSecret?await validWorkerSecret(workerSecret):false;
   if(!userOk&&!workerOk)return J({error:'Unauthorized'},401);
   const body=await req.json(),participant=body?.participant||{},docs=Array.isArray(body?.documents)?body.documents:[];
+  const onlyCodes=Array.isArray(body?.only_codes)?body.only_codes.filter(x=>REQUIRED.some(r=>r.code===x)):[];
+  const activeRequired=onlyCodes.length?REQUIRED.filter(x=>onlyCodes.includes(x.code)):REQUIRED;
   const by=new Map(docs.map(x=>[x.requirement_code,x]));
-  const missing=REQUIRED.filter(x=>!by.get(x.code));
-  if(missing.length)return J({ok:true,overall_status:'PERLU_PERBAIKAN',results:REQUIRED.map(x=>({requirement_code:x.code,status:by.get(x.code)?'PERLU_PERBAIKAN':'TIDAK_SESUAI',note:by.get(x.code)?'Belum diperiksa karena berkas belum lengkap.':'Berkas belum diunggah.'}))});
+  const missing=activeRequired.filter(x=>!by.get(x.code));
+  if(missing.length)return J({ok:true,overall_status:'PERLU_PERBAIKAN',partial:!!onlyCodes.length,results:activeRequired.map(x=>({requirement_code:x.code,status:by.get(x.code)?'PERLU_PERBAIKAN':'TIDAK_SESUAI',note:by.get(x.code)?'Belum diperiksa karena berkas belum lengkap.':'Berkas belum diunggah.'}))});
   if(!gateway)return J({error:'AI Gateway belum tersedia.'},503);
 
   async function loadDoc(spec){
@@ -79,7 +81,7 @@ export default async function handler(req){
    const buf=await r.arrayBuffer();if(buf.byteLength>512000)throw new Error(spec.label+' melebihi 500 KB');
    return {spec,d,buf,hash:await sha256Hex(buf),mime:String(d.mime_type||r.headers.get('content-type')||'application/pdf').split(';')[0]};
   }
-  const loaded=await Promise.all(REQUIRED.map(loadDoc));
+  const loaded=await Promise.all(activeRequired.map(loadDoc));
   const loadedBy=new Map(loaded.map(x=>[x.spec.code,x]));
   const hashes=Object.fromEntries(loaded.map(x=>[x.spec.code,x.hash]));
 
@@ -112,7 +114,7 @@ export default async function handler(req){
     if(x.mime.startsWith('image/'))content.push({type:'input_image',image_url:'data:'+x.mime+';base64,'+toB64(x.buf),detail:'high'});
     else content.push({type:'input_file',filename:String(x.d.file_name||spec.code+'.pdf'),file_data:'data:application/pdf;base64,'+toB64(x.buf)});
    }
-   const model=specs.every(s=>s.code==='SKP_1'||s.code==='SKP_2')?'google/gemini-2.5-flash':'google/gemini-2.5-flash-lite';
+   const model='google/gemini-2.5-flash-lite';
    const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{
     method:'POST',headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},
     body:JSON.stringify({model,input:[{type:'message',role:'user',content}],max_output_tokens:2600})
@@ -144,12 +146,12 @@ export default async function handler(req){
   }
 
   const primaryGroups=[
-   REQUIRED.filter(x=>x.code==='SKP_1'),
-   REQUIRED.filter(x=>x.code==='SKP_2'),
-   REQUIRED.filter(x=>['SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK'].includes(x.code)),
-   REQUIRED.filter(x=>x.code==='PAKTA_INTEGRITAS'),
-   REQUIRED.filter(x=>x.code==='SURAT_PERNYATAAN_DIKLAT')
-  ];
+   activeRequired.filter(x=>x.code==='SKP_1'),
+   activeRequired.filter(x=>x.code==='SKP_2'),
+   activeRequired.filter(x=>['SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK'].includes(x.code)),
+   activeRequired.filter(x=>x.code==='PAKTA_INTEGRITAS'),
+   activeRequired.filter(x=>x.code==='SURAT_PERNYATAAN_DIKLAT')
+  ].filter(x=>x.length);
   const groupedResults=await Promise.all(primaryGroups.map(analyzeGroup));
   let results=groupedResults.flat();
   const dup=hashes.SKP_1&&hashes.SKP_1===hashes.SKP_2;
@@ -169,6 +171,6 @@ export default async function handler(req){
   }
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length,teknis:results.filter(x=>x.technical_error).length};
   const overall_status=counts.teknis?'GAGAL_TEKNIS':(counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI');
-  return J({ok:true,engine:'DIKLAT_DOC_AI_V9_SHORT_JSON',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
+  return J({ok:true,engine:'DIKLAT_DOC_AI_V10_PARTIAL_RETRY',model:'google/gemini-2.5-flash-lite',partial:!!onlyCodes.length,only_codes:onlyCodes,overall_status,duplicate_skp:dup,counts,results});
  }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
