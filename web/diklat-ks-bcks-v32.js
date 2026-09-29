@@ -408,7 +408,10 @@ async function renderReviewer(){
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 function aiVerifierStatusBadge(status){
- const cfg=status==='SESUAI'?['✅ SESUAI','#166534','#ecfdf5']:status==='TIDAK_SESUAI'?['❌ TIDAK SESUAI','#b42318','#fff1f0']:['⚠️ PERLU PERBAIKAN','#955a00','#fff8e6'];
+ const cfg=status==='SESUAI'?['✅ SESUAI','#166534','#ecfdf5']:
+  status==='TIDAK_SESUAI'?['❌ TIDAK SESUAI','#b42318','#fff1f0']:
+  status==='GAGAL_TEKNIS'?['⚙️ GAGAL TEKNIS','#475569','#f1f5f9']:
+  ['⚠️ PERLU PERBAIKAN','#955a00','#fff8e6'];
  return `<span style="display:inline-block;padding:4px 8px;border-radius:999px;background:${cfg[2]};color:${cfg[1]};font-size:10px;font-weight:900">${cfg[0]}</span>`;
 }
 function aiVerifierResultHtml(r){
