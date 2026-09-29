@@ -35,6 +35,7 @@
 /* SIMANTAB_DIKLAT_KS_BCKS_V39_CONTENT_AI_PRECHECK */
 /* SIMANTAB_DIKLAT_KS_BCKS_V40_AI_PRIMARY_VERIFIER */
 /* SIMANTAB_DIKLAT_KS_BCKS_V43_AUTO_AI_ASSIGN */
+/* SIMANTAB_DIKLAT_KS_BCKS_V44_AI_AGGREGATE_VISIBILITY */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -67,6 +68,7 @@ const isLeader=()=>LEADER_ROLES.has(profile().role);
 const isKabid=()=>profile().role==='KABID';
 const isCoordinator=()=>COORD_ROLES.has(profile().role);
 const isApplicant=()=>['GTK','KEPALA_SEKOLAH'].includes(profile().role);
+const isDinasAccount=()=>String(profile().account_channel||'').toUpperCase()==='DINAS';
 let applicantSchoolStatus='';
 async function resolveApplicantSchoolStatus(){
  if(!isApplicant()){applicantSchoolStatus='';return applicantSchoolStatus}
@@ -132,7 +134,7 @@ const toast=(msg,bad=false)=>{let t=$('ksBcksToast');if(!t){t=document.createEle
 function mainEl(){return document.querySelector('main.content')}
 function ensureSection(){if($('diklatKsBcks'))return;const main=mainEl();if(!main)return;const sec=document.createElement('section');sec.id='diklatKsBcks';sec.className='section';sec.innerHTML='<div class="head"><div><h2>Diklat KS/BCKS</h2><p>Workflow seleksi administrasi, seleksi substansi, Diklat, dan pencatatan sertifikat dari pihak berwenang.</p></div></div><div id="diklatKsBcksBody"></div>';const footer=main.querySelector('.footer');if(footer)main.insertBefore(sec,footer);else main.appendChild(sec)}
 function navButton(){const b=document.createElement('button');b.className='navbtn';b.dataset.tab='diklatKsBcks';b.setAttribute('onclick',"showTab('diklatKsBcks')");b.innerHTML='<span class="ico">🎓</span>Diklat KS/BCKS';return b}
-function ensureNav(){const nav=$('nav');if(!nav)return;if(isPrivateApplicant()){nav.querySelector('[data-tab="diklatKsBcks"]')?.remove();return}if(nav.querySelector('[data-tab="diklatKsBcks"]'))return;if(!(isApplicant()||isReviewer()))return;const b=navButton();if(isReviewer()){const p=nav.querySelector('[data-tab="promotion"]');p?p.after(b):nav.appendChild(b)}else{const s=nav.querySelector('[data-tab="services"]')||nav.querySelector('[data-tab="status"]');s?s.after(b):nav.appendChild(b)}}
+function ensureNav(){const nav=$('nav');if(!nav)return;if(isPrivateApplicant()){nav.querySelector('[data-tab="diklatKsBcks"]')?.remove();return}if(nav.querySelector('[data-tab="diklatKsBcks"]'))return;if(!(isApplicant()||isReviewer()||isDinasAccount()))return;const b=navButton();if(isReviewer()||isDinasAccount()){const p=nav.querySelector('[data-tab="promotion"]');p?p.after(b):nav.appendChild(b)}else{const s=nav.querySelector('[data-tab="services"]')||nav.querySelector('[data-tab="status"]');s?s.after(b):nav.appendChild(b)}}
 const stageIndex=s=>({ADMINISTRASI:0,SUBSTANSI:1,DIKLAT:2,SERTIFIKAT:3}[s]??0);
 const stateLabel=(d,i)=>i===0?(d?.admin_status||'BELUM'):i===1?(d?.substansi_status||'TERKUNCI'):i===2?(d?.diklat_status||'TERKUNCI'):(d?.sertifikat_status||'TERKUNCI');
 function progressHtml(d){const cur=stageIndex(d?.workflow_stage||'ADMINISTRASI');const labels=['1. Seleksi Administrasi','2. Seleksi Substansi','3. Diklat','4. Pencatatan Sertifikat Diklat'];return `<div class="servicegrid" style="margin-bottom:14px">${labels.map((x,i)=>{const unlocked=i<=cur,active=i===cur;return `<div class="service" style="border:${active?'2px solid #2563eb':'1px solid #dbe3ec'};opacity:${unlocked?1:.6}"><div class="small">LEVEL ${i+1}${active?' • AKTIF':''}</div><h3>${esc(x)}</h3><p>${esc(unlocked?stateLabel(d,i):'TERKUNCI')}</p></div>`}).join('')}</div>`}
