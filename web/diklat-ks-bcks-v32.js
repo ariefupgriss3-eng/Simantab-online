@@ -447,6 +447,102 @@ function aiVerifierResultHtml(r){
  const detail=tech?'<br><span class="small">Jangan meminta peserta mengganti berkas berdasarkan hasil teknis ini. Klik Verifikasi AI lagi.</span>':'';
  return `<div class="${ok?'info':'notice'}" style="margin-top:10px"><b>${title}</b>${detail}${r?.duplicate_skp?'<br>❌ Duplikasi file SKP 2024/2025 terdeteksi; status tiap slot ditentukan dari tahun isi dokumen.':''}</div><div style="display:grid;gap:7px;margin-top:8px">${rows}</div>`;
 }
+
+function aiAggregateStatusBadge(status){
+ const cfg={
+  SESUAI:['✅ SESUAI','#166534','#ecfdf5'],
+  PERLU_PERBAIKAN:['⚠️ PERLU PERBAIKAN','#955a00','#fff8e6'],
+  GAGAL_TEKNIS:['⚙️ GAGAL TEKNIS','#475569','#f1f5f9'],
+  BERKAS_BELUM_LENGKAP:['📎 BELUM LENGKAP','#955a00','#fff8e6'],
+  BELUM_TERVERIFIKASI_AI:['○ BELUM DIVERIFIKASI','#475569','#f1f5f9'],
+  BELUM_ADA_BERKAS:['○ BELUM ADA BERKAS','#64748b','#f8fafc'],
+  BERKAS_BERUBAH_PERLU_AI:['↻ BERKAS BERUBAH','#9a3412','#fff7ed']
+ }[status]||['○ '+String(status||'BELUM ADA'),'#475569','#f1f5f9'];
+ return `<span style="display:inline-block;padding:4px 8px;border-radius:999px;background:${cfg[2]};color:${cfg[1]};font-size:10px;font-weight:900">${esc(cfg[0])}</span>`;
+}
+const aiSourceLabel=s=>s==='OTOMATIS'?'AI Otomatis':s==='AGREGAT_KABID'?'AI Agregat Kabid':s==='UJI_DINAS'?'Uji AI Dinas':(s||'AI');
+async function loadAiVisibilityMap(ids){
+ const list=[...new Set((ids||[]).filter(Boolean))];
+ const empty={autoLatest:new Map(),anyLatest:new Map(),aggregateItems:new Map(),aggregateRun:null};
+ if(!list.length)return empty;
+ const [runsQ,aggQ]=await Promise.all([
+  sb.from('ks_bcks_ai_verification_runs')
+   .select('id,submission_id,overall_status,verification_source,result,started_at,completed_at,sesuai_count,perbaikan_count,tidak_sesuai_count')
+   .in('submission_id',list)
+   .order('started_at',{ascending:false})
+   .limit(5000),
+  sb.from('ks_bcks_ai_aggregate_runs')
+   .select('*')
+   .order('created_at',{ascending:false})
+   .limit(1)
+   .maybeSingle()
+ ]);
+ const autoLatest=new Map(),anyLatest=new Map();
+ for(const r of runsQ.data||[]){
+  if(!anyLatest.has(r.submission_id))anyLatest.set(r.submission_id,r);
+  if(r.verification_source==='OTOMATIS'&&!autoLatest.has(r.submission_id))autoLatest.set(r.submission_id,r);
+ }
+ const aggregateRun=aggQ.data||null,aggregateItems=new Map();
+ if(aggregateRun?.id){
+  const iq=await sb.from('ks_bcks_ai_aggregate_items')
+   .select('*')
+   .eq('aggregate_run_id',aggregateRun.id)
+   .in('submission_id',list)
+   .limit(5000);
+  for(const x of iq.data||[])aggregateItems.set(x.submission_id,x);
+ }
+ return{autoLatest,anyLatest,aggregateItems,aggregateRun};
+}
+function aiCompactHtml(id,vis){
+ const a=vis?.autoLatest?.get(id),g=vis?.aggregateItems?.get(id);
+ const auto=a?aiVerifierStatusBadge(a.overall_status):aiAggregateStatusBadge('BELUM_TERVERIFIKASI_AI');
+ const agg=g?aiAggregateStatusBadge(g.aggregate_status):'<span class="small">Belum ada cek agregat</span>';
+ return `<div style="display:grid;gap:6px;min-width:170px"><div><span class="small"><b>Otomatis:</b></span> ${auto}</div><div><span class="small"><b>Agregat:</b></span> ${agg}</div><button class="btn secondary" style="padding:6px 8px" onclick="ksbOpenAiHistory('${id}')">🤖 Lihat Hasil AI</button></div>`;
+}
+function aiOwnPanel(id,vis){
+ const a=vis?.autoLatest?.get(id),g=vis?.aggregateItems?.get(id);
+ if(!a&&!g)return '<div class="card" style="margin-bottom:12px"><div class="info"><b>🤖 Hasil AI Verifikator</b><br>Belum ada hasil AI untuk berkas aktif Anda.</div></div>';
+ return `<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div class="label">HASIL AI VERIFIKATOR</div><h3 style="margin:4px 0">Berkas Diklat KS Anda</h3></div><button class="btn secondary" onclick="ksbOpenAiHistory('${id}')">🤖 Lihat Detail</button></div><div class="servicegrid" style="margin-top:10px"><div class="service"><b>AI Otomatis</b><div style="margin-top:7px">${a?aiVerifierStatusBadge(a.overall_status):aiAggregateStatusBadge('BELUM_TERVERIFIKASI_AI')}</div><div class="small" style="margin-top:5px">${a?fmtDateTime(a.completed_at||a.started_at):'Belum ada hasil otomatis'}</div></div><div class="service"><b>AI Verifikator Agregat Kabid</b><div style="margin-top:7px">${g?aiAggregateStatusBadge(g.aggregate_status):'<span class="small">Belum diperiksa agregat</span>'}</div><div class="small" style="margin-top:5px">${g?esc(g.note||''):'Hasil akan tampil setelah Kabid menjalankan pemeriksaan agregat.'}</div></div></div></div>`;
+}
+async function aiAggregateSummaryHtml(showButton=false){
+ const q=await sb.from('ks_bcks_ai_aggregate_runs').select('*').order('created_at',{ascending:false}).limit(1).maybeSingle();
+ const r=q.data||null;
+ const button=showButton?`<button class="btn" id="ksbRunAiAggregateBtn" onclick="ksbRunAiAggregate()">🤖 AI Verifikator Agregat</button>`:'';
+ if(!r)return `<div class="card" style="margin-bottom:12px"><div class="info"><b>AI Verifikator Agregat</b><br>Belum pernah dijalankan. Pemeriksaan agregat mencocokkan hasil AI per berkas dengan berkas aktif seluruh peserta dan tidak mengubah level/status peserta.</div>${button?'<div style="margin-top:10px">'+button+'</div>':''}</div>`;
+ return `<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div class="label">AI VERIFIKATOR AGREGAT</div><h3 style="margin:4px 0">Snapshot ${fmtDateTime(r.created_at)}</h3><div class="small">Mencocokkan hasil AI per dokumen dengan berkas aktif saat snapshot dibuat. Tidak mengubah status peserta.</div></div>${button}</div><div class="servicegrid" style="margin-top:10px"><div class="service"><b>✅ Sesuai</b><h3>${r.sesuai_count||0}</h3></div><div class="service"><b>⚠️ Perlu Perbaikan</b><h3>${r.perlu_perbaikan_count||0}</h3></div><div class="service"><b>📎 Belum Lengkap</b><h3>${r.berkas_belum_lengkap_count||0}</h3></div><div class="service"><b>↻ Berkas Berubah</b><h3>${r.berkas_berubah_count||0}</h3></div><div class="service"><b>○ Belum AI</b><h3>${r.belum_terverifikasi_count||0}</h3></div><div class="service"><b>⚙️ Teknis</b><h3>${r.gagal_teknis_count||0}</h3></div></div></div>`;
+}
+window.ksbRunAiAggregate=async()=>{
+ if(!isKabid())return alert('Tombol AI Verifikator Agregat hanya tersedia pada akun Kabid.');
+ if(!confirm('Jalankan AI Verifikator Agregat sekarang?\n\nSistem akan mencocokkan hasil AI per berkas dengan berkas Diklat KS yang aktif di seluruh peserta. Pemeriksaan agregat ini tidak mengubah level/status peserta.'))return;
+ const btn=$('ksbRunAiAggregateBtn');
+ try{
+  if(btn){btn.disabled=true;btn.textContent='🤖 Memeriksa agregat...'}
+  const {data,error}=await sb.rpc('ks_bcks_create_ai_aggregate_snapshot');
+  if(error)throw error;
+  toast('AI Verifikator Agregat selesai. Snapshot hasil telah tersimpan.');
+  await render();
+ }catch(e){toast(e.message||String(e),true)}
+ finally{if(btn&&document.body.contains(btn)){btn.disabled=false;btn.textContent='🤖 AI Verifikator Agregat'}}
+};
+window.ksbOpenAiHistory=async id=>{
+ try{
+  const [rq,iq,dq]=await Promise.all([
+   sb.from('ks_bcks_ai_verification_runs').select('id,overall_status,verification_source,result,started_at,completed_at,sesuai_count,perbaikan_count,tidak_sesuai_count').eq('submission_id',id).order('started_at',{ascending:false}).limit(10),
+   sb.from('ks_bcks_ai_aggregate_items').select('*').eq('submission_id',id).order('created_at',{ascending:false}).limit(5),
+   sb.from('ks_bcks_submission_details').select('full_name,nip,unit_kerja').eq('submission_id',id).maybeSingle()
+  ]);
+  if(rq.error)throw rq.error;if(iq.error)throw iq.error;
+  const d=dq.data||{},runs=rq.data||[],items=iq.data||[];
+  let m=$('ksbAiHistoryModal');m?.remove();m=document.createElement('div');m.id='ksbAiHistoryModal';
+  Object.assign(m.style,{position:'fixed',inset:'0',zIndex:'99999',background:'#0b203c99',display:'flex',alignItems:'center',justifyContent:'center',padding:'14px'});
+  m.onclick=e=>{if(e.target===m)m.remove()};
+  const runHtml=runs.length?runs.map(r=>`<div class="card" style="margin:10px 0"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b>${esc(aiSourceLabel(r.verification_source))}</b><div class="small">${fmtDateTime(r.completed_at||r.started_at)}</div></div>${aiVerifierStatusBadge(r.overall_status)}</div>${r.result?aiVerifierResultHtml(r.result):''}</div>`).join(''):'<div class="empty">Belum ada hasil AI per dokumen.</div>';
+  const aggHtml=items.length?items.map(x=>`<div class="service" style="margin-top:8px"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>AI Agregat Kabid • ${fmtDateTime(x.created_at)}</b>${aiAggregateStatusBadge(x.aggregate_status)}</div><div class="small" style="margin-top:6px">Berkas aktif: ${x.current_file_count}/7 • Cocok dengan hasil AI: ${x.ai_matched_file_count}/7</div><div class="small" style="margin-top:4px">${esc(x.note||'')}</div></div>`).join(''):'<div class="small">Belum ada hasil agregat Kabid untuk peserta ini.</div>';
+  m.innerHTML=`<div class="card" style="width:min(900px,100%);max-height:92vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><div class="label">RIWAYAT AI VERIFIKATOR</div><h3 style="margin:4px 0">${esc(d.full_name||'Peserta Diklat KS')}</h3><div class="small">${esc(d.nip||'')} • ${esc(d.unit_kerja||'')}</div></div><button class="btn secondary" onclick="document.getElementById('ksbAiHistoryModal')?.remove()">✕</button></div><h3 style="margin-top:16px">AI Verifikator Otomatis / Uji</h3>${runHtml}<h3 style="margin-top:18px">AI Verifikator Agregat Kabid</h3>${aggHtml}</div>`;
+  document.body.appendChild(m);
+ }catch(e){alert(e.message||String(e))}
+};
+
 async function invokeDiklatAi(id,mode='test'){
  const {data,error}=await sb.functions.invoke('simantab-diklat-ai-workflow',{body:{submission_id:id,mode}});
  if(error){
