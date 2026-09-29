@@ -491,22 +491,36 @@ function aiOwnPanel(id,vis){
 async function aiAggregateSummaryHtml(showButton=false){
  const q=await sb.from('ks_bcks_ai_aggregate_runs').select('*').order('created_at',{ascending:false}).limit(1).maybeSingle();
  const r=q.data||null;
- const button=showButton?`<button class="btn" id="ksbRunAiAggregateBtn" onclick="ksbRunAiAggregate()">🤖 AI Verifikator Agregat</button>`:'';
- if(!r)return `<div class="card" style="margin-bottom:12px"><div class="info"><b>AI Verifikator Agregat</b><br>Belum pernah dijalankan. Pemeriksaan agregat mencocokkan hasil AI per berkas dengan berkas aktif seluruh peserta dan tidak mengubah level/status peserta.</div>${button?'<div style="margin-top:10px">'+button+'</div>':''}</div>`;
- return `<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div class="label">AI VERIFIKATOR AGREGAT</div><h3 style="margin:4px 0">Snapshot ${fmtDateTime(r.created_at)}</h3><div class="small">Mencocokkan hasil AI per dokumen dengan berkas aktif saat snapshot dibuat. Tidak mengubah status peserta.</div></div>${button}</div><div class="servicegrid" style="margin-top:10px"><div class="service"><b>✅ Sesuai</b><h3>${r.sesuai_count||0}</h3></div><div class="service"><b>⚠️ Perlu Perbaikan</b><h3>${r.perlu_perbaikan_count||0}</h3></div><div class="service"><b>📎 Belum Lengkap</b><h3>${r.berkas_belum_lengkap_count||0}</h3></div><div class="service"><b>↻ Berkas Berubah</b><h3>${r.berkas_berubah_count||0}</h3></div><div class="service"><b>○ Belum AI</b><h3>${r.belum_terverifikasi_count||0}</h3></div><div class="service"><b>⚙️ Teknis</b><h3>${r.gagal_teknis_count||0}</h3></div></div></div>`;
+ const active=!!(r&&r.run_mode==='ACTIVE'),running=!!(active&&['QUEUED','RUNNING'].includes(r.run_status));
+ const totalQueued=Number(r?.queued_count||0),processed=Number(r?.processed_count||0),remaining=Math.max(0,totalQueued-processed);
+ const pct=totalQueued?Math.min(100,Math.round((processed/totalQueued)*100)):100;
+ const button=showButton?(running
+   ?`<button class="btn" id="ksbRunAiAggregateBtn" disabled>🤖 AI Agregat Aktif berjalan</button>`
+   :`<button class="btn" id="ksbRunAiAggregateBtn" onclick="ksbRunAiAggregate()">▶ AI Agregat Aktif</button>`):'';
+ if(!r)return `<div class="card" style="margin-bottom:12px"><div class="info"><b>AI Agregat Aktif</b><br>Belum pernah dijalankan. Saat diaktifkan, sistem akan membaca peserta yang belum pernah diperiksa AI, hasil teknis, atau berkas yang berubah secara bertahap di background.</div>${button?'<div style="margin-top:10px">'+button+'</div>':''}</div>`;
+ const title=active?`AI Agregat Aktif • ${esc(r.run_status||'-')}`:`Snapshot ${fmtDateTime(r.created_at)}`;
+ const desc=active
+  ?`Background worker memeriksa antrean secara bertahap agar tidak terkena rate limit. Halaman boleh ditutup. ${running?`Sisa sekitar ${remaining} peserta; estimasi kasar ±${remaining} menit.`:'Proses telah selesai.'}`
+  :'Snapshot lama hanya mencocokkan hasil AI yang sudah ada.';
+ const progress=active?`<div style="margin-top:10px"><div class="small"><b>Progres:</b> ${processed}/${totalQueued} antrean diproses • ${pct}%</div><div style="height:10px;background:#e2e8f0;border-radius:999px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${pct}%;background:#2563eb"></div></div>${r.last_error?`<div class="small" style="margin-top:5px;color:#b42318">Error terakhir: ${esc(r.last_error)}</div>`:''}</div>`:'';
+ if(running&&showButton){
+  clearTimeout(window.__ksbAggPollTimer);
+  window.__ksbAggPollTimer=setTimeout(()=>render(),60000);
+ }
+ return `<div class="card" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap"><div><div class="label">AI VERIFIKATOR AGREGAT</div><h3 style="margin:4px 0">${title}</h3><div class="small">${desc}</div></div>${button}</div>${progress}<div class="servicegrid" style="margin-top:10px"><div class="service"><b>✅ Sesuai</b><h3>${r.sesuai_count||0}</h3></div><div class="service"><b>⚠️ Perlu Perbaikan</b><h3>${r.perlu_perbaikan_count||0}</h3></div><div class="service"><b>📎 Belum Lengkap</b><h3>${r.berkas_belum_lengkap_count||0}</h3></div><div class="service"><b>↻ Berkas Berubah</b><h3>${r.berkas_berubah_count||0}</h3></div><div class="service"><b>○ Belum AI</b><h3>${r.belum_terverifikasi_count||0}</h3></div><div class="service"><b>⚙️ Teknis</b><h3>${r.gagal_teknis_count||0}</h3></div></div></div>`;
 }
 window.ksbRunAiAggregate=async()=>{
- if(!isKabid())return alert('Tombol AI Verifikator Agregat hanya tersedia pada akun Kabid.');
- if(!confirm('Jalankan AI Verifikator Agregat sekarang?\n\nSistem akan mencocokkan hasil AI per berkas dengan berkas Diklat KS yang aktif di seluruh peserta. Pemeriksaan agregat ini tidak mengubah level/status peserta.'))return;
+ if(!isKabid())return alert('AI Agregat Aktif hanya dapat dijalankan dari akun Kabid.');
+ if(!confirm('Aktifkan AI Verifikator Agregat?\n\nSistem akan membaca otomatis peserta yang BELUM AI, GAGAL TEKNIS, atau berkasnya berubah. Proses berjalan di background kira-kira 1 peserta per menit agar aman dari rate limit. Hasil agregat tidak mengubah level/status peserta.'))return;
  const btn=$('ksbRunAiAggregateBtn');
  try{
-  if(btn){btn.disabled=true;btn.textContent='🤖 Memeriksa agregat...'}
-  const {data,error}=await sb.rpc('ks_bcks_create_ai_aggregate_snapshot');
+  if(btn){btn.disabled=true;btn.textContent='▶ Memulai AI Agregat Aktif...'}
+  const {data,error}=await sb.rpc('ks_bcks_start_active_ai_aggregate');
   if(error)throw error;
-  toast('AI Verifikator Agregat selesai. Snapshot hasil telah tersimpan.');
+  toast('AI Agregat Aktif dimulai. Proses berjalan otomatis di background; halaman boleh ditutup.');
   await render();
  }catch(e){toast(e.message||String(e),true)}
- finally{if(btn&&document.body.contains(btn)){btn.disabled=false;btn.textContent='🤖 AI Verifikator Agregat'}}
+ finally{if(btn&&document.body.contains(btn)){btn.disabled=false;btn.textContent='▶ AI Agregat Aktif'}}
 };
 window.ksbOpenAiHistory=async id=>{
  try{
@@ -599,5 +613,5 @@ async function render(){ensureSection();ensureNav();if(isPrivateApplicant()){awa
 await resolveApplicantSchoolStatus();
 ensureSection();ensureNav();const nav=$('nav');if(nav&&!isPrivateApplicant()){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{await resolveApplicantSchoolStatus();if(id==='diklatKsBcks'&&isPrivateApplicant())return priorShow('profile');ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:44,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:45,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
