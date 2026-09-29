@@ -86,7 +86,13 @@ export default async function handler(req){
   function normalizeResult(spec,x){
    let status=['SESUAI','PERLU_PERBAIKAN','TIDAK_SESUAI'].includes(x?.status)?x.status:'PERLU_PERBAIKAN';
    const year=x?.detected_year==null?null:Number(x.detected_year),read=clamp(x?.readability_score),conf=clamp(x?.confidence);
-   if(spec.year&&year!==spec.year)status=year==null?'PERLU_PERBAIKAN':'TIDAK_SESUAI';
+   const expectedNip=String(participant.nip||'').replace(/\D/g,''),detectedNip=String(x?.detected_nip||'').replace(/\D/g,'');
+   const type=String(x?.detected_document_type||'').toLowerCase();
+   if(spec.year){
+    if(year!==spec.year) status=year==null?'PERLU_PERBAIKAN':'TIDAK_SESUAI';
+    else if(expectedNip&&detectedNip&&expectedNip!==detectedNip) status='TIDAK_SESUAI';
+    else if((type.includes('skp')||type.includes('sasaran kinerja'))&&read>=.8&&conf>=.8) status='SESUAI';
+   }
    if((read<.8||conf<.8)&&status==='SESUAI')status='PERLU_PERBAIKAN';
    return {requirement_code:spec.code,status,detected_document_type:x?.detected_document_type??null,detected_year:Number.isFinite(year)?year:null,detected_name:x?.detected_name??null,detected_nip:x?.detected_nip??null,readability_score:read,confidence:conf,evidence:String(x?.evidence||'').slice(0,500),note:String(x?.note||'').slice(0,500),technical_error:false};
   }
@@ -129,11 +135,13 @@ export default async function handler(req){
   }
 
   const primaryGroups=[
-   REQUIRED.filter(x=>x.code==='SKP_1'||x.code==='SKP_2'),
+   REQUIRED.filter(x=>x.code==='SKP_1'),
+   REQUIRED.filter(x=>x.code==='SKP_2'),
    REQUIRED.filter(x=>['SK_PENGALAMAN_MANAJERIAL','SK_HUDIS','SKCK'].includes(x.code)),
    REQUIRED.filter(x=>['PAKTA_INTEGRITAS','SURAT_PERNYATAAN_DIKLAT'].includes(x.code))
   ];
-  let results=(await Promise.all(primaryGroups.map(analyzeGroup))).flat();
+  let results=[];
+  for(const group of primaryGroups)results.push(...await analyzeGroup(group));
 
   const retrySpecs=REQUIRED.filter(spec=>results.find(x=>x.requirement_code===spec.code)?.technical_error);
   if(retrySpecs.length){
@@ -158,6 +166,6 @@ export default async function handler(req){
   }
   const counts={sesuai:results.filter(x=>x.status==='SESUAI').length,perbaikan:results.filter(x=>x.status==='PERLU_PERBAIKAN').length,tidak:results.filter(x=>x.status==='TIDAK_SESUAI').length,teknis:results.filter(x=>x.technical_error).length};
   const overall_status=counts.teknis?'GAGAL_TEKNIS':(counts.tidak||counts.perbaikan?'PERLU_PERBAIKAN':'SESUAI');
-  return J({ok:true,engine:'DIKLAT_DOC_AI_V4_GROUPED',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
+  return J({ok:true,engine:'DIKLAT_DOC_AI_V5_ROBUST_GROUPS',model:'google/gemini-2.5-flash-lite',overall_status,duplicate_skp:dup,counts,results});
  }catch(e){console.error('DIKLAT_AI_READ_ERROR',e?.message||String(e));return J({error:e?.message||String(e)},400)}
 }
