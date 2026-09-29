@@ -490,8 +490,11 @@ async function aiAggregateSummaryHtml(showButton=false){
  const q=await sb.from('ks_bcks_ai_aggregate_runs').select('*').order('created_at',{ascending:false}).limit(1).maybeSingle();
  const r=q.data||null;
  const active=!!(r&&r.run_mode==='ACTIVE'),running=!!(active&&['QUEUED','RUNNING'].includes(r.run_status));
- const totalQueued=Number(r?.queued_count||0),processed=Number(r?.processed_count||0),remaining=Math.max(0,totalQueued-processed);
- const pct=totalQueued?Math.min(100,Math.round((processed/totalQueued)*100)):100;
+ const totalQueued=Number(r?.queued_count||0);
+ const storedProcessed=Number(r?.processed_count||0);
+ const processed=running?storedProcessed:Math.max(storedProcessed,totalQueued);
+ const remaining=running?Math.max(0,totalQueued-processed):0;
+ const pct=running?(totalQueued?Math.min(100,Math.round((processed/totalQueued)*100)):100):100;
  const button=showButton?(running
    ?`<button class="btn" id="ksbRunAiAggregateBtn" disabled>🤖 AI Agregat Aktif berjalan</button>`
    :`<button class="btn" id="ksbRunAiAggregateBtn" onclick="ksbRunAiAggregate()">▶ AI Agregat Aktif</button>`):'';
@@ -611,5 +614,5 @@ async function render(){ensureSection();ensureNav();if(isPrivateApplicant()){awa
 await resolveApplicantSchoolStatus();
 ensureSection();ensureNav();const nav=$('nav');if(nav&&!isPrivateApplicant()){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{await resolveApplicantSchoolStatus();if(id==='diklatKsBcks'&&isPrivateApplicant())return priorShow('profile');ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:49,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:50,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
