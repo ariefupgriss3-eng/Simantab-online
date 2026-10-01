@@ -6,6 +6,8 @@
   if (!client || !window.showTab) return;
 
   const getProfile = () => window.__simantabProfile || {};
+  const params = new URLSearchParams(window.location.search);
+  const testMode = window.location.hostname.includes('git-feat-ks-needs-first-login') && params.get('ks_needs_test') === 'draft';
   if (getProfile().role !== 'KEPALA_SEKOLAH') return;
 
   let required = true;
@@ -20,7 +22,30 @@
     const section = document.getElementById('needs');
     if (!required || !section) { banner.remove(); return; }
     if (banner.parentElement !== section) section.prepend(banner);
-    banner.textContent = message;
+    if (!testMode) {
+      banner.textContent = message;
+      return;
+    }
+    banner.innerHTML = '';
+    const text = document.createElement('div');
+    text.textContent = 'MODE UJI PREVIEW — akun ini diperlakukan seolah-olah belum mengajukan Kebutuhan GTK Riil. Tidak ada data Supabase yang diubah.';
+    text.style.fontWeight = '700';
+    banner.appendChild(text);
+    const detail = document.createElement('div');
+    detail.textContent = message;
+    detail.style.marginTop = '6px';
+    banner.appendChild(detail);
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = 'Simulasikan pengajuan berhasil';
+    button.style.cssText = 'margin-top:10px;padding:8px 12px;border:0;border-radius:8px;background:#92400e;color:white;font-weight:700;cursor:pointer';
+    button.onclick = async () => {
+      required = false;
+      setNavigation();
+      showBanner();
+      await window.showTab('dashboard');
+    };
+    banner.appendChild(button);
   }
 
   function setNavigation() {
@@ -68,8 +93,10 @@
         const { data: workflow, error } = await client.from('school_gtk_needs_workflow')
           .select('status').eq('school_npsn', npsn).maybeSingle();
         if (error) throw error;
-        required = !['SUBMITTED', 'VERIFIED', 'APPROVED'].includes(String(workflow?.status || '').toUpperCase());
-        message = 'Selamat datang. Isi Kebutuhan GTK Riil sekolah, simpan perubahan, lalu klik “Ajukan ke Dinas”. Menu lainnya terbuka setelah pengajuan berhasil.';
+        required = testMode || !['SUBMITTED', 'VERIFIED', 'APPROVED'].includes(String(workflow?.status || '').toUpperCase());
+        message = testMode
+          ? 'Uji: menu lain harus terkunci dan halaman diarahkan ke Kebutuhan GTK Riil. Gunakan tombol simulasi pada banner untuk menguji pembukaan menu kembali.'
+          : 'Selamat datang. Isi Kebutuhan GTK Riil sekolah, simpan perubahan, lalu klik “Ajukan ke Dinas”. Menu lainnya terbuka setelah pengajuan berhasil.';
       } catch (error) {
         required = true;
         message = `Status Kebutuhan GTK Riil belum dapat diperiksa: ${error?.message || error}. Coba muat ulang halaman atau hubungi Super Admin.`;
