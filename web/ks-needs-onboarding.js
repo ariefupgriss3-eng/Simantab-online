@@ -22,13 +22,31 @@
     if (banner.parentElement !== section) section.prepend(banner);
     banner.textContent = message;
   }
+
   function setNavigation() {
     document.querySelectorAll('#nav .navbtn[data-tab]').forEach(button => {
-      const blocked = required && button.dataset.tab !== 'needs';
-      button.disabled = blocked;
-      button.title = blocked ? 'Lengkapi Kebutuhan GTK Riil terlebih dahulu' : '';
+      const shouldBlock = required && button.dataset.tab !== 'needs';
+      if (shouldBlock) {
+        if (!button.dataset.ksNeedsBlocked) {
+          button.dataset.ksNeedsBlocked = '1';
+          button.dataset.ksNeedsPrevDisabled = button.disabled ? '1' : '0';
+          button.dataset.ksNeedsPrevTitle = button.title || '';
+        }
+        button.disabled = true;
+        button.title = 'Lengkapi Kebutuhan GTK Riil terlebih dahulu';
+        return;
+      }
+
+      if (button.dataset.ksNeedsBlocked === '1') {
+        button.disabled = button.dataset.ksNeedsPrevDisabled === '1';
+        button.title = button.dataset.ksNeedsPrevTitle || '';
+        delete button.dataset.ksNeedsBlocked;
+        delete button.dataset.ksNeedsPrevDisabled;
+        delete button.dataset.ksNeedsPrevTitle;
+      }
     });
   }
+
   async function checkNeeds() {
     if (checking) return checking;
     checking = (async () => {
