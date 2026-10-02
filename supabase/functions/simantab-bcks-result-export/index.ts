@@ -139,7 +139,7 @@ async function makeDocx(data:any,logo:Uint8Array){
   ]}));
   const doc=new Document({
     creator:"SIMANTAB-ONLINE - Disdikbud Kabupaten Batang",
-    title:"Hasil Simulasi Seleksi Substansi BCKS",
+    title:"Hasil Simulasi dan Thinking Culture BCKS",
     description:"Dokumen hasil latihan SIMANTAB",
     sections:[{
       properties:{page:{margin:{top:700,right:850,bottom:700,left:850}}},
@@ -158,7 +158,7 @@ async function makeDocx(data:any,logo:Uint8Array){
           ]})]
         }),
         new Paragraph({border:{bottom:{color:"000000",space:1,style:BorderStyle.DOUBLE,size:8}},spacing:{after:180}}),
-        new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:"HASIL SIMULASI SELEKSI SUBSTANSI BCKS",bold:true,size:27,font:"Arial"})]}),
+        new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:40},children:[new TextRun({text:"HASIL SIMULASI DAN THINKING CULTURE",bold:true,size:27,font:"Arial"})]}),
         new Paragraph({alignment:AlignmentType.CENTER,spacing:{after:180},children:[new TextRun({text:"Diklat Kepala Sekolah / BCKS",bold:true,size:22,font:"Arial",color:"0F3F76"})]}),
 
         sectionHeading("A. IDENTITAS PESERTA"),
@@ -254,7 +254,7 @@ async function makePdf(data:any,logo:Uint8Array){
   center("BIDANG PEMBINAAN KETENAGAAN",773,11,bold);
   center("Jl. Slamet Riyadi No. 29 Batang",758,8.5,font);
   line(744);page.drawLine({start:{x:left,y:741},end:{x:right,y:741},thickness:1.6,color:rgb(0,0,0)});
-  center("HASIL SIMULASI SELEKSI SUBSTANSI BCKS",718,13,bold);
+  center("HASIL SIMULASI DAN THINKING CULTURE",718,13,bold);
   center("Diklat Kepala Sekolah / BCKS",702,10.5,bold);
   y=675;
 

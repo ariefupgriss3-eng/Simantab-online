@@ -7,6 +7,9 @@ const CORS={
   "Content-Type":"application/json"
 };
 const json=(body:any,status=200)=>new Response(JSON.stringify(body),{status,headers:CORS});
+const THINKING_SESSIONS=[{"level": 1, "date": "2026-10-03", "label": "Dasar", "questions": [2, 4, 5, 6, 15, 17, 18, 19, 31, 32, 33, 34, 44, 45, 46, 47, 58, 60, 62, 63]}, {"level": 2, "date": "2026-10-07", "label": "Menengah", "questions": [8, 9, 11, 12, 14, 22, 23, 25, 27, 28, 35, 37, 38, 39, 41, 49, 51, 52, 54, 56, 64, 65, 67, 68, 69]}, {"level": 3, "date": "2026-10-10", "label": "Lanjutan", "questions": [1, 3, 7, 10, 13, 16, 20, 21, 24, 26, 29, 30, 36, 40, 42, 43, 48, 50, 53, 55, 57, 59, 61, 66, 70]}];
+const activeSession=(now=Date.now())=>THINKING_SESSIONS.find(s=>now>=Date.parse(s.date+"T09:00:00+07:00")&&now<Date.parse(s.date+"T15:00:00+07:00"));
+const sessionOpen=(gate:any,session:any)=>!!session&&(Date.parse(gate?.updated_at||"")>=Date.parse(session.date+"T09:00:00+07:00")?!!gate?.is_open:true);
 const COMP_ORDER=["KEPRIBADIAN","SOSIAL","MANAJERIAL","KEWIRAUSAHAAN","SUPERVISI"];
 const LABEL:any={
   KEPRIBADIAN:"Kepribadian",SOSIAL:"Sosial",MANAJERIAL:"Manajerial",
@@ -138,7 +141,9 @@ Deno.serve(async(req)=>{
     if(ge) throw ge;
     return json({
       ok:true,
-      is_open:!!gate?.is_open,
+      is_open:sessionOpen(gate,activeSession()),
+      session:activeSession()||null,
+      sessions:THINKING_SESSIONS,
       opened_at:gate?.opened_at||null,
       updated_at:gate?.updated_at||null,
       can_manage:isKabid,
@@ -150,6 +155,7 @@ Deno.serve(async(req)=>{
   }
 
   if(action==="set_access"){
+    if(!activeSession())return json({error:"Akses hanya dapat dibuka atau ditutup dalam jadwal 09.00–15.00 WIB pada 3, 7, atau 10 Oktober."},409);
     if(!isKabid) return json({error:"Hanya Kabid yang dapat membuka atau menutup akses simulasi Seleksi Substansi."},403);
     const open=body?.open===true;
     const nowIso=new Date().toISOString();
@@ -203,7 +209,8 @@ Deno.serve(async(req)=>{
     const answerMap=new Map((answers||[]).map((a:any)=>[Number(a.question_no),a]));
     let evaluated:any[]=[];
     if(attempt.mode==="SIMULASI"){
-      evaluated=(keys||[]).map((k:any)=>{
+      const pack=THINKING_SESSIONS.find(s=>s.level===attempt.session_level);
+      evaluated=(keys||[]).filter((k:any)=>!pack||pack.questions.includes(Number(k.question_no))).map((k:any)=>{
         const a:any=answerMap.get(Number(k.question_no));
         return {...k,selected_option:a?.selected_option||null,is_doubtful:!!a?.is_doubtful,seconds_spent:Number(a?.seconds_spent||0)};
       });

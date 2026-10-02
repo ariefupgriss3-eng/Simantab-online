@@ -277,7 +277,7 @@ const modules=[
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],
  ['performance-achievement.js',4],
- ['bcks-substansi-simulator-v5.js',7],
+ ['bcks-substansi-simulator-v5.js',8],
  ['bcks-individual-readiness.js',2]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
