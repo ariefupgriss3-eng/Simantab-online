@@ -63,10 +63,73 @@ Deno.serve(async(req)=>{
   const action=String(body?.action||"").trim();
 
   const isDinas=String(profile.account_channel||"").toUpperCase()==="DINAS";
+  const role=String(profile.role||"");
   const leaderRoles=new Set(["SUPER_ADMIN","KEPALA_DINAS","SEKRETARIS_DINAS","KABID"]);
-  const isLeader=isDinas&&leaderRoles.has(String(profile.role||""));
+  const readinessRoles=new Set(["SUPER_ADMIN","KEPALA_DINAS","SEKRETARIS_DINAS","KABID","KASI_SD","KASI_SMP","SUBKOOR_TK"]);
+  const isLeader=isDinas&&leaderRoles.has(role);
+  const canViewReadiness=isDinas&&readinessRoles.has(role);
+  const isKabid=isDinas&&role==="KABID";
+  const scopeLevels:string[]|null=
+    role==="KASI_SD"?["SD"]:
+    role==="KASI_SMP"?["SMP"]:
+    role==="SUBKOOR_TK"?["PAUD","TK"]:
+    null;
+  const scopeLabel=
+    role==="KASI_SD"?"Jenjang SD":
+    role==="KASI_SMP"?"Jenjang SMP":
+    role==="SUBKOOR_TK"?"Jenjang TK/PAUD":
+    "Semua Jenjang";
 
-  const isKabid=isDinas&&String(profile.role||"")==="KABID";
+  const loadScopedParticipants=async()=>{
+    const {data:rows,error:e1}=await admin.from("ks_bcks_submission_details")
+      .select("user_id,full_name,unit_kerja,workflow_stage,admin_status,is_archived")
+      .eq("is_archived",false)
+      .in("workflow_stage",["SUBSTANSI","DIKLAT","SERTIFIKAT"])
+      .in("admin_status",["TERVERIFIKASI","DISETUJUI"]);
+    if(e1) throw e1;
+    const base=rows||[];
+    const ids=[...new Set(base.map((x:any)=>x.user_id).filter(Boolean))];
+    if(!ids.length) return [];
+
+    const {data:profiles,error:e2}=await admin.from("profiles")
+      .select("id,school_npsn").in("id",ids);
+    if(e2) throw e2;
+    const npsns=[...new Set((profiles||[]).map((x:any)=>x.school_npsn).filter(Boolean))];
+    let schools:any[]=[];
+    if(npsns.length){
+      const {data,error}=await admin.from("school_master")
+        .select("npsn,school_name,jenjang").in("npsn",npsns);
+      if(error) throw error;
+      schools=data||[];
+    }
+    const profMap=new Map((profiles||[]).map((x:any)=>[x.id,x]));
+    const schoolMap=new Map(schools.map((x:any)=>[x.npsn,x]));
+    const enriched=base.map((x:any)=>{
+      const p:any=profMap.get(x.user_id);
+      const s:any=p?.school_npsn?schoolMap.get(p.school_npsn):null;
+      return {
+        user_id:x.user_id,
+        full_name:x.full_name||"",
+        unit_kerja:x.unit_kerja||s?.school_name||"",
+        school_npsn:p?.school_npsn||null,
+        school_name:s?.school_name||x.unit_kerja||"",
+        jenjang:String(s?.jenjang||"").toUpperCase()||"TIDAK_TERPETAKAN"
+      };
+    });
+    return scopeLevels
+      ? enriched.filter((x:any)=>scopeLevels.includes(x.jenjang))
+      : enriched;
+  };
+
+  const canViewTarget=async(targetUserId:string)=>{
+    if(targetUserId===user.id) return true;
+    if(!canViewReadiness) return false;
+    if(!scopeLevels) return true;
+    const {data:p}=await admin.from("profiles").select("school_npsn").eq("id",targetUserId).maybeSingle();
+    if(!p?.school_npsn) return false;
+    const {data:s}=await admin.from("school_master").select("jenjang").eq("npsn",p.school_npsn).maybeSingle();
+    return !!s?.jenjang&&scopeLevels.includes(String(s.jenjang).toUpperCase());
+  };
 
   if(action==="access_status"){
     const {data:gate,error:ge}=await admin.from("bcks_substansi_access_control")
@@ -79,6 +142,9 @@ Deno.serve(async(req)=>{
       opened_at:gate?.opened_at||null,
       updated_at:gate?.updated_at||null,
       can_manage:isKabid,
+      can_view_readiness:canViewReadiness,
+      scope_label:scopeLabel,
+      scope_levels:scopeLevels,
       note:gate?.note||null
     });
   }
@@ -195,7 +261,7 @@ Deno.serve(async(req)=>{
     const attemptId=String(body?.attempt_id||"").trim();
     const {data:attempt}=await admin.from("bcks_substansi_attempts").select("*").eq("id",attemptId).maybeSingle();
     if(!attempt||attempt.status!=="SUBMITTED") return json({error:"Hasil belum tersedia."},409);
-    if(attempt.user_id!==user.id&&!isDinas) return json({error:"Tidak berwenang."},403);
+    if(!(await canViewTarget(String(attempt.user_id)))) return json({error:"Tidak berwenang melihat hasil peserta ini."},403);
     const [{data:keys},{data:answers}]=await Promise.all([
       admin.from("bcks_substansi_answer_keys").select("question_no,competency,subcompetency,correct_option"),
       admin.from("bcks_substansi_answers").select("question_no,selected_option,is_doubtful,seconds_spent").eq("attempt_id",attemptId)
@@ -234,40 +300,96 @@ Deno.serve(async(req)=>{
   }
 
   if(action==="kabid_summary"){
-    if(!isLeader) return json({error:"Ringkasan agregat hanya tersedia untuk pimpinan Dinas yang berwenang."},403);
-    const {data:participants,error:ppE}=await admin.from("ks_bcks_submission_details")
-      .select("user_id,workflow_stage,admin_status,is_archived")
-      .eq("is_archived",false)
-      .in("workflow_stage",["SUBSTANSI","DIKLAT","SERTIFIKAT"])
-      .in("admin_status",["TERVERIFIKASI","DISETUJUI"]);
-    if(ppE) throw ppE;
-    const ids=[...new Set((participants||[]).map((x:any)=>x.user_id))];
-    if(!ids.length) return json({ok:true,participants:0,attempted:0,readiness:{},average_score:0,competencies:[]});
+    if(!canViewReadiness) return json({error:"Dashboard kesiapan hanya tersedia untuk pimpinan/Kasi/Subkoor yang berwenang."},403);
+
+    const scopedParticipants=await loadScopedParticipants();
+    const ids=[...new Set(scopedParticipants.map((x:any)=>x.user_id))];
+    if(!ids.length) return json({
+      ok:true,scope_label:scopeLabel,scope_levels:scopeLevels,participants:0,attempted:0,not_attempted:0,
+      readiness:{SANGAT_SIAP:0,SIAP:0,PERLU_PENGUATAN:0,PERLU_PENDAMPINGAN_INTENSIF:0},
+      average_score:0,competencies:[],individuals:[],
+      note:"Ringkasan menggunakan simulasi terakhir tiap peserta. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
+    });
 
     const {data:attempts,error:atE}=await admin.from("bcks_substansi_attempts")
-      .select("id,user_id,score,readiness_label,submitted_at")
+      .select("id,user_id,score,correct_count,total_questions,readiness_label,priority_competency,submitted_at")
       .eq("mode","SIMULASI").eq("status","SUBMITTED").in("user_id",ids).order("submitted_at",{ascending:false});
     if(atE) throw atE;
+
     const latest=new Map<string,any>();
     for(const a of attempts||[]) if(!latest.has(a.user_id)) latest.set(a.user_id,a);
     const latestAttempts=[...latest.values()];
     const attemptIds=latestAttempts.map((a:any)=>a.id);
+
     let scoreRows:any[]=[];
     if(attemptIds.length){
       const {data,error}=await admin.from("bcks_substansi_competency_scores")
-        .select("attempt_id,competency,percentage").in("attempt_id",attemptIds);
-      if(error) throw error; scoreRows=data||[];
+        .select("attempt_id,competency,correct_count,total_count,percentage").in("attempt_id",attemptIds);
+      if(error) throw error;
+      scoreRows=data||[];
     }
+
+    const scoresByAttempt=new Map<string,any>();
+    for(const row of scoreRows){
+      if(!scoresByAttempt.has(row.attempt_id)) scoresByAttempt.set(row.attempt_id,{});
+      scoresByAttempt.get(row.attempt_id)[row.competency]={
+        percentage:Number(row.percentage||0),
+        correct_count:Number(row.correct_count||0),
+        total_count:Number(row.total_count||0)
+      };
+    }
+
     const readiness:any={SANGAT_SIAP:0,SIAP:0,PERLU_PENGUATAN:0,PERLU_PENDAMPINGAN_INTENSIF:0};
     for(const a of latestAttempts) if(a.readiness_label in readiness) readiness[a.readiness_label]++;
-    const avg=latestAttempts.length?Math.round(latestAttempts.reduce((s:number,a:any)=>s+Number(a.score||0),0)/latestAttempts.length*100)/100:0;
+
+    const avg=latestAttempts.length
+      ? Math.round(latestAttempts.reduce((s:number,a:any)=>s+Number(a.score||0),0)/latestAttempts.length*100)/100
+      : 0;
+
     const competencies=COMP_ORDER.map(comp=>{
       const xs=scoreRows.filter((x:any)=>x.competency===comp).map((x:any)=>Number(x.percentage||0));
-      return {competency:comp,label:LABEL[comp],average:xs.length?Math.round(xs.reduce((a:number,b:number)=>a+b,0)/xs.length*100)/100:0,count:xs.length,below70:xs.filter((x:number)=>x<70).length};
+      return {
+        competency:comp,label:LABEL[comp],
+        average:xs.length?Math.round(xs.reduce((a:number,b:number)=>a+b,0)/xs.length*100)/100:0,
+        count:xs.length,
+        below70:xs.filter((x:number)=>x<70).length
+      };
     });
+
+    const individuals=scopedParticipants
+      .map((p:any)=>{
+        const a:any=latest.get(p.user_id);
+        return {
+          user_id:p.user_id,
+          full_name:p.full_name,
+          unit_kerja:p.unit_kerja,
+          school_name:p.school_name,
+          jenjang:p.jenjang,
+          attempted:!!a,
+          attempt_id:a?.id||null,
+          score:a?Number(a.score||0):null,
+          correct_count:a?.correct_count??null,
+          total_questions:a?.total_questions??null,
+          readiness_label:a?.readiness_label||null,
+          priority_competency:a?.priority_competency||null,
+          submitted_at:a?.submitted_at||null,
+          competency_scores:a?(scoresByAttempt.get(a.id)||{}):{}
+        };
+      })
+      .sort((a:any,b:any)=>{
+        if(a.attempted!==b.attempted) return a.attempted?-1:1;
+        if(a.attempted&&b.attempted&&Number(a.score)!==Number(b.score)) return Number(b.score)-Number(a.score);
+        return String(a.full_name||"").localeCompare(String(b.full_name||""),"id");
+      });
+
     return json({
-      ok:true,participants:ids.length,attempted:latestAttempts.length,not_attempted:Math.max(0,ids.length-latestAttempts.length),
-      readiness,average_score:avg,competencies,
+      ok:true,
+      scope_label:scopeLabel,
+      scope_levels:scopeLevels,
+      participants:ids.length,
+      attempted:latestAttempts.length,
+      not_attempted:Math.max(0,ids.length-latestAttempts.length),
+      readiness,average_score:avg,competencies,individuals,
       note:"Ringkasan menggunakan simulasi terakhir tiap peserta. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
     });
   }
