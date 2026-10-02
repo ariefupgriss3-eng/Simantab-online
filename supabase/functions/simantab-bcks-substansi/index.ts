@@ -1,3 +1,4 @@
+import { ITEM_LEARNING } from "./learning.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const CORS={
@@ -285,6 +286,7 @@ Deno.serve(async(req)=>{
         question_no:Number(a.question_no),selected_option:a.selected_option||null,correct_option:k.correct_option,
         is_correct:a.selected_option===k.correct_option,competency:k.competency,subcompetency:k.subcompetency,
         is_doubtful:!!a.is_doubtful,seconds_spent:Number(a.seconds_spent||0),
+        learning:ITEM_LEARNING[String(a.question_no)]||null,
         why_wrong:a.selected_option===k.correct_option?null:mistakeMessage(k.subcompetency)
       };
     }).filter(Boolean).sort((a:any,b:any)=>a.question_no-b.question_no);
