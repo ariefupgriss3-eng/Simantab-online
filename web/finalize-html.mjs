@@ -211,6 +211,11 @@ const bcksSubstansiSimulatorCode=await fs.readFile(new URL(`./${bcksSubstansiSim
 if(!/SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE/.test(bcksSubstansiSimulatorCode))throw new Error('BCKS substansi simulator v5 tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksSubstansiSimulatorFile),bcksSubstansiSimulatorCode);
 
+const bcksIndividualReadinessFile='bcks-individual-readiness.js';
+const bcksIndividualReadinessCode=await fs.readFile(new URL(`./${bcksIndividualReadinessFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_BCKS_INDIVIDUAL_READINESS_V1/.test(bcksIndividualReadinessCode))throw new Error('BCKS individual readiness v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksIndividualReadinessFile),bcksIndividualReadinessCode);
+
 const modules=[
  ['kp-enhancement.js',4],
  ['ptk-swasta-enhancement.js',1],
@@ -272,7 +277,8 @@ const modules=[
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],
  ['performance-achievement.js',4],
- ['bcks-substansi-simulator-v5.js',6]
+ ['bcks-substansi-simulator-v5.js',6],
+ ['bcks-individual-readiness.js',1]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
