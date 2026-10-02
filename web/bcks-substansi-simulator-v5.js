@@ -17,7 +17,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const pct=v=>Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:1});
 const fmtRead=s=>({SANGAT_SIAP:"Sangat Siap",SIAP:"Siap",PERLU_PENGUATAN:"Perlu Penguatan",PERLU_PENDAMPINGAN_INTENSIF:"Perlu Pendampingan Intensif"}[s]||s||"-");
 const shuffle=a=>{const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
-const api=async body=>{const {data,error}=await sb.functions.invoke("simantab-bcks-substansi",{body});if(error)throw new Error(data?.error||error.message||"Layanan BCKS bermasalah.");if(data?.error)throw new Error(data.error);return data};
+const api=async body=>{const {data,error}=await sb.functions.invoke("simantab-bcks-substansi",{body});if(error){let detail=data?.error;try{const payload=await error.context?.clone()?.json();detail=payload?.error||detail}catch{}throw new Error(detail||error.message||"Layanan BCKS bermasalah.")}if(data?.error)throw new Error(data.error);return data};
 const downloadBcksResult=async(attemptId,format)=>{
  try{
   const {data,error}=await sb.functions.invoke("simantab-bcks-result-export",{body:{attempt_id:attemptId,format}});
@@ -77,6 +77,9 @@ function scheduleInject(){
  setTimeout(()=>{reinjectQueued=false;injectCard()},60);
 }
 async function setAccessFromKabid(open){
+ const now=Date.now();
+ if(!THINKING_SESSIONS.some(s=>now>=Date.parse(s.date+"T09:00:00+07:00")&&now<Date.parse(s.date+"T15:00:00+07:00"))){alert("Saat ini di luar jadwal. Akses peserta dibuka pada 3, 7, dan 10 Oktober 2026 pukul 09.00–15.00 WIB. Pembukaan akses umum belum tersedia sebelum pukul 09.00 WIB.");return null}
+
  const label=open?"membuka":"menutup";
  if(!confirm("Yakin ingin "+label+" akses Simulasi dan Thinking Culture untuk peserta KS?"))return null;
  const result=await api({action:"set_access",open});
