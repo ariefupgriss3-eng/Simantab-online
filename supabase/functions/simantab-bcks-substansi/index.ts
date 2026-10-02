@@ -139,10 +139,13 @@ Deno.serve(async(req)=>{
       .select("is_open,opened_at,opened_by,updated_at,note")
       .eq("singleton_key","GLOBAL").maybeSingle();
     if(ge) throw ge;
+    const {data:test}=await admin.from("bcks_substansi_test_access").select("session_level,starts_at,expires_at").eq("user_id",user.id).maybeSingle();
+    const testActive=!!test&&Date.now()>=Date.parse(test.starts_at)&&Date.now()<Date.parse(test.expires_at);
     return json({
       ok:true,
-      is_open:sessionOpen(gate,activeSession()),
-      session:activeSession()||null,
+      is_open:testActive||sessionOpen(gate,activeSession()),
+      session:testActive?THINKING_SESSIONS.find(s=>s.level===test.session_level):activeSession()||null,
+      is_test:testActive,test_expires_at:testActive?test.expires_at:null,
       sessions:THINKING_SESSIONS,
       opened_at:gate?.opened_at||null,
       updated_at:gate?.updated_at||null,

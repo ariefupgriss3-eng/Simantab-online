@@ -155,7 +155,7 @@ async function openHome(){
   const active=attempts.find(a=>a.status==="IN_PROGRESS"&&new Date(a.expires_at).getTime()>now);
   const lastSim=attempts.find(a=>a.mode==="SIMULASI"&&a.status==="SUBMITTED");
   const submitted=attempts.filter(a=>a.status==="SUBMITTED").slice(0,6);
-  modal("Simulasi dan Thinking Culture BCKS",`<div class="bsub-card">${sessionNote}</div><div class="bsub-home">
+  modal("Simulasi dan Thinking Culture BCKS",`${access.is_test?'<div class="bsub-card"><b>UJI COBA KHUSUS AKUN ANDA</b><div class="bsub-note">Data sesi ditandai sebagai uji coba dan akan dibersihkan setelah pengujian selesai.</div></div>':""}<div class="bsub-card">${sessionNote}</div><div class="bsub-home">
    <div class="bsub-stat"><div class="bsub-label">Format</div><div class="bsub-numstat">${access.session?.questions?.length||70}</div><div class="bsub-note">soal kasus</div></div>
    <div class="bsub-stat"><div class="bsub-label">Durasi</div><div class="bsub-numstat">120</div><div class="bsub-note">menit</div></div>
    <div class="bsub-stat"><div class="bsub-label">Simulasi terakhir</div><div class="bsub-numstat">${lastSim?pct(lastSim.score):"-"}</div><div class="bsub-note">${lastSim?fmtRead(lastSim.readiness_label):"Belum ada"}</div></div>
@@ -183,7 +183,7 @@ async function startAttempt(mode,target=null){
   const bank=Q.filter(x=>session.questions.includes(x[0]));
   const isSim=mode==="SIMULASI",mins=isSim?120:30,total=isSim?bank.length:Math.min(10,bank.filter(x=>x[1]===target).length);
   let qnos=isSim?shuffle(bank.map(x=>x[0])):shuffle(bank.filter(x=>x[1]===target).map(x=>x[0])).slice(0,total);
-  const payload={user_id:profile().id,session_level:session.level,mode,target_competency:isSim?null:target,expires_at:new Date(Math.min(Date.now()+mins*60000,new Date(session.date+"T15:00:00+07:00").getTime())).toISOString(),total_questions:total};
+  const payload={user_id:profile().id,session_level:session.level,mode,target_competency:isSim?null:target,expires_at:new Date(Math.min(Date.now()+mins*60000,new Date(access.test_expires_at||session.date+"T15:00:00+07:00").getTime())).toISOString(),total_questions:total};
   const {data:a,error}=await sb.from("bcks_substansi_attempts").insert(payload).select("*").single();if(error)throw error;
   const rows=qnos.map(n=>({attempt_id:a.id,question_no:n,user_id:profile().id,selected_option:null,is_doubtful:false,seconds_spent:0}));
   const ins=await sb.from("bcks_substansi_answers").insert(rows);if(ins.error)throw ins.error;
