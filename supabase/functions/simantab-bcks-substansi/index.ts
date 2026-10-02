@@ -7,7 +7,7 @@ const CORS={
   "Content-Type":"application/json"
 };
 const json=(body:any,status=200)=>new Response(JSON.stringify(body),{status,headers:CORS});
-const THINKING_SESSIONS=[{"level":1,"date":"2026-10-03","label":"Basic","questions":[101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,125,126,127,128,129,130,131,132,133,134,135,136,137,138,139,140,141,142,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,165,166,167,168,169,170]},{"level":2,"date":"2026-10-07","label":"Premium","questions":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70]},{"level":3,"date":"2026-10-10","label":"Pro","questions":[201,202,203,204,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,226,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,264,265,266,267,268,269,270]}];
+const THINKING_SESSIONS=[{"level":1,"date":"2026-10-03","label":"Basic","questions":[101,102,103,104,105,106,107,2,4,5,6,8,9,202,115,116,117,118,119,120,121,15,17,18,19,21,22,216,129,130,131,132,133,134,135,31,32,33,34,35,37,229,143,144,145,146,147,148,149,43,44,45,46,47,243,244,157,158,159,160,161,162,163,58,60,61,62,63,257,258],"difficulty_composition":{"mudah":35,"sedang":28,"sulit":7}},{"level":2,"date":"2026-10-07","label":"Premium","questions":[108,109,110,111,11,12,13,14,201,204,203,205,206,207,122,123,124,125,23,25,27,28,215,217,219,221,223,224,136,137,138,139,38,39,41,42,230,231,232,234,235,236,150,151,152,153,49,51,52,54,56,245,246,247,249,250,164,165,166,167,168,64,65,67,68,69,259,260,261,262],"difficulty_composition":{"mudah":21,"sedang":28,"sulit":21}},{"level":3,"date":"2026-10-10","label":"Pro","questions":[112,113,114,210,213,208,209,211,212,214,1,3,7,10,126,127,128,218,220,222,225,226,227,228,16,20,24,26,140,141,142,233,238,242,237,239,240,241,29,30,36,40,154,155,156,248,252,256,251,253,254,255,48,50,53,55,169,170,264,267,269,263,265,266,268,270,57,59,66,70],"difficulty_composition":{"mudah":14,"sedang":14,"sulit":42}}];
 const activeSession=(now=Date.now())=>THINKING_SESSIONS.find(s=>now>=Date.parse(s.date+"T09:00:00+07:00")&&now<Date.parse(s.date+"T15:00:00+07:00"));
 const sessionOpen=(gate:any,session:any)=>!!session&&(Date.parse(gate?.updated_at||"")>=Date.parse(session.date+"T09:00:00+07:00")?!!gate?.is_open:true);
 const COMP_ORDER=["KEPRIBADIAN","SOSIAL","MANAJERIAL","KEWIRAUSAHAAN","SUPERVISI"];
@@ -212,7 +212,8 @@ Deno.serve(async(req)=>{
     const answerMap=new Map((answers||[]).map((a:any)=>[Number(a.question_no),a]));
     let evaluated:any[]=[];
     if(attempt.mode==="SIMULASI"){
-      const pack=THINKING_SESSIONS.find(s=>s.level===attempt.session_level);
+      const legacyStart=attempt.session_level===1?101:attempt.session_level===3?201:1;
+      const pack={questions:attempt.package_questions||Array.from({length:70},(_,i)=>legacyStart+i)};
       evaluated=(keys||[]).filter((k:any)=>!pack||pack.questions.includes(Number(k.question_no))).map((k:any)=>{
         const a:any=answerMap.get(Number(k.question_no));
         return {...k,selected_option:a?.selected_option||null,is_doubtful:!!a?.is_doubtful,seconds_spent:Number(a?.seconds_spent||0)};

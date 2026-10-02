@@ -1,0 +1,1309 @@
+{
+  "version": 1,
+  "status": "estimated_from_content_not_empirically_calibrated",
+  "criteria": {
+    "mudah": "Menerapkan satu prinsip dengan fakta langsung dan pilihan yang jelas berbeda.",
+    "sedang": "Menimbang dua kondisi dan memilih tindakan atau urutan yang sesuai.",
+    "sulit": "Mengintegrasikan beberapa bukti, prioritas yang bersaing, keterbatasan, dan konsekuensi keputusan."
+  },
+  "packages": [
+    {
+      "level": 1,
+      "date": "2026-10-03",
+      "label": "Basic",
+      "questions": [
+        101,
+        102,
+        103,
+        104,
+        105,
+        106,
+        107,
+        2,
+        4,
+        5,
+        6,
+        8,
+        9,
+        202,
+        115,
+        116,
+        117,
+        118,
+        119,
+        120,
+        121,
+        15,
+        17,
+        18,
+        19,
+        21,
+        22,
+        216,
+        129,
+        130,
+        131,
+        132,
+        133,
+        134,
+        135,
+        31,
+        32,
+        33,
+        34,
+        35,
+        37,
+        229,
+        143,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        43,
+        44,
+        45,
+        46,
+        47,
+        243,
+        244,
+        157,
+        158,
+        159,
+        160,
+        161,
+        162,
+        163,
+        58,
+        60,
+        61,
+        62,
+        63,
+        257,
+        258
+      ],
+      "difficulty_composition": {
+        "mudah": 35,
+        "sedang": 28,
+        "sulit": 7
+      }
+    },
+    {
+      "level": 2,
+      "date": "2026-10-07",
+      "label": "Premium",
+      "questions": [
+        108,
+        109,
+        110,
+        111,
+        11,
+        12,
+        13,
+        14,
+        201,
+        204,
+        203,
+        205,
+        206,
+        207,
+        122,
+        123,
+        124,
+        125,
+        23,
+        25,
+        27,
+        28,
+        215,
+        217,
+        219,
+        221,
+        223,
+        224,
+        136,
+        137,
+        138,
+        139,
+        38,
+        39,
+        41,
+        42,
+        230,
+        231,
+        232,
+        234,
+        235,
+        236,
+        150,
+        151,
+        152,
+        153,
+        49,
+        51,
+        52,
+        54,
+        56,
+        245,
+        246,
+        247,
+        249,
+        250,
+        164,
+        165,
+        166,
+        167,
+        168,
+        64,
+        65,
+        67,
+        68,
+        69,
+        259,
+        260,
+        261,
+        262
+      ],
+      "difficulty_composition": {
+        "mudah": 21,
+        "sedang": 28,
+        "sulit": 21
+      }
+    },
+    {
+      "level": 3,
+      "date": "2026-10-10",
+      "label": "Pro",
+      "questions": [
+        112,
+        113,
+        114,
+        210,
+        213,
+        208,
+        209,
+        211,
+        212,
+        214,
+        1,
+        3,
+        7,
+        10,
+        126,
+        127,
+        128,
+        218,
+        220,
+        222,
+        225,
+        226,
+        227,
+        228,
+        16,
+        20,
+        24,
+        26,
+        140,
+        141,
+        142,
+        233,
+        238,
+        242,
+        237,
+        239,
+        240,
+        241,
+        29,
+        30,
+        36,
+        40,
+        154,
+        155,
+        156,
+        248,
+        252,
+        256,
+        251,
+        253,
+        254,
+        255,
+        48,
+        50,
+        53,
+        55,
+        169,
+        170,
+        264,
+        267,
+        269,
+        263,
+        265,
+        266,
+        268,
+        270,
+        57,
+        59,
+        66,
+        70
+      ],
+      "difficulty_composition": {
+        "mudah": 14,
+        "sedang": 14,
+        "sulit": 42
+      }
+    }
+  ],
+  "items": [
+    {
+      "id": 1,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 2,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 3,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 4,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 5,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 6,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 7,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 8,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 9,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 10,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 11,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 12,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 13,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 14,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 15,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 16,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 17,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 18,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 19,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 20,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 21,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 22,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 23,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 24,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 25,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 26,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 27,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 28,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 29,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 30,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 31,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 32,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 33,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 34,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 35,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 36,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 37,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 38,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 39,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 40,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 41,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 42,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 43,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 44,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 45,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 46,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 47,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 48,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 49,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 50,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 51,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 52,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 53,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 54,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 55,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 56,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 57,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 58,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 59,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 60,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 61,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 62,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 63,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 64,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 65,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 66,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 67,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 68,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 69,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 70,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 101,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 102,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 103,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 104,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 105,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 106,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 107,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 108,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 109,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 110,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 111,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 112,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 113,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 114,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 115,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 116,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 117,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 118,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 119,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 120,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 121,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 122,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 123,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 124,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 125,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 126,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 127,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 128,
+      "competency": "SOSIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 129,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 130,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 131,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 132,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 133,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 134,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 135,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 136,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 137,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 138,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 139,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 140,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 141,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 142,
+      "competency": "MANAJERIAL",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 143,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 144,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 145,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 146,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 147,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 148,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 149,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 150,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 151,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 152,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 153,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 154,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 155,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 156,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 157,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 158,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 159,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 160,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 161,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 162,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 163,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 164,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 165,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 166,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 167,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 168,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 169,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 170,
+      "competency": "SUPERVISI",
+      "difficulty": "mudah"
+    },
+    {
+      "id": 201,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 202,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 203,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 204,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 205,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 206,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 207,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 208,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 209,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 210,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 211,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 212,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 213,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 214,
+      "competency": "KEPRIBADIAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 215,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 216,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 217,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 218,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 219,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 220,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 221,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 222,
+      "competency": "SOSIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 223,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 224,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 225,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 226,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 227,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 228,
+      "competency": "SOSIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 229,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 230,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 231,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 232,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 233,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 234,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 235,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 236,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 237,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 238,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 239,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 240,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 241,
+      "competency": "MANAJERIAL",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 242,
+      "competency": "MANAJERIAL",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 243,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 244,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 245,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 246,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 247,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 248,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 249,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 250,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 251,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 252,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 253,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 254,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 255,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 256,
+      "competency": "KEWIRAUSAHAAN",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 257,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 258,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 259,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 260,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 261,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 262,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 263,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 264,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 265,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 266,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 267,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 268,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    },
+    {
+      "id": 269,
+      "competency": "SUPERVISI",
+      "difficulty": "sedang"
+    },
+    {
+      "id": 270,
+      "competency": "SUPERVISI",
+      "difficulty": "sulit"
+    }
+  ]
+}
