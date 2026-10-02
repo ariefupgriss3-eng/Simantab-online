@@ -1,4 +1,4 @@
-/* SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V1 */
+/* SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V2_STABLE_REINJECT */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -84,7 +84,7 @@ const pct=v=>Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:1});
 const fmtRead=s=>({SANGAT_SIAP:"Sangat Siap",SIAP:"Siap",PERLU_PENGUATAN:"Perlu Penguatan",PERLU_PENDAMPINGAN_INTENSIF:"Perlu Pendampingan Intensif"}[s]||s||"-");
 const shuffle=a=>{const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
 const api=async body=>{const {data,error}=await sb.functions.invoke("simantab-bcks-substansi",{body});if(error)throw new Error(data?.error||error.message||"Layanan BCKS bermasalah.");if(data?.error)throw new Error(data.error);return data};
-let eligibility=null,state=null,timer=null,observer=null;
+let eligibility=null,state=null,timer=null,observer=null,reinjectQueued=false;
 
 function style(){
  if($("bcksSubStyle"))return;
@@ -116,18 +116,29 @@ async function eligible(){
  eligibility=!error&&!!data&&!data.is_archived&&["SUBSTANSI","DIKLAT","SERTIFIKAT"].includes(data.workflow_stage)&&["TERVERIFIKASI","DISETUJUI"].includes(data.admin_status);
  return eligibility;
 }
+function placeCard(body,d){
+ const first=body.firstElementChild;
+ if(first)first.insertAdjacentElement("afterend",d);else body.prepend(d);
+}
+function scheduleInject(){
+ if(reinjectQueued)return;
+ reinjectQueued=true;
+ setTimeout(()=>{reinjectQueued=false;injectCard()},60);
+}
 async function injectCard(){
  const body=$("diklatKsBcksBody");if(!body||$("bcksSubstansiSimulatorCard"))return;
  const role=String(profile().role||"");
  if(LEADER.has(role)&&String(profile().account_channel||"").toUpperCase()==="DINAS"){
-  const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";d.innerHTML='<h3>🧠 Dashboard Kesiapan Seleksi Substansi</h3><div class="bsub-note">Monitoring agregat latihan CBT peserta BCKS. Nilai di modul ini merupakan indikator latihan SIMANTAB, bukan passing grade resmi Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenLeader">Lihat Peta Kesiapan</button></div>';body.appendChild(d);$("bcksOpenLeader").onclick=openLeader;return;
+  const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";d.innerHTML='<h3>🧠 Dashboard Kesiapan Seleksi Substansi</h3><div class="bsub-note">Monitoring agregat latihan CBT peserta BCKS. Nilai di modul ini merupakan indikator latihan SIMANTAB, bukan passing grade resmi Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenLeader">Lihat Peta Kesiapan</button></div>';placeCard(body,d);$("bcksOpenLeader").onclick=openLeader;return;
  }
  if(!(await eligible()))return;
- const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";d.innerHTML='<h3>🎯 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>70 soal • 120 menit • berbasis kasus.</b> Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif 10 kasus pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';body.appendChild(d);$("bcksOpenParticipant").onclick=openHome;
+ const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";d.innerHTML='<h3>🎯 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>70 soal • 120 menit • berbasis kasus.</b> Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif 10 kasus pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';placeCard(body,d);$("bcksOpenParticipant").onclick=openHome;
 }
 function installObserver(){
- const root=$("diklatKsBcksBody");if(!root||observer)return;
- observer=new MutationObserver(()=>setTimeout(injectCard,0));observer.observe(root,{childList:true});injectCard();
+ if(observer)return;
+ observer=new MutationObserver(()=>scheduleInject());
+ observer.observe(document.body,{childList:true,subtree:true});
+ scheduleInject();
 }
 async function loadAttempts(){
  const {data,error}=await sb.from("bcks_substansi_attempts").select("*").eq("user_id",profile().id).order("started_at",{ascending:false}).limit(12);if(error)throw error;return data||[];
@@ -263,5 +274,5 @@ async function openLeader(){
 
 style();
 for(const ms of [100,400,900,1800])setTimeout(()=>{installObserver();injectCard()},ms);
-window.__simantabBcksSubstansiSimulator={version:1,questions:70,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:2,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
