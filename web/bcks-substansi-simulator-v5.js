@@ -104,7 +104,7 @@ async function injectCard(){
    const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
    const status=access.is_open?"DIBUKA":"DITUTUP";
    const statusStyle=access.is_open?"color:#177245":"color:#a44528";
-   d.innerHTML='<h3>🧠 Dashboard Kesiapan Seleksi Substansi</h3><div class="bsub-note">Monitoring agregat latihan CBT peserta BCKS. Nilai di modul ini merupakan indikator latihan SIMANTAB, bukan passing grade resmi Kemendikdasmen.</div><div class="bsub-note" style="margin-top:8px"><b>Akses peserta KS: <span style="'+statusStyle+'">'+status+'</span></b></div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenLeader">Lihat Peta Kesiapan</button>'+(access.can_manage?'<button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccessCard">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button>':'')+'</div>';
+   d.innerHTML='<h3>🧠 Dashboard Simulasi dan Thinking Culture</h3><div class="bsub-note">Monitoring agregat Simulasi dan Thinking Culture peserta BCKS. Nilai di modul ini merupakan indikator latihan SIMANTAB, bukan passing grade resmi Kemendikdasmen.</div><div class="bsub-note" style="margin-top:8px">'+sessionNote+'</div><div class="bsub-note" style="margin-top:8px"><b>Akses peserta KS: <span style="'+statusStyle+'">'+status+'</span></b></div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenLeader">Lihat Peta Kesiapan</button>'+(access.can_manage?'<button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccessCard">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button>':'')+'</div>';
    placeCard(body,d);
    $("bcksOpenLeader").onclick=openLeader;
    if(access.can_manage&&$("bcksToggleAccessCard"))$("bcksToggleAccessCard").onclick=async()=>{try{await setAccessFromKabid(!access.is_open)}catch(e){alert(e.message||e)}};
@@ -143,7 +143,7 @@ async function openHome(){
  try{
   const access=await accessStatus();
   if(!access.is_open){
-   modal("Simulasi dan Thinking Culture BCKS",'<div class="bsub-card"><h3>🔒 Akses Belum Dibuka</h3><div class="bsub-note">Simulasi dan Thinking Culture masih dinonaktifkan. Akses akan tersedia setelah Kabid membuka modul pada waktu yang ditetapkan.</div></div>');
+   modal("Simulasi dan Thinking Culture BCKS",'<div class="bsub-card"><h3>🔒 Akses Belum Dibuka</h3><div class="bsub-note">Simulasi dan Thinking Culture masih dinonaktifkan. Akses tersedia otomatis pada 3, 7, dan 10 Oktober 2026 pukul 09.00–15.00 WIB, kecuali ditutup Kabid.</div></div>');
    return;
   }
   const attempts=await loadAttempts(),now=Date.now();
@@ -268,7 +268,7 @@ async function openReview(id){
 }
 async function openLeader(){
  try{
-  modal("Peta Kesiapan BCKS • Seleksi Substansi","<div class=\"bsub-card\">Memuat agregat…</div>");
+  modal("Peta Kesiapan • Simulasi dan Thinking Culture","<div class=\"bsub-card\">Memuat agregat…</div>");
   const [d,access]=await Promise.all([api({action:"kabid_summary"}),accessStatus()]);
   $("bcksSubModalBody").innerHTML=`<div class="bsub-home">
    <div class="bsub-card bsub-wide" style="margin:0;border-color:${access.is_open?"#9dd3b4":"#e4b5a8"}"><h3>${access.is_open?"🟢 Akses Simulasi DIBUKA":"🔒 Akses Simulasi DITUTUP"}</h3><div class="bsub-note">Peserta KS ${access.is_open?"dapat memulai Simulasi dan Thinking Culture dan AI Coach.":"belum dapat memulai Simulasi dan Thinking Culture maupun AI Coach."}</div>${access.can_manage?'<div class="bsub-actions"><button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccess">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button></div>':''}</div>
