@@ -21,6 +21,23 @@
     return data;
   };
 
+  const downloadResult=async(attemptId,format)=>{
+    try{
+      const {data,error}=await sb.functions.invoke("simantab-bcks-result-export",{body:{attempt_id:attemptId,format}});
+      if(error)throw new Error(data?.error||error.message||"Gagal membuat dokumen.");
+      if(data?.error)throw new Error(data.error);
+      const bin=atob(data.base64||"");
+      const bytes=new Uint8Array(bin.length);
+      for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+      const blob=new Blob([bytes],{type:data.mime||"application/octet-stream"});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement("a");
+      a.href=url;a.download=data.filename||("Hasil-Simulasi-BCKS."+format);
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),1500);
+    }catch(e){alert(e.message||e)}
+  };
+
   function style(){
     if(document.getElementById("bcksIndStyle"))return;
     const s=document.createElement("style");
@@ -75,10 +92,13 @@
       "<td>"+readinessCell(r,"MANAJERIAL")+"</td>"+
       "<td>"+readinessCell(r,"KEWIRAUSAHAAN")+"</td>"+
       "<td>"+readinessCell(r,"SUPERVISI")+"</td>"+
+      "<td>"+(r.attempted?"<button class='bcki-btn' style='margin:0;padding:6px 8px;font-size:10px' data-bcki-docx='"+esc(r.attempt_id)+"'>DOCX</button> <button class='bcki-btn' style='margin:0;padding:6px 8px;font-size:10px' data-bcki-pdf='"+esc(r.attempt_id)+"'>PDF</button>":"-")+"</td>"+
       "</tr>"
-    ).join(""):"<tr><td colspan='11' class='bcki-note'>Tidak ada peserta yang sesuai pencarian/filter.</td></tr>";
+    ).join(""):"<tr><td colspan='12' class='bcki-note'>Tidak ada peserta yang sesuai pencarian/filter.</td></tr>";
     const count=document.getElementById("bckiCount");
     if(count)count.textContent=filtered.length+" peserta";
+    document.querySelectorAll("[data-bcki-docx]").forEach(b=>b.onclick=()=>downloadResult(b.dataset.bckiDocx,"docx"));
+    document.querySelectorAll("[data-bcki-pdf]").forEach(b=>b.onclick=()=>downloadResult(b.dataset.bckiPdf,"pdf"));
   }
 
   async function openDashboard(){
@@ -106,7 +126,7 @@
         "<input id='bckiSearch' type='search' placeholder='Cari nama / unit kerja…' style='flex:1;min-width:210px;padding:10px;border:1px solid #cbd8e3;border-radius:10px'>"+
         "<select id='bckiFilter' style='padding:10px;border:1px solid #cbd8e3;border-radius:10px;background:#fff'><option value='ALL'>Semua</option><option value='DONE'>Sudah Simulasi</option><option value='PENDING'>Belum Simulasi</option></select>"+
         "<span id='bckiCount' class='bcki-note' style='align-self:center;font-weight:850'></span></div>"+
-        "<div style='overflow:auto;max-height:470px'><table class='bcki-table' style='min-width:1080px'><thead style='position:sticky;top:0;background:#fff'><tr><th>No</th><th>Peserta / Unit</th><th>Jenjang</th><th>Nilai</th><th>Status</th><th>Prioritas</th><th>Kep</th><th>Sos</th><th>Man</th><th>Kew</th><th>Sup</th></tr></thead><tbody id='bckiRows'></tbody></table></div>"+
+        "<div style='overflow:auto;max-height:470px'><table class='bcki-table' style='min-width:1080px'><thead style='position:sticky;top:0;background:#fff'><tr><th>No</th><th>Peserta / Unit</th><th>Jenjang</th><th>Nilai</th><th>Status</th><th>Prioritas</th><th>Kep</th><th>Sos</th><th>Man</th><th>Kew</th><th>Sup</th><th>Unduh</th></tr></thead><tbody id='bckiRows'></tbody></table></div>"+
         "<div class='bcki-note' style='margin-top:8px'>Kep = Kepribadian • Sos = Sosial • Man = Manajerial • Kew = Kewirausahaan • Sup = Supervisi. Hasil merupakan indikator latihan SIMANTAB, bukan passing grade resmi.</div>"+
         "</div></div>";
       renderRows(rows);
@@ -150,5 +170,5 @@
   const observer=new MutationObserver(()=>setTimeout(inject,80));
   observer.observe(document.body,{childList:true,subtree:true});
   for(const ms of [150,500,1200,2200])setTimeout(inject,ms);
-  window.__simantabBcksIndividualReadiness={version:1,roles:[...ALLOWED]};
+  window.__simantabBcksIndividualReadiness={version:2,resultExport:true,roles:[...ALLOWED]};
 })();

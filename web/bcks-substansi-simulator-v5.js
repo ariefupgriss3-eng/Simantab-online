@@ -14,6 +14,22 @@ const pct=v=>Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:1});
 const fmtRead=s=>({SANGAT_SIAP:"Sangat Siap",SIAP:"Siap",PERLU_PENGUATAN:"Perlu Penguatan",PERLU_PENDAMPINGAN_INTENSIF:"Perlu Pendampingan Intensif"}[s]||s||"-");
 const shuffle=a=>{const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
 const api=async body=>{const {data,error}=await sb.functions.invoke("simantab-bcks-substansi",{body});if(error)throw new Error(data?.error||error.message||"Layanan BCKS bermasalah.");if(data?.error)throw new Error(data.error);return data};
+const downloadBcksResult=async(attemptId,format)=>{
+ try{
+  const {data,error}=await sb.functions.invoke("simantab-bcks-result-export",{body:{attempt_id:attemptId,format}});
+  if(error)throw new Error(data?.error||error.message||"Gagal membuat dokumen.");
+  if(data?.error)throw new Error(data.error);
+  const bin=atob(data.base64||"");
+  const bytes=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+  const blob=new Blob([bytes],{type:data.mime||"application/octet-stream"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=data.filename||("Hasil-Simulasi-BCKS."+format);
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+ }catch(e){alert(e.message||e)}
+};
 const accessStatus=async()=>api({action:"access_status"});
 let eligibility=null,state=null,timer=null,observer=null,reinjectQueued=false,injectInFlight=false;
 
@@ -141,12 +157,14 @@ async function openHome(){
    ${active?'<button class="bsub-btn" id="bcksResume">Lanjutkan Sesi Aktif</button>':'<button class="bsub-btn" id="bcksStartSim">Mulai Simulasi 70 Soal</button>'}
    ${lastSim?'<button class="bsub-btn warn" id="bcksStartCoach">AI Coach • 10 Kasus</button>':''}
    </div></div>
-   <div class="bsub-card bsub-wide" style="margin:0"><h3>Riwayat</h3>${submitted.length?'<div style="overflow:auto"><table class="bsub-table"><thead><tr><th>Jenis</th><th>Nilai</th><th>Status Latihan</th><th>Prioritas</th><th></th></tr></thead><tbody>'+submitted.map(a=>`<tr><td>${a.mode}</td><td><b>${pct(a.score)}</b></td><td>${esc(fmtRead(a.readiness_label))}</td><td>${esc(a.priority_competency||"-")}</td><td><button class="bsub-btn soft" data-review="${a.id}">Bedah Hasil</button></td></tr>`).join("")+'</tbody></table></div>':'<div class="bsub-note">Belum ada simulasi selesai.</div>'}</div>
+   <div class="bsub-card bsub-wide" style="margin:0"><h3>Riwayat</h3>${submitted.length?'<div style="overflow:auto"><table class="bsub-table"><thead><tr><th>Jenis</th><th>Nilai</th><th>Status Latihan</th><th>Prioritas</th><th></th></tr></thead><tbody>'+submitted.map(a=>`<tr><td>${a.mode}</td><td><b>${pct(a.score)}</b></td><td>${esc(fmtRead(a.readiness_label))}</td><td>${esc(a.priority_competency||"-")}</td><td><div class="bsub-actions" style="margin:0">${a.mode==="SIMULASI"?`<button class="bsub-btn soft" data-docx="${a.id}">DOCX</button><button class="bsub-btn soft" data-pdf="${a.id}">PDF</button>`:""}<button class="bsub-btn soft" data-review="${a.id}">Bedah Hasil</button></div></td></tr>`).join("")+'</tbody></table></div>':'<div class="bsub-note">Belum ada simulasi selesai.</div>'}</div>
    <div class="bsub-card bsub-wide" style="margin:0;background:#fffdf2;border-color:#ead9a2"><b>Indikator latihan internal</b><div class="bsub-note">90–100 Sangat Siap • 80–89 Siap • 70–79 Perlu Penguatan • &lt;70 Perlu Pendampingan Intensif. Kategori ini bukan batas kelulusan resmi.</div></div>
   </div>`);
   if(active)$("bcksResume").onclick=()=>resumeAttempt(active);else $("bcksStartSim").onclick=()=>startAttempt("SIMULASI");
   if(lastSim)$("bcksStartCoach").onclick=()=>startAttempt("COACH",lastSim.priority_competency||"MANAJERIAL");
   document.querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>openReview(b.dataset.review));
+  document.querySelectorAll("[data-docx]").forEach(b=>b.onclick=()=>downloadBcksResult(b.dataset.docx,"docx"));
+  document.querySelectorAll("[data-pdf]").forEach(b=>b.onclick=()=>downloadBcksResult(b.dataset.pdf,"pdf"));
  }catch(e){alert(e.message||e)}
 }
 async function startAttempt(mode,target=null){
@@ -229,8 +247,10 @@ async function finishAttempt(auto=false){
   $("bcksSubModalBody").innerHTML=`<div class="bsub-home"><div class="bsub-stat"><div class="bsub-label">Nilai latihan</div><div class="bsub-numstat">${pct(att.score)}</div></div><div class="bsub-stat"><div class="bsub-label">Benar</div><div class="bsub-numstat">${att.correct_count}/${att.total_questions}</div></div><div class="bsub-stat"><div class="bsub-label">Status</div><div style="font-size:17px;font-weight:950;color:#0f3f76;margin-top:8px">${esc(fmtRead(att.readiness_label))}</div></div><div class="bsub-stat"><div class="bsub-label">Prioritas</div><div style="font-size:17px;font-weight:950;color:#0f3f76;margin-top:8px">${esc(coach.priority_label||att.priority_competency||"-")}</div></div>
   <div class="bsub-card bsub-half" style="margin:0"><h3>Peta Kompetensi</h3><table class="bsub-table"><tbody>${scores.map(s=>`<tr><td>${esc(s.competency)}</td><td><b>${pct(s.percentage)}%</b></td><td>${s.correct_count}/${s.total_count}</td></tr>`).join("")}</tbody></table></div>
   <div class="bsub-card bsub-half" style="margin:0"><h3>🧠 AI Coach</h3><div class="bsub-note">${esc(coach.diagnosis||"Pertahankan konsistensi pengambilan keputusan profesional.")}</div>${coach.next_target?'<div class="bsub-actions"><button class="bsub-btn warn" id="bsubCoachNow">Latihan 10 Kasus '+esc(coach.priority_label||coach.next_target)+'</button></div>':""}</div>
-  <div class="bsub-card bsub-wide" style="margin:0"><b>Catatan</b><div class="bsub-note">${esc(data.note||"Indikator latihan SIMANTAB, bukan passing grade resmi.")}</div><div class="bsub-actions"><button class="bsub-btn soft" id="bsubReviewNow">Mengapa Saya Salah?</button><button class="bsub-btn" id="bsubHomeNow">Kembali ke Beranda Latihan</button></div></div></div>`;
+  <div class="bsub-card bsub-wide" style="margin:0"><b>Catatan</b><div class="bsub-note">${esc(data.note||"Indikator latihan SIMANTAB, bukan passing grade resmi.")}</div><div class="bsub-actions"><button class="bsub-btn soft" id="bsubDownloadDocx">Unduh DOCX</button><button class="bsub-btn soft" id="bsubDownloadPdf">Unduh PDF</button><button class="bsub-btn soft" id="bsubReviewNow">Mengapa Saya Salah?</button><button class="bsub-btn" id="bsubHomeNow">Kembali ke Beranda Latihan</button></div></div></div>`;
   if(coach.next_target)$("bsubCoachNow").onclick=()=>startAttempt("COACH",coach.next_target);
+  if($("bsubDownloadDocx"))$("bsubDownloadDocx").onclick=()=>downloadBcksResult(att.id,"docx");
+  if($("bsubDownloadPdf"))$("bsubDownloadPdf").onclick=()=>downloadBcksResult(att.id,"pdf");
   $("bsubReviewNow").onclick=()=>openReview(att.id);$("bsubHomeNow").onclick=()=>openHome();
  }catch(e){alert(e.message||e)}
 }
