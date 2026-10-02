@@ -15,7 +15,7 @@ const fmtRead=s=>({SANGAT_SIAP:"Sangat Siap",SIAP:"Siap",PERLU_PENGUATAN:"Perlu 
 const shuffle=a=>{const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
 const api=async body=>{const {data,error}=await sb.functions.invoke("simantab-bcks-substansi",{body});if(error)throw new Error(data?.error||error.message||"Layanan BCKS bermasalah.");if(data?.error)throw new Error(data.error);return data};
 const accessStatus=async()=>api({action:"access_status"});
-let eligibility=null,state=null,timer=null,observer=null,reinjectQueued=false;
+let eligibility=null,state=null,timer=null,observer=null,reinjectQueued=false,injectInFlight=false;
 
 function style(){
  if($("bcksSubStyle"))return;
@@ -65,29 +65,52 @@ async function setAccessFromKabid(open){
  return result;
 }
 async function injectCard(){
- const body=$("diklatKsBcksBody");if(!body||$("bcksSubstansiSimulatorCard"))return;
- const role=String(profile().role||"");
- const isDinas=String(profile().account_channel||"").toUpperCase()==="DINAS";
- if(LEADER.has(role)&&isDinas){
-  const access=await accessStatus();
-  const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
-  const status=access.is_open?"DIBUKA":"DITUTUP";
-  const statusStyle=access.is_open?"color:#177245":"color:#a44528";
-  d.innerHTML='<h3>🧠 Dashboard Kesiapan Seleksi Substansi</h3><div class="bsub-note">Monitoring agregat latihan CBT peserta BCKS. Nilai di modul ini merupakan indikator latihan SIMANTAB, bukan passing grade resmi Kemendikdasmen.</div><div class="bsub-note" style="margin-top:8px"><b>Akses peserta KS: <span style="'+statusStyle+'">'+status+'</span></b></div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenLeader">Lihat Peta Kesiapan</button>'+(access.can_manage?'<button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccessCard">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button>':'')+'</div>';
-  placeCard(body,d);
-  $("bcksOpenLeader").onclick=openLeader;
-  if(access.can_manage&&$("bcksToggleAccessCard"))$("bcksToggleAccessCard").onclick=async()=>{try{await setAccessFromKabid(!access.is_open)}catch(e){alert(e.message||e)}};
+ if(injectInFlight)return;
+ const body=$("diklatKsBcksBody");
+ if(!body)return;
+
+ const existing=[...document.querySelectorAll("#bcksSubstansiSimulatorCard")];
+ if(existing.length){
+  existing.slice(1).forEach(el=>el.remove());
   return;
  }
- if(!(await eligible()))return;
- const access=await accessStatus();
- const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
- if(!access.is_open){
-  d.innerHTML='<h3>🔒 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>Akses simulasi belum dibuka oleh Kabid.</b><br>Modul akan aktif pada waktu yang ditetapkan Kabid. Peserta belum dapat memulai simulasi atau AI Coach.</div><div class="bsub-actions"><button class="bsub-btn" disabled>Belum Dibuka Kabid</button></div>';
-  placeCard(body,d);return;
+
+ injectInFlight=true;
+ try{
+  const role=String(profile().role||"");
+  const isDinas=String(profile().account_channel||"").toUpperCase()==="DINAS";
+
+  if(LEADER.has(role)&&isDinas){
+   const access=await accessStatus();
+   if(document.querySelector("#bcksSubstansiSimulatorCard"))return;
+   const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
+   const status=access.is_open?"DIBUKA":"DITUTUP";
+   const statusStyle=access.is_open?"color:#177245":"color:#a44528";
+   d.innerHTML='<h3>🧠 Dashboard Kesiapan Seleksi Substansi</h3><div class="bsub-note">Monitoring agregat latihan CBT peserta BCKS. Nilai di modul ini merupakan indikator latihan SIMANTAB, bukan passing grade resmi Kemendikdasmen.</div><div class="bsub-note" style="margin-top:8px"><b>Akses peserta KS: <span style="'+statusStyle+'">'+status+'</span></b></div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenLeader">Lihat Peta Kesiapan</button>'+(access.can_manage?'<button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccessCard">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button>':'')+'</div>';
+   placeCard(body,d);
+   $("bcksOpenLeader").onclick=openLeader;
+   if(access.can_manage&&$("bcksToggleAccessCard"))$("bcksToggleAccessCard").onclick=async()=>{try{await setAccessFromKabid(!access.is_open)}catch(e){alert(e.message||e)}};
+   return;
+  }
+
+  if(!(await eligible()))return;
+  const access=await accessStatus();
+  if(document.querySelector("#bcksSubstansiSimulatorCard"))return;
+
+  const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
+  if(!access.is_open){
+   d.innerHTML='<h3>🔒 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>Akses simulasi belum dibuka oleh Kabid.</b><br>Modul akan aktif pada waktu yang ditetapkan Kabid. Peserta belum dapat memulai simulasi atau AI Coach.</div><div class="bsub-actions"><button class="bsub-btn" disabled>Belum Dibuka Kabid</button></div>';
+   placeCard(body,d);return;
+  }
+
+  d.innerHTML='<h3>🎯 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>70 soal • 120 menit • SJT berbasis kasus kompleks.</b> Empat opsi dirancang sama-sama masuk akal; pilih tindakan yang paling tepat. Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif 10 kasus pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';
+  placeCard(body,d);
+  $("bcksOpenParticipant").onclick=openHome;
+ } finally {
+  injectInFlight=false;
+  const dup=[...document.querySelectorAll("#bcksSubstansiSimulatorCard")];
+  dup.slice(1).forEach(el=>el.remove());
  }
- d.innerHTML='<h3>🎯 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>70 soal • 120 menit • SJT berbasis kasus kompleks.</b> Empat opsi dirancang sama-sama masuk akal; pilih tindakan yang paling tepat. Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif 10 kasus pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';
- placeCard(body,d);$("bcksOpenParticipant").onclick=openHome;
 }
 function installObserver(){
  if(observer)return;
@@ -238,5 +261,5 @@ async function openLeader(){
 
 style();
 for(const ms of [100,400,900,1800])setTimeout(()=>{installObserver();injectCard()},ms);
-window.__simantabBcksSubstansiSimulator={version:5,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:25,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:5.1,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:25,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
