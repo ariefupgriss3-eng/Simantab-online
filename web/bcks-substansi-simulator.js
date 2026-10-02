@@ -1,4 +1,4 @@
-/* SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V4_HIGH_DISCRIMINATION */
+/* SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -13,7 +13,7 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const pct=v=>Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:1});
 const fmtRead=s=>({SANGAT_SIAP:"Sangat Siap",SIAP:"Siap",PERLU_PENGUATAN:"Perlu Penguatan",PERLU_PENDAMPINGAN_INTENSIF:"Perlu Pendampingan Intensif"}[s]||s||"-");
 const shuffle=a=>{const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
-const api=async body=>{const {data,error}=await sb.functions.invoke("simantab-bcks-substansi",{body});if(error)throw new Error(data?.error||error.message||"Layanan BCKS bermasalah.");if(data?.error)throw new Error(data.error);return data};
+const api=async body=>{const {data,error}=await sb.functions.invoke("simantab-bcks-substansi",{body});if(error)throw new Error(data?.error||error.message||"Layanan BCKS bermasalah.");if(data?.error)throw new Error(data.error);return data};\nconst accessStatus=async()=>api({action:"access_status"});
 let eligibility=null,state=null,timer=null,observer=null,reinjectQueued=false;
 
 function style(){
@@ -55,14 +55,38 @@ function scheduleInject(){
  reinjectQueued=true;
  setTimeout(()=>{reinjectQueued=false;injectCard()},60);
 }
+async function setAccessFromKabid(open){
+ const label=open?"membuka":"menutup";
+ if(!confirm("Yakin ingin "+label+" akses Simulasi Seleksi Substansi untuk peserta KS?"))return null;
+ const result=await api({action:"set_access",open});
+ $("bcksSubstansiSimulatorCard")?.remove();
+ await injectCard();
+ return result;
+}
 async function injectCard(){
  const body=$("diklatKsBcksBody");if(!body||$("bcksSubstansiSimulatorCard"))return;
  const role=String(profile().role||"");
- if(LEADER.has(role)&&String(profile().account_channel||"").toUpperCase()==="DINAS"){
-  const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";d.innerHTML='<h3>🧠 Dashboard Kesiapan Seleksi Substansi</h3><div class="bsub-note">Monitoring agregat latihan CBT peserta BCKS. Nilai di modul ini merupakan indikator latihan SIMANTAB, bukan passing grade resmi Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenLeader">Lihat Peta Kesiapan</button></div>';placeCard(body,d);$("bcksOpenLeader").onclick=openLeader;return;
+ const isDinas=String(profile().account_channel||"").toUpperCase()==="DINAS";
+ if(LEADER.has(role)&&isDinas){
+  const access=await accessStatus();
+  const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
+  const status=access.is_open?"DIBUKA":"DITUTUP";
+  const statusStyle=access.is_open?"color:#177245":"color:#a44528";
+  d.innerHTML='<h3>🧠 Dashboard Kesiapan Seleksi Substansi</h3><div class="bsub-note">Monitoring agregat latihan CBT peserta BCKS. Nilai di modul ini merupakan indikator latihan SIMANTAB, bukan passing grade resmi Kemendikdasmen.</div><div class="bsub-note" style="margin-top:8px"><b>Akses peserta KS: <span style="'+statusStyle+'">'+status+'</span></b></div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenLeader">Lihat Peta Kesiapan</button>'+(access.can_manage?'<button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccessCard">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button>':'')+'</div>';
+  placeCard(body,d);
+  $("bcksOpenLeader").onclick=openLeader;
+  if(access.can_manage&&$("bcksToggleAccessCard"))$("bcksToggleAccessCard").onclick=async()=>{try{await setAccessFromKabid(!access.is_open)}catch(e){alert(e.message||e)}};
+  return;
  }
  if(!(await eligible()))return;
- const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";d.innerHTML='<h3>🎯 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>70 soal • 120 menit • SJT berbasis kasus kompleks.</b> Empat opsi dirancang sama-sama masuk akal; pilih tindakan yang paling tepat. Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif 10 kasus pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';placeCard(body,d);$("bcksOpenParticipant").onclick=openHome;
+ const access=await accessStatus();
+ const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
+ if(!access.is_open){
+  d.innerHTML='<h3>🔒 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>Akses simulasi belum dibuka oleh Kabid.</b><br>Modul akan aktif pada waktu yang ditetapkan Kabid. Peserta belum dapat memulai simulasi atau AI Coach.</div><div class="bsub-actions"><button class="bsub-btn" disabled>Belum Dibuka Kabid</button></div>';
+  placeCard(body,d);return;
+ }
+ d.innerHTML='<h3>🎯 Simulasi Seleksi Substansi & AI Coach</h3><div class="bsub-note"><b>70 soal • 120 menit • SJT berbasis kasus kompleks.</b> Empat opsi dirancang sama-sama masuk akal; pilih tindakan yang paling tepat. Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif 10 kasus pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';
+ placeCard(body,d);$("bcksOpenParticipant").onclick=openHome;
 }
 function installObserver(){
  if(observer)return;
@@ -75,6 +99,11 @@ async function loadAttempts(){
 }
 async function openHome(){
  try{
+  const access=await accessStatus();
+  if(!access.is_open){
+   modal("Simulasi Seleksi Substansi BCKS",'<div class="bsub-card"><h3>🔒 Akses Belum Dibuka</h3><div class="bsub-note">Simulasi Seleksi Substansi masih dinonaktifkan. Akses akan tersedia setelah Kabid membuka modul pada waktu yang ditetapkan.</div></div>');
+   return;
+  }
   const attempts=await loadAttempts(),now=Date.now();
   const active=attempts.find(a=>a.status==="IN_PROGRESS"&&new Date(a.expires_at).getTime()>now);
   const lastSim=attempts.find(a=>a.mode==="SIMULASI"&&a.status==="SUBMITTED");
@@ -98,6 +127,8 @@ async function openHome(){
 }
 async function startAttempt(mode,target=null){
  try{
+  const access=await accessStatus();
+  if(!access.is_open){alert("Akses Simulasi Seleksi Substansi belum dibuka oleh Kabid.");return}
   const isSim=mode==="SIMULASI",mins=isSim?120:30,total=isSim?70:10;
   let qnos=isSim?shuffle(Q.map(x=>x[0])):shuffle(Q.filter(x=>x[1]===target).map(x=>x[0])).slice(0,10);
   const payload={user_id:profile().id,mode,target_competency:isSim?null:target,expires_at:new Date(Date.now()+mins*60000).toISOString(),total_questions:total};
@@ -189,8 +220,9 @@ async function openReview(id){
 async function openLeader(){
  try{
   modal("Peta Kesiapan BCKS • Seleksi Substansi","<div class=\"bsub-card\">Memuat agregat…</div>");
-  const d=await api({action:"kabid_summary"});
+  const [d,access]=await Promise.all([api({action:"kabid_summary"}),accessStatus()]);
   $("bcksSubModalBody").innerHTML=`<div class="bsub-home">
+   <div class="bsub-card bsub-wide" style="margin:0;border-color:${access.is_open?"#9dd3b4":"#e4b5a8"}"><h3>${access.is_open?"🟢 Akses Simulasi DIBUKA":"🔒 Akses Simulasi DITUTUP"}</h3><div class="bsub-note">Peserta KS ${access.is_open?"dapat memulai Simulasi Seleksi Substansi dan AI Coach.":"belum dapat memulai Simulasi Seleksi Substansi maupun AI Coach."}</div>${access.can_manage?'<div class="bsub-actions"><button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccess">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button></div>':''}</div>
    <div class="bsub-stat"><div class="bsub-label">Peserta aktif</div><div class="bsub-numstat">${d.participants}</div></div>
    <div class="bsub-stat"><div class="bsub-label">Sudah simulasi</div><div class="bsub-numstat">${d.attempted}</div></div>
    <div class="bsub-stat"><div class="bsub-label">Belum</div><div class="bsub-numstat">${d.not_attempted}</div></div>
@@ -199,10 +231,11 @@ async function openLeader(){
    <div class="bsub-card bsub-half" style="margin:0"><h3>Peta 5 Kompetensi</h3><table class="bsub-table"><thead><tr><th>Kompetensi</th><th>Rerata</th><th>&lt;70</th></tr></thead><tbody>${(d.competencies||[]).map(x=>`<tr><td>${esc(x.label)}</td><td><b>${pct(x.average)}%</b></td><td>${x.below70}</td></tr>`).join("")}</tbody></table></div>
    <div class="bsub-card bsub-wide" style="margin:0"><b>Interpretasi</b><div class="bsub-note">Ringkasan memakai simulasi terakhir setiap peserta. Gunakan untuk menentukan materi pembekalan; jangan digunakan sebagai keputusan lulus/tidak lulus resmi.</div></div>
   </div>`;
+  if(access.can_manage&&$("bcksToggleAccess"))$("bcksToggleAccess").onclick=async()=>{try{const changed=await setAccessFromKabid(!access.is_open);if(changed)await openLeader()}catch(e){alert(e.message||e)}};
  }catch(e){alert(e.message||e);closeModal()}
 }
 
 style();
 for(const ms of [100,400,900,1800])setTimeout(()=>{installObserver();injectCard()},ms);
-window.__simantabBcksSubstansiSimulator={version:4,advancedSjt:true,highDiscriminationItems:25,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:5,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:25,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();

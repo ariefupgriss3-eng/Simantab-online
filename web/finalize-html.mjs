@@ -208,7 +208,7 @@ await fs.writeFile(path.join(staticDir,performanceAchievementFile),performanceAc
 
 const bcksSubstansiSimulatorFile='bcks-substansi-simulator.js';
 const bcksSubstansiSimulatorCode=await fs.readFile(new URL(`./${bcksSubstansiSimulatorFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V4_HIGH_DISCRIMINATION/.test(bcksSubstansiSimulatorCode))throw new Error('BCKS substansi simulator v4 tidak valid.');
+if(!/SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE/.test(bcksSubstansiSimulatorCode))throw new Error('BCKS substansi simulator v5 tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksSubstansiSimulatorFile),bcksSubstansiSimulatorCode);
 
 const modules=[
@@ -272,7 +272,7 @@ const modules=[
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],
  ['performance-achievement.js',4],
- ['bcks-substansi-simulator.js',4]
+ ['bcks-substansi-simulator.js',5]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
