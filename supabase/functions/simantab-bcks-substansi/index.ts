@@ -66,6 +66,49 @@ Deno.serve(async(req)=>{
   const leaderRoles=new Set(["SUPER_ADMIN","KEPALA_DINAS","SEKRETARIS_DINAS","KABID"]);
   const isLeader=isDinas&&leaderRoles.has(String(profile.role||""));
 
+  const isKabid=isDinas&&String(profile.role||"")==="KABID";
+
+  if(action==="access_status"){
+    const {data:gate,error:ge}=await admin.from("bcks_substansi_access_control")
+      .select("is_open,opened_at,opened_by,updated_at,note")
+      .eq("singleton_key","GLOBAL").maybeSingle();
+    if(ge) throw ge;
+    return json({
+      ok:true,
+      is_open:!!gate?.is_open,
+      opened_at:gate?.opened_at||null,
+      updated_at:gate?.updated_at||null,
+      can_manage:isKabid,
+      note:gate?.note||null
+    });
+  }
+
+  if(action==="set_access"){
+    if(!isKabid) return json({error:"Hanya Kabid yang dapat membuka atau menutup akses simulasi Seleksi Substansi."},403);
+    const open=body?.open===true;
+    const nowIso=new Date().toISOString();
+    const payload:any={
+      is_open:open,
+      updated_by:user.id,
+      updated_at:nowIso,
+      note:open
+        ?"Akses simulasi Seleksi Substansi BCKS dibuka oleh Kabid."
+        :"Akses simulasi Seleksi Substansi BCKS ditutup oleh Kabid."
+    };
+    if(open){
+      payload.opened_by=user.id;
+      payload.opened_at=nowIso;
+    }else{
+      payload.opened_by=null;
+      payload.opened_at=null;
+    }
+    const {data:gate,error:ge}=await admin.from("bcks_substansi_access_control")
+      .update(payload).eq("singleton_key","GLOBAL")
+      .select("is_open,opened_at,updated_at,note").single();
+    if(ge) throw ge;
+    return json({ok:true,is_open:!!gate.is_open,opened_at:gate.opened_at,updated_at:gate.updated_at,note:gate.note,can_manage:true});
+  }
+
   if(action==="finish"){
     const attemptId=String(body?.attempt_id||"").trim();
     if(!attemptId) return json({error:"attempt_id wajib."},400);
