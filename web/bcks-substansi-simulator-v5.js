@@ -180,23 +180,28 @@ async function openHome(){
    modal("Simulasi dan Thinking Culture BCKS",'<div class="bsub-card"><h3>🔒 Akses Belum Dibuka</h3><div class="bsub-note">Simulasi dan Thinking Culture masih dinonaktifkan. Akses tersedia otomatis pada 3, 7, dan 10 Oktober 2026 pukul 09.00–15.00 WIB, kecuali ditutup Kabid.</div></div>');
    return;
   }
-  const attempts=await loadAttempts(),now=Date.now();
-  const active=attempts.find(a=>a.status==="IN_PROGRESS"&&new Date(a.expires_at).getTime()>now);
-  const lastSim=attempts.find(a=>a.mode==="SIMULASI"&&a.status==="SUBMITTED");
-  const submitted=attempts.filter(a=>a.status==="SUBMITTED").slice(0,6);
+   const attempts=await loadAttempts(),now=Date.now(),sessionLevel=Number(access.session?.level||0);
+   const {data:scheduledRows,error:scheduledErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("*").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",sessionLevel).order("started_at",{ascending:false}));
+   if(scheduledErr)throw scheduledErr;
+   const scheduledAttempt=(scheduledRows||[])[0]||null;
+   const active=scheduledAttempt?.status==="IN_PROGRESS"&&new Date(scheduledAttempt.expires_at).getTime()>now?scheduledAttempt:null;
+   const scheduledUsed=!!scheduledAttempt&&!active;
+   const lastSim=attempts.find(a=>a.mode==="SIMULASI"&&a.status==="SUBMITTED");
+   const submitted=attempts.filter(a=>a.status==="SUBMITTED").slice(0,6);
   modal("Simulasi dan Thinking Culture BCKS",`${access.is_test?'<div class="bsub-card"><b>UJI COBA KHUSUS AKUN ANDA</b><div class="bsub-note">Data sesi ditandai sebagai uji coba dan akan dibersihkan setelah pengujian selesai.</div></div>':""}<div class="bsub-card">${sessionNote}</div><div class="bsub-home">
    <div class="bsub-stat"><div class="bsub-label">Format</div><div class="bsub-numstat">${access.session?.questions?.length||70}</div><div class="bsub-note">soal kasus</div></div>
    <div class="bsub-stat"><div class="bsub-label">Durasi</div><div class="bsub-numstat">120</div><div class="bsub-note">menit</div></div>
    <div class="bsub-stat"><div class="bsub-label">Simulasi terakhir</div><div class="bsub-numstat">${lastSim?pct(lastSim.score):"-"}</div><div class="bsub-note">${lastSim?fmtRead(lastSim.readiness_label):"Belum ada"}</div></div>
    <div class="bsub-stat"><div class="bsub-label">Prioritas</div><div class="bsub-numstat" style="font-size:17px">${esc(lastSim?.priority_competency||"-")}</div><div class="bsub-note">hasil latihan terakhir</div></div>
    <div class="bsub-card bsub-wide" style="margin:0"><h3>Mulai / Lanjutkan Latihan</h3><div class="bsub-note">Kunci jawaban tidak disimpan di browser dan baru dibuka sesudah sesi dikirim.</div><div class="bsub-actions">
-   ${active?'<button class="bsub-btn" id="bcksResume">Lanjutkan Sesi Aktif</button>':'<button class="bsub-btn" id="bcksStartSim">Mulai Sesi Terjadwal</button>'}
-   ${lastSim?'<button class="bsub-btn warn" id="bcksStartCoach">AI Coach • Refleksi Keputusan</button>':''}
+    ${active?'<button class="bsub-btn" id="bcksResume">Lanjutkan Sesi Aktif</button>':scheduledUsed?'<button class="bsub-btn" disabled>Sesi Terjadwal Sudah Digunakan</button>':'<button class="bsub-btn" id="bcksStartSim">Mulai Sesi Terjadwal</button>'}
+    ${scheduledUsed?'<div class="bsub-note" style="width:100%;margin-top:4px">Setiap level hanya dapat dikerjakan satu kali. Setelah sesi dikirim atau kesempatan berakhir, sesi terjadwal tidak dapat dimulai ulang.</div>':""}
+    ${lastSim?'<button class="bsub-btn warn" id="bcksStartCoach">AI Coach • Refleksi Keputusan</button>':''}
    </div></div>
    <div class="bsub-card bsub-wide" style="margin:0"><h3>Riwayat</h3>${submitted.length?'<div style="overflow:auto"><table class="bsub-table"><thead><tr><th>Jenis</th><th>Nilai</th><th>Status Latihan</th><th>Prioritas</th><th></th></tr></thead><tbody>'+submitted.map(a=>`<tr><td>${a.mode}${a.session_level?" · Level "+a.session_level:""}</td><td><b>${pct(a.score)}</b></td><td>${esc(fmtRead(a.readiness_label))}</td><td>${esc(a.priority_competency||"-")}</td><td><div class="bsub-actions" style="margin:0">${a.mode==="SIMULASI"?`<button class="bsub-btn soft" data-docx="${a.id}">DOCX</button><button class="bsub-btn soft" data-pdf="${a.id}">PDF</button>`:""}<button class="bsub-btn soft" data-review="${a.id}">Bedah Hasil</button></div></td></tr>`).join("")+'</tbody></table></div>':'<div class="bsub-note">Belum ada simulasi selesai.</div>'}</div>
    <div class="bsub-card bsub-wide" style="margin:0;background:#fffdf2;border-color:#ead9a2"><b>Indikator latihan internal</b><div class="bsub-note">90–100 Sangat Siap • 80–89 Siap • 70–79 Perlu Penguatan • &lt;70 Perlu Pendampingan Intensif. Kategori ini bukan batas kelulusan resmi.</div></div>
   </div>`);
-  if(active)$("bcksResume").onclick=()=>resumeAttempt(active);else $("bcksStartSim").onclick=()=>startAttempt("SIMULASI");
+   if(active)$("bcksResume").onclick=()=>resumeAttempt(active);else if(!scheduledUsed&&$("bcksStartSim"))$("bcksStartSim").onclick=()=>startAttempt("SIMULASI");
   if(lastSim)$("bcksStartCoach").onclick=()=>startAttempt("COACH",lastSim.priority_competency||"MANAJERIAL");
   document.querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>openReview(b.dataset.review));
   document.querySelectorAll("[data-docx]").forEach(b=>b.onclick=()=>downloadBcksResult(b.dataset.docx,"docx"));
@@ -211,6 +216,16 @@ async function startAttempt(mode,target=null){
   if(!session){alert("Di luar jadwal Simulasi dan Thinking Culture.");return}
   const bank=Q.filter(x=>session.questions.includes(x[0]));
   const isSim=mode==="SIMULASI",mins=isSim?120:30,total=isSim?bank.length:Math.min(10,bank.filter(x=>x[1]===target).length);
+   if(isSim){
+    const {data:existing,error:existingErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("id,status,expires_at").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",Number(session.level)).order("started_at",{ascending:false}).limit(1));
+    if(existingErr)throw existingErr;
+    const prior=(existing||[])[0];
+    if(prior){
+     if(prior.status==="IN_PROGRESS"&&new Date(prior.expires_at).getTime()>Date.now()){alert("Sesi terjadwal level ini sudah dimulai. Gunakan tombol Lanjutkan Sesi Aktif.");await openHome();return}
+     alert("Kesempatan sesi terjadwal level ini sudah digunakan. Setiap peserta hanya dapat mengerjakan satu kali.");
+     await openHome();return;
+    }
+   }
   let qnos=isSim?(Number(session.level)===2?[...session.questions]:shuffle(bank.map(x=>x[0]))):shuffle(bank.filter(x=>x[1]===target).map(x=>x[0])).slice(0,total);
   const payload={user_id:profile().id,session_level:session.level,mode,target_competency:isSim?null:target,expires_at:new Date(Math.min(Date.now()+mins*60000,new Date(access.test_expires_at||session.date+"T15:00:00+07:00").getTime())).toISOString(),total_questions:total};
   const {data:a,error}=await retryJwt(()=>sb.from("bcks_substansi_attempts").insert(payload).select("*").single());if(error)throw error;
@@ -371,5 +386,5 @@ async function openLeader(){
 
 style();
 for(const ms of [100,400,900,1800])setTimeout(()=>{installObserver();injectCard()},ms);
-window.__simantabBcksSubstansiSimulator={version:6.0,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:6.1,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singleScheduledAttempt:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
