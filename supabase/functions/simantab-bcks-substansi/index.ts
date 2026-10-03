@@ -336,16 +336,17 @@ Deno.serve(async(req)=>{
       ok:true,scope_label:scopeLabel,scope_levels:scopeLevels,participants:0,attempted:0,not_attempted:0,
       readiness:{SANGAT_SIAP:0,SIAP:0,PERLU_PENGUATAN:0,PERLU_PENDAMPINGAN_INTENSIF:0},
       average_score:0,competencies:[],individuals:[],
-      note:"Ringkasan menggunakan hasil resmi pertama pada setiap level. Pengulangan historis tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
+      note:"Basic menggunakan hasil terakhir. Premium dan Pro menggunakan hasil resmi pertama; pengulangan Premium/Pro tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
     });
 
     const {data:attempts,error:atE}=await admin.from("bcks_substansi_attempts")
-      .select("id,user_id,score,correct_count,total_questions,readiness_label,priority_competency,submitted_at")
-      .eq("mode","SIMULASI").eq("status","SUBMITTED").eq("is_official_result",true).in("user_id",ids).order("submitted_at",{ascending:false});
+      .select("id,user_id,score,correct_count,total_questions,readiness_label,priority_competency,submitted_at,session_level,is_test,is_official_result")
+      .eq("mode","SIMULASI").eq("status","SUBMITTED").eq("is_test",false).in("user_id",ids).order("submitted_at",{ascending:false});
     if(atE) throw atE;
 
+    const countedAttempts=(attempts||[]).filter((a:any)=>Number(a.session_level)===1||a.is_official_result===true);
     const latest=new Map<string,any>();
-    for(const a of attempts||[]) if(!latest.has(a.user_id)) latest.set(a.user_id,a);
+    for(const a of countedAttempts) if(!latest.has(a.user_id)) latest.set(a.user_id,a);
     const latestAttempts=[...latest.values()];
     const attemptIds=latestAttempts.map((a:any)=>a.id);
 
@@ -418,7 +419,7 @@ Deno.serve(async(req)=>{
       attempted:latestAttempts.length,
       not_attempted:Math.max(0,ids.length-latestAttempts.length),
       readiness,average_score:avg,competencies,individuals,
-      note:"Ringkasan menggunakan hasil resmi. Jika peserta memiliki beberapa level, dashboard memakai hasil resmi level terbaru; pengulangan pada level yang sama tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
+      note:"Dashboard memakai hasil terakhir Basic atau hasil resmi Premium/Pro yang paling baru. Pengulangan Premium/Pro pada level yang sama tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
     });
   }
 
