@@ -75,11 +75,11 @@ async function getLogo(){
 }
 async function loadResult(admin:any,attemptId:string){
   const {data:attempt,error:ae}=await admin.from("bcks_substansi_attempts")
-    .select("id,user_id,mode,started_at,submitted_at,status,total_questions,correct_count,score,readiness_label,priority_competency,dominant_subcompetency,is_official_result,official_exclusion_reason")
+    .select("id,user_id,mode,started_at,submitted_at,status,total_questions,correct_count,score,readiness_label,priority_competency,dominant_subcompetency,session_level,is_official_result,official_exclusion_reason")
     .eq("id",attemptId).maybeSingle();
   if(ae||!attempt)throw new Error("Hasil simulasi tidak ditemukan.");
   if(attempt.mode!=="SIMULASI"||attempt.status!=="SUBMITTED")throw new Error("Dokumen hanya tersedia untuk simulasi yang sudah selesai.");
-   if(attempt.is_official_result!==true)throw new Error("Dokumen resmi hanya tersedia untuk hasil simulasi pertama yang diperhitungkan.");
+   if(Number(attempt.session_level)!==1&&attempt.is_official_result!==true)throw new Error("Dokumen Premium/Pro hanya tersedia untuk hasil pertama yang diperhitungkan.");
 
   const [{data:detail,error:de},{data:prof,error:pe},{data:scores,error:se}]=await Promise.all([
     admin.from("ks_bcks_submission_details").select("full_name,nip,pangkat_golruang,unit_kerja").eq("user_id",attempt.user_id).maybeSingle(),
