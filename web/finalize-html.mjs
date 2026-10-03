@@ -33,6 +33,53 @@ html=html.replace(/<div([^>]*)>Dinas Pendidikan dan Kebudayaan Kabupaten Batang<
  return `<div${attrs}>Dinas Pendidikan dan Kebudayaan Kabupaten Batang</div><div class="sim-login-unit-division" style="margin-top:6px;font-size:clamp(22px,2.4vw,30px);line-height:1.08;font-weight:900;letter-spacing:.025em;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.18)">Bidang Ketenagaan</div>`;
 });
 
+// CANONICAL_LOGIN_LAYOUT_V1
+// Keep the approved premium login shell directly in production HTML so it does
+// not depend on deferred theme JavaScript or an older PWA shell.
+const canonicalLoginCss=`<style id="simantabCanonicalLoginTheme">
+#loginPage.login{min-height:100vh;display:grid!important;grid-template-columns:minmax(0,1.08fr) minmax(420px,.92fr)!important;background:radial-gradient(circle at 31% 10%,rgba(52,171,255,.34),transparent 27%),radial-gradient(circle at 72% 42%,rgba(21,121,224,.22),transparent 32%),linear-gradient(135deg,#061a3a 0%,#0a4386 43%,#0868c4 100%)!important;position:relative;overflow:hidden}
+#loginPage.login.hidden{display:none!important}
+#loginPage.login:before{content:'';position:absolute;inset:0;background:radial-gradient(circle at 15% 80%,rgba(255,255,255,.10),transparent 24%),linear-gradient(145deg,transparent 0 74%,rgba(4,44,104,.42) 74% 82%,transparent 82%);pointer-events:none}
+#loginPage.login:after{content:'';position:absolute;left:-85px;bottom:66px;width:430px;height:14px;border-radius:999px;background:linear-gradient(90deg,#ff9f2f,#ffc35a);transform:rotate(19deg);box-shadow:0 0 28px rgba(255,159,47,.22);pointer-events:none}
+#loginPage .hero{position:relative;padding:24px 54px 22px!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:stretch!important;text-align:center;min-height:100vh;z-index:1;color:#fff}
+#loginPage .sim-login-hero-main{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;width:100%;padding:20px 0 150px}
+#loginPage .sim-institution{margin:0 0 13px!important;font-size:clamp(13px,1.25vw,18px)!important;font-weight:800!important;line-height:1.5!important;letter-spacing:.06em!important;text-transform:uppercase;color:#edf6ff!important;text-align:center}
+#loginPage .sim-institution b{display:block;color:#fff!important;font-size:1.08em;letter-spacing:.07em}
+#loginPage .hero-badge{width:92px!important;height:92px!important;margin:0 auto 16px!important;background:linear-gradient(145deg,#fff,#eaf2f8)!important;border:4px solid rgba(255,255,255,.82)!important;border-radius:24px!important;box-shadow:0 15px 38px rgba(0,19,50,.38)!important;overflow:hidden}
+#loginPage .hero-badge img{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+#loginPage .hero h1{font-size:clamp(42px,4.5vw,64px)!important;line-height:1!important;letter-spacing:-1.8px!important;margin:0 0 12px!important;white-space:nowrap;text-align:center}
+#loginPage .hero h1:after{content:'-ONLINE';color:#ffad3b;margin-left:5px;text-shadow:0 5px 18px rgba(255,153,0,.18)}
+#loginPage .hero p{font-size:clamp(16px,1.65vw,22px)!important;max-width:720px!important;margin:0!important;line-height:1.42!important;opacity:1!important;text-align:center}
+#loginPage .sim-hero-values{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:nowrap;margin-top:26px;padding:10px 18px;border:1px solid rgba(255,255,255,.28);border-radius:999px;background:rgba(6,48,103,.28)}
+#loginPage .sim-hero-values span{position:relative;font-size:11px;font-weight:850;padding:0 18px;color:#f7fbff;white-space:nowrap}
+#loginPage .sim-hero-values span+span:before{content:'';position:absolute;left:0;top:50%;width:1px;height:18px;background:rgba(255,255,255,.32);transform:translateY(-50%)}
+#loginPage .sim-login-division-footer{position:absolute;left:0;right:0;bottom:112px;margin:0;padding:0;width:100%;display:flex;align-items:center;justify-content:center;gap:18px;color:#fff;font-size:clamp(20px,2.2vw,30px);font-weight:950;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,22,55,.35)}
+#loginPage .sim-login-division-footer:before,#loginPage .sim-login-division-footer:after{content:'';width:78px;max-width:14%;height:3px;border-radius:999px;background:#ffad3b}
+#loginPage .loginpane{position:relative;z-index:1;display:flex!important;align-items:center!important;justify-content:center!important;padding:28px!important}
+#loginPage .loginbox{width:min(480px,100%);background:#fff;border:0!important;border-radius:24px!important;box-shadow:0 22px 60px rgba(8,42,84,.20)!important;padding:30px!important}
+#loginPage .loginbox h2{color:#0a3568!important;font-size:25px!important}
+#loginPage .tabs button.active{background:linear-gradient(135deg,#ff7a00,#f28a1c)!important;border-color:transparent!important;color:#fff!important}
+#loginPage .btn.primary{background:linear-gradient(135deg,#ff7a00,#ef6d00)!important;color:#fff!important;box-shadow:0 8px 18px rgba(255,122,0,.18)}
+@media(max-height:760px) and (min-width:981px){#loginPage .hero{padding:14px 48px!important}#loginPage .sim-login-hero-main{padding:8px 0 110px}#loginPage .hero-badge{width:76px!important;height:76px!important;margin-bottom:10px!important}#loginPage .hero h1{font-size:44px!important}#loginPage .sim-login-division-footer{bottom:80px;font-size:20px!important}}
+@media(max-width:580px){#loginPage .hero{display:none!important}#loginPage.login{grid-template-columns:1fr!important;background:linear-gradient(180deg,#0b3d73 0 25%,#eef5fb 25% 100%)!important}#loginPage .loginpane{padding:14px!important;align-items:flex-start!important;padding-top:10vh!important}#loginPage .loginbox{padding:21px!important;border-radius:20px!important}#loginPage .loginbox:before{content:'SIMANTAB-ONLINE';display:block;text-align:center;color:#0a3568;font-weight:950;font-size:18px;margin-bottom:13px}}
+</style>`;
+html=html.replace(/<style id="simantabCanonicalLoginTheme">[\s\S]*?<\/style>\s*/g,'');
+html=html.replace('</head>',canonicalLoginCss+'\n</head>');
+
+const canonicalHero=`<section class="hero">
+  <div class="sim-login-hero-main">
+   <div class="sim-institution"><b>PEMERINTAH KABUPATEN BATANG</b><span>DINAS PENDIDIKAN DAN KEBUDAYAAN</span></div>
+   <div class="hero-badge"><img src="${simantabIconHref}" alt="SIMANTAB"></div>
+   <h1>SIMANTAB</h1>
+   <p><b>Sistem Informasi Manajemen Ketenagaan Batang</b></p>
+   <div class="sim-hero-values"><span>▥&nbsp; Data Akurat</span><span>👥&nbsp; Layanan Terpadu</span><span>⚙&nbsp; Kinerja Lebih Baik</span></div>
+  </div>
+  <div class="sim-login-division-footer">Bidang Ketenagaan</div>
+ </section>`;
+html=html.replace(/<section class="hero">[\s\S]*?<\/section>\s*(?=<section class="loginpane">)/i,canonicalHero+'\n ');
+html=html.replace(/<h2 style="margin:0">(?:Masuk SIMANTAB Online|Masuk ke Akun Anda)<\/h2>/i,'<h2 style="margin:0">Masuk ke Akun Anda</h2>');
+html=html.replace(/<div class="small">(?:Akun menggunakan Supabase Auth\. Kanal Dinas dan GTK tetap dipisah\.|Silakan login untuk mengakses layanan SIMANTAB-ONLINE\.)<\/div>/i,'<div class="small">Silakan login untuk mengakses layanan SIMANTAB-ONLINE.</div>');
+
 try{
  const manifestPath=path.join(staticDir,'manifest.json');
  const manifest=JSON.parse(await fs.readFile(manifestPath,'utf8'));
