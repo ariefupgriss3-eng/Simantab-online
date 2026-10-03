@@ -282,12 +282,13 @@ Deno.serve(async(req)=>{
     const rows=(answers||[]).map((a:any)=>{
       const k:any=keyMap.get(Number(a.question_no));
       if(!k) return null;
+      const learning=ITEM_LEARNING[String(a.question_no)]||null;
       return {
         question_no:Number(a.question_no),selected_option:a.selected_option||null,correct_option:k.correct_option,
         is_correct:a.selected_option===k.correct_option,competency:k.competency,subcompetency:k.subcompetency,
         is_doubtful:!!a.is_doubtful,seconds_spent:Number(a.seconds_spent||0),
-        learning:ITEM_LEARNING[String(a.question_no)]||null,
-        why_wrong:a.selected_option===k.correct_option?null:mistakeMessage(k.subcompetency)
+        learning,
+        why_wrong:a.selected_option===k.correct_option?null:(learning?.comparison||mistakeMessage(k.subcompetency))
       };
     }).filter(Boolean).sort((a:any,b:any)=>a.question_no-b.question_no);
     return json({ok:true,attempt,review:rows});
