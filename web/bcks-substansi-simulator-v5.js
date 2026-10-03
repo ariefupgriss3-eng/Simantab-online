@@ -211,7 +211,7 @@ async function startAttempt(mode,target=null){
   if(!session){alert("Di luar jadwal Simulasi dan Thinking Culture.");return}
   const bank=Q.filter(x=>session.questions.includes(x[0]));
   const isSim=mode==="SIMULASI",mins=isSim?120:30,total=isSim?bank.length:Math.min(10,bank.filter(x=>x[1]===target).length);
-  let qnos=isSim?shuffle(bank.map(x=>x[0])):shuffle(bank.filter(x=>x[1]===target).map(x=>x[0])).slice(0,total);
+  let qnos=isSim?(Number(session.level)===2?[...session.questions]:shuffle(bank.map(x=>x[0]))):shuffle(bank.filter(x=>x[1]===target).map(x=>x[0])).slice(0,total);
   const payload={user_id:profile().id,session_level:session.level,mode,target_competency:isSim?null:target,expires_at:new Date(Math.min(Date.now()+mins*60000,new Date(access.test_expires_at||session.date+"T15:00:00+07:00").getTime())).toISOString(),total_questions:total};
   const {data:a,error}=await retryJwt(()=>sb.from("bcks_substansi_attempts").insert(payload).select("*").single());if(error)throw error;
   const rows=qnos.map(n=>({attempt_id:a.id,question_no:n,user_id:profile().id,selected_option:null,is_doubtful:false,seconds_spent:0}));
@@ -371,5 +371,5 @@ async function openLeader(){
 
 style();
 for(const ms of [100,400,900,1800])setTimeout(()=>{installObserver();injectCard()},ms);
-window.__simantabBcksSubstansiSimulator={version:5.8,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:5.9,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
