@@ -44,7 +44,7 @@ const manifest={
 };
 await fs.writeFile(path.join(staticDir,'manifest.json'),JSON.stringify(manifest,null,2));
 
-const sw=`const CACHE='simantab-pwa-v6';\nconst VERSION='6';
+const sw=`const CACHE='simantab-pwa-v7';\nconst VERSION='7';
 const SHELL=['./','./manifest.json','./simantab-icon-192.png?v=6','./simantab-icon-512.svg?v=6','./simantab-icon-maskable.svg?v=6','./pwa-install.js?v=6','./install.html'];
 self.addEventListener('install',event=>{event.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).catch(()=>{}).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',event=>{event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()).then(()=>self.clients.matchAll({type:'window'})).then(clients=>clients.forEach(client=>client.postMessage({type:'SIMANTAB_PWA_UPDATED',version:VERSION}))))});
