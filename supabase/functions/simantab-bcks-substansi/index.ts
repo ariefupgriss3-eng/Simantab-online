@@ -336,12 +336,12 @@ Deno.serve(async(req)=>{
       ok:true,scope_label:scopeLabel,scope_levels:scopeLevels,participants:0,attempted:0,not_attempted:0,
       readiness:{SANGAT_SIAP:0,SIAP:0,PERLU_PENGUATAN:0,PERLU_PENDAMPINGAN_INTENSIF:0},
       average_score:0,competencies:[],individuals:[],
-      note:"Ringkasan menggunakan simulasi terakhir tiap peserta. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
+      note:"Ringkasan menggunakan hasil resmi pertama pada setiap level. Pengulangan historis tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
     });
 
     const {data:attempts,error:atE}=await admin.from("bcks_substansi_attempts")
       .select("id,user_id,score,correct_count,total_questions,readiness_label,priority_competency,submitted_at")
-      .eq("mode","SIMULASI").eq("status","SUBMITTED").in("user_id",ids).order("submitted_at",{ascending:false});
+      .eq("mode","SIMULASI").eq("status","SUBMITTED").eq("is_official_result",true).in("user_id",ids).order("submitted_at",{ascending:false});
     if(atE) throw atE;
 
     const latest=new Map<string,any>();
@@ -418,7 +418,7 @@ Deno.serve(async(req)=>{
       attempted:latestAttempts.length,
       not_attempted:Math.max(0,ids.length-latestAttempts.length),
       readiness,average_score:avg,competencies,individuals,
-      note:"Ringkasan menggunakan simulasi terakhir tiap peserta. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
+      note:"Ringkasan menggunakan hasil resmi. Jika peserta memiliki beberapa level, dashboard memakai hasil resmi level terbaru; pengulangan pada level yang sama tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
     });
   }
 
