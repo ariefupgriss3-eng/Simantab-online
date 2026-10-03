@@ -279,18 +279,32 @@ Deno.serve(async(req)=>{
       admin.from("bcks_substansi_answers").select("question_no,selected_option,is_doubtful,seconds_spent").eq("attempt_id",attemptId)
     ]);
     const keyMap=new Map((keys||[]).map((x:any)=>[Number(x.question_no),x]));
+    const fallbackPack=attempt.mode==="SIMULASI"
+      ? THINKING_SESSIONS.find((s:any)=>Number(s.level)===Number(attempt.session_level))?.questions||[]
+      : [];
+    const packageOrder=(Array.isArray(attempt.package_questions)&&attempt.package_questions.length
+      ? attempt.package_questions
+      : fallbackPack).map((n:any)=>Number(n));
+    const orderMap=new Map(packageOrder.map((n:number,i:number)=>[n,i]));
     const rows=(answers||[]).map((a:any)=>{
-      const k:any=keyMap.get(Number(a.question_no));
+      const qno=Number(a.question_no);
+      const k:any=keyMap.get(qno);
       if(!k) return null;
-      const learning=ITEM_LEARNING[String(a.question_no)]||null;
+      const learning=ITEM_LEARNING[String(qno)]||null;
+      const orderIndex=orderMap.has(qno)?Number(orderMap.get(qno)):-1;
       return {
-        question_no:Number(a.question_no),selected_option:a.selected_option||null,correct_option:k.correct_option,
+        question_no:qno,display_no:orderIndex>=0?orderIndex+1:null,
+        selected_option:a.selected_option||null,correct_option:k.correct_option,
         is_correct:a.selected_option===k.correct_option,competency:k.competency,subcompetency:k.subcompetency,
         is_doubtful:!!a.is_doubtful,seconds_spent:Number(a.seconds_spent||0),
         learning,
         why_wrong:a.selected_option===k.correct_option?null:(learning?.comparison||mistakeMessage(k.subcompetency))
       };
-    }).filter(Boolean).sort((a:any,b:any)=>a.question_no-b.question_no);
+    }).filter(Boolean).sort((a:any,b:any)=>{
+      const ai=a.display_no==null?9999:Number(a.display_no);
+      const bi=b.display_no==null?9999:Number(b.display_no);
+      return ai-bi||a.question_no-b.question_no;
+    });
     return json({ok:true,attempt,review:rows});
   }
 
