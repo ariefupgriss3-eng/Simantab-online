@@ -418,7 +418,7 @@ Deno.serve(async(req)=>{
       attempted:latestAttempts.length,
       not_attempted:Math.max(0,ids.length-latestAttempts.length),
       readiness,average_score:avg,competencies,individuals,
-      note:"Ringkasan menggunakan simulasi terakhir tiap peserta. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
+      note:"Ringkasan menggunakan hasil resmi. Jika peserta memiliki beberapa level, dashboard memakai hasil resmi level terbaru; pengulangan pada level yang sama tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
     });
   }
 
