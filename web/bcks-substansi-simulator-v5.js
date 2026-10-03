@@ -19,7 +19,7 @@ const BAPAK_FILTERS=[
  {id:"AMAN",label:"Aman",terms:["aman","risiko","keselamatan","kesehatan","ancaman","perlindungan","privasi","rahasia","data pribadi","sensitif","kendaraan","cedera","praktik","pengawasan kompeten"],guide:"Risiko apa yang harus dicegah atau dikendalikan sebelum bertindak?"},
  {id:"PROPORSIONAL",label:"Proporsional",terms:["adil","beban","proporsional","bertahap","terbatas","prioritas","kelonggaran","sanksi","hukuman","konflik","perbedaan","tenggat","waktu terbatas","sumber daya terbatas","kompromi","keseimbangan","merata"],guide:"Apakah respons sebanding dengan masalah, konteks, dan keterbatasannya?"},
  {id:"AKUNTABEL",label:"Akuntabel",terms:["aturan","prosedur","laporan","pengadaan","anggaran","transparan","izin","dokument","tanggung jawab","rubrik","seleksi","persyaratan","kontrak","administrasi","disiplin","sah","kriteria"],guide:"Apakah keputusan dapat dijelaskan, ditelusuri, dan dipertanggungjawabkan?"},
- {id:"KEBERLANJUTAN",label:"Keberlanjutan",terms:["program","inovasi","kemitraan","mitra","biaya","pemeliharaan","keberlanjutan","perluas","pelatihan","tindak lanjut","jangka","implementasi","sistem","perawatan","dampak","berkelanjutan","kapasitas","pengembangan"],guide:"Apakah solusi tetap bermanfaat setelah masalah sesaat selesai?"}
+ {id:"KEBERLANJUTAN",label:"Keberlanjutan",terms:["program","inovasi","kemitraan","mitra","biaya","pemeliharaan","keberlanjutan","perluas","tindak lanjut","jangka","implementasi","sistem","perawatan","dampak","berkelanjutan","kapasitas","pengembangan"],guide:"Apakah solusi tetap bermanfaat setelah masalah sesaat selesai?"}
 ];
 const BAPAK_PRIOR={
  KEPRIBADIAN:{AKUNTABEL:2,PROPORSIONAL:1},
