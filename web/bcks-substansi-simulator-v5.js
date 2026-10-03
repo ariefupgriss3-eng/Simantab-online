@@ -19,7 +19,10 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&
 const pct=v=>Number(v||0).toLocaleString("id-ID",{maximumFractionDigits:1});
 const fmtRead=s=>({SANGAT_SIAP:"Sangat Siap",SIAP:"Siap",PERLU_PENGUATAN:"Perlu Penguatan",PERLU_PENDAMPINGAN_INTENSIF:"Perlu Pendampingan Intensif"}[s]||s||"-");
 const shuffle=a=>{const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x};
-const api=async body=>{const {data,error}=await sb.functions.invoke("simantab-bcks-substansi",{body});if(error){let detail=data?.error;try{const payload=await error.context?.clone()?.json();detail=payload?.error||detail}catch{}throw new Error(detail||error.message||"Layanan BCKS bermasalah.")}if(data?.error)throw new Error(data.error);return data};
+const jwtExpired=e=>/jwt\s*expired|expired\s*jwt/i.test(String(e?.message||e||""));
+const refreshAuth=async()=>{const {data,error}=await sb.auth.refreshSession();if(error||!data?.session?.access_token)throw new Error("Sesi login berakhir. Silakan muat ulang halaman atau login kembali.");return data.session};
+const retryJwt=async op=>{let result=await op();if(result?.error&&jwtExpired(result.error)){await refreshAuth();result=await op()}return result};
+const api=async body=>{let {data,error}=await retryJwt(()=>sb.functions.invoke("simantab-bcks-substansi",{body}));if(error){let detail=data?.error;try{const payload=await error.context?.clone()?.json();detail=payload?.error||detail}catch{}throw new Error(detail||error.message||"Layanan BCKS bermasalah.")}if(data?.error)throw new Error(data.error);return data};
 const downloadBcksResult=async(attemptId,format)=>{
  try{
   const {data,error}=await sb.functions.invoke("simantab-bcks-result-export",{body:{attempt_id:attemptId,format}});
@@ -144,7 +147,7 @@ function installObserver(){
  scheduleInject();
 }
 async function loadAttempts(){
- const {data,error}=await sb.from("bcks_substansi_attempts").select("*").eq("user_id",profile().id).order("started_at",{ascending:false}).limit(12);if(error)throw error;return data||[];
+ const {data,error}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("*").eq("user_id",profile().id).order("started_at",{ascending:false}).limit(12));if(error)throw error;return data||[];
 }
 async function openHome(){
  try{
@@ -186,16 +189,16 @@ async function startAttempt(mode,target=null){
   const isSim=mode==="SIMULASI",mins=isSim?120:30,total=isSim?bank.length:Math.min(10,bank.filter(x=>x[1]===target).length);
   let qnos=isSim?shuffle(bank.map(x=>x[0])):shuffle(bank.filter(x=>x[1]===target).map(x=>x[0])).slice(0,total);
   const payload={user_id:profile().id,session_level:session.level,mode,target_competency:isSim?null:target,expires_at:new Date(Math.min(Date.now()+mins*60000,new Date(access.test_expires_at||session.date+"T15:00:00+07:00").getTime())).toISOString(),total_questions:total};
-  const {data:a,error}=await sb.from("bcks_substansi_attempts").insert(payload).select("*").single();if(error)throw error;
+  const {data:a,error}=await retryJwt(()=>sb.from("bcks_substansi_attempts").insert(payload).select("*").single());if(error)throw error;
   const rows=qnos.map(n=>({attempt_id:a.id,question_no:n,user_id:profile().id,selected_option:null,is_doubtful:false,seconds_spent:0}));
-  const ins=await sb.from("bcks_substansi_answers").insert(rows);if(ins.error)throw ins.error;
+  const ins=await retryJwt(()=>sb.from("bcks_substansi_answers").insert(rows));if(ins.error)throw ins.error;
   localStorage.setItem("bcksAttemptOrder:"+a.id,JSON.stringify(qnos));
   await beginAttempt(a,qnos,new Map());
  }catch(e){alert(e.message||e)}
 }
 async function resumeAttempt(a){
  try{
-  const {data:rows,error}=await sb.from("bcks_substansi_answers").select("*").eq("attempt_id",a.id);if(error)throw error;
+  const {data:rows,error}=await retryJwt(()=>sb.from("bcks_substansi_answers").select("*").eq("attempt_id",a.id));if(error)throw error;
   let order=[];try{order=JSON.parse(localStorage.getItem("bcksAttemptOrder:"+a.id)||"[]")}catch{}
   const existing=(rows||[]).map(x=>Number(x.question_no));
   if(!order.length||order.some(n=>!existing.includes(Number(n))))order=shuffle(existing);
@@ -237,7 +240,7 @@ async function saveAnswer(no,selected,doubt){
  const old=state.answers.get(Number(no))||{question_no:Number(no),selected_option:null,is_doubtful:false,seconds_spent:0};
  const spent=Math.min(7200,Number(old.seconds_spent||0)+Math.max(0,Math.round((Date.now()-state.questionStart)/1000)));
  const patch={selected_option:selected===undefined?old.selected_option:selected,is_doubtful:doubt===null?!!old.is_doubtful:!!doubt,seconds_spent:spent,answered_at:new Date().toISOString()};
- const {error}=await sb.from("bcks_substansi_answers").update(patch).eq("attempt_id",state.attempt.id).eq("question_no",Number(no));
+ const {error}=await retryJwt(()=>sb.from("bcks_substansi_answers").update(patch).eq("attempt_id",state.attempt.id).eq("question_no",Number(no)));
  if(error){alert("Jawaban belum tersimpan: "+error.message);return}
  state.answers.set(Number(no),{...old,...patch});state.questionStart=Date.now();renderQuestion();
 }
