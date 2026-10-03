@@ -185,20 +185,20 @@ async function openHome(){
    if(scheduledErr)throw scheduledErr;
    const scheduledAttempt=(scheduledRows||[])[0]||null;
    const active=scheduledAttempt?.status==="IN_PROGRESS"&&new Date(scheduledAttempt.expires_at).getTime()>now?scheduledAttempt:null;
-   const scheduledUsed=!!scheduledAttempt&&!active;
-    const lastSim=attempts.find(a=>a.mode==="SIMULASI"&&a.status==="SUBMITTED"&&a.is_official_result===true);
+   const restrictedScheduled=[2,3].includes(sessionLevel),scheduledUsed=restrictedScheduled&&!!scheduledAttempt&&!active;
+    const lastSim=attempts.find(a=>a.mode==="SIMULASI"&&a.status==="SUBMITTED"&&(Number(a.session_level)===1||a.is_official_result===true));
    const submitted=attempts.filter(a=>a.status==="SUBMITTED").slice(0,6);
   modal("Simulasi dan Thinking Culture BCKS",`${access.is_test?'<div class="bsub-card"><b>UJI COBA KHUSUS AKUN ANDA</b><div class="bsub-note">Data sesi ditandai sebagai uji coba dan akan dibersihkan setelah pengujian selesai.</div></div>':""}<div class="bsub-card">${sessionNote}</div><div class="bsub-home">
    <div class="bsub-stat"><div class="bsub-label">Format</div><div class="bsub-numstat">${access.session?.questions?.length||70}</div><div class="bsub-note">soal kasus</div></div>
    <div class="bsub-stat"><div class="bsub-label">Durasi</div><div class="bsub-numstat">120</div><div class="bsub-note">menit</div></div>
-    <div class="bsub-stat"><div class="bsub-label">Hasil resmi</div><div class="bsub-numstat">${lastSim?pct(lastSim.score):"-"}</div><div class="bsub-note">${lastSim?fmtRead(lastSim.readiness_label):"Belum ada"}</div></div>
-    <div class="bsub-stat"><div class="bsub-label">Prioritas</div><div class="bsub-numstat" style="font-size:17px">${esc(lastSim?.priority_competency||"-")}</div><div class="bsub-note">berdasarkan hasil resmi</div></div>
+    <div class="bsub-stat"><div class="bsub-label">Hasil acuan</div><div class="bsub-numstat">${lastSim?pct(lastSim.score):"-"}</div><div class="bsub-note">${lastSim?fmtRead(lastSim.readiness_label):"Belum ada"}</div></div>
+    <div class="bsub-stat"><div class="bsub-label">Prioritas</div><div class="bsub-numstat" style="font-size:17px">${esc(lastSim?.priority_competency||"-")}</div><div class="bsub-note">berdasarkan hasil acuan</div></div>
    <div class="bsub-card bsub-wide" style="margin:0"><h3>Mulai / Lanjutkan Latihan</h3><div class="bsub-note">Kunci jawaban tidak disimpan di browser dan baru dibuka sesudah sesi dikirim.</div><div class="bsub-actions">
     ${active?'<button class="bsub-btn" id="bcksResume">Lanjutkan Sesi Aktif</button>':scheduledUsed?'<button class="bsub-btn" disabled>Sesi Terjadwal Sudah Digunakan</button>':'<button class="bsub-btn" id="bcksStartSim">Mulai Sesi Terjadwal</button>'}
-    ${scheduledUsed?'<div class="bsub-note" style="width:100%;margin-top:4px">Setiap level hanya dapat dikerjakan satu kali. Setelah sesi dikirim atau kesempatan berakhir, sesi terjadwal tidak dapat dimulai ulang.</div>':""}
+    ${scheduledUsed?'<div class="bsub-note" style="width:100%;margin-top:4px">Premium dan Pro hanya dapat dikerjakan satu kali per level. Basic tetap dapat diulang.</div>':""}
     ${lastSim?'<button class="bsub-btn warn" id="bcksStartCoach">AI Coach • Refleksi Keputusan</button>':''}
    </div></div>
-    <div class="bsub-card bsub-wide" style="margin:0"><h3>Riwayat</h3>${submitted.length?'<div style="overflow:auto"><table class="bsub-table"><thead><tr><th>Jenis</th><th>Nilai</th><th>Status Latihan</th><th>Prioritas</th><th></th></tr></thead><tbody>'+submitted.map(a=>`<tr><td>${a.mode}${a.session_level?" · Level "+a.session_level:""}${a.mode==="SIMULASI"?(a.is_official_result===true?"<div class=\'bsub-note\' style=\'color:#177245;font-weight:900\'>HASIL RESMI</div>":"<div class=\'bsub-note\' style=\'color:#a44528;font-weight:900\'>TIDAK DIPERHITUNGKAN</div>"):""}</td><td><b>${pct(a.score)}</b></td><td>${esc(fmtRead(a.readiness_label))}</td><td>${esc(a.priority_competency||"-")}</td><td><div class="bsub-actions" style="margin:0">${a.mode==="SIMULASI"&&a.is_official_result===true?`<button class="bsub-btn soft" data-docx="${a.id}">DOCX</button><button class="bsub-btn soft" data-pdf="${a.id}">PDF</button>`:""}<button class="bsub-btn soft" data-review="${a.id}">Bedah Hasil</button></div></td></tr>`).join("")+'</tbody></table></div>':'<div class="bsub-note">Belum ada simulasi selesai.</div>'}</div>
+    <div class="bsub-card bsub-wide" style="margin:0"><h3>Riwayat</h3>${submitted.length?'<div style="overflow:auto"><table class="bsub-table"><thead><tr><th>Jenis</th><th>Nilai</th><th>Status Latihan</th><th>Prioritas</th><th></th></tr></thead><tbody>'+submitted.map(a=>`<tr><td>${a.mode}${a.session_level?" · Level "+a.session_level:""}${a.mode==="SIMULASI"&&Number(a.session_level)!==1?(a.is_official_result===true?"<div class=\'bsub-note\' style=\'color:#177245;font-weight:900\'>HASIL RESMI</div>":"<div class=\'bsub-note\' style=\'color:#a44528;font-weight:900\'>TIDAK DIPERHITUNGKAN</div>"):""}</td><td><b>${pct(a.score)}</b></td><td>${esc(fmtRead(a.readiness_label))}</td><td>${esc(a.priority_competency||"-")}</td><td><div class="bsub-actions" style="margin:0">${a.mode==="SIMULASI"&&(Number(a.session_level)===1||a.is_official_result===true)?`<button class="bsub-btn soft" data-docx="${a.id}">DOCX</button><button class="bsub-btn soft" data-pdf="${a.id}">PDF</button>`:""}<button class="bsub-btn soft" data-review="${a.id}">Bedah Hasil</button></div></td></tr>`).join("")+'</tbody></table></div>':'<div class="bsub-note">Belum ada simulasi selesai.</div>'}</div>
    <div class="bsub-card bsub-wide" style="margin:0;background:#fffdf2;border-color:#ead9a2"><b>Indikator latihan internal</b><div class="bsub-note">90–100 Sangat Siap • 80–89 Siap • 70–79 Perlu Penguatan • &lt;70 Perlu Pendampingan Intensif. Kategori ini bukan batas kelulusan resmi.</div></div>
   </div>`);
    if(active)$("bcksResume").onclick=()=>resumeAttempt(active);else if(!scheduledUsed&&$("bcksStartSim"))$("bcksStartSim").onclick=()=>startAttempt("SIMULASI");
@@ -216,13 +216,13 @@ async function startAttempt(mode,target=null){
   if(!session){alert("Di luar jadwal Simulasi dan Thinking Culture.");return}
   const bank=Q.filter(x=>session.questions.includes(x[0]));
   const isSim=mode==="SIMULASI",mins=isSim?120:30,total=isSim?bank.length:Math.min(10,bank.filter(x=>x[1]===target).length);
-   if(isSim){
+   if(isSim&&[2,3].includes(Number(session.level))){
     const {data:existing,error:existingErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("id,status,expires_at").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",Number(session.level)).order("started_at",{ascending:false}).limit(1));
     if(existingErr)throw existingErr;
     const prior=(existing||[])[0];
     if(prior){
      if(prior.status==="IN_PROGRESS"&&new Date(prior.expires_at).getTime()>Date.now()){alert("Sesi terjadwal level ini sudah dimulai. Gunakan tombol Lanjutkan Sesi Aktif.");await openHome();return}
-     alert("Kesempatan sesi terjadwal level ini sudah digunakan. Setiap peserta hanya dapat mengerjakan satu kali.");
+     alert("Kesempatan Premium/Pro pada level ini sudah digunakan. Setiap peserta hanya dapat mengerjakan satu kali.");
      await openHome();return;
     }
    }
@@ -386,5 +386,5 @@ async function openLeader(){
 
 style();
 for(const ms of [100,400,900,1800])setTimeout(()=>{installObserver();injectCard()},ms);
-window.__simantabBcksSubstansiSimulator={version:6.2,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singleScheduledAttempt:true,officialFirstResult:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:6.3,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
