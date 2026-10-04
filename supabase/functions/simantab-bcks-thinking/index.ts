@@ -1,5 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { PREMIUM_V5_META } from "./premium-v5.ts";
+import { PREMIUM_TWO_V1_META } from "./premium-two-v1.ts";
 
 const CORS={
   "Access-Control-Allow-Origin":"*",
@@ -46,8 +47,10 @@ Deno.serve(async(req)=>{
       if(error||!a)throw new Error("Sesi latihan tidak ditemukan.");
       if(a.user_id!==user.id)throw new Error("Tidak berwenang.");
       const pack=(Array.isArray(a.package_questions)?a.package_questions:[]).map((n:any)=>Number(n));
-      const isV5=Number(a.session_level)===2&&pack.length===70&&pack.every((n:number)=>n>=1001&&n<=1070);
-      return {attempt:a,pack,isV5};
+      const isPremiumOne=pack.length===70&&pack.every((n:number)=>n>=1001&&n<=1070);
+      const isPremiumTwo=pack.length===70&&pack.every((n:number)=>n>=2001&&n<=2070);
+      const premiumKind=isPremiumOne?"PREMIUM_ONE":isPremiumTwo?"PREMIUM_TWO":null;
+      return {attempt:a,pack,isPremiumOne,isPremiumTwo,premiumKind};
     };
     const originalAnswer=async(attemptId:string,qno:number)=>{
       const {data,error}=await admin.from("bcks_substansi_answers")
@@ -73,17 +76,19 @@ Deno.serve(async(req)=>{
     const requireCase=async(attemptId:string,qno:number)=>{
       const ctx=await getAttempt(attemptId);
       if(ctx.attempt.status!=="SUBMITTED")throw new Error("Thinking Culture tersedia setelah sesi diselesaikan.");
-      if(!ctx.isV5||!ctx.pack.includes(qno))throw new Error("Kasus Premium One v5.0 tidak tersedia.");
-      const meta:any=PREMIUM_V5_META[String(qno)];
+      if(!ctx.premiumKind||!ctx.pack.includes(qno))throw new Error("Kasus Premium tidak tersedia.");
+      const meta:any=ctx.premiumKind==="PREMIUM_TWO"
+        ?PREMIUM_TWO_V1_META[String(qno)]
+        :PREMIUM_V5_META[String(qno)];
       if(!meta)throw new Error("Metadata kasus tidak tersedia.");
       return {...ctx,meta};
     };
 
     if(action==="items"){
       const attemptId=String(body?.attempt_id||"").trim();
-      const {attempt,pack,isV5}=await getAttempt(attemptId);
+      const {attempt,pack,isPremiumOne,isPremiumTwo,premiumKind}=await getAttempt(attemptId);
       if(attempt.status!=="SUBMITTED")return J({error:"Thinking Culture tersedia setelah sesi diselesaikan."},409);
-      if(!isV5)return J({ok:true,premium_v5:false});
+      if(!premiumKind)return J({ok:true,premium_v5:false,premium_two_v1:false,premium_kind:null});
       const [{data:answers,error:ae},{data:learn,error:le}]=await Promise.all([
         admin.from("bcks_substansi_answers").select("question_no,selected_option,is_doubtful,seconds_spent").eq("attempt_id",attemptId),
         admin.from("bcks_premium_learning").select("question_no,highest_hint,recovery_success,transfer_status,mastery_state").eq("attempt_id",attemptId)
@@ -97,7 +102,7 @@ Deno.serve(async(req)=>{
           seconds_spent:Number(a.seconds_spent||0),highest_hint:Number(l.highest_hint||0),
           recovery_success:!!l.recovery_success,transfer_status:l.transfer_status||null,mastery_state:l.mastery_state||null};
       });
-      return J({ok:true,premium_v5:true,attempt_id:attemptId,rows});
+      return J({ok:true,premium_v5:isPremiumOne,premium_two_v1:isPremiumTwo,premium_kind:premiumKind,attempt_id:attemptId,rows});
     }
 
     if(action==="coach_step"){
@@ -121,7 +126,9 @@ Deno.serve(async(req)=>{
         reasoning_key:meta.reasoning,
         hint_level:hint,
         competency:String(body?.competency||"PROFESIONAL").slice(0,50),
-        transfer_question:meta.transfer
+        transfer_question:meta.transfer,
+        hint_reference:String(meta?.["h"+hint]||"").slice(0,1800),
+        premium_level:String((await getAttempt(attemptId)).premiumKind||"").slice(0,40)
       });
       const next=db===5?"GO_TO_TRANSFER":String(out.next_action||"CONTINUE_HINT");
       return J({ok:true,coach_message:String(out.coach_message||""),reflection_question:String(out.reflection_question||""),
@@ -155,7 +162,9 @@ Deno.serve(async(req)=>{
             reasoning_key:meta.reasoning,
             hint_level:4,
             competency:String(body?.competency||"PROFESIONAL").slice(0,50),
-            transfer_question:meta.transfer
+            transfer_question:meta.transfer,
+            hint_reference:String(meta?.h4||"").slice(0,1800),
+            premium_level:String((await getAttempt(attemptId)).premiumKind||"").slice(0,40)
           });
           return J({ok:true,recovery_success:false,next_hint:4,
             retry_coach_message:String(coach.coach_message||""),
@@ -174,7 +183,8 @@ Deno.serve(async(req)=>{
         reasoning_terbaru:String(body?.reasoning_latest||"").slice(0,2500),
         concept_key:meta.principle,
         reasoning_key:meta.reasoning,
-        transfer_question:meta.transfer
+        transfer_question:meta.transfer,
+        premium_level:String((await getAttempt(attemptId)).premiumKind||"").slice(0,40)
       });
       return J({ok:true,recovery_success:true,reinforcement:String(out.reinforcement||""),transfer_question:meta.transfer});
     }
@@ -194,7 +204,8 @@ Deno.serve(async(req)=>{
         participant_response:response,
         target_principle:meta.principle,
         target_reasoning:meta.reasoning,
-        misconception_to_avoid:meta.misconception
+        misconception_to_avoid:meta.misconception,
+        premium_level:String((await getAttempt(attemptId)).premiumKind||"").slice(0,40)
       });
       const status=String(out.transfer_status||"NOT_YET");
       if(!["TRANSFER_MASTERED","PARTIAL_TRANSFER","NOT_YET"].includes(status))throw new Error("Status transfer tidak valid.");
@@ -203,7 +214,7 @@ Deno.serve(async(req)=>{
       const mastery=mastered&&initialDb===5?"INDEPENDENT_MASTERY":
         mastered&&initialDb===4&&hint<=1?"RAPID_MASTERY":
         mastered?"SCAFFOLDED_MASTERY":
-        (learn?.recovery_success?"UNSTABLE_UNDERSTANDING":"CONCEPT_GAP");
+        (initialDb===5||learn?.recovery_success?"UNSTABLE_UNDERSTANDING":"CONCEPT_GAP");
       await saveLearning(attemptId,qno,{
         transfer_response:response,
         principle_score:Number(out.principle_score||0),
@@ -220,8 +231,8 @@ Deno.serve(async(req)=>{
 
     if(action==="summary"){
       const attemptId=String(body?.attempt_id||"").trim();
-      const {attempt,isV5}=await getAttempt(attemptId);
-      if(attempt.status!=="SUBMITTED"||!isV5)return J({error:"Ringkasan Premium One tidak tersedia."},409);
+      const {attempt,premiumKind}=await getAttempt(attemptId);
+      if(attempt.status!=="SUBMITTED"||!premiumKind)return J({error:"Ringkasan Premium tidak tersedia."},409);
       const {data:rows,error}=await admin.from("bcks_premium_learning")
         .select("transfer_status,mastery_state,highest_hint,recovery_success").eq("attempt_id",attemptId);
       if(error)throw error;
