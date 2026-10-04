@@ -341,7 +341,7 @@ window.__simantabPremiumTwoV1Options={
       "C": "Menegaskan disiplin dan tenggat kepada seluruh anggota.",
       "E": "Mengganti anggota yang sering terlambat menyelesaikan tugas.",
       "D": "Memperjelas pemilik tugas, kewenangan, tenggat, indikator selesai, dan tindak lanjut.",
-      "A": "Menambah frekuensi rapat monitoring.",
+      "A": "Menambah frekuensi rapat monitoring agar kemajuan tugas lebih sering diperiksa oleh tim.",
       "B": "Menyerahkan koordinasi kepada ketua tim dengan kewenangan lebih jelas untuk memastikan tindak lanjut."
     },
     "db": {
@@ -614,7 +614,7 @@ window.__simantabPremiumTwoV1Options={
       "C": "Mengurangi kehadiran kepala sekolah pada beberapa sesi agar guru lebih bebas menyampaikan pandangan.",
       "E": "Mendesain ruang diskusi aman dan mengubah peran pimpinan menjadi fasilitator.",
       "D": "Menggunakan diskusi tertulis agar guru lebih berani.",
-      "B": "Mengganti pengurus komunitas."
+      "B": "Mengganti pengurus komunitas dengan tim baru yang dianggap lebih mampu menggerakkan diskusi."
     },
     "db": {
       "A": 2,
@@ -661,7 +661,7 @@ window.__simantabPremiumTwoV1Options={
       "E": "Menghapus insentif karena tidak berdampak pada nilai.",
       "C": "Mempertahankan insentif sambil memantau data kehadiran dan perubahan hasil pada semester berikutnya.",
       "A": "Menilai keterlibatan dan kualitas pembelajaran sebelum menyimpulkan hubungan kehadiran dengan hasil.",
-      "B": "Menambah besar insentif.",
+      "B": "Menambah besar insentif agar murid semakin terdorong untuk hadir secara konsisten.",
       "D": "Mengganti indikator hasil dari nilai menjadi kehadiran."
     },
     "db": {
@@ -885,7 +885,7 @@ window.__simantabPremiumTwoV1Options={
       "E": "Mengapa sebagian besar murid belum aktif, dan bukti apa dari diskusi tadi yang mendukung penilaian Anda?",
       "C": "Apakah Anda puas dengan diskusi tadi?",
       "B": "Apa yang ditunjukkan kualitas jawaban lima murid dan keterlibatan murid lain, serta apa yang perlu diuji berikutnya?",
-      "D": "Sebaiknya Anda mengubah pembagian kelompok.",
+      "D": "Sebaiknya Anda mengubah pembagian kelompok agar lebih banyak murid memperoleh kesempatan berbicara.",
       "A": "Bagaimana jika semua murid diwajibkan berbicara?"
     },
     "db": {
@@ -898,7 +898,7 @@ window.__simantabPremiumTwoV1Options={
   },
   "2057": {
     "options": {
-      "C": "Mengulang pelatihan penyusunan instrumen.",
+      "C": "Mengulang pelatihan penyusunan instrumen agar guru semakin mahir membuat asesmen formatif.",
       "E": "Menilai program sudah berhasil karena keterampilan membuat instrumen meningkat.",
       "D": "Menggeser pendampingan ke interpretasi bukti dan keputusan instruksional setelah asesmen.",
       "B": "Membuat instrumen standar untuk seluruh sekolah.",
@@ -946,11 +946,11 @@ window.__simantabPremiumTwoV1Options={
   },
   "2060": {
     "options": {
-      "A": "Menambah observasi terjadwal.",
+      "A": "Menambah observasi terjadwal pada beberapa pertemuan untuk melihat apakah praktik tersebut tetap konsisten.",
       "E": "Menggunakan beberapa sumber bukti dan konteks observasi untuk menilai konsistensi praktik.",
       "C": "Menilai guru sudah mampu karena ketika diobservasi praktiknya benar.",
-      "B": "Melakukan observasi diam-diam sesering mungkin.",
-      "D": "Meminta murid menilai guru."
+      "B": "Melakukan observasi tanpa pemberitahuan pada beberapa kesempatan untuk mengurangi perilaku yang dibuat-buat.",
+      "D": "Meminta murid menilai konsistensi praktik guru melalui umpan balik terstruktur setelah pembelajaran."
     },
     "db": {
       "A": 3,
@@ -963,10 +963,10 @@ window.__simantabPremiumTwoV1Options={
   "2061": {
     "options": {
       "B": "Memprioritaskan asesmen karena dampaknya lebih besar sambil memberi dukungan agar guru siap memperbaikinya.",
-      "C": "Membiarkan guru memilih sepenuhnya.",
-      "D": "Memperbaiki kedua area sekaligus.",
+      "C": "Membiarkan guru memilih fokus sendiri agar komitmen perbaikannya lebih kuat.",
+      "D": "Memperbaiki kedua area sekaligus agar tidak ada temuan supervisi yang diabaikan.",
       "A": "Menegosiasikan fokus berdasarkan dampak, kesiapan, keterkaitan masalah, dan peluang keberhasilan.",
-      "E": "Menunda coaching."
+      "E": "Menunda coaching sampai guru merasa lebih siap menentukan fokus perbaikan yang ingin dibahas."
     },
     "db": {
       "B": 4,
@@ -979,10 +979,10 @@ window.__simantabPremiumTwoV1Options={
   "2062": {
     "options": {
       "B": "Memberikan feedback pada hari yang sama dengan memulai dari bukti paling objektif agar diskusi tetap terarah.",
-      "A": "Membatalkan seluruh hasil observasi.",
+      "A": "Membatalkan hasil observasi dan menjadwalkan ulang ketika kondisi guru dianggap lebih stabil.",
       "C": "Memilih waktu yang menjaga kesiapan guru tanpa kehilangan kedekatan dengan bukti.",
-      "E": "Mengirim catatan tertulis tanpa percakapan.",
-      "D": "Menunda sampai guru sendiri meminta."
+      "E": "Mengirim catatan tertulis terlebih dahulu agar guru dapat membacanya sebelum berdiskusi.",
+      "D": "Menunda percakapan sampai guru sendiri menyatakan siap menerima umpan balik."
     },
     "db": {
       "B": 4,
@@ -996,9 +996,9 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "A": "Menghubungkan masalah pengelolaan kelas dengan desain tugas sebelum memilih intervensi.",
       "D": "Memberikan pelatihan pengelolaan kelas berbasis kasus agar guru memiliki strategi saat murid kehilangan fokus.",
-      "B": "Memperketat aturan murid.",
-      "C": "Menambah jumlah guru pendamping.",
-      "E": "Meminta guru lebih tegas."
+      "B": "Memperketat aturan kelas dan konsekuensi agar murid lebih disiplin selama kegiatan berlangsung.",
+      "C": "Menambah guru pendamping untuk membantu menjaga keteraturan selama pembelajaran berlangsung.",
+      "E": "Meminta guru meningkatkan ketegasan ketika perhatian murid mulai menurun."
     },
     "db": {
       "A": 5,
@@ -1026,11 +1026,11 @@ window.__simantabPremiumTwoV1Options={
   },
   "2065": {
     "options": {
-      "E": "Menyimpulkan coaching gagal.",
+      "E": "Menyimpulkan coaching belum berhasil karena perubahan praktik tidak bertahan setelah beberapa minggu.",
       "C": "Menyelidiki kondisi pendukung dan hambatan keberlanjutan lalu merancang follow-up bertahap.",
       "A": "Mengulang coaching dengan target yang lebih spesifik agar perubahan praktik dapat bertahan lebih lama.",
-      "D": "Menambah frekuensi supervisi permanen.",
-      "B": "Memberikan target tertulis."
+      "D": "Menambah frekuensi supervisi untuk menjaga agar guru terus menerapkan strategi baru.",
+      "B": "Memberikan target tertulis agar perubahan yang diharapkan tetap menjadi fokus guru."
     },
     "db": {
       "E": 1,
@@ -1061,7 +1061,7 @@ window.__simantabPremiumTwoV1Options={
       "A": "Menempatkan kedua bukti bersama dan menelusuri pengalaman yang tidak tampak saat observasi.",
       "B": "Mempercayai observasi karena dilakukan oleh profesional.",
       "D": "Memprioritaskan suara murid melalui survei lanjutan karena mereka mengalami langsung suasana pembelajaran.",
-      "E": "Mengulang survei saja.",
+      "E": "Mengulang survei anonim pada waktu berbeda untuk melihat apakah persepsi murid tetap sama.",
       "C": "Mengabaikan perbedaan sampai muncul masalah nyata."
     },
     "db": {
@@ -1106,10 +1106,10 @@ window.__simantabPremiumTwoV1Options={
   },
   "2070": {
     "options": {
-      "C": "Menambah frekuensi supervisi.",
+      "C": "Menambah frekuensi supervisi agar perubahan praktik guru lebih sering dipantau sepanjang semester.",
       "B": "Mengganti instrumen supervisi agar observasi berikutnya menghasilkan bukti praktik yang lebih tajam dan konsisten.",
       "D": "Memberikan target perbaikan lebih ketat kepada guru.",
-      "A": "Menilai supervisor berdasarkan jumlah observasi.",
+      "A": "Menilai kinerja supervisor dari jumlah observasi dan kelengkapan laporan yang berhasil diselesaikan.",
       "E": "Mengevaluasi rantai diagnosis, observasi, feedback, tindak lanjut, perubahan praktik, dan dampak murid."
     },
     "db": {
