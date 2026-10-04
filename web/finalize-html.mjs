@@ -255,7 +255,7 @@ await fs.writeFile(path.join(staticDir,performanceAchievementFile),performanceAc
 
 const bcksPremiumV5DataFile='bcks-premium-one-v5-data.js';
 const bcksPremiumV5DataCode=await fs.readFile(new URL(`./${bcksPremiumV5DataFile}`,import.meta.url),'utf8');
-if(!/PREMIUM ONE FINAL v5\.0/.test(bcksPremiumV5DataCode))throw new Error('Premium One v5 data tidak valid.');
+if(!/PREMIUM ONE FINAL v5\.1/.test(bcksPremiumV5DataCode))throw new Error('Premium One v5 data tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksPremiumV5DataFile),bcksPremiumV5DataCode);
 
 const bcksPremiumThinkingFile='bcks-premium-thinking-v5.js';
@@ -334,7 +334,7 @@ const modules=[
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],
  ['performance-achievement.js',4],
- ['bcks-premium-one-v5-data.js',1],
+ ['bcks-premium-one-v5-data.js',2],
  ['bcks-premium-thinking-v5.js',3],
  ['bcks-substansi-simulator-v5.js',42],
  ['bcks-individual-readiness.js',2]
