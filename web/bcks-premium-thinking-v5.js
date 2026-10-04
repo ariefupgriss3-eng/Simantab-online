@@ -1,13 +1,14 @@
 /* SIMANTAB_PREMIUM_ONE_THINKING_V5 */
-(async()=>{
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
-for(let i=0;i<200&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
-const sb=window.__simantabSb,profile=()=>window.__simantabProfile||{};
-if(!sb)return;
+(()=>{
+const getSb=()=>window.__simantabSb||null;
+const profile=()=>window.__simantabProfile||{};
+window.__simantabPremiumThinkingReady=true;
 const LETTERS=["A","B","C","D","E"];
 const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const bank=()=>new Map((window.__simantabPremiumOneV5||[]).map(q=>[Number(q[0]),q]));
 async function invoke(body){
+ const sb=getSb();
+ if(!sb)throw new Error("Sistem belum siap. Tutup modul, tunggu beberapa detik, lalu buka kembali.");
  let {data,error}=await sb.functions.invoke("simantab-bcks-thinking",{body});
  if(error){
   let detail=data?.error;
