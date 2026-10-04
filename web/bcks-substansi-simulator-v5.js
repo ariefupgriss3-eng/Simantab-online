@@ -265,9 +265,13 @@ async function startAttempt(mode,target=null){
      await openHome();return;
     }
    }
-  let qnos=isSim?([2,3,30].includes(Number(session.level))?[...session.questions]:shuffle(bank.map(x=>x[0]))):shuffle(bank.filter(x=>x[1]===target).map(x=>x[0])).slice(0,total);
+  let qnos=isSim?[]:shuffle(bank.filter(x=>x[1]===target).map(x=>x[0])).slice(0,total);
   const payload={user_id:profile().id,session_level:session.level,mode,target_competency:isSim?null:target,expires_at:new Date(Math.min(Date.now()+mins*60000,new Date(access.test_expires_at||session.date+"T"+(session.end_time||"15:00")+":00+07:00").getTime())).toISOString(),total_questions:total};
   const {data:a,error}=await retryJwt(()=>sb.from("bcks_substansi_attempts").insert(payload).select("*").single());if(error)throw error;
+  if(isSim){
+   const serverOrder=(Array.isArray(a.package_questions)?a.package_questions:[]).map(Number).filter(Number.isFinite);
+   qnos=serverOrder.length===total?serverOrder:shuffle(bank.map(x=>x[0]));
+  }
   const rows=qnos.map(n=>({attempt_id:a.id,question_no:n,user_id:profile().id,selected_option:null,is_doubtful:false,seconds_spent:0}));
   const ins=await retryJwt(()=>sb.from("bcks_substansi_answers").insert(rows));if(ins.error)throw ins.error;
   localStorage.setItem("bcksAttemptOrder:"+a.id,JSON.stringify(qnos));
@@ -292,7 +296,10 @@ async function resumeAttempt(a){
   if(!existing.length)throw new Error("Sesi tidak memiliki nomor soal yang valid. Tutup modul lalu mulai sesi kembali.");
   let order=[];try{order=JSON.parse(localStorage.getItem("bcksAttemptOrder:"+a.id)||"[]")}catch{}
   order=(order||[]).map(Number).filter(Number.isFinite);
-  if(!order.length||order.some(n=>!existing.includes(Number(n))))order=shuffle(existing);
+  const serverOrder=(Array.isArray(a.package_questions)?a.package_questions:[]).map(Number).filter(n=>Number.isFinite(n)&&existing.includes(n));
+  if(!order.length||order.length!==existing.length||order.some(n=>!existing.includes(Number(n)))){
+   order=serverOrder.length===existing.length?serverOrder:shuffle(existing);
+  }
   const map=new Map((rows||[]).map(x=>[Number(x.question_no),x]));
   await beginAttempt(a,order,map);
  }catch(e){alert(e.message||e)}
