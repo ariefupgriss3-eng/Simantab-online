@@ -136,7 +136,9 @@ module.exports=async function handler(req,res){
         reasoning_key:safeText(b.reasoning_key,1600),
         hint_level:"H"+hint,
         competency:safeText(b.competency,50),
-        transfer_question:safeText(b.transfer_question,1800)
+        transfer_question:safeText(b.transfer_question,1800),
+        hint_reference:safeText(b.hint_reference,1800),
+        premium_level:safeText(b.premium_level,40)
       };
       const result=await gateway(AI_COACH_PROMPT,input,"simantab_coach",coachSchema);
       const out=result.output;
@@ -152,7 +154,8 @@ module.exports=async function handler(req,res){
         reasoning_terbaru:safeText(b.reasoning_terbaru,2500),
         concept_key:safeText(b.concept_key,1200),
         reasoning_key:safeText(b.reasoning_key,1600),
-        transfer_question:safeText(b.transfer_question,1800)
+        transfer_question:safeText(b.transfer_question,1800),
+        premium_level:safeText(b.premium_level,40)
       };
       const result=await gateway(RECOVERY_PROMPT,input,"simantab_reinforcement",recoverySchema);
       const out=result.output;
@@ -167,7 +170,8 @@ module.exports=async function handler(req,res){
         participant_response:safeText(b.participant_response,4000),
         target_principle:safeText(b.target_principle,1600),
         target_reasoning:safeText(b.target_reasoning,1800),
-        misconception_to_avoid:safeText(b.misconception_to_avoid,1200)
+        misconception_to_avoid:safeText(b.misconception_to_avoid,1200),
+        premium_level:safeText(b.premium_level,40)
       };
       const result=await gateway(TRANSFER_EVALUATOR_PROMPT,input,"simantab_transfer_evaluation",transferSchema);
       const out=result.output;

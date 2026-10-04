@@ -8,9 +8,11 @@ const CORS={
   "Content-Type":"application/json"
 };
 const json=(body:any,status=200)=>new Response(JSON.stringify(body),{status,headers:CORS});
-const THINKING_SESSIONS=[{"level":1,"date":"2026-10-03","label":"Basic","questions":[101,102,103,104,105,106,107,2,4,5,6,8,9,202,115,116,117,118,119,120,121,15,17,18,19,21,22,216,129,130,131,132,133,134,135,31,32,33,34,35,37,229,143,144,145,146,147,148,149,43,44,45,46,47,243,244,157,158,159,160,161,162,163,58,60,61,62,63,257,258],"difficulty_composition":{"mudah":35,"sedang":28,"sulit":7}},{"level":2,"date":"2026-10-07","label":"Premium One","questions":[1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039,1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055,1056,1057,1058,1059,1060,1061,1062,1063,1064,1065,1066,1067,1068,1069,1070],"difficulty_composition":{"mudah":21,"sedang":28,"sulit":21}},{"level":3,"date":"2026-10-10","label":"Pro","questions":[112,113,114,210,213,208,209,211,212,214,1,3,7,10,126,127,128,218,220,222,225,226,227,228,16,20,24,26,140,141,142,233,238,242,237,239,240,241,29,30,36,40,154,155,156,248,252,256,251,253,254,255,48,50,53,55,169,170,264,267,269,263,265,266,268,270,57,59,66,70],"difficulty_composition":{"mudah":14,"sedang":14,"sulit":42}}];
-const activeSession=(now=Date.now())=>THINKING_SESSIONS.find(s=>now>=Date.parse(s.date+"T09:00:00+07:00")&&now<Date.parse(s.date+"T15:00:00+07:00"));
-const sessionOpen=(gate:any,session:any)=>!!session&&(Date.parse(gate?.updated_at||"")>=Date.parse(session.date+"T09:00:00+07:00")?!!gate?.is_open:true);
+const THINKING_SESSIONS=[{"level":1,"date":"2026-10-03","start_time":"09:00","end_time":"15:00","label":"Basic","questions":[101,102,103,104,105,106,107,2,4,5,6,8,9,202,115,116,117,118,119,120,121,15,17,18,19,21,22,216,129,130,131,132,133,134,135,31,32,33,34,35,37,229,143,144,145,146,147,148,149,43,44,45,46,47,243,244,157,158,159,160,161,162,163,58,60,61,62,63,257,258],"difficulty_composition":{"mudah":35,"sedang":28,"sulit":7}},{"level":2,"date":"2026-10-05","start_time":"13:00","end_time":"16:00","label":"Premium One","questions":[1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039,1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055,1056,1057,1058,1059,1060,1061,1062,1063,1064,1065,1066,1067,1068,1069,1070],"difficulty_composition":{"mudah":21,"sedang":28,"sulit":21}},{"level":3,"date":"2026-10-08","start_time":"13:00","end_time":"16:00","label":"Premium Two","questions":[2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040,2041,2042,2043,2044,2045,2046,2047,2048,2049,2050,2051,2052,2053,2054,2055,2056,2057,2058,2059,2060,2061,2062,2063,2064,2065,2066,2067,2068,2069,2070],"difficulty_composition":{"mudah":0,"sedang":28,"sulit":42}},{"level":4,"date":"2026-10-10","start_time":"09:00","end_time":"12:00","label":"Pro","questions":[112,113,114,210,213,208,209,211,212,214,1,3,7,10,126,127,128,218,220,222,225,226,227,228,16,20,24,26,140,141,142,233,238,242,237,239,240,241,29,30,36,40,154,155,156,248,252,256,251,253,254,255,48,50,53,55,169,170,264,267,269,263,265,266,268,270,57,59,66,70],"difficulty_composition":{"mudah":14,"sedang":14,"sulit":42}},{"level":30,"date":"2099-01-01","start_time":"00:00","end_time":"23:59","label":"Premium Two • Uji","questions":[2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040,2041,2042,2043,2044,2045,2046,2047,2048,2049,2050,2051,2052,2053,2054,2055,2056,2057,2058,2059,2060,2061,2062,2063,2064,2065,2066,2067,2068,2069,2070],"difficulty_composition":{"mudah":0,"sedang":28,"sulit":42},"test_only":true}];
+const sessionStart=(s:any)=>Date.parse(s.date+"T"+(s.start_time||"09:00")+":00+07:00");
+const sessionEnd=(s:any)=>Date.parse(s.date+"T"+(s.end_time||"15:00")+":00+07:00");
+const activeSession=(now=Date.now())=>THINKING_SESSIONS.find((s:any)=>!s.test_only&&now>=sessionStart(s)&&now<sessionEnd(s));
+const sessionOpen=(gate:any,session:any)=>!!session&&(Date.parse(gate?.updated_at||"")>=sessionStart(session)?!!gate?.is_open:true);
 const COMP_ORDER=["KEPRIBADIAN","SOSIAL","MANAJERIAL","KEWIRAUSAHAAN","SUPERVISI"];
 const LABEL:any={
   KEPRIBADIAN:"Kepribadian",SOSIAL:"Sosial",MANAJERIAL:"Manajerial",
@@ -153,7 +155,7 @@ Deno.serve(async(req)=>{
       is_open:testActive||sessionOpen(gate,activeSession()),
       session:testActive?THINKING_SESSIONS.find(s=>s.level===test.session_level):activeSession()||null,
       is_test:testActive,test_expires_at:testActive?test.expires_at:null,
-      sessions:THINKING_SESSIONS,
+      sessions:THINKING_SESSIONS.filter((s:any)=>!s.test_only),
       opened_at:gate?.opened_at||null,
       updated_at:gate?.updated_at||null,
       can_manage:isKabid,
@@ -165,7 +167,7 @@ Deno.serve(async(req)=>{
   }
 
   if(action==="set_access"){
-    if(!activeSession())return json({error:"Akses hanya dapat dibuka atau ditutup dalam jadwal 09.00–15.00 WIB pada 3, 7, atau 10 Oktober."},409);
+    if(!activeSession())return json({error:"Kontrol manual Kabid hanya tersedia selama jendela sesi terjadwal yang sedang aktif."},409);
     if(!isKabid) return json({error:"Hanya Kabid yang dapat membuka atau menutup akses simulasi Seleksi Substansi."},403);
     const open=body?.open===true;
     const nowIso=new Date().toISOString();
@@ -219,7 +221,7 @@ Deno.serve(async(req)=>{
     const answerMap=new Map((answers||[]).map((a:any)=>[Number(a.question_no),a]));
     let evaluated:any[]=[];
     if(attempt.mode==="SIMULASI"){
-      const legacyStart=attempt.session_level===1?101:attempt.session_level===3?201:1;
+      const legacyStart=attempt.session_level===1?101:attempt.session_level===2?1001:(attempt.session_level===3||attempt.session_level===30)?2001:attempt.session_level===4?201:1;
       const pack={questions:attempt.package_questions||Array.from({length:70},(_,i)=>legacyStart+i)};
       evaluated=(keys||[]).filter((k:any)=>!pack||pack.questions.includes(Number(k.question_no))).map((k:any)=>{
         const a:any=answerMap.get(Number(k.question_no));

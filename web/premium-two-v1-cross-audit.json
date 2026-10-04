@@ -1,0 +1,63 @@
+{
+  "version": "Premium Two v1.0",
+  "status": "FINAL_CANDIDATE_PASS",
+  "audited_at": "2026-10-04",
+  "scope": {
+    "items": 70,
+    "options": 350,
+    "ids": "2001-2070"
+  },
+  "composition": {
+    "KEPRIBADIAN": 14,
+    "SOSIAL": 14,
+    "MANAJERIAL": 18,
+    "KEWIRAUSAHAAN": 8,
+    "SUPERVISI": 16
+  },
+  "qa": {
+    "keyCounts": {
+      "A": 14,
+      "B": 14,
+      "C": 14,
+      "D": 14,
+      "E": 14
+    },
+    "adjacentSameKey": 0,
+    "strongLengthClues": 0,
+    "strongLexicalClues": 5,
+    "strongLexicalClueRatio": 0.071,
+    "maxOptionWordRatio": 2.8,
+    "optionDataMismatches": 0,
+    "dbMetadataMismatches": 0,
+    "missingMetadata": [],
+    "stimulusMinWords": 70,
+    "stimulusMaxWords": 93,
+    "stimulusAvgWords": 78,
+    "maxH4ToDB5Similarity": 0.21,
+    "h4LeakFlags": [],
+    "maxStimulusToTransferSimilarity": 0.2,
+    "transferTooSimilarFlags": []
+  },
+  "manualReview": {
+    "heuristicFlagsReviewed": [
+      2003,
+      2009,
+      2013,
+      2015,
+      2025,
+      2028,
+      2034,
+      2037,
+      2038,
+      2047,
+      2048,
+      2052,
+      2060,
+      2065,
+      2070
+    ],
+    "resolution": "PASS_AFTER_MANUAL_REVIEW",
+    "note": "Fakta H1 didukung stimulus, DB5 sejalan dengan reasoning/principle, H4 tidak membocorkan DB5, dan transfer memakai konteks berbeda."
+  },
+  "release_gate": "Layak dinyatakan FINAL secara konten. Belum merge/deploy ke production."
+}
