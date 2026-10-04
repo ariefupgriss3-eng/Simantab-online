@@ -208,7 +208,7 @@ const P=[
   [
     2018,
     "SOSIAL",
-    "Guru menolak kebijakan baru karena merasa pengalaman mereka tidak dihargai. Kepala sekolah sudah mengadakan dua sosialisasi dan memberi kesempatan bertanya, tetapi keputusan dasar tidak dapat diubah karena merupakan kebijakan pemerintah. Sebagian guru meminta dilibatkan, sementara kepala sekolah tidak dapat membuka kembali aspek yang sudah ditetapkan. Beberapa bagian implementasi seperti jadwal, pembagian peran, dan mekanisme umpan balik masih dapat disesuaikan di tingkat sekolah. Bentuk pelibatan yang paling bermakna adalah...",
+    "Guru menolak kebijakan baru karena merasa pengalaman mereka tidak dihargai. Kepala sekolah sudah mengadakan dua sosialisasi dan memberi kesempatan bertanya, tetapi keputusan dasar tidak dapat diubah karena merupakan kebijakan pemerintah. Sebagian guru meminta dilibatkan, sementara kepala sekolah tidak dapat membuka kembali aspek yang sudah ditetapkan. Beberapa bagian implementasi seperti jadwal, pembagian peran, dan mekanisme umpan balik masih dapat disesuaikan di tingkat sekolah. Guru juga meminta kejelasan sejauh mana usulan mereka benar-benar dapat memengaruhi keputusan teknis, bukan sekadar didengar. Bentuk pelibatan yang paling bermakna adalah...",
     [
       "Membuka seluruh keputusan untuk dibahas ulang demi rasa memiliki.",
       "Menjelaskan batas kebijakan dan melibatkan guru pada aspek implementasi yang masih terbuka.",
@@ -220,7 +220,7 @@ const P=[
   [
     2019,
     "SOSIAL",
-    "Konflik antar dua kelompok guru mulai memengaruhi rapat dan kolaborasi. Kedua kelompok memiliki keluhan yang sebagian valid. Beberapa guru meminta kepala sekolah segera menentukan pihak yang salah agar konflik selesai. Data menunjukkan masalah berkembang dari pembagian peran yang tidak jelas dan komunikasi informal yang berulang. Kegiatan bersama pernah dilakukan sebelumnya dan suasana sempat membaik, tetapi konflik muncul kembali ketika pembagian tugas baru diumumkan. Pendekatan terbaik adalah...",
+    "Konflik antar dua kelompok guru mulai memengaruhi rapat dan kolaborasi. Kedua kelompok memiliki keluhan yang sebagian valid. Beberapa guru meminta kepala sekolah segera menentukan pihak yang salah agar konflik selesai. Data menunjukkan masalah berkembang dari pembagian peran yang tidak jelas dan komunikasi informal yang berulang. Kegiatan bersama pernah dilakukan sebelumnya dan suasana sempat membaik, tetapi konflik muncul kembali ketika pembagian tugas baru diumumkan. Jika konflik dibiarkan, beberapa program lintas kelompok terancam berhenti karena anggota menolak bekerja bersama. Pendekatan terbaik adalah...",
     [
       "Memisahkan kedua kelompok dalam pekerjaan berbeda.",
       "Menentukan pihak yang paling banyak melanggar agar konflik berhenti.",
@@ -232,7 +232,7 @@ const P=[
   [
     2020,
     "SOSIAL",
-    "Informasi dugaan pelanggaran guru bocor ke grup orang tua sebelum pemeriksaan selesai. Beberapa orang tua menuntut sekolah membuka seluruh informasi sebagai bentuk transparansi. Guru yang diperiksa merasa reputasinya sudah rusak. Kepala sekolah harus menjaga kepercayaan publik sekaligus kerahasiaan proses. Dinas belum meminta laporan publik, tetapi grup orang tua terus mendesak sekolah memberi kepastian dan beberapa pesan mulai menyebut nama guru yang diperiksa. Respons paling tepat adalah...",
+    "Informasi dugaan pelanggaran guru bocor ke grup orang tua sebelum pemeriksaan selesai. Beberapa orang tua menuntut sekolah membuka seluruh informasi sebagai bentuk transparansi. Guru yang diperiksa merasa reputasinya sudah rusak. Kepala sekolah harus menjaga kepercayaan publik sekaligus kerahasiaan proses. Dinas belum meminta laporan publik, tetapi grup orang tua terus mendesak sekolah memberi kepastian dan beberapa pesan mulai menyebut nama guru yang diperiksa. Sekolah harus memberi respons dalam waktu singkat karena rumor sudah menyebar di luar grup resmi. Respons paling tepat adalah...",
     [
       "Menolak memberikan informasi sampai pemeriksaan selesai.",
       "Meminta guru memberikan klarifikasi publik.",
@@ -244,7 +244,7 @@ const P=[
   [
     2021,
     "SOSIAL",
-    "Beberapa guru dengan kinerja tinggi terus mendapat tugas tambahan karena dianggap mampu, sementara guru lain jarang dilibatkan. Pembagian ini menghasilkan pekerjaan cepat tetapi mulai menyebabkan kelelahan dan ketergantungan pada individu tertentu. Kepala sekolah ingin menjaga kualitas sekaligus membangun kapasitas organisasi. Dua guru andalan sudah menyampaikan tanda kelelahan, sementara beberapa guru lain sebenarnya berminat belajar tetapi belum pernah diberi kesempatan memegang tugas penting. Keputusan paling strategis adalah...",
+    "Beberapa guru dengan kinerja tinggi terus mendapat tugas tambahan karena dianggap mampu, sementara guru lain jarang dilibatkan. Pembagian ini menghasilkan pekerjaan cepat tetapi mulai menyebabkan kelelahan dan ketergantungan pada individu tertentu. Kepala sekolah ingin menjaga kualitas sekaligus membangun kapasitas organisasi. Dua guru andalan sudah menyampaikan tanda kelelahan, sementara beberapa guru lain sebenarnya berminat belajar tetapi belum pernah diberi kesempatan memegang tugas penting. Jika satu guru kunci absen, beberapa kegiatan saat ini tidak memiliki pengganti yang siap mengambil alih. Keputusan paling strategis adalah...",
     [
       "Memberikan insentif tambahan kepada guru yang memegang banyak tugas.",
       "Mengurangi program agar guru unggul tidak terlalu terbebani.",
@@ -256,7 +256,7 @@ const P=[
   [
     2022,
     "SOSIAL",
-    "Tim sekolah sering rapat tetapi keputusan tidak dijalankan konsisten. Notulen lengkap, namun anggota berbeda pemahaman mengenai siapa penanggung jawab akhir dan kapan pekerjaan dianggap selesai. Ketua tim menilai masalahnya adalah kedisiplinan anggota. Kepala sekolah melihat masalah mungkin lebih struktural. Beberapa pekerjaan selesai hanya karena anggota saling mengingatkan secara pribadi, sehingga hasil rapat formal belum benar-benar menjadi mekanisme eksekusi yang dapat diandalkan. Intervensi terbaik adalah...",
+    "Tim sekolah sering rapat tetapi keputusan tidak dijalankan konsisten. Notulen lengkap, namun anggota berbeda pemahaman mengenai siapa penanggung jawab akhir dan kapan pekerjaan dianggap selesai. Ketua tim menilai masalahnya adalah kedisiplinan anggota. Kepala sekolah melihat masalah mungkin lebih struktural. Beberapa pekerjaan selesai hanya karena anggota saling mengingatkan secara pribadi, sehingga hasil rapat formal belum benar-benar menjadi mekanisme eksekusi yang dapat diandalkan. Dua tenggat penting akan jatuh dalam minggu yang sama sehingga kelemahan sistem kerja dapat segera berdampak pada layanan. Intervensi terbaik adalah...",
     [
       "Menambah frekuensi rapat monitoring agar kemajuan tugas lebih sering diperiksa oleh tim.",
       "Menyerahkan koordinasi kepada ketua tim dengan kewenangan lebih jelas untuk memastikan tindak lanjut.",
@@ -268,7 +268,7 @@ const P=[
   [
     2023,
     "SOSIAL",
-    "Komunitas belajar guru aktif berbagi materi, tetapi perubahan praktik kelas minim. Guru merasa pertemuan bermanfaat karena memperoleh banyak ide. Namun, hampir tidak ada dokumentasi mengenai strategi yang diuji, hasilnya, atau perbaikannya. Pada akhir semester, guru dapat menyebut banyak strategi yang pernah dibahas, tetapi sulit menunjukkan mana yang sudah diuji, pada kelas mana, dan perubahan apa yang terjadi. Perubahan desain komunitas paling tepat adalah...",
+    "Komunitas belajar guru aktif berbagi materi, tetapi perubahan praktik kelas minim. Guru merasa pertemuan bermanfaat karena memperoleh banyak ide. Namun, hampir tidak ada dokumentasi mengenai strategi yang diuji, hasilnya, atau perbaikannya. Pada akhir semester, guru dapat menyebut banyak strategi yang pernah dibahas, tetapi sulit menunjukkan mana yang sudah diuji, pada kelas mana, dan perubahan apa yang terjadi. Kepala sekolah ingin setiap pertemuan menghasilkan perubahan yang dapat dilihat di kelas, bukan hanya daftar materi. Perubahan desain komunitas paling tepat adalah...",
     [
       "Menggunakan siklus masalah kelas, uji praktik, bukti perubahan, dan refleksi bersama.",
       "Menambah jumlah materi yang dibagikan.",
@@ -280,7 +280,7 @@ const P=[
   [
     2024,
     "SOSIAL",
-    "Program antarbidang masing-masing memiliki indikator keberhasilan sendiri, tetapi sebagian indikator tidak berhubungan langsung dengan tujuan sekolah. Setiap koordinator dapat menunjukkan capaian programnya, namun sasaran utama sekolah tidak bergerak. Anggaran tahun berikutnya sedang disusun dan tiap koordinator mengusulkan programnya tetap dipertahankan karena indikator internal mereka tercapai. Evaluasi yang paling tepat adalah...",
+    "Program antarbidang masing-masing memiliki indikator keberhasilan sendiri, tetapi sebagian indikator tidak berhubungan langsung dengan tujuan sekolah. Setiap koordinator dapat menunjukkan capaian programnya, namun sasaran utama sekolah tidak bergerak. Anggaran tahun berikutnya sedang disusun dan tiap koordinator mengusulkan programnya tetap dipertahankan karena indikator internal mereka tercapai. Jika program dipertahankan tanpa evaluasi kontribusi, sekolah berisiko terus membiayai kegiatan yang hanya berhasil pada indikator internal. Evaluasi yang paling tepat adalah...",
     [
       "Mengurangi program dengan capaian terendah.",
       "Mempertahankan program yang mencapai indikator masing-masing.",
@@ -292,7 +292,7 @@ const P=[
   [
     2025,
     "SOSIAL",
-    "Sekolah ingin belajar dari sekolah lain yang berhasil meningkatkan literasi. Sekolah rujukan memiliki karakteristik murid, jumlah guru, dan dukungan orang tua yang lebih kuat. Tim Anda tertarik menyalin struktur program karena hasilnya terbukti baik. Sekolah Anda memiliki sumber daya lebih terbatas dan pola kehadiran murid yang berbeda, sehingga tim perlu menentukan bagian mana yang mungkin benar-benar dapat dipindahkan. Cara menggunakan praktik baik tersebut secara paling tepat adalah...",
+    "Sekolah ingin belajar dari sekolah lain yang berhasil meningkatkan literasi. Sekolah rujukan memiliki karakteristik murid, jumlah guru, dan dukungan orang tua yang lebih kuat. Tim Anda tertarik menyalin struktur program karena hasilnya terbukti baik. Sekolah Anda memiliki sumber daya lebih terbatas dan pola kehadiran murid yang berbeda, sehingga tim perlu menentukan bagian mana yang mungkin benar-benar dapat dipindahkan. Tim juga belum mengetahui apakah keberhasilan sekolah rujukan berasal dari program itu sendiri atau dukungan konteks lain. Cara menggunakan praktik baik tersebut secara paling tepat adalah...",
     [
       "Menunggu sampai sumber daya sekolah setara.",
       "Memahami mekanisme keberhasilan, menilai konteks, mengadaptasi, lalu menguji hasil.",
@@ -304,7 +304,7 @@ const P=[
   [
     2026,
     "SOSIAL",
-    "Jejaring sekolah rutin berbagi praktik, tetapi sekolah dengan capaian rendah cenderung hanya menjadi penerima informasi. Mereka jarang membawa data sendiri dan kurang percaya diri berdiskusi. Kepala sekolah ingin jejaring menjadi ruang pembelajaran dua arah. Sebagian sekolah bahkan berhenti menyampaikan masalah karena merasa hanya akan dibandingkan dengan sekolah unggul, bukan dibantu menganalisis konteks mereka sendiri. Desain yang paling tepat adalah...",
+    "Jejaring sekolah rutin berbagi praktik, tetapi sekolah dengan capaian rendah cenderung hanya menjadi penerima informasi. Mereka jarang membawa data sendiri dan kurang percaya diri berdiskusi. Kepala sekolah ingin jejaring menjadi ruang pembelajaran dua arah. Sebagian sekolah bahkan berhenti menyampaikan masalah karena merasa hanya akan dibandingkan dengan sekolah unggul, bukan dibantu menganalisis konteks mereka sendiri. Jejaring memiliki jadwal enam bulan lagi sehingga perubahan desain perlu memperkuat kontribusi semua anggota sejak pertemuan berikutnya. Desain yang paling tepat adalah...",
     [
       "Mengadakan kompetisi antar sekolah untuk meningkatkan motivasi.",
       "Menambah forum presentasi praktik baik dan meminta tiap sekolah membawa contoh penerapan dari konteksnya.",
@@ -316,7 +316,7 @@ const P=[
   [
     2027,
     "SOSIAL",
-    "Seorang guru berhasil dengan pendekatan tertentu, tetapi ketika tiga guru lain mencoba, hasilnya berbeda-beda. Guru pencetus berpendapat rekan lain belum menerapkan dengan benar. Kepala sekolah ingin menentukan apakah praktik tersebut layak diperluas. Data awal menunjukkan guru lain tidak selalu menggunakan strategi pada durasi, kelompok murid, dan jenis tugas yang sama seperti guru pencetus. Langkah evaluatif paling kuat adalah...",
+    "Seorang guru berhasil dengan pendekatan tertentu, tetapi ketika tiga guru lain mencoba, hasilnya berbeda-beda. Guru pencetus berpendapat rekan lain belum menerapkan dengan benar. Kepala sekolah ingin menentukan apakah praktik tersebut layak diperluas. Data awal menunjukkan guru lain tidak selalu menggunakan strategi pada durasi, kelompok murid, dan jenis tugas yang sama seperti guru pencetus. Kepala sekolah perlu membedakan apakah variasi hasil menunjukkan masalah pada strategi, cara penerapan, atau karakteristik kelas. Langkah evaluatif paling kuat adalah...",
     [
       "Membandingkan konteks, kualitas implementasi, dan hasil untuk menemukan kondisi keberhasilan.",
       "Meminta guru pencetus melatih seluruh guru kembali.",
@@ -328,7 +328,7 @@ const P=[
   [
     2028,
     "SOSIAL",
-    "Sekolah akan mempublikasikan inovasi yang berhasil. Tim komunikasi ingin hanya menampilkan keberhasilan agar citra sekolah kuat. Tim pengembang menilai beberapa kegagalan awal justru penting sebagai pembelajaran. Sekolah lain sudah meminta bahan presentasi dan berniat meniru program pada semester berikutnya, sehingga informasi yang dibagikan akan memengaruhi keputusan mereka. Pendekatan diseminasi terbaik adalah...",
+    "Sekolah akan mempublikasikan inovasi yang berhasil. Tim komunikasi ingin hanya menampilkan keberhasilan agar citra sekolah kuat. Tim pengembang menilai beberapa kegagalan awal justru penting sebagai pembelajaran. Sekolah lain sudah meminta bahan presentasi dan berniat meniru program pada semester berikutnya, sehingga informasi yang dibagikan akan memengaruhi keputusan mereka. Jika hanya hasil positif yang ditampilkan, sekolah lain mungkin mengadopsi program tanpa memahami kondisi yang diperlukan untuk berhasil. Pendekatan diseminasi terbaik adalah...",
     [
       "Menjelaskan proses secara lengkap termasuk semua kesalahan internal.",
       "Menonjolkan hasil akhir karena publik membutuhkan contoh positif.",
@@ -340,7 +340,7 @@ const P=[
   [
     2029,
     "MANAJERIAL",
-    "Visi sekolah menekankan kemandirian murid, tetapi program tahunan lebih banyak berupa kegiatan yang diarahkan penuh oleh guru. Semua kegiatan terlaksana dengan baik dan mendapat apresiasi orang tua. Kepala sekolah ingin menilai apakah program benar-benar sejalan dengan visi, bukan sekadar berjalan sukses secara administratif. Dalam wawancara, murid mengatakan mereka jarang menentukan topik, cara kerja, atau pembagian peran karena hampir seluruh keputusan sudah dibuat guru. Evaluasi paling tepat adalah...",
+    "Visi sekolah menekankan kemandirian murid, tetapi program tahunan lebih banyak berupa kegiatan yang diarahkan penuh oleh guru. Semua kegiatan terlaksana dengan baik dan mendapat apresiasi orang tua. Kepala sekolah ingin menilai apakah program benar-benar sejalan dengan visi, bukan sekadar berjalan sukses secara administratif. Dalam wawancara, murid mengatakan mereka jarang menentukan topik, cara kerja, atau pembagian peran karena hampir seluruh keputusan sudah dibuat guru. Kepala sekolah juga melihat bahwa indikator keberhasilan kegiatan selama ini lebih banyak mengukur keterlaksanaan daripada agency murid. Evaluasi paling tepat adalah...",
     [
       "Menambahkan satu program khusus kepemimpinan murid.",
       "Menilai apakah program benar-benar memberi murid ruang mengambil peran dan keputusan.",
@@ -352,7 +352,7 @@ const P=[
   [
     2030,
     "MANAJERIAL",
-    "Kepala sekolah ingin membangun budaya inovasi. Guru mulai banyak mencoba strategi baru, tetapi sebagian percobaan tidak terdokumentasi dan sulit diketahui dampaknya. Ada risiko sekolah sekadar menjadi tempat banyak eksperimen tanpa pembelajaran organisasi. Beberapa inovasi terlihat menarik ketika dipresentasikan, tetapi sekolah belum memiliki mekanisme untuk menentukan mana yang perlu diteruskan, diperbaiki, atau dihentikan. Kebijakan paling tepat adalah...",
+    "Kepala sekolah ingin membangun budaya inovasi. Guru mulai banyak mencoba strategi baru, tetapi sebagian percobaan tidak terdokumentasi dan sulit diketahui dampaknya. Ada risiko sekolah sekadar menjadi tempat banyak eksperimen tanpa pembelajaran organisasi. Beberapa inovasi terlihat menarik ketika dipresentasikan, tetapi sekolah belum memiliki mekanisme untuk menentukan mana yang perlu diteruskan, diperbaiki, atau dihentikan. Tanpa mekanisme seleksi, waktu guru habis mencoba hal baru yang belum tentu relevan dengan masalah belajar utama. Kebijakan paling tepat adalah...",
     [
       "Memberikan penghargaan pada inovasi paling kreatif.",
       "Menugaskan tim khusus menilai hasil setiap inovasi dan memberi rekomendasi tindak lanjut.",
@@ -364,7 +364,7 @@ const P=[
   [
     2031,
     "MANAJERIAL",
-    "Visi sekolah disepakati melalui proses partisipatif, tetapi setelah dua tahun muncul kebutuhan baru akibat perubahan karakteristik murid dan teknologi. Sebagian guru ingin mengganti visi, sementara yang lain menilai visi tidak boleh sering berubah. Rapor Pendidikan juga menunjukkan perubahan kebutuhan tertentu, tetapi tujuan jangka panjang sekolah masih dianggap relevan oleh sebagian besar warga sekolah. Pendekatan paling tepat adalah...",
+    "Visi sekolah disepakati melalui proses partisipatif, tetapi setelah dua tahun muncul kebutuhan baru akibat perubahan karakteristik murid dan teknologi. Sebagian guru ingin mengganti visi, sementara yang lain menilai visi tidak boleh sering berubah. Rapor Pendidikan juga menunjukkan perubahan kebutuhan tertentu, tetapi tujuan jangka panjang sekolah masih dianggap relevan oleh sebagian besar warga sekolah. Perubahan visi akan memengaruhi seluruh program dan indikator, sehingga keputusan tidak boleh hanya mengikuti tren teknologi. Pendekatan paling tepat adalah...",
     [
       "Mengganti visi agar mengikuti perkembangan terbaru.",
       "Menambahkan istilah teknologi ke dalam visi.",
@@ -376,7 +376,7 @@ const P=[
   [
     2032,
     "MANAJERIAL",
-    "Sekolah mencatat aktivitas membaca digital meningkat, tetapi kemampuan mengevaluasi kualitas sumber masih rendah. Guru mengusulkan penambahan waktu membaca digital, sementara pustakawan ingin mengembalikan fokus pada buku cetak. Survei murid menunjukkan mereka cepat menemukan informasi daring, tetapi sering kesulitan membedakan sumber tepercaya, opini, iklan, dan konten yang tidak terverifikasi. Strategi paling tepat adalah...",
+    "Sekolah mencatat aktivitas membaca digital meningkat, tetapi kemampuan mengevaluasi kualitas sumber masih rendah. Guru mengusulkan penambahan waktu membaca digital, sementara pustakawan ingin mengembalikan fokus pada buku cetak. Survei murid menunjukkan mereka cepat menemukan informasi daring, tetapi sering kesulitan membedakan sumber tepercaya, opini, iklan, dan konten yang tidak terverifikasi. Sekolah ingin meningkatkan kemampuan murid menilai informasi, bukan sekadar menaikkan jumlah bacaan yang dikonsumsi. Strategi paling tepat adalah...",
     [
       "Meningkatkan waktu membaca digital karena minat murid tinggi.",
       "Membagi waktu membaca digital dan cetak sama rata.",
@@ -388,7 +388,7 @@ const P=[
   [
     2033,
     "MANAJERIAL",
-    "Sekolah memiliki banyak kegiatan populer, tetapi data menunjukkan hanya sedikit yang memiliki hubungan jelas dengan capaian prioritas. Beberapa kegiatan sudah menjadi tradisi dan penghentian dapat menimbulkan resistensi. Jika semua kegiatan dipertahankan, anggaran untuk program prioritas menjadi terbatas; jika tradisi dihentikan terlalu cepat, dukungan warga sekolah dapat turun. Keputusan manajerial paling kuat adalah...",
+    "Sekolah memiliki banyak kegiatan populer, tetapi data menunjukkan hanya sedikit yang memiliki hubungan jelas dengan capaian prioritas. Beberapa kegiatan sudah menjadi tradisi dan penghentian dapat menimbulkan resistensi. Jika semua kegiatan dipertahankan, anggaran untuk program prioritas menjadi terbatas; jika tradisi dihentikan terlalu cepat, dukungan warga sekolah dapat turun. Tim perencana meminta dasar yang dapat digunakan konsisten untuk membandingkan program lama dan kebutuhan baru. Keputusan manajerial paling kuat adalah...",
     [
       "Meminta warga sekolah menilai manfaat tiap kegiatan sebelum menentukan program yang dipertahankan melalui voting.",
       "Menambah program prioritas tanpa mengurangi kegiatan lama.",
@@ -400,7 +400,7 @@ const P=[
   [
     2034,
     "MANAJERIAL",
-    "Tiga inovasi bersaing memperoleh dana. Program A berpotensi berdampak besar tetapi belum pernah diuji. Program B sudah menunjukkan hasil sedang dan mudah diperluas. Program C sangat populer tetapi bukti manfaatnya terbatas. Dana hanya cukup untuk satu program penuh. Program A dapat diuji dalam skala kecil, sedangkan Program B dapat langsung dijalankan penuh; keputusan harus diambil sebelum tahun anggaran baru dimulai. Keputusan paling dapat dipertanggungjawabkan adalah...",
+    "Tiga inovasi bersaing memperoleh dana. Program A berpotensi berdampak besar tetapi belum pernah diuji. Program B sudah menunjukkan hasil sedang dan mudah diperluas. Program C sangat populer tetapi bukti manfaatnya terbatas. Dana hanya cukup untuk satu program penuh. Program A dapat diuji dalam skala kecil, sedangkan Program B dapat langsung dijalankan penuh; keputusan harus diambil sebelum tahun anggaran baru dimulai. Kepala sekolah ingin keputusan dapat dijelaskan kepada guru yang mendukung ketiga program dengan argumen yang sama-sama masuk akal. Keputusan paling dapat dipertanggungjawabkan adalah...",
     [
       "Memilih C karena dukungan warga sekolah paling besar.",
       "Membandingkan kebutuhan, bukti, dampak, risiko, kelayakan, dan opsi uji terbatas.",
@@ -412,7 +412,7 @@ const P=[
   [
     2035,
     "MANAJERIAL",
-    "Komunitas belajar mulai menggunakan data kelas, tetapi guru cenderung memilih data yang mendukung pendapat mereka. Ketika hasil strategi baru kurang baik, guru menyalahkan karakteristik murid. Dalam diskusi, data yang bertentangan dengan pendapat awal sering dianggap tidak relevan, sehingga kesimpulan tim cenderung tetap sama meskipun bukti baru muncul. Perbaikan paling tepat adalah...",
+    "Komunitas belajar mulai menggunakan data kelas, tetapi guru cenderung memilih data yang mendukung pendapat mereka. Ketika hasil strategi baru kurang baik, guru menyalahkan karakteristik murid. Dalam diskusi, data yang bertentangan dengan pendapat awal sering dianggap tidak relevan, sehingga kesimpulan tim cenderung tetap sama meskipun bukti baru muncul. Kepala sekolah khawatir diskusi berubah menjadi pembenaran keputusan lama alih-alih proses belajar dari bukti. Perbaikan paling tepat adalah...",
     [
       "Menggunakan protokol yang memisahkan fakta, interpretasi, alternatif penjelasan, dan bukti lanjutan.",
       "Menetapkan satu indikator yang sama untuk semua guru.",
@@ -424,7 +424,7 @@ const P=[
   [
     2036,
     "MANAJERIAL",
-    "Sebuah inovasi gagal pada percobaan pertama, tetapi data menunjukkan sebagian komponennya bekerja. Tim terbagi antara menghentikan program dan melanjutkannya tanpa perubahan agar mendapat waktu cukup. Anggaran tersisa hanya cukup untuk satu siklus perbaikan, sehingga tim perlu memutuskan apakah informasi dari kegagalan pertama cukup berguna untuk desain ulang. Keputusan terbaik adalah...",
+    "Sebuah inovasi gagal pada percobaan pertama, tetapi data menunjukkan sebagian komponennya bekerja. Tim terbagi antara menghentikan program dan melanjutkannya tanpa perubahan agar mendapat waktu cukup. Anggaran tersisa hanya cukup untuk satu siklus perbaikan, sehingga tim perlu memutuskan apakah informasi dari kegagalan pertama cukup berguna untuk desain ulang. Kegagalan pertama juga memberi informasi tentang bagian yang berjalan, sehingga menghentikan seluruh program dapat membuang pembelajaran penting. Keputusan terbaik adalah...",
     [
       "Mengganti seluruh tim pelaksana.",
       "Menghentikan program karena hasil awal tidak memenuhi target.",
@@ -436,7 +436,7 @@ const P=[
   [
     2037,
     "MANAJERIAL",
-    "Lima program peningkatan mutu berjalan bersamaan. Masing-masing memiliki laporan kegiatan lengkap, tetapi beberapa menargetkan masalah yang hampir sama. Guru mulai mengalami kelelahan program. Beberapa guru harus mengikuti kegiatan dari tiga program berbeda dalam minggu yang sama, sementara bukti dampak masing-masing program belum dibandingkan secara sistematis. Langkah manajerial paling tepat adalah...",
+    "Lima program peningkatan mutu berjalan bersamaan. Masing-masing memiliki laporan kegiatan lengkap, tetapi beberapa menargetkan masalah yang hampir sama. Guru mulai mengalami kelelahan program. Beberapa guru harus mengikuti kegiatan dari tiga program berbeda dalam minggu yang sama, sementara bukti dampak masing-masing program belum dibandingkan secara sistematis. Kepala sekolah perlu memastikan pengurangan program tidak sekadar memotong jumlah kegiatan, tetapi memperbaiki fokus intervensi. Langkah manajerial paling tepat adalah...",
     [
       "Meminta setiap koordinator mempertahankan program masing-masing dengan anggaran lebih kecil.",
       "Menghentikan dua program dengan capaian terendah.",
@@ -448,7 +448,7 @@ const P=[
   [
     2038,
     "MANAJERIAL",
-    "Data penggunaan ruang menunjukkan laboratorium hanya digunakan 35% dari waktu sekolah, tetapi guru mengeluhkan sulit memperoleh jadwal ketika dibutuhkan. Sekolah berencana membangun ruang baru. Catatan peminjaman menunjukkan penggunaan rendah pada pagi hari tetapi sangat padat pada jam tertentu, sehingga angka 35% mungkin menyembunyikan masalah distribusi waktu. Interpretasi yang paling tepat adalah...",
+    "Data penggunaan ruang menunjukkan laboratorium hanya digunakan 35% dari waktu sekolah, tetapi guru mengeluhkan sulit memperoleh jadwal ketika dibutuhkan. Sekolah berencana membangun ruang baru. Catatan peminjaman menunjukkan penggunaan rendah pada pagi hari tetapi sangat padat pada jam tertentu, sehingga angka 35% mungkin menyembunyikan masalah distribusi waktu. Tim sarana belum memeriksa apakah perubahan jadwal atau fungsi ruang dapat menyelesaikan konflik tanpa pembangunan baru. Interpretasi yang paling tepat adalah...",
     [
       "Jadwal laboratorium harus dibagi sama rata.",
       "Menganalisis pola waktu, konflik jadwal, fungsi ruang, dan alternatif sebelum investasi.",
@@ -460,7 +460,7 @@ const P=[
   [
     2039,
     "MANAJERIAL",
-    "Komunitas belajar dihadiri 95% guru, tetapi partisipasi diskusi rendah. Survei anonim menunjukkan guru takut pendapatnya dinilai oleh pimpinan. Kepala sekolah selama ini selalu hadir dan sering memberi kesimpulan akhir. Dalam beberapa pertemuan, guru baru menyampaikan pendapat setelah kepala sekolah keluar ruangan, sedangkan saat pimpinan hadir mereka cenderung menyetujui kesimpulan yang diberikan. Perubahan paling tepat adalah...",
+    "Komunitas belajar dihadiri 95% guru, tetapi partisipasi diskusi rendah. Survei anonim menunjukkan guru takut pendapatnya dinilai oleh pimpinan. Kepala sekolah selama ini selalu hadir dan sering memberi kesimpulan akhir. Dalam beberapa pertemuan, guru baru menyampaikan pendapat setelah kepala sekolah keluar ruangan, sedangkan saat pimpinan hadir mereka cenderung menyetujui kesimpulan yang diberikan. Guru senior dan guru muda sama-sama menyatakan enggan menyampaikan kritik jika pimpinan langsung menilai pendapat mereka. Perubahan paling tepat adalah...",
     [
       "Mewajibkan setiap guru berbicara minimal sekali.",
       "Mengganti pengurus komunitas dengan tim baru yang dianggap lebih mampu menggerakkan diskusi.",
@@ -472,7 +472,7 @@ const P=[
   [
     2040,
     "MANAJERIAL",
-    "Guru meminta pelatihan AI, tetapi observasi menunjukkan masalah terbesar pada kualitas pertanyaan dan asesmen. Teknologi AI berpotensi membantu, tetapi dapat pula hanya mempercepat praktik yang belum baik. Sebagian guru berharap AI segera digunakan untuk membuat soal dan perangkat, tetapi tim kurikulum khawatir teknologi hanya memperbanyak materi tanpa memperbaiki kualitas pertanyaan. Keputusan pengembangan kompetensi terbaik adalah...",
+    "Guru meminta pelatihan AI, tetapi observasi menunjukkan masalah terbesar pada kualitas pertanyaan dan asesmen. Teknologi AI berpotensi membantu, tetapi dapat pula hanya mempercepat praktik yang belum baik. Sebagian guru berharap AI segera digunakan untuk membuat soal dan perangkat, tetapi tim kurikulum khawatir teknologi hanya memperbanyak materi tanpa memperbaiki kualitas pertanyaan. Sekolah ingin menghindari pelatihan AI yang menarik tetapi tidak mengubah kualitas pembelajaran di kelas. Keputusan pengembangan kompetensi terbaik adalah...",
     [
       "Menghubungkan AI dengan kebutuhan pedagogis prioritas dan mengukur perubahan praktik.",
       "Mengikuti permintaan guru agar motivasi tinggi.",
@@ -484,7 +484,7 @@ const P=[
   [
     2041,
     "MANAJERIAL",
-    "Nilai numerasi sekolah naik secara keseluruhan, tetapi kesenjangan antarkelompok murid justru melebar. Sebagian tim menyebut program berhasil karena rata-rata naik. Kelompok murid dengan kemampuan awal tinggi meningkat cukup besar, sedangkan kelompok berkemampuan awal rendah hampir tidak berubah dan sebagian justru tertinggal. Kesimpulan paling tepat adalah...",
+    "Nilai numerasi sekolah naik secara keseluruhan, tetapi kesenjangan antarkelompok murid justru melebar. Sebagian tim menyebut program berhasil karena rata-rata naik. Kelompok murid dengan kemampuan awal tinggi meningkat cukup besar, sedangkan kelompok berkemampuan awal rendah hampir tidak berubah dan sebagian justru tertinggal. Jika hanya memakai rata-rata, keberhasilan kelompok tertentu dapat menutupi stagnasi pada kelompok yang paling membutuhkan dukungan. Kesimpulan paling tepat adalah...",
     [
       "Fokus berikutnya cukup pada kelompok terendah.",
       "Program gagal karena kesenjangan meningkat.",
@@ -496,7 +496,7 @@ const P=[
   [
     2042,
     "MANAJERIAL",
-    "Tingkat kehadiran meningkat setelah sekolah menerapkan insentif, tetapi hasil belajar tidak berubah. Guru menyimpulkan kehadiran bukan faktor penting. Catatan kelas menunjukkan murid yang hadir lebih sering belum tentu terlibat aktif; pada beberapa pelajaran mereka tetap pasif dan tugas tidak selesai. Evaluasi paling tepat adalah...",
+    "Tingkat kehadiran meningkat setelah sekolah menerapkan insentif, tetapi hasil belajar tidak berubah. Guru menyimpulkan kehadiran bukan faktor penting. Catatan kelas menunjukkan murid yang hadir lebih sering belum tentu terlibat aktif; pada beberapa pelajaran mereka tetap pasif dan tugas tidak selesai. Sekolah belum menilai apakah intervensi kehadiran mengubah waktu belajar efektif, keterlibatan, atau kualitas interaksi di kelas. Evaluasi paling tepat adalah...",
     [
       "Menilai keterlibatan dan kualitas pembelajaran sebelum menyimpulkan hubungan kehadiran dengan hasil.",
       "Menambah besar insentif agar murid semakin terdorong untuk hadir secara konsisten.",
@@ -508,7 +508,7 @@ const P=[
   [
     2043,
     "MANAJERIAL",
-    "Survei menunjukkan keamanan psikologis meningkat, tetapi beberapa kelas masih memiliki tingkat partisipasi rendah. Guru merasa masalah selesai karena survei membaik. Pada dua kelas, murid tetap enggan menyampaikan pendapat meskipun skor survei sekolah secara keseluruhan membaik, dan guru berbeda pendapat tentang penyebabnya. Tindakan paling tepat adalah...",
+    "Survei menunjukkan keamanan psikologis meningkat, tetapi beberapa kelas masih memiliki tingkat partisipasi rendah. Guru merasa masalah selesai karena survei membaik. Pada dua kelas, murid tetap enggan menyampaikan pendapat meskipun skor survei sekolah secara keseluruhan membaik, dan guru berbeda pendapat tentang penyebabnya. Kepala sekolah perlu mengetahui apakah masalah tersisa bersifat lokal pada beberapa kelas atau masih sistemik. Tindakan paling tepat adalah...",
     [
       "Menutup program karena indikator utama sudah meningkat.",
       "Memberikan target partisipasi kepada setiap guru.",
@@ -520,7 +520,7 @@ const P=[
   [
     2044,
     "MANAJERIAL",
-    "Sekolah ingin menentukan prioritas kesejahteraan murid. Data menunjukkan kecemasan tinggi, tetapi penyebab bervariasi: tekanan akademik, konflik teman, dan masalah keluarga. Satu program tidak mungkin menyelesaikan semua faktor. Sebagian murid mengalami lebih dari satu faktor sekaligus, sementara tenaga konseling sekolah terbatas dan tidak semua kasus membutuhkan tingkat dukungan yang sama. Pendekatan terbaik adalah...",
+    "Sekolah ingin menentukan prioritas kesejahteraan murid. Data menunjukkan kecemasan tinggi, tetapi penyebab bervariasi: tekanan akademik, konflik teman, dan masalah keluarga. Satu program tidak mungkin menyelesaikan semua faktor. Sebagian murid mengalami lebih dari satu faktor sekaligus, sementara tenaga konseling sekolah terbatas dan tidak semua kasus membutuhkan tingkat dukungan yang sama. Sekolah perlu memilih bentuk dukungan yang proporsional agar sumber daya terbatas tetap menjangkau murid dengan risiko berbeda. Pendekatan terbaik adalah...",
     [
       "Memilih penyebab yang paling banyak disebut.",
       "Membuat program umum kesejahteraan untuk semua murid.",
@@ -532,7 +532,7 @@ const P=[
   [
     2045,
     "MANAJERIAL",
-    "Penyesuaian untuk murid dengan hambatan penglihatan berhasil meningkatkan akses, tetapi guru merasa beban persiapan bertambah dan khawatir tidak berkelanjutan. Penyesuaian dilakukan manual oleh masing-masing guru dan sering mengulang pekerjaan yang sama, sehingga masalah keberlanjutan mungkin berkaitan dengan desain dukungan, bukan kebutuhan murid. Keputusan terbaik adalah...",
+    "Penyesuaian untuk murid dengan hambatan penglihatan berhasil meningkatkan akses, tetapi guru merasa beban persiapan bertambah dan khawatir tidak berkelanjutan. Penyesuaian dilakukan manual oleh masing-masing guru dan sering mengulang pekerjaan yang sama, sehingga masalah keberlanjutan mungkin berkaitan dengan desain dukungan, bukan kebutuhan murid. Beberapa guru mengusulkan mengurangi penyesuaian, sementara orang tua khawatir akses anak akan kembali menurun. Keputusan terbaik adalah...",
     [
       "Mempertahankan karena hak murid harus dipenuhi tanpa mempertimbangkan beban guru.",
       "Mengurangi target pembelajaran murid.",
@@ -544,7 +544,7 @@ const P=[
   [
     2046,
     "MANAJERIAL",
-    "Pengelompokan fleksibel berhasil meningkatkan capaian murid tertentu, tetapi beberapa guru mulai menggunakan kelompok secara tetap karena dianggap efisien. Beberapa murid mulai menyebut diri mereka sebagai anggota kelompok 'tinggi' atau 'rendah', walaupun guru awalnya menyatakan pengelompokan hanya sementara. Tindakan kepala sekolah paling tepat adalah...",
+    "Pengelompokan fleksibel berhasil meningkatkan capaian murid tertentu, tetapi beberapa guru mulai menggunakan kelompok secara tetap karena dianggap efisien. Beberapa murid mulai menyebut diri mereka sebagai anggota kelompok 'tinggi' atau 'rendah', walaupun guru awalnya menyatakan pengelompokan hanya sementara. Kepala sekolah khawatir efisiensi pengelompokan mulai mengubah ekspektasi guru terhadap kemampuan murid. Tindakan kepala sekolah paling tepat adalah...",
     [
       "Mengganti nama kelompok agar tidak terlihat hierarkis.",
       "Melakukan rotasi anggota dengan jadwal tetap.",
@@ -616,7 +616,7 @@ const P=[
   [
     2052,
     "KEWIRAUSAHAAN",
-    "Sekolah mendapat kesempatan hibah perangkat senilai besar. Seluruh biaya pembelian ditanggung pada tahun pertama, tetapi sekolah harus menanggung lisensi, perawatan, dan pelatihan pada tahun berikutnya. Tim antusias karena sekolah lain belum memiliki fasilitas serupa. Belum ada analisis apakah penggunaan perangkat benar-benar sesuai kebutuhan pembelajaran. Bendahara memperkirakan biaya tahunan cukup besar dan dapat mengurangi ruang anggaran program lain jika perangkat benar-benar digunakan secara luas. Keputusan paling tepat adalah...",
+    "Sekolah mendapat kesempatan hibah perangkat senilai besar. Seluruh biaya pembelian ditanggung pada tahun pertama, tetapi sekolah harus menanggung lisensi, perawatan, dan pelatihan pada tahun berikutnya. Tim antusias karena sekolah lain belum memiliki fasilitas serupa. Belum ada analisis apakah penggunaan perangkat benar-benar sesuai kebutuhan pembelajaran. Bendahara memperkirakan biaya tahunan cukup besar dan dapat mengurangi ruang anggaran program lain jika perangkat benar-benar digunakan secara luas. Komite meminta keputusan sebelum batas penerimaan hibah berakhir sehingga analisis biaya jangka panjang harus dilakukan cepat. Keputusan paling tepat adalah...",
     [
       "Menolak karena dapat membebani anggaran masa depan.",
       "Menerima karena nilai hibah jauh lebih besar daripada biaya lanjutan.",
@@ -628,7 +628,7 @@ const P=[
   [
     2053,
     "KEWIRAUSAHAAN",
-    "Industri lokal menawarkan kerja sama pembelajaran kontekstual untuk murid. Mereka menyediakan narasumber dan tempat kunjungan tanpa biaya. Guru tertarik, tetapi belum jelas hubungan aktivitas dengan kompetensi yang sedang dipelajari, perlindungan murid, pembagian tanggung jawab, dan bagaimana pengalaman tersebut akan dinilai. Pihak industri berharap jadwal segera disepakati karena kuota kunjungan terbatas, sedangkan sekolah belum memiliki rancangan asesmen untuk kegiatan tersebut. Keputusan kepala sekolah paling tepat adalah...",
+    "Industri lokal menawarkan kerja sama pembelajaran kontekstual untuk murid. Mereka menyediakan narasumber dan tempat kunjungan tanpa biaya. Guru tertarik, tetapi belum jelas hubungan aktivitas dengan kompetensi yang sedang dipelajari, perlindungan murid, pembagian tanggung jawab, dan bagaimana pengalaman tersebut akan dinilai. Pihak industri berharap jadwal segera disepakati karena kuota kunjungan terbatas, sedangkan sekolah belum memiliki rancangan asesmen untuk kegiatan tersebut. Sekolah juga perlu menentukan siapa yang bertanggung jawab jika terjadi masalah keselamatan selama kegiatan di lokasi mitra. Keputusan kepala sekolah paling tepat adalah...",
     [
       "Merancang kebutuhan belajar, keselamatan, peran mitra, aktivitas, dan bukti hasil bersama.",
       "Menerima kerja sama karena relevan dengan kebutuhan belajar, lalu meminta guru menyesuaikan aktivitas sekolah.",
@@ -640,7 +640,7 @@ const P=[
   [
     2054,
     "KEWIRAUSAHAAN",
-    "Sebuah pendekatan pembelajaran menunjukkan hasil sangat baik di satu jenjang. Kepala sekolah ingin memperluasnya ke seluruh sekolah. Namun, guru pada jenjang lain memiliki karakteristik murid dan struktur pembelajaran berbeda. Tim pencetus yakin keberhasilan akan tetap sama selama prosedur diikuti secara konsisten. Pada jenjang lain, durasi pelajaran lebih pendek dan kemampuan belajar mandiri murid berbeda, sehingga penerapan identik dapat menghasilkan pengalaman yang tidak sama. Strategi perluasan paling tepat adalah...",
+    "Sebuah pendekatan pembelajaran menunjukkan hasil sangat baik di satu jenjang. Kepala sekolah ingin memperluasnya ke seluruh sekolah. Namun, guru pada jenjang lain memiliki karakteristik murid dan struktur pembelajaran berbeda. Tim pencetus yakin keberhasilan akan tetap sama selama prosedur diikuti secara konsisten. Pada jenjang lain, durasi pelajaran lebih pendek dan kemampuan belajar mandiri murid berbeda, sehingga penerapan identik dapat menghasilkan pengalaman yang tidak sama. Tim ingin menjaga unsur inti inovasi, tetapi belum sepakat bagian mana yang boleh diubah untuk menyesuaikan jenjang. Strategi perluasan paling tepat adalah...",
     [
       "Mewajibkan seluruh jenjang mengikuti model yang sama agar fidelity terjaga.",
       "Menunggu bukti keberhasilan selama satu tahun lagi.",
@@ -652,7 +652,7 @@ const P=[
   [
     2055,
     "SUPERVISI",
-    "Guru defensif ketika melihat data observasi yang menunjukkan partisipasi murid rendah. Ia menunjukkan nilai kelas yang tinggi sebagai bukti pembelajaran berhasil. Kepala sekolah tidak ingin memilih salah satu bukti secara tergesa-gesa karena keduanya mungkin menjelaskan aspek yang berbeda. Nilai tinggi terutama berasal dari tes tertulis, sementara observasi hanya dilakukan pada satu pertemuan, sehingga belum jelas apakah keduanya benar-benar mengukur hal yang sama. Langkah supervisor terbaik adalah...",
+    "Guru defensif ketika melihat data observasi yang menunjukkan partisipasi murid rendah. Ia menunjukkan nilai kelas yang tinggi sebagai bukti pembelajaran berhasil. Kepala sekolah tidak ingin memilih salah satu bukti secara tergesa-gesa karena keduanya mungkin menjelaskan aspek yang berbeda. Nilai tinggi terutama berasal dari tes tertulis, sementara observasi hanya dilakukan pada satu pertemuan, sehingga belum jelas apakah keduanya benar-benar mengukur hal yang sama. Supervisor perlu menghindari kesimpulan bahwa salah satu data pasti lebih benar hanya karena lebih mudah diukur. Langkah supervisor terbaik adalah...",
     [
       "Menegaskan bahwa observasi lebih objektif daripada nilai.",
       "Menerima penjelasan guru karena nilai merupakan hasil akhir.",
@@ -664,7 +664,7 @@ const P=[
   [
     2056,
     "SUPERVISI",
-    "Dalam observasi, hanya lima murid aktif berdiskusi, tetapi kelompok tersebut menghasilkan jawaban berkualitas tinggi. Guru menilai diskusi berhasil karena hasil kelompok sangat baik, sedangkan supervisor melihat sebagian besar murid belum terlibat. Catatan observasi menunjukkan murid yang aktif adalah kelompok yang sama sejak awal pembelajaran, sedangkan anggota lain banyak mengikuti keputusan tanpa memberi alasan. Pertanyaan umpan balik paling kuat adalah...",
+    "Dalam observasi, hanya lima murid aktif berdiskusi, tetapi kelompok tersebut menghasilkan jawaban berkualitas tinggi. Guru menilai diskusi berhasil karena hasil kelompok sangat baik, sedangkan supervisor melihat sebagian besar murid belum terlibat. Catatan observasi menunjukkan murid yang aktif adalah kelompok yang sama sejak awal pembelajaran, sedangkan anggota lain banyak mengikuti keputusan tanpa memberi alasan. Guru bersedia merefleksikan pembelajaran, tetapi tidak ingin hanya menerima instruksi solusi dari supervisor. Pertanyaan umpan balik paling kuat adalah...",
     [
       "Bagaimana jika setiap murid diwajibkan berbicara pada setiap sesi diskusi?",
       "Apa yang ditunjukkan kualitas jawaban lima murid dan keterlibatan murid lain, serta apa yang perlu diuji berikutnya?",
@@ -676,7 +676,7 @@ const P=[
   [
     2057,
     "SUPERVISI",
-    "Program pengembangan asesmen formatif menunjukkan guru mampu membuat instrumen lebih baik, tetapi penggunaan hasil asesmen untuk mengubah pembelajaran belum meningkat. Beberapa guru justru memperbanyak asesmen tanpa memperjelas keputusan instruksional setelahnya. Guru mengaku belum yakin bagaimana mengubah rencana mengajar setelah melihat respons murid, meskipun mereka dapat membuat instrumen dengan format yang benar. Tindak lanjut terbaik adalah...",
+    "Program pengembangan asesmen formatif menunjukkan guru mampu membuat instrumen lebih baik, tetapi penggunaan hasil asesmen untuk mengubah pembelajaran belum meningkat. Beberapa guru justru memperbanyak asesmen tanpa memperjelas keputusan instruksional setelahnya. Guru mengaku belum yakin bagaimana mengubah rencana mengajar setelah melihat respons murid, meskipun mereka dapat membuat instrumen dengan format yang benar. Koordinator program ingin memastikan peningkatan jumlah asesmen tidak justru menambah pekerjaan tanpa mengubah keputusan mengajar. Tindak lanjut terbaik adalah...",
     [
       "Menambah frekuensi asesmen agar guru memperoleh lebih banyak bukti untuk menyesuaikan pembelajaran.",
       "Membuat instrumen standar untuk seluruh sekolah.",
@@ -688,7 +688,7 @@ const P=[
   [
     2058,
     "SUPERVISI",
-    "Program coaching meningkatkan kualitas praktik guru, tetapi capaian murid belum berubah setelah satu semester. Tim coaching menganggap perubahan praktik sudah cukup sebagai bukti keberhasilan, sedangkan pihak lain ingin menghentikan program karena nilai murid belum naik. Data observasi menunjukkan beberapa perubahan praktik memang konsisten, tetapi belum ada analisis apakah durasi satu semester cukup untuk melihat perubahan hasil murid. Kesimpulan paling tepat adalah...",
+    "Program coaching meningkatkan kualitas praktik guru, tetapi capaian murid belum berubah setelah satu semester. Tim coaching menganggap perubahan praktik sudah cukup sebagai bukti keberhasilan, sedangkan pihak lain ingin menghentikan program karena nilai murid belum naik. Data observasi menunjukkan beberapa perubahan praktik memang konsisten, tetapi belum ada analisis apakah durasi satu semester cukup untuk melihat perubahan hasil murid. Sekolah perlu menentukan apakah program dilanjutkan, disesuaikan, atau dihentikan berdasarkan bukti yang tersedia saat ini. Kesimpulan paling tepat adalah...",
     [
       "Capaian murid tidak relevan dalam evaluasi coaching.",
       "Menilai perubahan praktik sebagai hasil antara sambil terus menguji dampaknya pada murid.",
@@ -700,7 +700,7 @@ const P=[
   [
     2059,
     "SUPERVISI",
-    "Dua supervisor mengobservasi pembelajaran guru yang sama. Supervisor pertama menilai praktik sudah sangat baik, sedangkan supervisor kedua menemukan beberapa masalah penting. Keduanya menggunakan instrumen yang sama dan sama-sama merasa interpretasinya tepat. Perbedaan skor cukup besar untuk memengaruhi rekomendasi pengembangan guru, sehingga sekadar mengambil rata-rata dapat menyembunyikan perbedaan interpretasi indikator. Sebelum hasil digunakan untuk pembinaan guru, langkah yang paling tepat adalah...",
+    "Dua supervisor mengobservasi pembelajaran guru yang sama. Supervisor pertama menilai praktik sudah sangat baik, sedangkan supervisor kedua menemukan beberapa masalah penting. Keduanya menggunakan instrumen yang sama dan sama-sama merasa interpretasinya tepat. Perbedaan skor cukup besar untuk memengaruhi rekomendasi pengembangan guru, sehingga sekadar mengambil rata-rata dapat menyembunyikan perbedaan interpretasi indikator. Kedua supervisor juga memiliki pengalaman berbeda, sehingga perbedaan skor bisa berasal dari standar interpretasi, bukan kinerja guru. Sebelum hasil digunakan untuk pembinaan guru, langkah yang paling tepat adalah...",
     [
       "Mengkalibrasi penilaian berdasarkan bukti observasi dan interpretasi indikator sebelum pembinaan.",
       "Membiarkan masing-masing hasil karena observasi memang subjektif.",
@@ -712,7 +712,7 @@ const P=[
   [
     2060,
     "SUPERVISI",
-    "Guru menunjukkan praktik sangat baik setiap kali kepala sekolah melakukan observasi terjadwal, tetapi data kelas lainnya menunjukkan strategi tersebut tidak konsisten digunakan. Kepala sekolah ingin menilai apakah perubahan benar-benar menjadi kebiasaan tanpa mengubah supervisi menjadi pengawasan tersembunyi. Sebagian data berasal dari catatan tugas, rekaman refleksi guru, dan umpan balik murid yang dikumpulkan di luar jadwal observasi formal. Langkah yang paling tepat adalah...",
+    "Guru menunjukkan praktik sangat baik setiap kali kepala sekolah melakukan observasi terjadwal, tetapi data kelas lainnya menunjukkan strategi tersebut tidak konsisten digunakan. Kepala sekolah ingin menilai apakah perubahan benar-benar menjadi kebiasaan tanpa mengubah supervisi menjadi pengawasan tersembunyi. Sebagian data berasal dari catatan tugas, rekaman refleksi guru, dan umpan balik murid yang dikumpulkan di luar jadwal observasi formal. Guru mengetahui jadwal observasi jauh hari sehingga ada kemungkinan persiapan khusus memengaruhi tampilan praktik pada hari tersebut. Langkah yang paling tepat adalah...",
     [
       "Menambah observasi terjadwal pada beberapa pertemuan untuk melihat apakah praktik tersebut tetap konsisten.",
       "Melakukan observasi tanpa pemberitahuan pada beberapa kesempatan untuk mengurangi perilaku yang dibuat-buat.",
@@ -724,7 +724,7 @@ const P=[
   [
     2061,
     "SUPERVISI",
-    "Data supervisi menunjukkan kelemahan besar pada asesmen, tetapi guru lebih siap memperbaiki pengelolaan kelas yang dampaknya lebih kecil. Supervisor ingin memilih fokus pertama yang cukup penting sekaligus realistis untuk menghasilkan perubahan. Masalah asesmen berpotensi berdampak luas, tetapi guru mengaku belum percaya diri membahasnya dan khawatir coaching menjadi terlalu berat sejak awal. Keputusan fokus coaching terbaik adalah...",
+    "Data supervisi menunjukkan kelemahan besar pada asesmen, tetapi guru lebih siap memperbaiki pengelolaan kelas yang dampaknya lebih kecil. Supervisor ingin memilih fokus pertama yang cukup penting sekaligus realistis untuk menghasilkan perubahan. Masalah asesmen berpotensi berdampak luas, tetapi guru mengaku belum percaya diri membahasnya dan khawatir coaching menjadi terlalu berat sejak awal. Jika fokus terlalu sulit, guru mungkin tidak bergerak; jika terlalu mudah, dampak pada pembelajaran bisa kecil. Keputusan fokus coaching terbaik adalah...",
     [
       "Menegosiasikan fokus berdasarkan dampak, kesiapan, keterkaitan masalah, dan peluang keberhasilan.",
       "Memprioritaskan asesmen karena dampaknya lebih besar sambil memberi dukungan agar guru siap memperbaikinya.",
@@ -736,7 +736,7 @@ const P=[
   [
     2062,
     "SUPERVISI",
-    "Observasi berlangsung buruk dan guru tampak sangat emosional karena masalah pribadi yang baru diterimanya. Bukti observasi masih segar, tetapi percakapan langsung berisiko membuat guru defensif dan sulit merefleksikan praktiknya. Jika feedback terlalu lama ditunda, detail situasi kelas mungkin terlupakan; jika dilakukan segera, kualitas refleksi dapat turun karena kondisi emosional guru. Cara menentukan waktu feedback yang paling tepat adalah...",
+    "Observasi berlangsung buruk dan guru tampak sangat emosional karena masalah pribadi yang baru diterimanya. Bukti observasi masih segar, tetapi percakapan langsung berisiko membuat guru defensif dan sulit merefleksikan praktiknya. Jika feedback terlalu lama ditunda, detail situasi kelas mungkin terlupakan; jika dilakukan segera, kualitas refleksi dapat turun karena kondisi emosional guru. Supervisor tetap perlu menjaga hubungan profesional tanpa mengubah feedback menjadi percakapan yang terlalu ditunda atau terlalu dini. Cara menentukan waktu feedback yang paling tepat adalah...",
     [
       "Membatalkan hasil observasi dan menjadwalkan ulang ketika kondisi guru dianggap lebih stabil.",
       "Memberikan feedback pada hari yang sama dengan memulai dari bukti paling objektif agar diskusi tetap terarah.",
@@ -748,7 +748,7 @@ const P=[
   [
     2063,
     "SUPERVISI",
-    "Guru sering kehilangan kendali kelas. Observasi lebih rinci menunjukkan murid mulai tidak fokus terutama ketika tugas terlalu mudah dan berlangsung terlalu lama. Sebagian pihak menyarankan pelatihan disiplin dan aturan yang lebih tegas. Ketika guru memberi tugas lebih menantang dan durasinya lebih singkat, perhatian murid membaik meskipun aturan kelas tidak berubah. Tindak lanjut supervisi paling tepat adalah...",
+    "Guru sering kehilangan kendali kelas. Observasi lebih rinci menunjukkan murid mulai tidak fokus terutama ketika tugas terlalu mudah dan berlangsung terlalu lama. Sebagian pihak menyarankan pelatihan disiplin dan aturan yang lebih tegas. Ketika guru memberi tugas lebih menantang dan durasinya lebih singkat, perhatian murid membaik meskipun aturan kelas tidak berubah. Kepala sekolah ingin memastikan intervensi menyasar penyebab utama, bukan hanya gejala ketidaktertiban yang terlihat. Tindak lanjut supervisi paling tepat adalah...",
     [
       "Menghubungkan masalah pengelolaan kelas dengan desain tugas sebelum memilih intervensi.",
       "Memperketat aturan kelas dan konsekuensi agar murid lebih disiplin selama kegiatan berlangsung.",
@@ -760,7 +760,7 @@ const P=[
   [
     2064,
     "SUPERVISI",
-    "Guru mendapat nilai sangat baik dalam pelatihan pembelajaran berdiferensiasi, tetapi setelah dua bulan praktik kelas hampir tidak berubah. Sertifikat dan hasil pascapelatihan menunjukkan pengetahuan konsep sudah baik, namun transfer ke praktik belum terlihat. Guru mengatakan sulit menerapkan diferensiasi karena waktu perencanaan terbatas dan belum memiliki contoh yang sesuai dengan karakter kelasnya. Tindak lanjut paling tepat adalah...",
+    "Guru mendapat nilai sangat baik dalam pelatihan pembelajaran berdiferensiasi, tetapi setelah dua bulan praktik kelas hampir tidak berubah. Sertifikat dan hasil pascapelatihan menunjukkan pengetahuan konsep sudah baik, namun transfer ke praktik belum terlihat. Guru mengatakan sulit menerapkan diferensiasi karena waktu perencanaan terbatas dan belum memiliki contoh yang sesuai dengan karakter kelasnya. Guru menyatakan memahami konsep, tetapi belum mampu menerjemahkannya menjadi keputusan konkret pada kelasnya sendiri. Tindak lanjut paling tepat adalah...",
     [
       "Menunggu satu semester lagi.",
       "Mengamati transfer ke praktik, hambatan, dukungan penerapan, dan perubahan yang terjadi.",
@@ -772,7 +772,7 @@ const P=[
   [
     2065,
     "SUPERVISI",
-    "Setelah coaching, praktik guru membaik selama beberapa minggu tetapi perlahan kembali ke pola lama. Supervisor belum mengetahui apakah penyebabnya beban kerja, dukungan, kebiasaan lama, atau faktor lain. Catatan tindak lanjut menunjukkan dukungan intensif berhenti setelah dua minggu, sementara guru belum memiliki rutinitas mandiri untuk memantau perubahan. Tindak lanjut terbaik adalah...",
+    "Setelah coaching, praktik guru membaik selama beberapa minggu tetapi perlahan kembali ke pola lama. Supervisor belum mengetahui apakah penyebabnya beban kerja, dukungan, kebiasaan lama, atau faktor lain. Catatan tindak lanjut menunjukkan dukungan intensif berhenti setelah dua minggu, sementara guru belum memiliki rutinitas mandiri untuk memantau perubahan. Supervisor ingin mengetahui mengapa perubahan tidak bertahan sebelum memutuskan apakah coaching perlu diulang. Tindak lanjut terbaik adalah...",
     [
       "Mengulang coaching dengan target yang lebih spesifik agar perubahan praktik dapat bertahan lebih lama.",
       "Memberikan target tertulis agar perubahan yang diharapkan tetap menjadi fokus guru.",
@@ -784,7 +784,7 @@ const P=[
   [
     2066,
     "SUPERVISI",
-    "Guru mulai menggunakan AI untuk menyusun perangkat pembelajaran. Dokumen menjadi lebih lengkap, tetapi observasi menunjukkan beberapa aktivitas kurang sesuai dengan kebutuhan murid. Kepala sekolah ingin menilai penggunaan AI dari sisi kualitas keputusan pembelajaran, bukan semata kemampuan teknis. Sebagian perangkat bahkan memuat aktivitas yang tampak menarik tetapi tidak sesuai dengan kemampuan awal murid yang diamati di kelas. Fokus supervisinya adalah...",
+    "Guru mulai menggunakan AI untuk menyusun perangkat pembelajaran. Dokumen menjadi lebih lengkap, tetapi observasi menunjukkan beberapa aktivitas kurang sesuai dengan kebutuhan murid. Kepala sekolah ingin menilai penggunaan AI dari sisi kualitas keputusan pembelajaran, bukan semata kemampuan teknis. Sebagian perangkat bahkan memuat aktivitas yang tampak menarik tetapi tidak sesuai dengan kemampuan awal murid yang diamati di kelas. Kepala sekolah juga ingin memastikan AI tidak menggantikan pertimbangan guru tentang kebutuhan, urutan, dan tingkat tantangan murid. Fokus supervisinya adalah...",
     [
       "Menganggap praktik berhasil karena dokumen lebih baik.",
       "Menilai kemampuan guru menggunakan AI dan kesesuaian perangkat yang dihasilkan dengan rencana pembelajaran.",
@@ -796,7 +796,7 @@ const P=[
   [
     2067,
     "SUPERVISI",
-    "Supervisor menilai suasana kelas aman dan suportif, tetapi survei anonim menunjukkan sebagian murid takut salah menjawab. Observasi dilakukan hanya pada satu pertemuan, sedangkan survei menggambarkan pengalaman murid selama beberapa minggu. Guru merasa tidak pernah melihat murid takut bertanya, tetapi beberapa murid menyatakan mereka hanya berani bertanya setelah kelas selesai. Tindakan supervisor yang paling tepat adalah...",
+    "Supervisor menilai suasana kelas aman dan suportif, tetapi survei anonim menunjukkan sebagian murid takut salah menjawab. Observasi dilakukan hanya pada satu pertemuan, sedangkan survei menggambarkan pengalaman murid selama beberapa minggu. Guru merasa tidak pernah melihat murid takut bertanya, tetapi beberapa murid menyatakan mereka hanya berani bertanya setelah kelas selesai. Perbedaan ini cukup penting karena dapat memengaruhi penilaian tentang keamanan psikologis kelas dan fokus pembinaan guru. Tindakan supervisor yang paling tepat adalah...",
     [
       "Menempatkan kedua bukti bersama dan menelusuri pengalaman yang tidak tampak saat observasi.",
       "Mempercayai observasi karena dilakukan oleh profesional.",
@@ -808,7 +808,7 @@ const P=[
   [
     2068,
     "SUPERVISI",
-    "Guru telah mengikuti tiga pelatihan, memperoleh sertifikat, dan nilai pascapelatihan tinggi, tetapi praktik pembelajaran tetap serupa. Kepala sekolah belum mengetahui apakah masalah berada pada relevansi materi, transfer, dukungan, umpan balik, atau faktor lain. Sebagian pelatihan dipilih karena rekomendasi umum, bukan karena diagnosis kebutuhan individual guru, dan tindak lanjut setelah pelatihan juga berbeda-beda. Evaluasi yang paling tepat adalah...",
+    "Guru telah mengikuti tiga pelatihan, memperoleh sertifikat, dan nilai pascapelatihan tinggi, tetapi praktik pembelajaran tetap serupa. Kepala sekolah belum mengetahui apakah masalah berada pada relevansi materi, transfer, dukungan, umpan balik, atau faktor lain. Sebagian pelatihan dipilih karena rekomendasi umum, bukan karena diagnosis kebutuhan individual guru, dan tindak lanjut setelah pelatihan juga berbeda-beda. Sekolah ingin mengetahui titik mana dalam siklus pengembangan yang gagal agar tidak sekadar menambah pelatihan baru. Evaluasi yang paling tepat adalah...",
     [
       "Mengurangi pelatihan karena tidak efektif.",
       "Menilai rantai kebutuhan, belajar, praktik, feedback, dan dampak untuk menemukan titik putus.",
@@ -820,7 +820,7 @@ const P=[
   [
     2069,
     "SUPERVISI",
-    "Setelah coaching, capaian rata-rata kelas meningkat. Namun, analisis menunjukkan peningkatan hampir seluruhnya terjadi pada murid berkemampuan awal tinggi, sedangkan kelompok lain hampir tidak berubah. Supervisor perlu menilai apakah perubahan praktik memberikan manfaat yang cukup merata. Guru merasa strategi baru berhasil karena nilai kelas naik, tetapi belum pernah membandingkan bagaimana setiap kelompok murid merespons perubahan tersebut. Langkah terbaik adalah...",
+    "Setelah coaching, capaian rata-rata kelas meningkat. Namun, analisis menunjukkan peningkatan hampir seluruhnya terjadi pada murid berkemampuan awal tinggi, sedangkan kelompok lain hampir tidak berubah. Supervisor perlu menilai apakah perubahan praktik memberikan manfaat yang cukup merata. Guru merasa strategi baru berhasil karena nilai kelas naik, tetapi belum pernah membandingkan bagaimana setiap kelompok murid merespons perubahan tersebut. Jika hanya melihat rata-rata, keberhasilan kelompok tertentu dapat memberi kesan bahwa intervensi sudah efektif untuk semua murid. Langkah terbaik adalah...",
     [
       "Memusatkan pembinaan berikutnya hanya pada murid berkemampuan rendah.",
       "Menggunakan median sebagai pengganti rata-rata.",
