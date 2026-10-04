@@ -867,65 +867,65 @@ window.__simantabPremiumTwoV1Options={
   "2055": {
     "options": {
       "A": "Menegaskan bahwa observasi lebih objektif daripada nilai.",
-      "E": "Menerima penjelasan guru karena nilai merupakan hasil akhir.",
+      "B": "Menerima penjelasan guru karena nilai merupakan hasil akhir.",
       "D": "Membandingkan nilai dan observasi untuk melihat apa yang dijelaskan masing-masing bukti.",
-      "B": "Melakukan observasi ulang sebelum berdiskusi.",
-      "C": "Meminta guru membuat refleksi tertulis."
+      "C": "Melakukan observasi ulang sebelum berdiskusi.",
+      "E": "Meminta guru membuat refleksi tertulis."
     },
     "db": {
       "A": 2,
-      "E": 3,
-      "D": 5,
       "B": 1,
-      "C": 4
+      "D": 5,
+      "C": 4,
+      "E": 3
     }
   },
   "2056": {
     "options": {
-      "A": "Mengapa sebagian besar murid belum aktif?",
+      "E": "Mengapa sebagian besar murid belum aktif?",
       "C": "Apakah Anda puas dengan diskusi tadi?",
       "B": "Apa yang ditunjukkan kualitas jawaban lima murid dan keterlibatan murid lain, serta apa yang perlu diuji berikutnya?",
       "D": "Sebaiknya Anda mengubah pembagian kelompok.",
-      "E": "Bagaimana jika semua murid diwajibkan berbicara?"
+      "A": "Bagaimana jika semua murid diwajibkan berbicara?"
     },
     "db": {
-      "A": 3,
+      "E": 4,
       "C": 2,
       "B": 5,
       "D": 1,
-      "E": 4
+      "A": 3
     }
   },
   "2057": {
     "options": {
       "C": "Mengulang pelatihan penyusunan instrumen.",
-      "B": "Menilai program sudah berhasil karena keterampilan membuat instrumen meningkat.",
+      "E": "Menilai program sudah berhasil karena keterampilan membuat instrumen meningkat.",
       "D": "Menggeser pendampingan ke interpretasi bukti dan keputusan instruksional setelah asesmen.",
-      "E": "Membuat instrumen standar untuk seluruh sekolah.",
+      "B": "Membuat instrumen standar untuk seluruh sekolah.",
       "A": "Menambah frekuensi asesmen."
     },
     "db": {
       "C": 2,
-      "B": 3,
-      "D": 5,
       "E": 1,
+      "D": 5,
+      "B": 3,
       "A": 4
     }
   },
   "2058": {
     "options": {
       "D": "Coaching gagal karena hasil murid belum meningkat.",
-      "E": "Coaching berhasil karena praktik guru membaik.",
+      "C": "Coaching berhasil karena praktik guru membaik.",
       "B": "Menilai perubahan praktik sebagai hasil antara sambil terus menguji dampaknya pada murid.",
-      "A": "Program harus diteruskan tanpa perubahan.",
-      "C": "Capaian murid tidak relevan dalam evaluasi coaching."
+      "E": "Program harus diteruskan tanpa perubahan.",
+      "A": "Capaian murid tidak relevan dalam evaluasi coaching."
     },
     "db": {
       "D": 3,
-      "E": 2,
+      "C": 4,
       "B": 5,
-      "A": 1,
-      "C": 4
+      "E": 2,
+      "A": 1
     }
   },
   "2059": {
@@ -946,17 +946,17 @@ window.__simantabPremiumTwoV1Options={
   },
   "2060": {
     "options": {
-      "B": "Menambah observasi terjadwal.",
+      "A": "Menambah observasi terjadwal.",
       "E": "Menggunakan beberapa sumber bukti dan konteks observasi untuk menilai konsistensi praktik.",
       "C": "Menilai guru sudah mampu karena ketika diobservasi praktiknya benar.",
-      "A": "Melakukan observasi diam-diam sesering mungkin.",
+      "B": "Melakukan observasi diam-diam sesering mungkin.",
       "D": "Meminta murid menilai guru."
     },
     "db": {
-      "B": 2,
+      "A": 3,
       "E": 5,
       "C": 1,
-      "A": 3,
+      "B": 2,
       "D": 4
     }
   },
