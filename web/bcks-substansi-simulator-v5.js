@@ -318,6 +318,7 @@ const TC_STEPS=[
 
 async function openThinkingCulture(id){
  try{
+  if(typeof window.__simantabPremiumThinkingV5==="function"){const handled=await window.__simantabPremiumThinkingV5(id);if(handled)return}
   const data=await api({action:"review",attempt_id:id}),rows=data.review||[];
   if(!rows.length){alert("Belum ada jawaban yang dapat dipelajari pada sesi ini.");return}
   const ranked=[...rows].sort((a,b)=>(Number(a.is_correct)*2-Number(a.is_doubtful))-(Number(b.is_correct)*2-Number(b.is_doubtful))||a.question_no-b.question_no);
