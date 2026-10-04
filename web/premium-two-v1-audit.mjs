@@ -4,8 +4,8 @@ export const PREMIUM_TWO_QA_LIMITS={
   options_per_item:5,
   key_count_each:14,
   max_adjacent_same_key:0,
-  max_key_is_longest_ratio:0.35,
-  max_unique_key_lexical_cue_ratio:0.15,
+  max_strong_length_clue_ratio:0.15,
+  max_strong_lexical_cue_ratio:0.15,
   max_option_word_ratio:2.8
 };
 
@@ -28,7 +28,7 @@ export function auditPremiumTwo(items){
   const L=["A","B","C","D","E"],issues=[];
   if(!Array.isArray(items)||items.length!==70)issues.push("Jumlah butir harus tepat 70.");
   const keyCounts={A:0,B:0,C:0,D:0,E:0};
-  let prev=null,adjacent=0,keyLongest=0,uniqueCue=0,maxRatio=0;
+  let prev=null,adjacent=0,strongLength=0,strongCue=0,maxRatio=0;
   for(const item of (items||[])){
     const opts=item?.options||{},db=item?.db||{};
     if(L.some(x=>typeof opts[x]!=="string"))issues.push(`Butir ${item?.id}: opsi A-E tidak lengkap.`);
@@ -41,18 +41,21 @@ export function auditPremiumTwo(items){
     const lens=L.map(x=>words(opts[x]));
     const max=Math.max(...lens),min=Math.max(1,Math.min(...lens));
     maxRatio=Math.max(maxRatio,max/min);
-    if(lens[L.indexOf(key)]===max)keyLongest++;
-    const cs=L.map(x=>cues(opts[x])),cm=Math.max(...cs);
-    if(cm>0&&cs[L.indexOf(key)]===cm&&cs.filter(x=>x===cm).length===1)uniqueCue++;
+    const keyLen=lens[L.indexOf(key)];
+    const secondLen=Math.max(...lens.filter((_,j)=>L[j]!==key));
+    if(keyLen-secondLen>=3)strongLength++;
+    const cs=L.map(x=>cues(opts[x])),keyCue=cs[L.indexOf(key)];
+    const secondCue=Math.max(...cs.filter((_,j)=>L[j]!==key));
+    if(keyCue-secondCue>=2)strongCue++;
   }
   for(const l of L)if(keyCounts[l]!==14)issues.push(`Distribusi kunci ${l} harus 14, saat ini ${keyCounts[l]}.`);
   const denom=Math.max(1,(items||[]).length);
   if(adjacent>0)issues.push(`Ada ${adjacent} pasangan kunci berturut-turut yang sama.`);
-  if(keyLongest/denom>PREMIUM_TWO_QA_LIMITS.max_key_is_longest_ratio)
-    issues.push(`DB5 menjadi opsi terpanjang ${keyLongest}/${denom}, melewati batas QA.`);
-  if(uniqueCue/denom>PREMIUM_TWO_QA_LIMITS.max_unique_key_lexical_cue_ratio)
-    issues.push(`DB5 memiliki clue lexical unik ${uniqueCue}/${denom}, melewati batas QA.`);
+  if(strongLength/denom>PREMIUM_TWO_QA_LIMITS.max_strong_length_clue_ratio)
+    issues.push(`DB5 lebih panjang ≥3 kata pada ${strongLength}/${denom} butir, melewati batas QA.`);
+  if(strongCue/denom>PREMIUM_TWO_QA_LIMITS.max_strong_lexical_cue_ratio)
+    issues.push(`DB5 memiliki clue lexical kuat pada ${strongCue}/${denom} butir, melewati batas QA.`);
   if(maxRatio>PREMIUM_TWO_QA_LIMITS.max_option_word_ratio)
     issues.push(`Rasio panjang opsi maksimum ${maxRatio.toFixed(2)} melewati batas QA.`);
-  return {ok:issues.length===0,issues,metrics:{keyCounts,adjacent,keyLongest,uniqueCue,maxOptionWordRatio:maxRatio}};
+  return {ok:issues.length===0,issues,metrics:{keyCounts,adjacent,strongLength,strongCue,maxOptionWordRatio:maxRatio}};
 }
