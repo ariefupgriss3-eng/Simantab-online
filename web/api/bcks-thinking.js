@@ -2,7 +2,8 @@ const {AI_COACH_PROMPT,RECOVERY_PROMPT,TRANSFER_EVALUATOR_PROMPT}=require("../li
 
 const SUPABASE_URL="https://tizxfzvgglkokzvsiwkg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_EfCKPSelNMo1X3whBFszJw_Ui6SuRIB";
-const MODEL="openai/gpt-5.6-sol";
+const PRIMARY_MODEL="openai/gpt-5.6-sol";
+const FREE_FALLBACK_MODEL="inclusionai/ling-3.0-tiny-free";
 const allowedNext=new Set(["CONTINUE_HINT","RETRY_REASONING","GO_TO_TRANSFER"]);
 const allowedTransfer=new Set(["TRANSFER_MASTERED","PARTIAL_TRANSFER","NOT_YET"]);
 
@@ -21,36 +22,85 @@ async function getUser(auth){
   if(!r.ok)return null;
   return await r.json();
 }
-async function gateway(system,input,schemaName,schema){
-  const apiKey=process.env.AI_GATEWAY_API_KEY;
-  if(!apiKey)throw new Error("AI Gateway belum dikonfigurasi.");
+function parseJsonObject(text){
+  let s=String(text??"").trim();
+  if(!s)return null;
+  s=s.replace(/^\`\`\`(?:json)?\s*/i,"").replace(/\s*\`\`\`$/,"").trim();
+  const first=s.indexOf("{"),last=s.lastIndexOf("}");
+  if(first>=0&&last>first)s=s.slice(first,last+1);
+  try{return JSON.parse(s)}catch{return null}
+}
+function validateSchemaShape(value,schema){
+  if(!value||typeof value!=="object"||Array.isArray(value))return false;
+  const props=schema?.properties||{};
+  const required=schema?.required||[];
+  for(const key of required)if(!(key in value))return false;
+  for(const [key,def] of Object.entries(props)){
+    if(!(key in value))continue;
+    const v=value[key];
+    if(def.type==="string"&&typeof v!=="string")return false;
+    if(def.type==="integer"&&(!Number.isInteger(v)||(def.minimum!=null&&v<def.minimum)||(def.maximum!=null&&v>def.maximum)))return false;
+    if(Array.isArray(def.enum)&&!def.enum.includes(v))return false;
+  }
+  if(schema?.additionalProperties===false){
+    for(const key of Object.keys(value))if(!(key in props))return false;
+  }
+  return true;
+}
+async function callGatewayModel(apiKey,model,system,input,schemaName,schema,useStrictSchema){
+  const messages=[
+    {role:"system",content:system+(useStrictSchema?"":"\n\nKELUARKAN HANYA SATU OBJEK JSON VALID. Jangan gunakan markdown, code fence, komentar, atau teks di luar JSON. Struktur JSON wajib mengikuti schema berikut: "+JSON.stringify(schema))},
+    {role:"user",content:JSON.stringify(input)}
+  ];
+  const payload={model,stream:false,messages,max_tokens:1200};
+  if(useStrictSchema){
+    payload.response_format={
+      type:"json_schema",
+      json_schema:{name:schemaName,strict:true,schema}
+    };
+  }
   const r=await fetch("https://ai-gateway.vercel.sh/v1/chat/completions",{
     method:"POST",
     headers:{"Content-Type":"application/json",Authorization:"Bearer "+apiKey},
-    body:JSON.stringify({
-      model:MODEL,
-      stream:false,
-      messages:[
-        {role:"system",content:system},
-        {role:"user",content:JSON.stringify(input)}
-      ],
-      response_format:{
-        type:"json_schema",
-        json_schema:{
-          name:schemaName,
-          strict:true,
-          schema
-        }
-      }
-    })
+    body:JSON.stringify(payload)
   });
   const raw=await r.text();
   let outer={};try{outer=JSON.parse(raw)}catch{}
-  if(!r.ok)throw new Error(outer?.error?.message||outer?.error||raw||("AI Gateway HTTP "+r.status));
+  if(!r.ok){
+    const message=outer?.error?.message||outer?.error||raw||("AI Gateway HTTP "+r.status);
+    const err=new Error(String(message));
+    err.status=r.status;
+    throw err;
+  }
   const txt=outer?.choices?.[0]?.message?.content;
   if(!txt)throw new Error("AI Gateway tidak mengembalikan respons.");
-  let parsed;try{parsed=JSON.parse(txt)}catch{throw new Error("Respons AI tidak berupa JSON valid.");}
-  return parsed;
+  const parsed=parseJsonObject(txt);
+  if(!validateSchemaShape(parsed,schema))throw new Error("Respons AI tidak memenuhi kontrak JSON.");
+  return {output:parsed,model:outer?.model||model};
+}
+function shouldUseFreeFallback(error){
+  const m=String(error?.message||error||"").toLowerCase();
+  return m.includes("free tier users do not have access")
+    ||m.includes("upgrade to paid credits")
+    ||m.includes("model access")
+    ||m.includes("no providers available");
+}
+async function gateway(system,input,schemaName,schema){
+  const apiKey=process.env.AI_GATEWAY_API_KEY;
+  if(!apiKey)throw new Error("AI Gateway belum dikonfigurasi.");
+  try{
+    return await callGatewayModel(apiKey,PRIMARY_MODEL,system,input,schemaName,schema,true);
+  }catch(primaryError){
+    if(!shouldUseFreeFallback(primaryError))throw primaryError;
+    console.warn("BCKS_AI_PRIMARY_FALLBACK",String(primaryError?.message||primaryError));
+    try{
+      return await callGatewayModel(apiKey,FREE_FALLBACK_MODEL,system,input,schemaName,schema,false);
+    }catch(firstFallbackError){
+      // One repair retry for free models that occasionally wrap or deviate from JSON.
+      const repairSystem=system+"\n\nPENTING: Respons sebelumnya tidak lolos validasi. Balas hanya JSON valid persis sesuai schema, tanpa kalimat tambahan.";
+      return await callGatewayModel(apiKey,FREE_FALLBACK_MODEL,repairSystem,input,schemaName,schema,false);
+    }
+  }
 }
 const coachSchema={
   type:"object",additionalProperties:false,
@@ -105,9 +155,10 @@ module.exports=async function handler(req,res){
         competency:safeText(b.competency,50),
         transfer_question:safeText(b.transfer_question,1800)
       };
-      const out=await gateway(AI_COACH_PROMPT,input,"simantab_coach",coachSchema);
+      const result=await gateway(AI_COACH_PROMPT,input,"simantab_coach",coachSchema);
+      const out=result.output;
       if(!allowedNext.has(out.next_action))throw new Error("next_action AI tidak valid.");
-      return send(res,200,{ok:true,...out,model:MODEL});
+      return send(res,200,{ok:true,...out,model:result.model});
     }
 
     if(mode==="reinforce"){
@@ -120,10 +171,11 @@ module.exports=async function handler(req,res){
         reasoning_key:safeText(b.reasoning_key,1600),
         transfer_question:safeText(b.transfer_question,1800)
       };
-      const out=await gateway(RECOVERY_PROMPT,input,"simantab_reinforcement",recoverySchema);
+      const result=await gateway(RECOVERY_PROMPT,input,"simantab_reinforcement",recoverySchema);
+      const out=result.output;
       // Transfer question is canonical server input; never allow the model to mutate it.
       out.transfer_question=input.transfer_question;
-      return send(res,200,{ok:true,...out,model:MODEL});
+      return send(res,200,{ok:true,...out,model:result.model});
     }
 
     if(mode==="transfer"){
@@ -134,7 +186,8 @@ module.exports=async function handler(req,res){
         target_reasoning:safeText(b.target_reasoning,1800),
         misconception_to_avoid:safeText(b.misconception_to_avoid,1200)
       };
-      const out=await gateway(TRANSFER_EVALUATOR_PROMPT,input,"simantab_transfer_evaluation",transferSchema);
+      const result=await gateway(TRANSFER_EVALUATOR_PROMPT,input,"simantab_transfer_evaluation",transferSchema);
+      const out=result.output;
       const sum=Number(out.principle_score)+Number(out.context_transfer_score)+Number(out.priority_score)+Number(out.reasoning_score)+Number(out.misconception_avoidance_score);
       out.total_score=sum;
       if(!allowedTransfer.has(out.transfer_status))throw new Error("transfer_status AI tidak valid.");
@@ -142,7 +195,7 @@ module.exports=async function handler(req,res){
       const numeric=sum>=80?"TRANSFER_MASTERED":sum>=55?"PARTIAL_TRANSFER":"NOT_YET";
       const rank={NOT_YET:0,PARTIAL_TRANSFER:1,TRANSFER_MASTERED:2};
       if(rank[out.transfer_status]>rank[numeric])out.transfer_status=numeric;
-      return send(res,200,{ok:true,...out,model:MODEL});
+      return send(res,200,{ok:true,...out,model:result.model});
     }
 
     return send(res,400,{error:"Mode tidak dikenali."});
