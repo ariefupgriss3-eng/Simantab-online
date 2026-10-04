@@ -90,10 +90,11 @@ function modal(title,html,timerText=""){
  const el=document.createElement("div");el.id="bcksSubOverlay";el.className="bsub-overlay";el.innerHTML=`<div class="bsub-modal"><div class="bsub-top"><h2>${esc(title)}</h2><div style="display:flex;align-items:center;gap:12px"><div id="bcksSubTimer" class="bsub-timer">${esc(timerText)}</div><button class="bsub-btn soft" id="bcksSubClose">Tutup</button></div></div><div class="bsub-body" id="bcksSubModalBody">${html}</div></div>`;document.body.appendChild(el);$("bcksSubClose").onclick=()=>closeModal();return el;
 }
 async function eligible(){
- if(eligibility!==null)return eligibility;
+ if(eligibility===true)return true;
  if(!["GTK","KEPALA_SEKOLAH"].includes(String(profile().role||""))){eligibility=false;return false}
  const {data,error}=await sb.from("ks_bcks_submission_details").select("workflow_stage,admin_status,is_archived").eq("user_id",profile().id).maybeSingle();
- eligibility=!error&&!!data&&!data.is_archived&&["SUBSTANSI","DIKLAT","SERTIFIKAT"].includes(data.workflow_stage)&&["TERVERIFIKASI","DISETUJUI"].includes(data.admin_status);
+ if(error)return false;
+ eligibility=!!data&&!data.is_archived&&["SUBSTANSI","DIKLAT","SERTIFIKAT"].includes(data.workflow_stage)&&["TERVERIFIKASI","DISETUJUI"].includes(data.admin_status);
  return eligibility;
 }
 function placeCard(body,d){
@@ -116,10 +117,34 @@ async function setAccessFromKabid(open){
  await injectCard();
  return result;
 }
+async function ensureQuickLauncher(){
+ const id="bcksQuickLauncher";
+ const old=document.getElementById(id);
+ const role=String(profile().role||"");
+ const isDinas=String(profile().account_channel||"").toUpperCase()==="DINAS";
+ if((LEADER.has(role)&&isDinas)||!["GTK","KEPALA_SEKOLAH"].includes(role)){
+  old?.remove();return false;
+ }
+ if(!(await eligible())){old?.remove();return false}
+ let access;
+ try{access=await accessStatus()}catch{old?.remove();return false}
+ if(!access?.is_open){old?.remove();return false}
+ if(old)return true;
+ const b=document.createElement("button");
+ b.id=id;
+ b.type="button";
+ b.textContent="Buka Modul Latihan";
+ b.setAttribute("aria-label","Buka Modul Latihan Seleksi Substansi");
+ b.style.cssText="position:fixed;right:16px;bottom:18px;z-index:10070;border:0;border-radius:999px;padding:12px 16px;background:#0f5f9d;color:#fff;font-weight:900;box-shadow:0 8px 28px rgba(0,31,61,.28);font-size:13px";
+ b.onclick=()=>openHome();
+ document.body.appendChild(b);
+ return true;
+}
 async function injectCard(){
  if(injectInFlight)return;
  const body=$("diklatKsBcksBody");
- if(!body)return;
+ if(!body){await ensureQuickLauncher();return}
+ document.getElementById("bcksQuickLauncher")?.remove();
 
  const existing=[...document.querySelectorAll("#bcksSubstansiSimulatorCard")];
  if(existing.length){
