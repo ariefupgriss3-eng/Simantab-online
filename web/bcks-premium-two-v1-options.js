@@ -883,10 +883,10 @@ window.__simantabPremiumTwoV1Options={
   "2056": {
     "options": {
       "E": "Mengapa sebagian besar murid belum aktif, dan bukti apa dari diskusi tadi yang mendukung penilaian Anda?",
-      "C": "Apakah Anda puas dengan diskusi tadi?",
+      "C": "Apakah Anda puas dengan kualitas dan keterlibatan diskusi yang berlangsung tadi?",
       "B": "Apa yang ditunjukkan kualitas jawaban lima murid dan keterlibatan murid lain, serta apa yang perlu diuji berikutnya?",
       "D": "Sebaiknya Anda mengubah pembagian kelompok agar lebih banyak murid memperoleh kesempatan berbicara.",
-      "A": "Bagaimana jika semua murid diwajibkan berbicara?"
+      "A": "Bagaimana jika setiap murid diwajibkan berbicara pada setiap sesi diskusi?"
     },
     "db": {
       "E": 4,
