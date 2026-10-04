@@ -21,6 +21,28 @@ for(let i=0;i<70;i++)ITEM_DIFFICULTY[1001+i]=PREMIUM_V5_DIFFICULTY_PATTERN[i%10]
 HIGH_DISCRIMINATION.clear();
 for(const [n,d] of Object.entries(ITEM_DIFFICULTY))if(d==="sulit")HIGH_DISCRIMINATION.add(Number(n));
 const BYNO=new Map(Q.map(x=>[x[0],x])),LETTERS=["A","B","C","D","E"];
+function stableHash(text){
+ let h=2166136261>>>0;
+ for(let i=0;i<String(text).length;i++){h^=String(text).charCodeAt(i);h=Math.imul(h,16777619)>>>0}
+ return h>>>0;
+}
+function optionOrderFor(attemptId,questionNo){
+ const arr=[0,1,2,3,4];let seed=stableHash(String(attemptId||"")+"|"+String(questionNo));
+ for(let i=arr.length-1;i>0;i--){seed=(Math.imul(seed,1664525)+1013904223)>>>0;const j=seed%(i+1);[arr[i],arr[j]]=[arr[j],arr[i]]}
+ return arr;
+}
+function displayLetterFor(attemptId,questionNo,originalLetter){
+ const oi=LETTERS.indexOf(String(originalLetter||""));if(oi<0)return "-";
+ const di=optionOrderFor(attemptId,questionNo).indexOf(oi);
+ return di>=0?LETTERS[di]:"-";
+}
+function watermarkMarkup(identity,attemptId){
+ const full=String(identity?.full_name||profile().full_name||"PESERTA").trim()||"PESERTA";
+ const unit=String(identity?.unit_kerja||"").trim();
+ const code=String(attemptId||"").replace(/-/g,"").slice(-8).toUpperCase();
+ const label=[full,unit,code?"SESI "+code:""].filter(Boolean).join(" • ");
+ return '<div class="bsub-watermarks" aria-hidden="true">'+Array.from({length:12},()=>'<span>'+esc(label)+'</span>').join("")+'</div>';
+}
 const BAPAK_FILTERS=[
  {id:"BUKTI",label:"Bukti",terms:["data","bukti","verifik","klarifikasi","informasi","asesmen","hasil","indikator","catatan","rekap","baseline","survei","observasi","skor","evaluasi","sumber","dokumen","fakta"],guide:"Apa fakta yang sudah cukup dan apa yang masih perlu diverifikasi?"},
  {id:"AMAN",label:"Aman",terms:["aman","risiko","keselamatan","kesehatan","ancaman","perlindungan","privasi","rahasia","data pribadi","sensitif","kendaraan","cedera","praktik","pengawasan kompeten"],guide:"Risiko apa yang harus dicegah atau dikendalikan sebelum bertindak?"},
@@ -71,7 +93,15 @@ const downloadBcksResult=async(attemptId,format)=>{
   setTimeout(()=>URL.revokeObjectURL(url),1500);
  }catch(e){alert(e.message||e)}
 };
-const accessStatus=async()=>api({action:"access_status"});
+let participantIdentityCache={full_name:String(profile().full_name||"").trim(),unit_kerja:""};
+const accessStatus=async()=>{
+ const data=await api({action:"access_status"});
+ if(data?.participant_identity)participantIdentityCache={
+  full_name:String(data.participant_identity.full_name||profile().full_name||"").trim(),
+  unit_kerja:String(data.participant_identity.unit_kerja||"").trim()
+ };
+ return data;
+};
 let eligibility=null,state=null,timer=null,observer=null,reinjectQueued=false,injectInFlight=false;
 
 function style(){
@@ -84,7 +114,7 @@ function style(){
  .bsub-modal{width:min(1120px,100%);height:100%;background:#f5f8fb;border-radius:18px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 24px 80px #0008}
  .bsub-top{background:#0f3f76;color:#fff;padding:13px 16px;display:flex;align-items:center;justify-content:space-between;gap:10px}.bsub-top h2{font-size:17px;margin:0}.bsub-timer{font-size:20px;font-weight:950;font-variant-numeric:tabular-nums}
  .bsub-body{padding:14px;overflow:auto;flex:1}.bsub-grid{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:12px}
- .bsub-q{background:#fff;border:1px solid #dce6ef;border-radius:16px;padding:17px}.bsub-qnum{font-size:11px;font-weight:900;color:#5d7890}.bsub-qtext{font-size:16px;font-weight:850;line-height:1.55;margin:8px 0 14px;color:#183a5a}
+ .bsub-q{background:#fff;border:1px solid #dce6ef;border-radius:16px;padding:17px;position:relative;overflow:hidden}.bsub-qcontent{position:relative;z-index:1}.bsub-watermarks{position:absolute;inset:-16%;z-index:2;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(72px,1fr);gap:18px 28px;align-items:center;justify-items:center;transform:rotate(-17deg);pointer-events:none;user-select:none;overflow:hidden}.bsub-watermarks span{max-width:320px;text-align:center;font-size:10px;line-height:1.25;font-weight:950;letter-spacing:.45px;color:#0f3f76;opacity:.075;white-space:normal;text-transform:uppercase}.bsub-qnum{font-size:11px;font-weight:900;color:#5d7890}.bsub-qtext{font-size:16px;font-weight:850;line-height:1.55;margin:8px 0 14px;color:#183a5a}
  .bsub-opt{display:flex;gap:10px;padding:11px;margin:8px 0;border:1px solid #dbe4ec;border-radius:12px;cursor:pointer;background:#fff}.bsub-opt:has(input:checked){border-color:#2d78bd;background:#edf6ff}.bsub-opt input{margin-top:3px}.bsub-letter{font-weight:950;color:#0f3f76}
  .bsub-side{background:#fff;border:1px solid #dce6ef;border-radius:16px;padding:12px;align-self:start;position:sticky;top:0}.bsub-nav{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:8px}.bsub-num{border:1px solid #cfdce7;border-radius:8px;background:#fff;padding:7px 4px;font-weight:850;cursor:pointer;font-size:10px}.bsub-num.ans{background:#dff3e8;border-color:#8ac9a7}.bsub-num.doubt{box-shadow:inset 0 0 0 2px #e4a832}.bsub-num.active{background:#155fa8;color:#fff;border-color:#155fa8}
  .bsub-bottom{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.bsub-home{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:10px}.bsub-stat{grid-column:span 3;background:#fff;border:1px solid #dfe8f0;border-radius:14px;padding:13px}.bsub-wide{grid-column:span 12}.bsub-half{grid-column:span 6}.bsub-numstat{font-size:27px;font-weight:950;color:#0f3f76}.bsub-label{font-size:10px;text-transform:uppercase;font-weight:900;color:#6a8094}
@@ -305,7 +335,7 @@ async function resumeAttempt(a){
  }catch(e){alert(e.message||e)}
 }
 async function beginAttempt(attempt,order,answers){
- state={attempt,order,index:0,answers,questionStart:Date.now()};
+ state={attempt,order,index:0,answers,questionStart:Date.now(),identity:{...participantIdentityCache}};
  modal(attempt.mode==="SIMULASI"?"Simulasi dan Thinking Culture • Level "+attempt.session_level+" • "+attempt.total_questions+" Soal":"AI Coach Adaptif • "+attempt.target_competency,"<div id=\"bcksAttemptRoot\"></div>");
  renderQuestion();startTimer();
 }
@@ -327,10 +357,10 @@ function renderQuestion(){
   clearInterval(timer);timer=null;
   return;
  }
- const ans=state.answers.get(no)||{},answered=state.order.filter(n=>state.answers.get(Number(n))?.selected_option).length,hard=HIGH_DISCRIMINATION.has(no),focus=bapakFocus(q),focusText=focus.map(x=>x.label).join(" + "),coachGuide=state.attempt.mode==="COACH"?`<div class="bsub-card" style="margin:10px 0 0;padding:11px;background:#fffdf2;border-color:#ead9a2"><b>🧠 AI Coach • BAPAK Adaptif</b><div class="bsub-note" style="margin-top:5px">Fokus kasus: <b>${esc(focusText)}</b><br>${focus.map(x=>`• <b>${esc(x.label)}</b>: ${esc(x.guide)}`).join("<br>")}<br><span style="opacity:.8">Filter lain tetap digunakan bila relevan. Fokus ditentukan dari konteks kasus, bukan dari kunci jawaban.</span></div></div>`:"";
- root.innerHTML=`<div class="bsub-grid"><div class="bsub-q"><div class="bsub-qnum">SOAL ${state.index+1} DARI ${state.order.length} • ${esc(q[1])}${hard?" • HOTS":""}</div><div class="bsub-qtext">${esc(q[2])}</div>
- ${q[3].map((o,i)=>`<label class="bsub-opt"><input type="radio" name="bsubAns" value="${LETTERS[i]}" ${ans.selected_option===LETTERS[i]?"checked":""}><span class="bsub-letter">${LETTERS[i]}.</span><span>${esc(o)}</span></label>`).join("")}
- <div class="bsub-bottom"><button class="bsub-btn soft" id="bsubPrev" ${state.index===0?"disabled":""}>← Sebelumnya</button><button class="bsub-btn ${ans.is_doubtful?"warn":"soft"}" id="bsubDoubt">${ans.is_doubtful?"★ Ragu-ragu":"☆ Tandai Ragu-ragu"}</button><button class="bsub-btn" id="bsubNext">${state.index===state.order.length-1?"Ke Ringkasan":"Berikutnya →"}</button></div></div>
+ const ans=state.answers.get(no)||{},answered=state.order.filter(n=>state.answers.get(Number(n))?.selected_option).length,hard=HIGH_DISCRIMINATION.has(no),optionOrder=state.attempt.mode==="SIMULASI"?optionOrderFor(state.attempt.id,no):[0,1,2,3,4],watermark=state.attempt.mode==="SIMULASI"?watermarkMarkup(state.identity,state.attempt.id):"",focus=bapakFocus(q),focusText=focus.map(x=>x.label).join(" + "),coachGuide=state.attempt.mode==="COACH"?`<div class="bsub-card" style="margin:10px 0 0;padding:11px;background:#fffdf2;border-color:#ead9a2"><b>🧠 AI Coach • BAPAK Adaptif</b><div class="bsub-note" style="margin-top:5px">Fokus kasus: <b>${esc(focusText)}</b><br>${focus.map(x=>`• <b>${esc(x.label)}</b>: ${esc(x.guide)}`).join("<br>")}<br><span style="opacity:.8">Filter lain tetap digunakan bila relevan. Fokus ditentukan dari konteks kasus, bukan dari kunci jawaban.</span></div></div>`:"";
+ root.innerHTML=`<div class="bsub-grid"><div class="bsub-q">${watermark}<div class="bsub-qcontent"><div class="bsub-qnum">SOAL ${state.index+1} DARI ${state.order.length} • ${esc(q[1])}${hard?" • HOTS":""}</div><div class="bsub-qtext">${esc(q[2])}</div>
+ ${optionOrder.map((origIdx,displayIdx)=>`<label class="bsub-opt"><input type="radio" name="bsubAns" value="${LETTERS[origIdx]}" ${ans.selected_option===LETTERS[origIdx]?"checked":""}><span class="bsub-letter">${LETTERS[displayIdx]}.</span><span>${esc(q[3][origIdx])}</span></label>`).join("")}
+ <div class="bsub-bottom"><button class="bsub-btn soft" id="bsubPrev" ${state.index===0?"disabled":""}>← Sebelumnya</button><button class="bsub-btn ${ans.is_doubtful?"warn":"soft"}" id="bsubDoubt">${ans.is_doubtful?"★ Ragu-ragu":"☆ Tandai Ragu-ragu"}</button><button class="bsub-btn" id="bsubNext">${state.index===state.order.length-1?"Ke Ringkasan":"Berikutnya →"}</button></div></div></div>
  <div class="bsub-side"><b>Progres</b><div class="bsub-note">${answered}/${state.order.length} terjawab</div><div class="bsub-nav">${state.order.map((n,i)=>{const a=state.answers.get(Number(n))||{};return `<button class="bsub-num ${a.selected_option?"ans":""} ${a.is_doubtful?"doubt":""} ${i===state.index?"active":""}" data-qidx="${i}">${i+1}</button>`}).join("")}</div>${coachGuide}<div class="bsub-actions"><button class="bsub-btn warn" id="bsubFinish">Selesai & Nilai</button></div><div class="bsub-note" style="margin-top:8px">Jawaban tersimpan otomatis. Kunci tetap berada di server sampai sesi dikirim.</div></div></div>`;
  document.querySelectorAll('input[name="bsubAns"]').forEach(r=>r.onchange=()=>saveAnswer(no,r.value,null));
  $("bsubDoubt").onclick=()=>saveAnswer(no,ans.selected_option??null,!ans.is_doubtful);
@@ -461,7 +491,7 @@ async function openThinkingCulture(id){
 async function openReview(id){
  try{
   const data=await api({action:"review",attempt_id:id}),rows=data.review||[];
-  modal("Bedah Hasil • Mengapa Saya Salah?",`<div class="bsub-card"><h3>Analisis Keputusan</h3><div class="bsub-actions"><button class="bsub-btn" id="bsubThinkingReview">Belajar dengan Sintaks Thinking Culture</button></div><div class="bsub-note">Pembahasan muncul setelah sesi dikirim. Fokusnya bukan menghafal huruf jawaban, tetapi memahami pola keputusan kepala sekolah.</div></div>${rows.map((r,i)=>{const q=BYNO.get(Number(r.question_no)),sel=q?.[3]?.[LETTERS.indexOf(r.selected_option)],cor=q?.[3]?.[LETTERS.indexOf(r.correct_option)],displayNo=Number(r.display_no||i+1);return `<div class="bsub-review ${r.is_correct?"good":"bad"}"><div class="bsub-qnum">SOAL ${displayNo} • ${esc(r.competency)}</div><div style="font-weight:850;margin:5px 0">${esc(q?.[2]||"")}</div><div class="${r.is_correct?"bsub-ok":"bsub-bad"}">${r.is_correct?"✓ Tepat":"✕ Perlu diperbaiki"}</div><div class="bsub-note">Jawaban Anda: <b>${esc(r.selected_option||"-")}</b> ${esc(sel||"")}</div>${r.is_correct?"":`<div class="bsub-note">Pilihan yang lebih tepat: <b>${esc(r.correct_option)}</b> ${esc(cor||"")}</div><div class="bsub-note" style="margin-top:6px"><b>Mengapa?</b> ${esc(r.why_wrong||"")}</div>`}</div>`}).join("")}<div class="bsub-actions"><button class="bsub-btn" id="bsubBackHome">Kembali</button></div>`);
+  modal("Bedah Hasil • Mengapa Saya Salah?",`<div class="bsub-card"><h3>Analisis Keputusan</h3><div class="bsub-actions"><button class="bsub-btn" id="bsubThinkingReview">Belajar dengan Sintaks Thinking Culture</button></div><div class="bsub-note">Pembahasan muncul setelah sesi dikirim. Fokusnya bukan menghafal huruf jawaban, tetapi memahami pola keputusan kepala sekolah.</div></div>${rows.map((r,i)=>{const q=BYNO.get(Number(r.question_no)),sel=q?.[3]?.[LETTERS.indexOf(r.selected_option)],cor=q?.[3]?.[LETTERS.indexOf(r.correct_option)],displayNo=Number(r.display_no||i+1),selLetter=displayLetterFor(id,Number(r.question_no),r.selected_option),corLetter=displayLetterFor(id,Number(r.question_no),r.correct_option);return `<div class="bsub-review ${r.is_correct?"good":"bad"}"><div class="bsub-qnum">SOAL ${displayNo} • ${esc(r.competency)}</div><div style="font-weight:850;margin:5px 0">${esc(q?.[2]||"")}</div><div class="${r.is_correct?"bsub-ok":"bsub-bad"}">${r.is_correct?"✓ Tepat":"✕ Perlu diperbaiki"}</div><div class="bsub-note">Jawaban Anda: <b>${esc(selLetter)}</b> ${esc(sel||"")}</div>${r.is_correct?"":`<div class="bsub-note">Pilihan yang lebih tepat: <b>${esc(corLetter)}</b> ${esc(cor||"")}</div><div class="bsub-note" style="margin-top:6px"><b>Mengapa?</b> ${esc(r.why_wrong||"")}</div>`}</div>`}).join("")}<div class="bsub-actions"><button class="bsub-btn" id="bsubBackHome">Kembali</button></div>`);
   $("bsubThinkingReview").onclick=()=>openThinkingCulture(id);
   $("bsubBackHome").onclick=()=>openHome();
  }catch(e){alert(e.message||e)}
