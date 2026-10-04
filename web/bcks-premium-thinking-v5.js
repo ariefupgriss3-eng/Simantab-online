@@ -112,10 +112,27 @@ window.__simantabPremiumThinkingV5=async function(attemptId){
     if(!st.reflection.trim()){st.message="Tuliskan singkat alasan keputusan ulang Anda.";render();return}
     if(st.busy)return;st.busy=true;render();
     try{
-      const out=await invoke({action:"record_recovery",attempt_id:attemptId,question_no:current.question_no,recovery_option:st.retry,reasoning_latest:st.reflection,stimulus_soal:q[2],pertanyaan:q[2]});
+      const retryIdx=LETTERS.indexOf(st.retry);
+      const retryText=retryIdx>=0?q[3][retryIdx]:"";
+      const out=await invoke({action:"record_recovery",attempt_id:attemptId,question_no:current.question_no,recovery_option:st.retry,
+        reasoning_latest:st.reflection,stimulus_soal:q[2],pertanyaan:q[2],opsi_yang_dipilih:retryText,competency:q[1]});
       st.message=out.message||"";
-      if(out.recovery_success){st.reinforcement=out.reinforcement;st.transferQuestion=out.transfer_question;st.message=""}
-      else st.hint=Number(out.next_hint||Math.min(4,st.hint+1));
+      if(out.recovery_success){
+        st.reinforcement=out.reinforcement;st.transferQuestion=out.transfer_question;st.message="";
+      }else{
+        st.hint=Number(out.next_hint||Math.min(4,st.hint+1));
+        if(out.retry_coach_message||out.retry_reflection_question){
+          st.coach={
+            ...(st.coach||{}),
+            coach_message:out.retry_coach_message||st.coach?.coach_message||"",
+            reflection_question:out.retry_reflection_question||st.coach?.reflection_question||"",
+            next_action:"RETRY_REASONING",
+            hint_level:4
+          };
+          st.retry="";
+          st.reflection="";
+        }
+      }
     }catch(e){st.message=e.message||String(e)}finally{st.busy=false;render()}
   };
   const transfer=document.getElementById("ptv5Transfer");if(transfer)transfer.oninput=e=>{st.transferResponse=e.target.value};

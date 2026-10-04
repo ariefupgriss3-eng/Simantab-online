@@ -139,9 +139,33 @@ Deno.serve(async(req)=>{
       const success=db===5;
       const row:any=await saveLearning(attemptId,qno,{recovery_option:option,recovery_db:db,recovery_success:success,
         reasoning_latest:String(body?.reasoning_latest||"").slice(0,4000)});
-      if(!success)return J({ok:true,recovery_success:false,
-        next_hint:Math.min(4,Math.max(1,Number(row.highest_hint||0)+1)),
-        message:"Arah berpikir sudah direkam. Gunakan petunjuk berikutnya untuk menguji kembali alasan keputusan Anda."});
+      if(!success){
+        const currentHint=Math.max(1,Number(row.highest_hint||0));
+        if(currentHint>=4){
+          const retryText=String(body?.opsi_yang_dipilih||"").slice(0,1800);
+          const retryReason=String(body?.reasoning_latest||"").slice(0,2500);
+          const coach=await callAi({
+            mode:"coach",
+            stimulus_soal:String(body?.stimulus_soal||"").slice(0,6000),
+            pertanyaan:String(body?.pertanyaan||"").slice(0,1200),
+            opsi_yang_dipilih:(retryText+(retryReason?" | Alasan peserta: "+retryReason:"")).slice(0,3000),
+            db_level:"DB"+db,
+            misconception_code:meta.mc,
+            concept_key:meta.principle,
+            reasoning_key:meta.reasoning,
+            hint_level:4,
+            competency:String(body?.competency||"PROFESIONAL").slice(0,50),
+            transfer_question:meta.transfer
+          });
+          return J({ok:true,recovery_success:false,next_hint:4,
+            retry_coach_message:String(coach.coach_message||""),
+            retry_reflection_question:String(coach.reflection_question||""),
+            message:"Keputusan ulang sudah diperiksa. Gunakan refleksi H4 yang diperbarui, lalu pilih kembali keputusan yang paling kuat."});
+        }
+        return J({ok:true,recovery_success:false,
+          next_hint:Math.min(4,currentHint+1),
+          message:"Arah berpikir sudah direkam. Gunakan petunjuk berikutnya untuk menguji kembali alasan keputusan Anda."});
+      }
       const out=await callAi({
         mode:"reinforce",
         stimulus_soal:String(body?.stimulus_soal||"").slice(0,6000),
