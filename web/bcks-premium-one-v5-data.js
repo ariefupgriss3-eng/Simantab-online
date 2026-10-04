@@ -484,7 +484,7 @@ const P=[
   [
     1041,
     "MANAJERIAL",
-    "Rapor Pendidikan menunjukkan capaian numerasi sekolah menurun dua tahun berturut-turut. Informasi awal memperlihatkan adanya perbedaan capaian antarjenjang, beberapa guru menilai jam matematika kurang, sementara hasil supervisi menunjukkan penggunaan soal penalaran masih terbatas. Komite sekolah mengusulkan tambahan jam belajar dan sebagian guru ingin segera membuat program numerasi baru. Kepala sekolah memiliki waktu dan anggaran terbatas sehingga intervensi harus dipilih secara hati-hati. Sumber daya dan waktu tindak lanjut terbatas, sehingga kepala sekolah perlu menentukan fokus yang paling berdaya ungkit terhadap mutu sekolah. Langkah awal yang paling kuat sebelum menetapkan program adalah...",
+    "Rapor Pendidikan menunjukkan capaian numerasi sekolah menurun dua tahun berturut-turut. Informasi awal memperlihatkan adanya perbedaan capaian antarjenjang, beberapa guru menilai jam matematika kurang, sementara hasil supervisi menunjukkan penggunaan soal penalaran masih terbatas. Komite sekolah mengusulkan tambahan jam belajar dan sebagian guru ingin segera membuat program numerasi baru. Kepala sekolah memiliki waktu dan anggaran terbatas sehingga intervensi harus dipilih secara hati-hati. Beberapa pilihan tampak sama-sama masuk akal, tetapi penyebab penurunan belum dapat dipastikan hanya dari satu jenis data. Langkah awal yang paling kuat sebelum menetapkan program adalah...",
     [
       "Menambah waktu pembelajaran matematika bagi kelas dengan capaian rendah.",
       "Menelaah lebih rinci data numerasi dan hasil asesmen sekolah.",
@@ -820,7 +820,7 @@ const P=[
   [
     1069,
     "SUPERVISI",
-    "Pada akhir tahun, seluruh anggaran program terserap sesuai rencana dan dokumen pertanggungjawaban lengkap. Namun, indikator hasil utama yang ditetapkan sejak awal tidak tercapai. Pengelola program menilai kegiatan tetap berhasil karena seluruh agenda terlaksana dan tidak ada masalah administrasi. Kepala sekolah ingin membedakan kepatuhan penggunaan anggaran dari efektivitas program. Kepala sekolah harus menjaga hubungan profesional sekaligus memastikan bukti digunakan untuk mendorong perubahan yang benar-benar terjadi di kelas. Fokus evaluasi yang paling tepat adalah...",
+    "Pada akhir tahun, seluruh anggaran program terserap sesuai rencana dan dokumen pertanggungjawaban lengkap. Namun, indikator hasil utama yang ditetapkan sejak awal tidak tercapai. Pengelola program menilai kegiatan tetap berhasil karena seluruh agenda terlaksana dan tidak ada masalah administrasi. Kepala sekolah ingin membedakan kepatuhan penggunaan anggaran dari efektivitas program. Sebagian pihak mengusulkan cukup memperbaiki pelaporan tahun berikutnya, sementara pihak lain menilai desain program perlu ditinjau kembali. Fokus evaluasi yang paling tepat adalah...",
     [
       "Mengevaluasi capaian program dan hambatan selama pelaksanaannya.",
       "Menganggap program berhasil secara administratif karena anggaran terserap sesuai rencana.",
@@ -832,7 +832,7 @@ const P=[
   [
     1070,
     "SUPERVISI",
-    "Program numerasi sekolah telah berjalan satu tahun. Seluruh kegiatan yang direncanakan terlaksana: pelatihan guru, tambahan latihan, komunitas belajar, dan kegiatan murid. Laporan administrasi dinyatakan lengkap, tetapi capaian numerasi murid hampir tidak berubah. Sebagian tim mengusulkan program diteruskan karena kegiatannya sudah berjalan baik, sementara yang lain ingin menggantinya. Tindak lanjut yang dipilih perlu cukup konkret untuk dilakukan, tetapi tetap memberi ruang bagi guru dan sekolah untuk belajar dari prosesnya. Sebelum menentukan kelanjutan program, evaluasi yang paling penting adalah...",
+    "Program numerasi sekolah telah berjalan satu tahun. Seluruh kegiatan yang direncanakan terlaksana: pelatihan guru, tambahan latihan, komunitas belajar, dan kegiatan murid. Laporan administrasi dinyatakan lengkap, tetapi capaian numerasi murid hampir tidak berubah. Sebagian tim mengusulkan program diteruskan karena kegiatannya sudah berjalan baik, sementara yang lain ingin menggantinya. Kepala sekolah perlu memastikan keputusan berikutnya didasarkan pada bukti mengenai bagian mana dari rantai program yang bekerja dan yang tidak. Sebelum menentukan kelanjutan program, evaluasi yang paling penting adalah...",
     [
       "Menelaah diagnosis awal, implementasi, praktik guru, sumber daya, dan dampaknya.",
       "Membandingkan jalannya program dengan target hasil yang direncanakan.",
