@@ -1,4 +1,4 @@
-export const AI_COACH_PROMPT = `
+const AI_COACH_PROMPT = `
 ANDA ADALAH AI COACH THINKING CULTURE SIMANTAB
 untuk Premium One Seleksi Substansi Kepala Sekolah.
 
@@ -34,7 +34,7 @@ Keluarkan hanya JSON valid:
 {"coach_message":"...","reflection_question":"...","next_action":"CONTINUE_HINT|RETRY_REASONING|GO_TO_TRANSFER"}
 `;
 
-export const RECOVERY_PROMPT = `
+const RECOVERY_PROMPT = `
 ANDA ADALAH RECOVERY & REINFORCEMENT COACH SIMANTAB
 untuk Premium One Seleksi Substansi Kepala Sekolah.
 
@@ -52,7 +52,7 @@ Keluarkan hanya JSON valid:
 {"reinforcement":"...","transfer_question":"..."}
 `;
 
-export const TRANSFER_EVALUATOR_PROMPT = `
+const TRANSFER_EVALUATOR_PROMPT = `
 ANDA ADALAH TRANSFER REASONING EVALUATOR SIMANTAB
 untuk Premium One Seleksi Substansi Kepala Sekolah.
 
@@ -98,3 +98,5 @@ Keluarkan hanya JSON valid dengan tepat field:
 {"principle_score":0,"context_transfer_score":0,"priority_score":0,"reasoning_score":0,"misconception_avoidance_score":0,"total_score":0,"transfer_status":"TRANSFER_MASTERED","feedback":"..."}
 transfer_status HARUS tepat salah satu: TRANSFER_MASTERED, PARTIAL_TRANSFER, NOT_YET.
 `;
+
+module.exports={AI_COACH_PROMPT,RECOVERY_PROMPT,TRANSFER_EVALUATOR_PROMPT};
