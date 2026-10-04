@@ -232,7 +232,7 @@ async function openHome(){
    <div class="bsub-card bsub-wide" style="margin:0;background:#fffdf2;border-color:#ead9a2"><b>Indikator latihan internal</b><div class="bsub-note">90–100 Sangat Siap • 80–89 Siap • 70–79 Perlu Penguatan • &lt;70 Perlu Pendampingan Intensif. Kategori ini bukan batas kelulusan resmi.</div></div>
   </div>`);
    if(active)$("bcksResume").onclick=()=>resumeAttempt(active);else if(!scheduledUsed&&$("bcksStartSim"))$("bcksStartSim").onclick=()=>startAttempt("SIMULASI");
-  if(lastSim)$("bcksStartCoach").onclick=()=>startAttempt("COACH",lastSim.priority_competency||"MANAJERIAL");
+  if(lastSim&&$("bcksStartCoach"))$("bcksStartCoach").onclick=()=>Number(lastSim.session_level)===2?openThinkingCulture(lastSim.id):startAttempt("COACH",lastSim.priority_competency||"MANAJERIAL");
   document.querySelectorAll("[data-review]").forEach(b=>b.onclick=()=>openReview(b.dataset.review));
   document.querySelectorAll("[data-docx]").forEach(b=>b.onclick=()=>downloadBcksResult(b.dataset.docx,"docx"));
   document.querySelectorAll("[data-pdf]").forEach(b=>b.onclick=()=>downloadBcksResult(b.dataset.pdf,"pdf"));
@@ -245,7 +245,12 @@ async function startAttempt(mode,target=null){
   const session=access.session;
   if(!session){alert("Di luar jadwal Simulasi dan Thinking Culture.");return}
   const bank=Q.filter(x=>session.questions.includes(x[0]));
-  const isSim=mode==="SIMULASI",mins=isSim?120:30,total=isSim?bank.length:Math.min(10,bank.filter(x=>x[1]===target).length);
+  const isSim=mode==="SIMULASI";
+  if(!isSim&&Number(session.level)===2){
+    alert("Premium One menggunakan Thinking Culture adaptif setelah simulasi. Buka hasil Premium lalu pilih Mulai Sintaks Thinking Culture.");
+    return;
+  }
+  const mins=isSim?120:30,total=isSim?bank.length:Math.min(10,bank.filter(x=>x[1]===target).length);
    if(isSim&&[2,3].includes(Number(session.level))){
     const {data:existing,error:existingErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("id,status,expires_at").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",Number(session.level)).eq("is_test",access.is_test===true).order("started_at",{ascending:false}).limit(1));
     if(existingErr)throw existingErr;
@@ -337,10 +342,10 @@ async function finishAttempt(auto=false){
   $("bcksSubTimer").textContent="";
   $("bcksSubModalBody").innerHTML=`<div class="bsub-home"><div class="bsub-stat"><div class="bsub-label">Nilai latihan</div><div class="bsub-numstat">${pct(att.score)}</div></div><div class="bsub-stat"><div class="bsub-label">Benar</div><div class="bsub-numstat">${att.correct_count}/${att.total_questions}</div></div><div class="bsub-stat"><div class="bsub-label">Status</div><div style="font-size:17px;font-weight:950;color:#0f3f76;margin-top:8px">${esc(fmtRead(att.readiness_label))}</div></div><div class="bsub-stat"><div class="bsub-label">Prioritas</div><div style="font-size:17px;font-weight:950;color:#0f3f76;margin-top:8px">${esc(coach.priority_label||att.priority_competency||"-")}</div></div>
   <div class="bsub-card bsub-half" style="margin:0"><h3>Peta Kompetensi</h3><table class="bsub-table"><tbody>${scores.map(s=>`<tr><td>${esc(s.competency)}</td><td><b>${pct(s.percentage)}%</b></td><td>${s.correct_count}/${s.total_count}</td></tr>`).join("")}</tbody></table></div>
-  <div class="bsub-card bsub-half" style="margin:0"><h3>🧠 Belajar Setelah Simulasi</h3><div class="bsub-note">Pilih sedikitnya tiga kasus. Latih urutan: tangkap inti → uji BAPAK → bandingkan opsi → simpulkan pola keputusan. Dahulukan cara berpikir sebelum mengulang latihan.</div><div class="bsub-actions"><button class="bsub-btn" id="bsubThinkingNow">Mulai Sintaks Thinking Culture</button></div><div class="bsub-note">${esc(coach.diagnosis||"Pertahankan konsistensi pengambilan keputusan profesional.")}</div>${coach.next_target?'<div class="bsub-actions"><button class="bsub-btn warn" id="bsubCoachNow">Refleksi Kasus '+esc(coach.priority_label||coach.next_target)+'</button></div>':""}</div>
+  <div class="bsub-card bsub-half" style="margin:0"><h3>🧠 Belajar Setelah Simulasi</h3><div class="bsub-note">Pilih sedikitnya tiga kasus. Latih urutan: tangkap inti → uji BAPAK → bandingkan opsi → simpulkan pola keputusan. Dahulukan cara berpikir sebelum mengulang latihan.</div><div class="bsub-actions"><button class="bsub-btn" id="bsubThinkingNow">Mulai Sintaks Thinking Culture</button></div><div class="bsub-note">${esc(coach.diagnosis||"Pertahankan konsistensi pengambilan keputusan profesional.")}</div>${coach.next_target?'<div class="bsub-actions"><button class="bsub-btn warn" id="bsubCoachNow">'+(Number(att.session_level)===2?'Lanjutkan Thinking Culture':'Refleksi Kasus '+esc(coach.priority_label||coach.next_target))+'</button></div>':""}</div>
   <div class="bsub-card bsub-wide" style="margin:0"><b>Catatan</b><div class="bsub-note">${esc(data.note||"Indikator latihan SIMANTAB, bukan passing grade resmi.")}</div><div class="bsub-actions"><button class="bsub-btn soft" id="bsubDownloadDocx">Unduh DOCX</button><button class="bsub-btn soft" id="bsubDownloadPdf">Unduh PDF</button><button class="bsub-btn soft" id="bsubReviewNow">Bedah Keputusan</button><button class="bsub-btn" id="bsubHomeNow">Kembali ke Beranda Latihan</button></div></div></div>`;
   $("bsubThinkingNow").onclick=()=>openThinkingCulture(att.id);
-  if(coach.next_target)$("bsubCoachNow").onclick=()=>startAttempt("COACH",coach.next_target);
+  if(coach.next_target&&$("bsubCoachNow"))$("bsubCoachNow").onclick=()=>Number(att.session_level)===2?openThinkingCulture(att.id):startAttempt("COACH",coach.next_target);
   if($("bsubDownloadDocx"))$("bsubDownloadDocx").onclick=()=>downloadBcksResult(att.id,"docx");
   if($("bsubDownloadPdf"))$("bsubDownloadPdf").onclick=()=>downloadBcksResult(att.id,"pdf");
   $("bsubReviewNow").onclick=()=>openReview(att.id);$("bsubHomeNow").onclick=()=>openHome();
@@ -428,5 +433,5 @@ window.__simantabOpenBcksSubstansi=openHome;
 window.__simantabOpenBcksLeader=openLeader;
 window.__simantabGetBcksAccessStatus=accessStatus;
 window.__simantabSetBcksAccess=async(open)=>setAccessFromKabid(!!open);
-window.__simantabBcksSubstansiSimulator={version:7.5,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:7.6,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
