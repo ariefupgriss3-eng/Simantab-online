@@ -4,7 +4,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Memberikan teguran tertulis yang sama agar seluruh guru melihat aturan diterapkan konsisten.",
       "D": "Memberikan toleransi karena sebagian keterlambatan berkaitan dengan kegiatan profesional.",
-      "E": "Memverifikasi setiap kejadian, membedakan tugas resmi dan nonresmi, lalu menerapkan ketentuan serta dukungan secara konsisten.",
+      "E": "Memverifikasi dasar tiap keterlambatan lalu menerapkan ketentuan dan dukungan secara konsisten.",
       "C": "Meminta guru membuat komitmen tertulis untuk mengurangi keterlambatan berikutnya.",
       "A": "Menyerahkan pemeriksaan kepada tim disiplin agar keputusan tidak dianggap berpihak."
     },
@@ -20,7 +20,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Mempertahankan nilai karena guru memiliki kewenangan menetapkan hasil asesmen.",
       "C": "Menyesuaikan nilai murid karena rubrik tidak diinformasikan sejak awal.",
-      "D": "Memeriksa kesesuaian bukti, kriteria, dan transparansi asesmen sebelum menetapkan hasil serta memperbaiki prosedur.",
+      "D": "Memeriksa bukti, kriteria, dan transparansi asesmen sebelum menetapkan hasil dan memperbaiki prosedur.",
       "A": "Meminta guru dan orang tua menyepakati nilai yang dianggap adil bagi kedua pihak.",
       "B": "Mengulang penilaian seluruh kelas agar tidak muncul tuduhan perlakuan berbeda."
     },
@@ -36,7 +36,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Mempertahankan program tetapi mengurangi anggarannya agar identitas sekolah tetap terjaga.",
       "A": "Menghentikan program karena bukti dampaknya rendah.",
-      "B": "Menelaah bukti bersama tim, memisahkan kepentingan pribadi dari tujuan sekolah, lalu menentukan kelanjutan berdasarkan manfaat dan peluang perbaikan.",
+      "B": "Menelaah bukti bersama tim lalu menentukan kelanjutan tanpa bias kepentingan pribadi.",
       "C": "Meminta komite sekolah memutuskan agar kepala sekolah tidak dianggap bias.",
       "D": "Melanjutkan satu semester lagi untuk memperoleh data yang lebih meyakinkan."
     },
@@ -52,7 +52,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Membagi tugas sama rata agar tidak ada pihak yang merasa dirugikan.",
       "D": "Menunda seluruh jadwal sampai semua data dapat diverifikasi secara sempurna.",
-      "C": "Memverifikasi komponen beban yang relevan dengan kriteria terbuka, lalu menetapkan pembagian yang dapat ditinjau berdasarkan bukti.",
+      "C": "Memverifikasi seluruh komponen beban dengan kriteria terbuka sebelum menetapkan pembagian.",
       "A": "Meminta kedua guru mencapai kompromi pembagian tugas sendiri.",
       "E": "Mempertahankan pembagian sementara dan mengevaluasinya setelah satu bulan."
     },
@@ -68,7 +68,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Meminta tanggal diperbaiki dan memberi peringatan lisan karena substansi laporan tetap benar.",
       "D": "Memberikan sanksi formal agar menjadi contoh bagi staf lain.",
-      "B": "Memulihkan dokumen sesuai fakta, menindak pelanggaran secara proporsional, dan memperbaiki penyebab keterlambatan proses.",
+      "B": "Memulihkan dokumen sesuai fakta, menindak proporsional, dan memperbaiki penyebab keterlambatan.",
       "E": "Menganggap kasus selesai setelah dokumen diperbaiki.",
       "A": "Menyerahkan keputusan kepada atasan langsung staf agar objektivitas terjaga."
     },
@@ -84,7 +84,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Mengukur kepuasan kepala sekolah terhadap pelatihan yang diikuti.",
       "E": "Membandingkan jumlah kegiatan pengembangan sebelum dan sesudah pelatihan.",
-      "A": "Menelaah perubahan praktik kepemimpinan, hambatan penerapan, dan dampaknya terhadap proses sekolah.",
+      "A": "Menelaah perubahan praktik, hambatan penerapan, dan dampak pelatihan pada proses sekolah.",
       "C": "Meminta guru menilai apakah kepala sekolah menjadi lebih baik secara umum.",
       "D": "Mengikuti pelatihan tambahan agar kompetensi semakin kuat."
     },
@@ -100,7 +100,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Memberikan sanksi maksimal karena pelanggaran akademik harus ditindak tegas.",
       "B": "Mengurangi sanksi karena rekam prestasi murid sangat baik.",
-      "C": "Menindak pelanggaran secara proporsional sesuai ketentuan sekaligus memperbaiki kelemahan sistem pengawasan.",
+      "C": "Menindak pelanggaran secara proporsional sekaligus memperbaiki kelemahan sistem pengawasan.",
       "A": "Mengulang ujian bagi murid tersebut tanpa mencatat pelanggaran.",
       "E": "Meminta dewan guru menentukan sanksi berdasarkan suara terbanyak."
     },
@@ -116,7 +116,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Memberikan teguran agar kritik disampaikan melalui jalur formal.",
       "C": "Membahas kritik dalam rapat terbuka untuk menunjukkan transparansi.",
-      "A": "Menangani cara komunikasi secara proporsional sambil menelaah substansi kritik berdasarkan bukti.",
+      "A": "Menangani cara komunikasi secara proporsional sambil tetap menelaah substansi kritik.",
       "E": "Mengajak guru berbicara pribadi dan meminta pesan dihapus.",
       "D": "Membiarkan diskusi berkembang agar semua pihak dapat menyampaikan pendapat."
     },
@@ -132,7 +132,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Memberikan dispensasi tetap selama kondisi keluarga belum berubah.",
       "E": "Menerapkan sanksi yang sama agar prinsip keadilan tetap terjaga.",
-      "D": "Menyusun dukungan dan penyesuaian sementara berbatas waktu, disertai pemantauan dan upaya penyelesaian bersama keluarga.",
+      "D": "Memberi penyesuaian sementara berbatas waktu disertai pemantauan dan penyelesaian bersama keluarga.",
       "B": "Meminta wali kelas menangani kasus secara informal agar tidak menjadi preseden.",
       "A": "Mengurangi konsekuensi keterlambatan karena alasan keluarga dapat diterima."
     },
@@ -148,7 +148,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "A": "Menunda perbaikan sampai terdapat bukti risiko yang lebih nyata.",
       "B": "Memperbaiki seluruh prosedur sekaligus meskipun program lain harus ditunda.",
-      "C": "Memetakan tingkat risiko, menangani kerentanan paling kritis segera, dan menyusun perbaikan bertahap yang terukur.",
+      "C": "Memetakan risiko, menangani yang paling kritis, lalu memperbaiki sisanya secara bertahap.",
       "E": "Menambah sosialisasi keselamatan tanpa mengubah prosedur.",
       "D": "Menyerahkan penilaian risiko kepada komite sekolah."
     },
@@ -164,7 +164,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Mengizinkan karena identitas tidak akan dipublikasikan.",
       "B": "Mengizinkan sementara dan meminta persetujuan setelah kompetisi.",
-      "D": "Memastikan dasar penggunaan data dan persetujuan yang diperlukan sebelum data dipakai, meskipun kesempatan kompetisi berisiko terlewat.",
+      "D": "Memastikan dasar penggunaan dan persetujuan yang diperlukan sebelum data murid dipakai.",
       "C": "Menghapus nama murid lalu mengizinkan seluruh data digunakan.",
       "A": "Meminta guru menggunakan data kelas lain yang lebih mudah mendapat izin."
     },
@@ -180,7 +180,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Tidak mengikutsertakan murid karena sekolah belum memiliki pengalaman.",
       "B": "Mengikutsertakan murid dengan tanggung jawab penuh pada orang tua.",
-      "E": "Menilai risiko individual, menyiapkan penyesuaian dan dukungan yang layak, lalu menentukan partisipasi berdasarkan mitigasi tersebut.",
+      "E": "Menilai risiko individual dan menyiapkan dukungan sebelum menentukan partisipasi murid.",
       "D": "Mengubah seluruh kegiatan agar sepenuhnya aman bagi semua peserta.",
       "A": "Meminta murid mengikuti kegiatan alternatif di sekolah."
     },
@@ -196,7 +196,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Memberikan sanksi sementara sambil menunggu pemeriksaan selesai.",
       "A": "Mempertemukan kedua pihak agar kebenaran segera diketahui.",
-      "B": "Mengamankan korban dan bukti, membatasi risiko lanjutan, lalu melakukan pemeriksaan sesuai prosedur sebelum keputusan akhir.",
+      "B": "Mengamankan korban dan bukti, membatasi risiko, lalu memeriksa kasus sesuai prosedur.",
       "D": "Menunggu bukti tambahan sebelum melakukan tindakan apa pun.",
       "E": "Menyerahkan seluruh kasus kepada orang tua karena terjadi di ruang digital."
     },
@@ -212,7 +212,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Menjelaskan bahwa kegagalan terjadi karena banyak faktor di luar kendali.",
       "B": "Meminta panitia mengevaluasi tanpa membahas keputusan kepala sekolah.",
-      "D": "Mengakui bagian keputusan yang keliru, membuka evaluasi berbasis bukti, dan memperbaiki mekanisme keputusan berikutnya.",
+      "D": "Mengakui keputusan yang keliru, mengevaluasi bukti, dan memperbaiki mekanisme keputusan berikutnya.",
       "C": "Mengganti ketua panitia agar masyarakat melihat adanya tindak lanjut.",
       "A": "Menunda evaluasi sampai perhatian terhadap kegagalan berkurang."
     },
@@ -228,7 +228,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Menunjuk guru paling ahli teknologi sebagai ketua dan guru lain sebagai anggota.",
       "B": "Menunjuk guru yang paling kolaboratif sebagai ketua tanpa mempertimbangkan kemampuan teknis.",
-      "A": "Membagi peran kepemimpinan berdasarkan kebutuhan teknis, fasilitasi, dan pengembangan kapasitas dengan tanggung jawab yang jelas.",
+      "A": "Membagi peran teknis, fasilitasi, dan pengembangan kapasitas sesuai kekuatan anggota.",
       "C": "Kepala sekolah memimpin langsung agar konflik kompetensi tidak terjadi.",
       "D": "Meminta anggota memilih ketua melalui voting."
     },
@@ -244,7 +244,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Menjelaskan bukti penelitian dan menerapkan kebijakan sesuai keputusan sekolah.",
       "B": "Menunda kebijakan sampai mayoritas orang tua menyetujuinya.",
-      "C": "Mendialogkan tujuan, bukti sekolah, pengalaman orang tua, dan indikator evaluasi kebijakan sebelum menilai hasilnya.",
+      "C": "Mendialogkan tujuan, bukti, pengalaman orang tua, dan indikator evaluasi kebijakan.",
       "D": "Membiarkan setiap kelas menentukan kebijakan sendiri.",
       "A": "Mengadakan voting orang tua untuk menentukan jumlah pekerjaan rumah."
     },
@@ -260,7 +260,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Membuat aplikasi agar komunikasi lebih fleksibel.",
       "A": "Menambah pertemuan akhir pekan.",
-      "D": "Mengelompokkan hambatan partisipasi dan merancang beberapa jalur keterlibatan sesuai kebutuhan yang berbeda.",
+      "D": "Mengelompokkan hambatan partisipasi lalu menyiapkan beberapa jalur keterlibatan yang sesuai.",
       "E": "Mewajibkan setiap keluarga mengikuti minimal satu kegiatan.",
       "B": "Memberikan penghargaan kepada keluarga yang paling aktif."
     },
@@ -276,7 +276,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Menjelaskan kembali bahwa kebijakan wajib dilaksanakan.",
       "A": "Membuka seluruh keputusan untuk dibahas ulang demi rasa memiliki.",
-      "B": "Menjelaskan batas yang tidak dapat diubah dan melibatkan guru secara nyata pada aspek implementasi yang masih terbuka.",
+      "B": "Menjelaskan batas kebijakan dan melibatkan guru pada aspek implementasi yang masih terbuka.",
       "E": "Meminta pengawas memberi penjelasan agar guru menerima kebijakan.",
       "C": "Membiarkan tiap guru menyesuaikan kebijakan menurut kondisi kelas."
     },
@@ -292,7 +292,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Menentukan pihak yang paling banyak melanggar agar konflik berhenti.",
       "A": "Memisahkan kedua kelompok dalam pekerjaan berbeda.",
-      "D": "Menangani perilaku yang merusak sekaligus memperbaiki struktur peran dan mekanisme koordinasi yang menjadi sumber konflik.",
+      "D": "Menangani perilaku bermasalah sekaligus memperbaiki struktur peran dan koordinasi.",
       "E": "Mengadakan kegiatan kebersamaan untuk memulihkan hubungan.",
       "C": "Meminta mediator eksternal menyelesaikan konflik."
     },
@@ -308,7 +308,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Membuka seluruh fakta sementara agar orang tua tidak berspekulasi.",
       "A": "Menolak memberikan informasi sampai pemeriksaan selesai.",
-      "C": "Menyampaikan informasi yang dapat dibuka mengenai proses dan perlindungan pihak terkait tanpa mengungkap data yang belum terverifikasi.",
+      "C": "Menjelaskan proses dan perlindungan tanpa membuka informasi yang belum terverifikasi.",
       "B": "Meminta guru memberikan klarifikasi publik.",
       "E": "Menyerahkan komunikasi kepada komite sekolah."
     },
@@ -324,7 +324,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Mempertahankan pembagian karena kinerja tim lebih penting daripada pemerataan.",
       "D": "Membagi tugas sama rata mulai semester berikutnya.",
-      "E": "Menata ulang beban berdasarkan kompetensi dan kapasitas sambil mengembangkan guru lain agar tanggung jawab dapat tersebar bertahap.",
+      "E": "Menata beban sesuai kompetensi dan kapasitas sambil mengembangkan kemampuan guru lain.",
       "B": "Mengurangi program agar guru unggul tidak terlalu terbebani.",
       "A": "Memberikan insentif tambahan kepada guru yang memegang banyak tugas."
     },
@@ -340,7 +340,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Menegaskan disiplin dan tenggat kepada seluruh anggota.",
       "E": "Mengganti anggota yang sering terlambat menyelesaikan tugas.",
-      "D": "Memperjelas keputusan, pemilik tugas, kewenangan, tenggat, indikator selesai, dan mekanisme tindak lanjut.",
+      "D": "Memperjelas pemilik tugas, kewenangan, tenggat, indikator selesai, dan tindak lanjut.",
       "A": "Menambah frekuensi rapat monitoring.",
       "B": "Memberikan seluruh koordinasi kepada ketua tim."
     },
@@ -356,7 +356,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Menambah jumlah materi yang dibagikan.",
       "E": "Mengundang lebih banyak narasumber ahli.",
-      "A": "Menggeser fokus ke siklus masalah kelas, percobaan praktik, bukti perubahan, dan refleksi bersama.",
+      "A": "Menggunakan siklus masalah kelas, uji praktik, bukti perubahan, dan refleksi bersama.",
       "C": "Mewajibkan setiap guru presentasi bergiliran.",
       "D": "Mengurangi frekuensi pertemuan agar guru memiliki waktu menerapkan materi."
     },
@@ -372,7 +372,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Mempertahankan program yang mencapai indikator masing-masing.",
       "A": "Mengurangi program dengan capaian terendah.",
-      "D": "Menilai hubungan antara tujuan sekolah, kontribusi tiap program, indikator antara, dan hasil akhir sebelum menentukan kelanjutan.",
+      "D": "Menilai hubungan tujuan sekolah, kontribusi program, indikator antara, dan hasil akhir.",
       "C": "Membuat indikator baru yang sama untuk semua bidang.",
       "E": "Menggabungkan seluruh program dalam satu kegiatan besar."
     },
@@ -388,7 +388,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Menyalin program karena efektivitasnya sudah terbukti.",
       "D": "Mengambil bagian yang mudah diterapkan terlebih dahulu.",
-      "B": "Memahami mekanisme keberhasilannya, menilai kesesuaian konteks, mengadaptasi, lalu menguji hasilnya.",
+      "B": "Memahami mekanisme keberhasilan, menilai konteks, mengadaptasi, lalu menguji hasil.",
       "C": "Mengundang tim sekolah rujukan menjadi pelaksana program di sekolah Anda.",
       "A": "Menunggu sampai sumber daya sekolah setara."
     },
@@ -404,7 +404,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Meminta sekolah unggul menjadi mentor tetap.",
       "E": "Membagi sekolah berdasarkan tingkat capaian.",
-      "C": "Menggunakan masalah dan data masing-masing sekolah sebagai bahan kerja bersama sehingga setiap sekolah berkontribusi pada proses analisis dan pengujian.",
+      "C": "Menggunakan masalah dan data tiap sekolah sebagai bahan analisis dan pengujian bersama.",
       "A": "Mengadakan kompetisi antar sekolah untuk meningkatkan motivasi.",
       "B": "Menambah jumlah presentasi praktik baik."
     },
@@ -420,7 +420,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Menetapkan prosedur penerapan yang lebih ketat.",
       "C": "Menilai guru yang gagal menerapkan.",
-      "A": "Membandingkan konteks, kualitas implementasi, dan hasil tiap kelas untuk mengidentifikasi kondisi keberhasilan praktik tersebut.",
+      "A": "Membandingkan konteks, kualitas implementasi, dan hasil untuk menemukan kondisi keberhasilan.",
       "E": "Menghentikan perluasan karena hasil tidak konsisten.",
       "B": "Meminta guru pencetus melatih seluruh guru kembali."
     },
@@ -436,7 +436,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Menonjolkan hasil akhir karena publik membutuhkan contoh positif.",
       "A": "Menjelaskan proses secara lengkap termasuk semua kesalahan internal.",
-      "E": "Menyajikan tujuan, bukti hasil, proses utama, keterbatasan, dan kondisi adaptasi secara proporsional.",
+      "E": "Menyajikan tujuan, bukti hasil, proses, keterbatasan, dan kondisi adaptasi secara proporsional.",
       "C": "Menunda publikasi sampai inovasi benar-benar sempurna.",
       "D": "Mengirim laporan teknis saja kepada sekolah yang berminat."
     },
@@ -452,7 +452,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Mengukur kepuasan orang tua terhadap setiap kegiatan.",
       "D": "Menghitung jumlah kegiatan yang mendukung tema kemandirian.",
-      "B": "Menilai sejauh mana desain dan pelaksanaan program memberi kesempatan nyata bagi murid mengambil peran dan keputusan.",
+      "B": "Menilai apakah program benar-benar memberi murid ruang mengambil peran dan keputusan.",
       "A": "Menambahkan satu program khusus kepemimpinan murid.",
       "E": "Mengubah rumusan visi agar sesuai dengan program yang sudah ada."
     },
@@ -468,7 +468,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Membatasi inovasi pada strategi yang sudah terbukti.",
       "C": "Mewajibkan setiap guru menghasilkan satu inovasi per semester.",
-      "D": "Membentuk siklus uji coba kecil, bukti hasil, refleksi, dan keputusan apakah praktik diperbaiki, dihentikan, atau diperluas.",
+      "D": "Membangun siklus uji kecil, bukti hasil, refleksi, dan keputusan tindak lanjut.",
       "A": "Memberikan penghargaan pada inovasi paling kreatif.",
       "B": "Menugaskan tim khusus menilai semua inovasi guru."
     },
@@ -484,7 +484,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Mempertahankan visi karena sudah menjadi identitas sekolah.",
       "A": "Mengganti visi agar mengikuti perkembangan terbaru.",
-      "E": "Menilai apakah perubahan konteks menuntut perubahan arah fundamental atau cukup penyesuaian strategi dan indikator.",
+      "E": "Menilai apakah perubahan konteks menuntut revisi arah atau cukup penyesuaian strategi.",
       "B": "Menambahkan istilah teknologi ke dalam visi.",
       "C": "Menyerahkan keputusan kepada komite sekolah."
     },
@@ -500,7 +500,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "A": "Meningkatkan waktu membaca digital karena minat murid tinggi.",
       "D": "Mengurangi penggunaan digital untuk mencegah sumber tidak berkualitas.",
-      "C": "Mengintegrasikan berbagai format bacaan dengan pembelajaran literasi sumber, kredibilitas, dan pemaknaan.",
+      "C": "Mengintegrasikan bacaan digital dan cetak sambil mengajarkan evaluasi kredibilitas sumber.",
       "B": "Membagi waktu membaca digital dan cetak sama rata.",
       "E": "Menyerahkan pilihan media sepenuhnya kepada murid."
     },
@@ -516,7 +516,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Menghentikan seluruh kegiatan yang tidak memiliki indikator akademik.",
       "E": "Mempertahankan tradisi karena penting bagi budaya sekolah.",
-      "D": "Menilai kontribusi, biaya, manfaat, dan alternatif tiap program lalu menyusun ulang portofolio kegiatan secara bertahap.",
+      "D": "Menilai kontribusi, biaya, manfaat, dan alternatif sebelum menata ulang portofolio kegiatan.",
       "B": "Menambah program prioritas tanpa mengurangi kegiatan lama.",
       "A": "Meminta warga sekolah memilih kegiatan melalui voting."
     },
@@ -532,7 +532,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Memilih A karena potensi dampaknya paling tinggi.",
       "C": "Memilih B karena risikonya paling kecil.",
-      "B": "Membandingkan kebutuhan, bukti, potensi dampak, risiko, kelayakan, dan opsi uji terbatas sebelum memutuskan skala pendanaan.",
+      "B": "Membandingkan kebutuhan, bukti, dampak, risiko, kelayakan, dan opsi uji terbatas.",
       "A": "Memilih C karena dukungan warga sekolah paling besar.",
       "E": "Membagi dana kepada ketiganya meskipun pelaksanaan terbatas."
     },
@@ -548,7 +548,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Menetapkan satu indikator yang sama untuk semua guru.",
       "C": "Meminta kepala sekolah menentukan interpretasi data.",
-      "A": "Mengembangkan protokol analisis bersama yang membedakan fakta, interpretasi, alternatif penjelasan, dan bukti lanjutan yang diperlukan.",
+      "A": "Menggunakan protokol yang memisahkan fakta, interpretasi, alternatif penjelasan, dan bukti lanjutan.",
       "D": "Mengundang ahli statistik dalam setiap pertemuan.",
       "E": "Menggunakan hanya data kuantitatif agar lebih objektif."
     },
@@ -564,7 +564,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Menghentikan program karena hasil awal tidak memenuhi target.",
       "D": "Melanjutkan rancangan yang sama selama satu semester lagi.",
-      "C": "Mengidentifikasi mekanisme yang bekerja dan gagal, merancang perubahan terukur, lalu melakukan pengujian berikutnya.",
+      "C": "Mengidentifikasi mekanisme yang bekerja dan gagal, lalu menguji rancangan perbaikan.",
       "A": "Mengganti seluruh tim pelaksana.",
       "E": "Menambah anggaran agar implementasi lebih kuat."
     },
@@ -580,7 +580,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Menghentikan dua program dengan capaian terendah.",
       "C": "Menggabungkan semua kegiatan menjadi satu program.",
-      "E": "Memetakan masalah, teori perubahan, tumpang tindih intervensi, sumber daya, dan hasil untuk menentukan program yang perlu dipertahankan, digabung, atau dihentikan.",
+      "E": "Memetakan masalah, tumpang tindih intervensi, sumber daya, dan hasil tiap program.",
       "D": "Mengurangi frekuensi semua kegiatan.",
       "A": "Meminta setiap koordinator mempertahankan program masing-masing dengan anggaran lebih kecil."
     },
@@ -596,7 +596,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Tingkat penggunaan rendah menunjukkan sekolah tidak membutuhkan ruang baru.",
       "D": "Keluhan guru membuktikan kapasitas ruang kurang.",
-      "B": "Data agregat belum cukup; perlu dianalisis pola waktu, konflik jadwal, fungsi ruang, dan alternatif pengelolaan sebelum investasi.",
+      "B": "Menganalisis pola waktu, konflik jadwal, fungsi ruang, dan alternatif sebelum investasi.",
       "A": "Jadwal laboratorium harus dibagi sama rata.",
       "C": "Membangun ruang baru karena kebutuhan akan meningkat di masa depan."
     },
@@ -612,7 +612,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "A": "Mewajibkan setiap guru berbicara minimal sekali.",
       "C": "Kepala sekolah tidak perlu menghadiri komunitas lagi.",
-      "E": "Mendesain ruang diskusi yang lebih aman, memperjelas fungsi reflektif, dan mengubah peran pimpinan dari pemberi jawaban menjadi fasilitator.",
+      "E": "Mendesain ruang diskusi aman dan mengubah peran pimpinan menjadi fasilitator.",
       "D": "Menggunakan diskusi tertulis agar guru lebih berani.",
       "B": "Mengganti pengurus komunitas."
     },
@@ -628,7 +628,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Menunda AI sampai masalah pedagogi selesai.",
       "B": "Mengikuti permintaan guru agar motivasi tinggi.",
-      "A": "Merancang pengembangan yang menghubungkan AI dengan kebutuhan pedagogis prioritas dan mengukur perubahan praktik.",
+      "A": "Menghubungkan AI dengan kebutuhan pedagogis prioritas dan mengukur perubahan praktik.",
       "C": "Membagi pelatihan menjadi separuh AI dan separuh asesmen.",
       "D": "Memberi guru pilihan bebas mengikuti topik yang diminati."
     },
@@ -644,7 +644,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Program berhasil karena indikator utama meningkat.",
       "B": "Program gagal karena kesenjangan meningkat.",
-      "C": "Keberhasilan agregat perlu dibaca bersama distribusi hasil; manfaat program harus dianalisis pada kelompok berbeda sebelum kesimpulan akhir.",
+      "C": "Membaca kenaikan rata-rata bersama distribusi hasil pada kelompok murid berbeda.",
       "A": "Fokus berikutnya cukup pada kelompok terendah.",
       "E": "Rata-rata tetap menjadi indikator utama karena paling objektif."
     },
@@ -660,7 +660,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Menghapus insentif karena tidak berdampak pada nilai.",
       "C": "Mempertahankan karena kehadiran sudah meningkat.",
-      "A": "Menilai apakah peningkatan kehadiran diikuti kualitas keterlibatan dan pembelajaran yang memadai sebelum menyimpulkan hubungan dengan hasil belajar.",
+      "A": "Menilai keterlibatan dan kualitas pembelajaran sebelum menyimpulkan hubungan kehadiran dengan hasil.",
       "B": "Menambah besar insentif.",
       "D": "Mengganti indikator hasil dari nilai menjadi kehadiran."
     },
@@ -676,7 +676,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "A": "Menutup program karena indikator utama sudah meningkat.",
       "D": "Fokus hanya pada kelas dengan partisipasi terendah.",
-      "E": "Menggabungkan data survei, observasi kelas, suara murid, dan pola partisipasi untuk memahami sisa masalah.",
+      "E": "Menggabungkan survei, observasi, suara murid, dan pola partisipasi untuk memahami sisa masalah.",
       "C": "Mengadakan survei lebih sering.",
       "B": "Memberikan target partisipasi kepada setiap guru."
     },
@@ -692,7 +692,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "A": "Memilih penyebab yang paling banyak disebut.",
       "B": "Membuat program umum kesejahteraan untuk semua murid.",
-      "D": "Mengelompokkan pola kebutuhan, menentukan intervensi bertingkat, dan membangun mekanisme rujukan sesuai tingkat risiko.",
+      "D": "Mengelompokkan kebutuhan, memberi dukungan bertingkat, dan menyiapkan jalur rujukan sesuai risiko.",
       "E": "Fokus pada tekanan akademik karena dapat dikendalikan sekolah.",
       "C": "Menyerahkan kasus keluarga kepada orang tua."
     },
@@ -708,7 +708,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Mengurangi penyesuaian agar beban guru lebih wajar.",
       "A": "Mempertahankan karena hak murid harus dipenuhi tanpa mempertimbangkan beban guru.",
-      "E": "Menilai kebutuhan esensial, menyederhanakan proses, berbagi sumber daya, dan menjaga akses murid tetap terpenuhi secara berkelanjutan.",
+      "E": "Menjaga akses murid sambil menyederhanakan proses dan berbagi sumber daya.",
       "D": "Meminta orang tua menyediakan seluruh materi alternatif.",
       "B": "Mengurangi target pembelajaran murid."
     },
@@ -724,7 +724,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Melarang seluruh pengelompokan berdasarkan kemampuan.",
       "D": "Membiarkan selama nilai meningkat.",
-      "C": "Memastikan pengelompokan tetap berbasis kebutuhan yang berubah, dievaluasi berkala, dan tidak menjadi label kemampuan permanen.",
+      "C": "Menjaga pengelompokan tetap fleksibel, berbasis kebutuhan, dan ditinjau berkala.",
       "A": "Mengganti nama kelompok agar tidak terlihat hierarkis.",
       "B": "Melakukan rotasi anggota dengan jadwal tetap."
     },
@@ -738,7 +738,7 @@ window.__simantabPremiumTwoV1Options={
   },
   "2047": {
     "options": {
-      "A": "Memulai pilot terbatas dengan tujuan belajar, pembagian peran, indikator hasil, dan keputusan perluasan berdasarkan bukti.",
+      "A": "Memulai pilot terbatas dengan tujuan, peran, indikator, dan keputusan perluasan berbasis bukti.",
       "B": "Membangun program penuh selama mitra bersedia membantu biaya awal.",
       "C": "Menunggu sampai sekolah memiliki anggaran sendiri yang memadai.",
       "E": "Menjadikan kebun hanya sebagai kegiatan ekstrakurikuler agar risiko rendah.",
@@ -757,7 +757,7 @@ window.__simantabPremiumTwoV1Options={
       "C": "Menerima karena sekolah memperoleh fasilitas tanpa biaya.",
       "A": "Menolak karena kemitraan dengan perusahaan selalu memiliki kepentingan komersial.",
       "D": "Meminta komite menentukan melalui voting.",
-      "B": "Menilai kebutuhan pendidikan, konflik kepentingan, syarat branding, biaya lanjutan, dan mekanisme keluar sebelum membuat perjanjian.",
+      "B": "Menilai kebutuhan, konflik kepentingan, branding, biaya lanjutan, dan mekanisme keluar.",
       "E": "Menerima uji coba satu semester tanpa komitmen pembelian berikutnya."
     },
     "db": {
@@ -771,7 +771,7 @@ window.__simantabPremiumTwoV1Options={
   "2049": {
     "options": {
       "B": "Mengubah ruang segera karena aset yang tidak digunakan merupakan pemborosan.",
-      "C": "Memetakan kebutuhan, pengguna, biaya, manfaat, serta melakukan uji pemanfaatan sebelum renovasi permanen.",
+      "C": "Memetakan kebutuhan, pengguna, biaya, manfaat, lalu menguji pemanfaatan sebelum renovasi.",
       "E": "Menyewakan ruang agar sekolah memperoleh pemasukan.",
       "D": "Membiarkan ruang tetap seperti sekarang sampai kebutuhan lebih jelas.",
       "A": "Memberikan kesempatan kepada tim guru mencoba penggunaan sementara dengan target dan evaluasi."
@@ -788,7 +788,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "E": "Mewajibkan aplikasi karena hasil awal sudah positif.",
       "D": "Menghentikan penggunaan karena terdapat risiko data pribadi.",
-      "B": "Memvalidasi dampak, keamanan data, beban pemeliharaan, dan kompatibilitas sebelum melakukan pilot perluasan.",
+      "B": "Memvalidasi dampak, keamanan data, pemeliharaan, dan kompatibilitas sebelum memperluas aplikasi.",
       "C": "Memberikan penghargaan kepada guru dan membiarkan penggunaan bersifat sukarela.",
       "A": "Membeli aplikasi komersial yang memiliki fungsi serupa."
     },
@@ -804,7 +804,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Menjalankan projek karena pengalaman berjualan merupakan pembelajaran kewirausahaan nyata.",
       "A": "Membatalkan unsur penjualan agar sekolah tidak dianggap berbisnis.",
-      "C": "Merancang projek berdasarkan tujuan belajar, etika, peran murid, transparansi keuangan, dan refleksi hasil.",
+      "C": "Merancang projek berbasis tujuan belajar, etika, peran murid, keuangan, dan refleksi.",
       "E": "Meminta komite mengelola seluruh transaksi sementara murid hanya membuat produk.",
       "B": "Menggunakan keuntungan sebagai indikator utama keberhasilan projek."
     },
@@ -821,7 +821,7 @@ window.__simantabPremiumTwoV1Options={
       "B": "Menerima karena nilai hibah jauh lebih besar daripada biaya lanjutan.",
       "A": "Menolak karena dapat membebani anggaran masa depan.",
       "C": "Menerima kemudian mencari dana perawatan setelah perangkat digunakan.",
-      "E": "Menghitung total biaya kepemilikan, kebutuhan pendidikan, kemampuan pemanfaatan, dan keberlanjutan sebelum menerima.",
+      "E": "Menghitung total biaya kepemilikan, kesesuaian pendidikan, kapasitas pemanfaatan, dan keberlanjutan.",
       "D": "Meminta hibah hanya sebagian perangkat."
     },
     "db": {
@@ -835,7 +835,7 @@ window.__simantabPremiumTwoV1Options={
   "2053": {
     "options": {
       "B": "Menerima karena pengalaman dunia nyata memiliki nilai pendidikan tinggi.",
-      "A": "Merancang kebutuhan belajar, keselamatan, peran mitra, aktivitas, dan bukti hasil sebelum kerja sama dijalankan.",
+      "A": "Merancang kebutuhan belajar, keselamatan, peran mitra, aktivitas, dan bukti hasil bersama.",
       "E": "Meminta industri menyusun program karena mereka lebih memahami dunia kerja.",
       "D": "Mengirim hanya murid yang berminat.",
       "C": "Menunggu sampai sekolah memiliki pedoman kemitraan lengkap."
@@ -854,7 +854,7 @@ window.__simantabPremiumTwoV1Options={
       "C": "Menyerahkan adaptasi sepenuhnya kepada masing-masing guru.",
       "B": "Menunggu bukti keberhasilan selama satu tahun lagi.",
       "D": "Menggunakan model hanya pada jenjang asal.",
-      "E": "Mengidentifikasi mekanisme inti, melakukan adaptasi terkontrol, menguji pada konteks baru, lalu memperluas berdasarkan bukti."
+      "E": "Menetapkan mekanisme inti, mengadaptasi konteks, menguji, lalu memperluas berdasarkan bukti."
     },
     "db": {
       "A": 1,
@@ -868,7 +868,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "A": "Menegaskan bahwa observasi lebih objektif daripada nilai.",
       "E": "Menerima penjelasan guru karena nilai merupakan hasil akhir.",
-      "D": "Menempatkan kedua bukti secara berdampingan dan mengajak guru menelaah apa yang masing-masing data dapat dan tidak dapat jelaskan.",
+      "D": "Membandingkan nilai dan observasi untuk melihat apa yang dijelaskan masing-masing bukti.",
       "B": "Melakukan observasi ulang sebelum berdiskusi.",
       "C": "Meminta guru membuat refleksi tertulis."
     },
@@ -884,7 +884,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "A": "Mengapa sebagian besar murid belum aktif?",
       "C": "Apakah Anda puas dengan diskusi tadi?",
-      "B": "Apa yang dapat kita simpulkan dari kualitas jawaban lima murid dan keterlibatan murid lainnya, serta apa yang perlu diuji pada pertemuan berikutnya?",
+      "B": "Apa yang ditunjukkan kualitas jawaban lima murid dan keterlibatan murid lain, serta apa yang perlu diuji berikutnya?",
       "D": "Sebaiknya Anda mengubah pembagian kelompok.",
       "E": "Bagaimana jika semua murid diwajibkan berbicara?"
     },
@@ -900,7 +900,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "C": "Mengulang pelatihan penyusunan instrumen.",
       "B": "Menilai program sudah berhasil karena keterampilan membuat instrumen meningkat.",
-      "D": "Menggeser pendampingan ke interpretasi bukti, keputusan instruksional, praktik, dan umpan balik.",
+      "D": "Menggeser pendampingan ke interpretasi bukti dan keputusan instruksional setelah asesmen.",
       "E": "Membuat instrumen standar untuk seluruh sekolah.",
       "A": "Menambah frekuensi asesmen."
     },
@@ -916,7 +916,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "D": "Coaching gagal karena hasil murid belum meningkat.",
       "E": "Coaching berhasil karena praktik guru membaik.",
-      "B": "Perubahan praktik merupakan hasil antara yang penting, tetapi hubungan dengan pengalaman dan capaian murid masih perlu diuji dengan waktu dan bukti yang sesuai.",
+      "B": "Menilai perubahan praktik sebagai hasil antara sambil terus menguji dampaknya pada murid.",
       "A": "Program harus diteruskan tanpa perubahan.",
       "C": "Capaian murid tidak relevan dalam evaluasi coaching."
     },
@@ -934,7 +934,7 @@ window.__simantabPremiumTwoV1Options={
       "C": "Memilih penilaian supervisor yang lebih senior.",
       "D": "Mengobservasi guru sekali lagi tanpa membahas perbedaan sebelumnya.",
       "B": "Membiarkan masing-masing hasil karena observasi memang subjektif.",
-      "A": "Melakukan kalibrasi berdasarkan bukti observasi dan interpretasi indikator sebelum hasil digunakan untuk pembinaan."
+      "A": "Mengkalibrasi penilaian berdasarkan bukti observasi dan interpretasi indikator sebelum pembinaan."
     },
     "db": {
       "E": 3,
@@ -947,7 +947,7 @@ window.__simantabPremiumTwoV1Options={
   "2060": {
     "options": {
       "B": "Menambah observasi terjadwal.",
-      "E": "Menggunakan beberapa sumber bukti dan observasi pada konteks berbeda untuk menilai konsistensi praktik.",
+      "E": "Menggunakan beberapa sumber bukti dan konteks observasi untuk menilai konsistensi praktik.",
       "C": "Menilai guru sudah mampu karena ketika diobservasi praktiknya benar.",
       "A": "Melakukan observasi diam-diam sesering mungkin.",
       "D": "Meminta murid menilai guru."
@@ -965,7 +965,7 @@ window.__simantabPremiumTwoV1Options={
       "B": "Mewajibkan fokus pada asesmen.",
       "C": "Membiarkan guru memilih sepenuhnya.",
       "D": "Memperbaiki kedua area sekaligus.",
-      "A": "Menegosiasikan fokus dengan mempertimbangkan dampak, kesiapan, keterkaitan masalah, dan peluang keberhasilan.",
+      "A": "Menegosiasikan fokus berdasarkan dampak, kesiapan, keterkaitan masalah, dan peluang keberhasilan.",
       "E": "Menunda coaching."
     },
     "db": {
@@ -980,7 +980,7 @@ window.__simantabPremiumTwoV1Options={
     "options": {
       "B": "Memberikan feedback lengkap segera agar bukti masih segar.",
       "A": "Membatalkan seluruh hasil observasi.",
-      "C": "Menentukan waktu yang menjaga kesiapan psikologis guru tanpa kehilangan kedekatan dengan bukti observasi.",
+      "C": "Memilih waktu yang menjaga kesiapan guru tanpa kehilangan kedekatan dengan bukti.",
       "E": "Mengirim catatan tertulis tanpa percakapan.",
       "D": "Menunda sampai guru sendiri meminta."
     },
@@ -994,7 +994,7 @@ window.__simantabPremiumTwoV1Options={
   },
   "2063": {
     "options": {
-      "A": "Menghubungkan masalah pengelolaan kelas dengan desain tugas sebelum menentukan strategi perbaikan.",
+      "A": "Menghubungkan masalah pengelolaan kelas dengan desain tugas sebelum memilih intervensi.",
       "D": "Memberikan pelatihan disiplin kelas.",
       "B": "Memperketat aturan murid.",
       "C": "Menambah jumlah guru pendamping.",
@@ -1014,7 +1014,7 @@ window.__simantabPremiumTwoV1Options={
       "C": "Mengulang pelatihan yang sama.",
       "E": "Meminta guru membuat laporan penerapan.",
       "A": "Menunggu satu semester lagi.",
-      "B": "Mengamati transfer ke praktik, mengidentifikasi hambatan, memberi dukungan penerapan, dan menilai perubahan."
+      "B": "Mengamati transfer ke praktik, hambatan, dukungan penerapan, dan perubahan yang terjadi."
     },
     "db": {
       "D": 1,
@@ -1027,7 +1027,7 @@ window.__simantabPremiumTwoV1Options={
   "2065": {
     "options": {
       "E": "Menyimpulkan coaching gagal.",
-      "C": "Menyelidiki kondisi yang mendukung perubahan, hambatan keberlanjutan, dan merancang follow-up bertahap.",
+      "C": "Menyelidiki kondisi pendukung dan hambatan keberlanjutan lalu merancang follow-up bertahap.",
       "A": "Mengulang coaching dari awal.",
       "D": "Menambah frekuensi supervisi permanen.",
       "B": "Memberikan target tertulis."
@@ -1045,7 +1045,7 @@ window.__simantabPremiumTwoV1Options={
       "C": "Melarang AI karena menurunkan orisinalitas.",
       "A": "Menganggap praktik berhasil karena dokumen lebih baik.",
       "B": "Menilai kemampuan guru menggunakan AI.",
-      "E": "Menghubungkan kebutuhan murid, keputusan pedagogis, penggunaan AI, praktik kelas, dan bukti belajar dalam supervisi.",
+      "E": "Menghubungkan kebutuhan murid, keputusan pedagogis, penggunaan AI, praktik, dan bukti belajar.",
       "D": "Mewajibkan semua guru memakai prompt yang sama."
     },
     "db": {
@@ -1058,7 +1058,7 @@ window.__simantabPremiumTwoV1Options={
   },
   "2067": {
     "options": {
-      "A": "Menempatkan kedua bukti bersama dan menelusuri situasi yang tidak tampak dalam observasi terbatas.",
+      "A": "Menempatkan kedua bukti bersama dan menelusuri pengalaman yang tidak tampak saat observasi.",
       "B": "Mempercayai observasi karena dilakukan oleh profesional.",
       "D": "Mempercayai survei karena murid mengalami langsung.",
       "E": "Mengulang survei saja.",
@@ -1075,7 +1075,7 @@ window.__simantabPremiumTwoV1Options={
   "2068": {
     "options": {
       "C": "Menambah pelatihan yang lebih tinggi levelnya.",
-      "B": "Menilai siklus kebutuhan → belajar → praktik → feedback → dampak untuk menemukan titik putus transfer.",
+      "B": "Menilai rantai kebutuhan, belajar, praktik, feedback, dan dampak untuk menemukan titik putus.",
       "A": "Mengurangi pelatihan karena tidak efektif.",
       "D": "Menilai guru kurang memiliki motivasi.",
       "E": "Mengganti penyedia pelatihan."
@@ -1093,7 +1093,7 @@ window.__simantabPremiumTwoV1Options={
       "C": "Menyatakan coaching berhasil karena rata-rata naik.",
       "A": "Memusatkan pembinaan berikutnya hanya pada murid berkemampuan rendah.",
       "E": "Menilai praktik guru gagal.",
-      "D": "Menganalisis bagaimana perubahan praktik berdampak pada kelompok murid berbeda lalu menyesuaikan coaching.",
+      "D": "Menganalisis dampak praktik pada kelompok murid berbeda lalu menyesuaikan coaching.",
       "B": "Menggunakan median sebagai pengganti rata-rata."
     },
     "db": {
@@ -1110,7 +1110,7 @@ window.__simantabPremiumTwoV1Options={
       "B": "Mengganti instrumen supervisi.",
       "D": "Memberikan target perbaikan lebih ketat kepada guru.",
       "A": "Menilai supervisor berdasarkan jumlah observasi.",
-      "E": "Mengevaluasi keseluruhan rantai diagnosis → observasi → feedback → tindak lanjut → perubahan praktik → dampak pada murid."
+      "E": "Mengevaluasi rantai diagnosis, observasi, feedback, tindak lanjut, perubahan praktik, dan dampak murid."
     },
     "db": {
       "C": 3,
