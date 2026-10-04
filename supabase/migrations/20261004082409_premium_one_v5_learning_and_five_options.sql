@@ -1,0 +1,107 @@
+-- Applied to production as migration 20261004082409.
+alter table public.bcks_substansi_answer_keys drop constraint if exists bcks_substansi_answer_keys_correct_option_check;
+alter table public.bcks_substansi_answer_keys add constraint bcks_substansi_answer_keys_correct_option_check check (correct_option = any(array['A'::text,'B'::text,'C'::text,'D'::text,'E'::text]));
+alter table public.bcks_substansi_answer_keys drop constraint if exists bcks_substansi_answer_keys_question_no_check;
+alter table public.bcks_substansi_answer_keys add constraint bcks_substansi_answer_keys_question_no_check check ((question_no between 1 and 70) or (question_no between 101 and 170) or (question_no between 201 and 270) or (question_no between 1001 and 1070));
+alter table public.bcks_substansi_answers drop constraint if exists bcks_substansi_answers_selected_option_check;
+alter table public.bcks_substansi_answers add constraint bcks_substansi_answers_selected_option_check check (selected_option is null or selected_option = any(array['A'::text,'B'::text,'C'::text,'D'::text,'E'::text]));
+alter table public.bcks_substansi_answers drop constraint if exists bcks_substansi_answers_question_no_check;
+alter table public.bcks_substansi_answers add constraint bcks_substansi_answers_question_no_check check ((question_no between 1 and 70) or (question_no between 101 and 170) or (question_no between 201 and 270) or (question_no between 1001 and 1070));
+
+create table if not exists public.bcks_premium_learning (
+ attempt_id uuid not null references public.bcks_substansi_attempts(id) on delete cascade,
+ question_no smallint not null,
+ user_id uuid not null references public.profiles(id) on delete cascade,
+ highest_hint smallint not null default 0 check (highest_hint between 0 and 4),
+ recovery_option text null check (recovery_option is null or recovery_option = any(array['A','B','C','D','E'])),
+ recovery_db smallint null check (recovery_db is null or recovery_db between 1 and 5),
+ recovery_success boolean not null default false,
+ reasoning_latest text null,
+ transfer_response text null,
+ principle_score smallint null check (principle_score is null or principle_score between 0 and 30),
+ context_transfer_score smallint null check (context_transfer_score is null or context_transfer_score between 0 and 25),
+ priority_score smallint null check (priority_score is null or priority_score between 0 and 20),
+ reasoning_score smallint null check (reasoning_score is null or reasoning_score between 0 and 15),
+ misconception_avoidance_score smallint null check (misconception_avoidance_score is null or misconception_avoidance_score between 0 and 10),
+ transfer_total smallint null check (transfer_total is null or transfer_total between 0 and 100),
+ transfer_status text null check (transfer_status is null or transfer_status = any(array['TRANSFER_MASTERED','PARTIAL_TRANSFER','NOT_YET'])),
+ mastery_state text null check (mastery_state is null or mastery_state = any(array['INDEPENDENT_MASTERY','RAPID_MASTERY','SCAFFOLDED_MASTERY','UNSTABLE_UNDERSTANDING','CONCEPT_GAP'])),
+ updated_at timestamptz not null default now(),
+ primary key(attempt_id,question_no)
+);
+alter table public.bcks_premium_learning enable row level security;
+revoke all on table public.bcks_premium_learning from anon, authenticated;
+
+insert into public.bcks_substansi_answer_keys(question_no,competency,subcompetency,correct_option)
+values
+(1001,'KEPRIBADIAN','integritas_keadilan','B'),
+(1002,'KEPRIBADIAN','integritas_keadilan','A'),
+(1003,'KEPRIBADIAN','dialog_orang_tua','D'),
+(1004,'KEPRIBADIAN','analisis_akar_masalah','E'),
+(1005,'KEPRIBADIAN','integritas_keadilan','C'),
+(1006,'KEPRIBADIAN','analisis_akar_masalah','B'),
+(1007,'KEPRIBADIAN','belajar_dari_kegagalan','E'),
+(1008,'KEPRIBADIAN','evaluasi_program','C'),
+(1009,'KEPRIBADIAN','orientasi_murid','D'),
+(1010,'KEPRIBADIAN','orientasi_murid','A'),
+(1011,'KEPRIBADIAN','orientasi_murid','D'),
+(1012,'KEPRIBADIAN','manajemen_risiko','C'),
+(1013,'KEPRIBADIAN','manajemen_risiko','B'),
+(1014,'KEPRIBADIAN','manajemen_risiko','E'),
+(1015,'SOSIAL','kolaborasi_inovasi','A'),
+(1016,'SOSIAL','kolaborasi_inovasi','E'),
+(1017,'SOSIAL','analisis_akar_masalah','D'),
+(1018,'SOSIAL','dialog_orang_tua','B'),
+(1019,'SOSIAL','dialog_orang_tua','C'),
+(1020,'SOSIAL','integritas_keadilan','A'),
+(1021,'SOSIAL','tata_kelola_sumber_daya','E'),
+(1022,'SOSIAL','kolaborasi_inovasi','D'),
+(1023,'SOSIAL','kolaborasi_inovasi','C'),
+(1024,'SOSIAL','evaluasi_program','A'),
+(1025,'SOSIAL','kolaborasi_inovasi','B'),
+(1026,'SOSIAL','kolaborasi_inovasi','D'),
+(1027,'SOSIAL','kolaborasi_inovasi','C'),
+(1028,'SOSIAL','kolaborasi_inovasi','B'),
+(1029,'MANAJERIAL','evaluasi_program','A'),
+(1030,'MANAJERIAL','belajar_dari_kegagalan','E'),
+(1031,'MANAJERIAL','evaluasi_program','A'),
+(1032,'MANAJERIAL','belajar_dari_kegagalan','C'),
+(1033,'MANAJERIAL','evaluasi_program','E'),
+(1034,'MANAJERIAL','tata_kelola_sumber_daya','B'),
+(1035,'MANAJERIAL','evaluasi_program','D'),
+(1036,'MANAJERIAL','belajar_dari_kegagalan','C'),
+(1037,'MANAJERIAL','evaluasi_program','D'),
+(1038,'MANAJERIAL','tata_kelola_sumber_daya','E'),
+(1039,'MANAJERIAL','analisis_akar_masalah','B'),
+(1040,'MANAJERIAL','tindak_lanjut','A'),
+(1041,'MANAJERIAL','keputusan_berbasis_bukti','C'),
+(1042,'MANAJERIAL','keputusan_berbasis_bukti','D'),
+(1043,'MANAJERIAL','manajemen_risiko','B'),
+(1044,'MANAJERIAL','manajemen_risiko','E'),
+(1045,'MANAJERIAL','manajemen_risiko','A'),
+(1046,'MANAJERIAL','orientasi_murid','E'),
+(1047,'KEWIRAUSAHAAN','manajemen_risiko','B'),
+(1048,'KEWIRAUSAHAAN','analisis_akar_masalah','C'),
+(1049,'KEWIRAUSAHAAN','tujuan_supervisi','A'),
+(1050,'KEWIRAUSAHAAN','keputusan_berbasis_bukti','D'),
+(1051,'KEWIRAUSAHAAN','keputusan_berbasis_bukti','E'),
+(1052,'KEWIRAUSAHAAN','analisis_akar_masalah','D'),
+(1053,'KEWIRAUSAHAAN','analisis_akar_masalah','B'),
+(1054,'KEWIRAUSAHAAN','tujuan_supervisi','A'),
+(1055,'SUPERVISI','tujuan_supervisi','C'),
+(1056,'SUPERVISI','tujuan_supervisi','B'),
+(1057,'SUPERVISI','tindak_lanjut','D'),
+(1058,'SUPERVISI','evaluasi_program','A'),
+(1059,'SUPERVISI','tata_kelola_sumber_daya','C'),
+(1060,'SUPERVISI','tata_kelola_sumber_daya','E'),
+(1061,'SUPERVISI','kolaborasi_inovasi','C'),
+(1062,'SUPERVISI','tata_kelola_sumber_daya','D'),
+(1063,'SUPERVISI','analisis_akar_masalah','E'),
+(1064,'SUPERVISI','tata_kelola_sumber_daya','A'),
+(1065,'SUPERVISI','evaluasi_program','B'),
+(1066,'SUPERVISI','belajar_dari_kegagalan','C'),
+(1067,'SUPERVISI','tata_kelola_sumber_daya','B'),
+(1068,'SUPERVISI','integritas_keadilan','D'),
+(1069,'SUPERVISI','tata_kelola_sumber_daya','E'),
+(1070,'SUPERVISI','evaluasi_program','A')
+on conflict(question_no) do update set competency=excluded.competency,subcompetency=excluded.subcompetency,correct_option=excluded.correct_option;
