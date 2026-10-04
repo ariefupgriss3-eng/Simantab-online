@@ -155,7 +155,7 @@ async function injectCard(){
    placeCard(body,d);return;
   }
 
-  d.innerHTML='<h3>🎯 Simulasi dan Thinking Culture & AI Coach</h3><div class="bsub-note"><b>3 sesi × 70 soal berbeda • 120 menit per sesi • SJT berbasis kasus.</b> Empat opsi dirancang sama-sama masuk akal; pilih tindakan yang paling tepat. Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif sesuai kompetensi pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-note">'+sessionNote+'</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';
+  d.innerHTML='<h3>🎯 Simulasi dan Thinking Culture & AI Coach</h3><div class="bsub-note"><b>3 sesi × 70 soal berbeda • 120 menit per sesi • SJT berbasis kasus.</b> Lima opsi dirancang sama-sama masuk akal; pilih tindakan yang paling tepat. Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif sesuai kompetensi pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-note">'+sessionNote+'</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';
   placeCard(body,d);
   $("bcksOpenParticipant").onclick=openHome;
  } finally {
@@ -181,7 +181,7 @@ async function openHome(){
    return;
   }
    const attempts=await loadAttempts(),now=Date.now(),sessionLevel=Number(access.session?.level||0);
-   const {data:scheduledRows,error:scheduledErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("*").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",sessionLevel).order("started_at",{ascending:false}));
+   const {data:scheduledRows,error:scheduledErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("*").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",sessionLevel).eq("is_test",access.is_test===true).order("started_at",{ascending:false}));
    if(scheduledErr)throw scheduledErr;
    const scheduledAttempt=(scheduledRows||[])[0]||null;
    const active=scheduledAttempt?.status==="IN_PROGRESS"&&new Date(scheduledAttempt.expires_at).getTime()>now?scheduledAttempt:null;
@@ -217,7 +217,7 @@ async function startAttempt(mode,target=null){
   const bank=Q.filter(x=>session.questions.includes(x[0]));
   const isSim=mode==="SIMULASI",mins=isSim?120:30,total=isSim?bank.length:Math.min(10,bank.filter(x=>x[1]===target).length);
    if(isSim&&[2,3].includes(Number(session.level))){
-    const {data:existing,error:existingErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("id,status,expires_at").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",Number(session.level)).order("started_at",{ascending:false}).limit(1));
+    const {data:existing,error:existingErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("id,status,expires_at").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",Number(session.level)).eq("is_test",access.is_test===true).order("started_at",{ascending:false}).limit(1));
     if(existingErr)throw existingErr;
     const prior=(existing||[])[0];
     if(prior){
