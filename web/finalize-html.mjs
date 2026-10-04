@@ -336,7 +336,7 @@ const modules=[
  ['performance-achievement.js',4],
  ['bcks-premium-one-v5-data.js',1],
  ['bcks-premium-thinking-v5.js',1],
- ['bcks-substansi-simulator-v5.js',33],
+ ['bcks-substansi-simulator-v5.js',34],
  ['bcks-individual-readiness.js',2]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
