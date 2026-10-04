@@ -219,7 +219,7 @@ async function openHome(){
    const restrictedScheduled=[2,3,4,30].includes(sessionLevel),scheduledUsed=restrictedScheduled&&!!scheduledAttempt&&!active;
     const lastSim=attempts.find(a=>a.mode==="SIMULASI"&&a.status==="SUBMITTED"&&(Number(a.session_level)===1||a.is_official_result===true||(access.is_test===true&&a.is_test===true)));
    const submitted=attempts.filter(a=>a.status==="SUBMITTED").slice(0,6);
-  modal("Simulasi dan Thinking Culture BCKS",`${access.is_test?'<div class="bsub-card"><b>UJI COBA KHUSUS AKUN ANDA</b><div class="bsub-note">Data sesi ditandai sebagai uji coba dan akan dibersihkan setelah pengujian selesai.</div></div>':""}<div class="bsub-card">${sessionNote}</div><div class="bsub-home">
+  modal("Simulasi dan Thinking Culture BCKS",`${access.is_test?'<div class="bsub-card"><b>UJI COBA KHUSUS AKUN ANDA · ${esc(access.session?.label||('Level '+sessionLevel))}</b><div class="bsub-note">Data sesi ditandai sebagai uji coba dan akan dibersihkan setelah pengujian selesai.</div></div>':""}<div class="bsub-card">${sessionNote}</div><div class="bsub-home">
    <div class="bsub-stat"><div class="bsub-label">Format</div><div class="bsub-numstat">${access.session?.questions?.length||70}</div><div class="bsub-note">soal kasus</div></div>
    <div class="bsub-stat"><div class="bsub-label">Durasi</div><div class="bsub-numstat">120</div><div class="bsub-note">menit</div></div>
     <div class="bsub-stat"><div class="bsub-label">Hasil acuan</div><div class="bsub-numstat">${lastSim?pct(lastSim.score):"-"}</div><div class="bsub-note">${lastSim?fmtRead(lastSim.readiness_label):"Belum ada"}</div></div>
@@ -467,5 +467,5 @@ window.__simantabOpenBcksSubstansi=openHome;
 window.__simantabOpenBcksLeader=openLeader;
 window.__simantabGetBcksAccessStatus=accessStatus;
 window.__simantabSetBcksAccess=async(open)=>setAccessFromKabid(!!open);
-window.__simantabBcksSubstansiSimulator={version:8.1,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:8.2,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
