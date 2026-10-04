@@ -136,6 +136,11 @@ Deno.serve(async(req)=>{
   };
 
   if(action==="access_status"){
+    const {data:eligRow}=await admin.from("ks_bcks_submission_details")
+      .select("workflow_stage,admin_status,is_archived").eq("user_id",user.id).maybeSingle();
+    const participantEligible=!!eligRow&&!eligRow.is_archived
+      &&["SUBSTANSI","DIKLAT","SERTIFIKAT"].includes(String(eligRow.workflow_stage||""))
+      &&["TERVERIFIKASI","DISETUJUI"].includes(String(eligRow.admin_status||""));
     const {data:gate,error:ge}=await admin.from("bcks_substansi_access_control")
       .select("is_open,opened_at,opened_by,updated_at,note")
       .eq("singleton_key","GLOBAL").maybeSingle();
@@ -144,6 +149,7 @@ Deno.serve(async(req)=>{
     const testActive=!!test&&Date.now()>=Date.parse(test.starts_at)&&Date.now()<Date.parse(test.expires_at);
     return json({
       ok:true,
+      participant_eligible:participantEligible,
       is_open:testActive||sessionOpen(gate,activeSession()),
       session:testActive?THINKING_SESSIONS.find(s=>s.level===test.session_level):activeSession()||null,
       is_test:testActive,test_expires_at:testActive?test.expires_at:null,

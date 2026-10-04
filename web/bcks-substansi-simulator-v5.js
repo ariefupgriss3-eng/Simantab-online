@@ -1,7 +1,7 @@
 /* SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-for(let i=0;i<300&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
+for(let i=0;i<1200&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id),profile=()=>window.__simantabProfile||{};
 if(!sb)return;
 
@@ -125,10 +125,10 @@ async function ensureQuickLauncher(){
  if((LEADER.has(role)&&isDinas)||!["GTK","KEPALA_SEKOLAH"].includes(role)){
   old?.remove();return false;
  }
- if(!(await eligible())){old?.remove();return false}
  let access;
  try{access=await accessStatus()}catch{old?.remove();return false}
- if(!access?.is_open){old?.remove();return false}
+ if(!access?.participant_eligible||!access?.is_open){old?.remove();return false}
+ eligibility=true;
  if(old)return true;
  const b=document.createElement("button");
  b.id=id;
@@ -170,8 +170,9 @@ async function injectCard(){
    return;
   }
 
-  if(!(await eligible()))return;
   const access=await accessStatus();
+  if(!access?.participant_eligible)return;
+  eligibility=true;
   if(document.querySelector("#bcksSubstansiSimulatorCard"))return;
 
   const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
@@ -412,5 +413,5 @@ async function openLeader(){
 
 style();
 for(const ms of [100,400,900,1800])setTimeout(()=>{installObserver();injectCard()},ms);
-window.__simantabBcksSubstansiSimulator={version:7.0,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:7.1,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
