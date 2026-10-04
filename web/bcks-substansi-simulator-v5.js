@@ -291,7 +291,14 @@ function startTimer(){
 }
 function renderQuestion(){
  const root=$("bcksAttemptRoot");if(!root||!state)return;
- const no=Number(state.order[state.index]),q=BYNO.get(no),ans=state.answers.get(no)||{},answered=state.order.filter(n=>state.answers.get(Number(n))?.selected_option).length,hard=HIGH_DISCRIMINATION.has(no),focus=bapakFocus(q),focusText=focus.map(x=>x.label).join(" + "),coachGuide=state.attempt.mode==="COACH"?`<div class="bsub-card" style="margin:10px 0 0;padding:11px;background:#fffdf2;border-color:#ead9a2"><b>🧠 AI Coach • BAPAK Adaptif</b><div class="bsub-note" style="margin-top:5px">Fokus kasus: <b>${esc(focusText)}</b><br>${focus.map(x=>`• <b>${esc(x.label)}</b>: ${esc(x.guide)}`).join("<br>")}<br><span style="opacity:.8">Filter lain tetap digunakan bila relevan. Fokus ditentukan dari konteks kasus, bukan dari kunci jawaban.</span></div></div>`:"";
+ const no=Number(state.order[state.index]),q=BYNO.get(no);
+ if(!q){
+  root.innerHTML='<div class="bsub-card"><h3>⚠️ Paket soal perlu diperbarui</h3><div class="bsub-note">Soal nomor internal '+esc(no)+' tidak ditemukan pada bank soal aktif. Tutup modul lalu mulai ulang sesi. Data hasil sesi lain tidak berubah.</div><div class="bsub-actions"><button class="bsub-btn soft" id="bsubCloseBroken">Tutup Modul</button></div></div>';
+  const btn=$("bsubCloseBroken");if(btn)btn.onclick=()=>closeModal();
+  clearInterval(timer);timer=null;
+  return;
+ }
+ const ans=state.answers.get(no)||{},answered=state.order.filter(n=>state.answers.get(Number(n))?.selected_option).length,hard=HIGH_DISCRIMINATION.has(no),focus=bapakFocus(q),focusText=focus.map(x=>x.label).join(" + "),coachGuide=state.attempt.mode==="COACH"?`<div class="bsub-card" style="margin:10px 0 0;padding:11px;background:#fffdf2;border-color:#ead9a2"><b>🧠 AI Coach • BAPAK Adaptif</b><div class="bsub-note" style="margin-top:5px">Fokus kasus: <b>${esc(focusText)}</b><br>${focus.map(x=>`• <b>${esc(x.label)}</b>: ${esc(x.guide)}`).join("<br>")}<br><span style="opacity:.8">Filter lain tetap digunakan bila relevan. Fokus ditentukan dari konteks kasus, bukan dari kunci jawaban.</span></div></div>`:"";
  root.innerHTML=`<div class="bsub-grid"><div class="bsub-q"><div class="bsub-qnum">SOAL ${state.index+1} DARI ${state.order.length} • ${esc(q[1])}${hard?" • HOTS":""}</div><div class="bsub-qtext">${esc(q[2])}</div>
  ${q[3].map((o,i)=>`<label class="bsub-opt"><input type="radio" name="bsubAns" value="${LETTERS[i]}" ${ans.selected_option===LETTERS[i]?"checked":""}><span class="bsub-letter">${LETTERS[i]}.</span><span>${esc(o)}</span></label>`).join("")}
  <div class="bsub-bottom"><button class="bsub-btn soft" id="bsubPrev" ${state.index===0?"disabled":""}>← Sebelumnya</button><button class="bsub-btn ${ans.is_doubtful?"warn":"soft"}" id="bsubDoubt">${ans.is_doubtful?"★ Ragu-ragu":"☆ Tandai Ragu-ragu"}</button><button class="bsub-btn" id="bsubNext">${state.index===state.order.length-1?"Ke Ringkasan":"Berikutnya →"}</button></div></div>
@@ -421,5 +428,5 @@ window.__simantabOpenBcksSubstansi=openHome;
 window.__simantabOpenBcksLeader=openLeader;
 window.__simantabGetBcksAccessStatus=accessStatus;
 window.__simantabSetBcksAccess=async(open)=>setAccessFromKabid(!!open);
-window.__simantabBcksSubstansiSimulator={version:7.4,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:7.5,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
