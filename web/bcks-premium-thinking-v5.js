@@ -131,6 +131,17 @@ window.__simantabPremiumThinkingV5=async function(attemptId){
           };
           st.retry="";
           st.reflection="";
+        }else if(st.hint>=4){
+          st.coach={
+            ...(st.coach||{}),
+            coach_message:"Keputusan ulang Anda sudah diperiksa, tetapi alasan dan prioritasnya belum sepenuhnya menjawab inti kasus. Gunakan prinsip pada H4 untuk membandingkan kembali seluruh pilihan, bukan hanya tindakan yang tampak paling cepat dilakukan.",
+            reflection_question:"Pilihan mana yang paling menjaga prinsip utama sekaligus menjawab akar masalah dan dampaknya, bukan hanya salah satu gejalanya?",
+            next_action:"RETRY_REASONING",
+            hint_level:4
+          };
+          st.message="H4 telah diperbarui. Pilihan sebelumnya dikosongkan agar Anda dapat menguji kembali keputusan secara sadar.";
+          st.retry="";
+          st.reflection="";
         }
       }
     }catch(e){st.message=e.message||String(e)}finally{st.busy=false;render()}
