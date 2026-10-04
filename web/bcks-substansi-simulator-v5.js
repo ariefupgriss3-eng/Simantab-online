@@ -185,11 +185,11 @@ async function injectCard(){
 
   const d=document.createElement("div");d.id="bcksSubstansiSimulatorCard";d.className="bsub-card";
   if(!access.is_open){
-   d.innerHTML='<h3>🔒 Simulasi dan Thinking Culture & AI Coach</h3><div class="bsub-note"><b>Akses simulasi belum tersedia pada jadwal atau ditutup Kabid.</b><br>Jadwal: 3, 7, dan 10 Oktober 2026, pukul 09.00–15.00 WIB. Modul mengikuti jadwal dan kendali akses Kabid. Peserta belum dapat memulai simulasi atau AI Coach.<br>'+sessionNote+'</div><div class="bsub-actions"><button class="bsub-btn" disabled>Menunggu Jadwal / Akses Kabid</button></div>';
+   d.innerHTML='<h3>🔒 Simulasi dan Thinking Culture & AI Coach</h3><div class="bsub-note"><b>Akses simulasi belum tersedia pada jadwal atau ditutup Kabid.</b><br>Jadwal berikutnya: Premium One 5 Oktober 13.00–16.00 WIB, Premium Two 8 Oktober 13.00–16.00 WIB, dan Pro 10 Oktober 09.00–12.00 WIB. Modul mengikuti jadwal dan kendali akses Kabid. Peserta belum dapat memulai simulasi atau AI Coach.<br>'+sessionNote+'</div><div class="bsub-actions"><button class="bsub-btn" disabled>Menunggu Jadwal / Akses Kabid</button></div>';
    placeCard(body,d);return;
   }
 
-  d.innerHTML='<h3>🎯 Simulasi dan Thinking Culture & AI Coach</h3><div class="bsub-note"><b>3 sesi × 70 soal berbeda • 120 menit per sesi • SJT berbasis kasus.</b> Lima opsi dirancang sama-sama masuk akal; pilih tindakan yang paling tepat. Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif sesuai kompetensi pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-note">'+sessionNote+'</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';
+  d.innerHTML='<h3>🎯 Simulasi dan Thinking Culture & AI Coach</h3><div class="bsub-note"><b>4 level × 70 soal berbeda • 120 menit maksimum per sesi • SJT berbasis kasus.</b> Lima opsi dirancang sama-sama masuk akal; pilih tindakan yang paling tepat. Setelah simulasi, sistem memetakan Kepribadian, Sosial, Manajerial, Kewirausahaan, dan Supervisi, lalu memberi latihan adaptif sesuai kompetensi pada area terlemah.<br><b>Catatan:</b> ini latihan SIMANTAB, bukan ujian resmi dan bukan passing grade Kemendikdasmen.</div><div class="bsub-note">'+sessionNote+'</div><div class="bsub-actions"><button class="bsub-btn" id="bcksOpenParticipant">Buka Modul Latihan</button></div>';
   placeCard(body,d);
   $("bcksOpenParticipant").onclick=openHome;
  } finally {
