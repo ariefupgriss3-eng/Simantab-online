@@ -46,32 +46,29 @@ function validateSchemaShape(value,schema){
   }
   return true;
 }
-async function callGatewayModel(apiKey,model,system,input,schemaName,schema,useStrictSchema){
-  const messages=[
-    {role:"system",content:system+(useStrictSchema?"":"\n\nKELUARKAN HANYA SATU OBJEK JSON VALID. Jangan gunakan markdown, code fence, komentar, atau teks di luar JSON. Struktur JSON wajib mengikuti schema berikut: "+JSON.stringify(schema))},
-    {role:"user",content:JSON.stringify(input)}
-  ];
-  const payload={model,stream:false,messages,max_tokens:1200};
-  if(useStrictSchema){
-    payload.response_format={
-      type:"json_schema",
-      json_schema:{name:schemaName,strict:true,schema}
-    };
-  }
-  const r=await fetch("https://ai-gateway.vercel.sh/v1/chat/completions",{
+async function callGatewayModel(apiKey,model,system,input,schemaName,schema){
+  const instruction=system+
+    "\n\nKELUARKAN HANYA SATU OBJEK JSON VALID. Jangan gunakan markdown, code fence, komentar, atau teks di luar JSON."+
+    "\nSchema JSON wajib: "+JSON.stringify(schema)+
+    "\nData input: "+JSON.stringify(input);
+  const r=await fetch("https://ai-gateway.vercel.sh/v1/responses",{
     method:"POST",
     headers:{"Content-Type":"application/json",Authorization:"Bearer "+apiKey},
-    body:JSON.stringify(payload)
+    body:JSON.stringify({
+      model,
+      input:[{type:"message",role:"user",content:[{type:"input_text",text:instruction}]}],
+      max_output_tokens:1200
+    })
   });
   const raw=await r.text();
   let outer={};try{outer=JSON.parse(raw)}catch{}
   if(!r.ok){
     const message=outer?.error?.message||outer?.error||raw||("AI Gateway HTTP "+r.status);
-    const err=new Error(String(message));
-    err.status=r.status;
-    throw err;
+    throw new Error(String(message));
   }
-  const txt=outer?.choices?.[0]?.message?.content;
+  const txt=typeof outer?.output_text==="string"
+    ?outer.output_text
+    :(outer?.output||[]).flatMap(x=>x?.content||[]).filter(x=>typeof x?.text==="string").map(x=>x.text).join("\n");
   if(!txt)throw new Error("AI Gateway tidak mengembalikan respons.");
   const parsed=parseJsonObject(txt);
   if(!validateSchemaShape(parsed,schema))throw new Error("Respons AI tidak memenuhi kontrak JSON.");
@@ -81,7 +78,7 @@ async function gateway(system,input,schemaName,schema){
   const apiKey=process.env.AI_GATEWAY_API_KEY;
   if(!apiKey)throw new Error("AI Gateway belum dikonfigurasi.");
   try{
-    return await callGatewayModel(apiKey,PRIMARY_MODEL,system,input,schemaName,schema,false);
+    return await callGatewayModel(apiKey,PRIMARY_MODEL,system,input,schemaName,schema);
   }catch(firstError){
     console.warn("BCKS_AI_REPAIR_RETRY",String(firstError?.message||firstError));
     const repairSystem=system+"\n\nPENTING: Respons sebelumnya tidak lolos validasi. Balas hanya JSON valid persis sesuai schema, tanpa kalimat tambahan.";
