@@ -67,7 +67,7 @@ export const PREMIUM_TWO_V1_META={
     "h1": "Rubrik diberikan setelah tugas selesai.",
     "h2": "Persoalannya bukan hanya nilai akhir, tetapi validitas proses penilaian.",
     "h3": "Bandingkan mempertahankan nilai demi kewenangan guru dengan langsung menaikkan nilai demi murid. Apa risiko masing-masing?",
-    "h4": "Keadilan asesmen memerlukan kriteria yang transparan, bukti yang dapat diperiksa, dan prosedur koreksi yang sah.",
+    "h4": "Keputusan yang adil lahir dari aturan penilaian yang diketahui sejak awal, alasan yang dapat diuji, dan mekanisme peninjauan yang sah.",
     "transfer": "Seorang murid memprotes hasil seleksi karena kriteria tertentu baru dijelaskan setelah penilaian dilakukan. Bagaimana kepala sekolah menilai keadilan keputusan tanpa otomatis membatalkan hasil?"
   },
   "2003": {
