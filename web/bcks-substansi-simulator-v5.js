@@ -276,9 +276,22 @@ async function startAttempt(mode,target=null){
 }
 async function resumeAttempt(a){
  try{
-  const {data:rows,error}=await retryJwt(()=>sb.from("bcks_substansi_answers").select("*").eq("attempt_id",a.id));if(error)throw error;
+  let {data:rows,error}=await retryJwt(()=>sb.from("bcks_substansi_answers").select("*").eq("attempt_id",a.id));if(error)throw error;
+  if(!(rows||[]).length){
+   const pack=(Array.isArray(a.package_questions)?a.package_questions:[]).map(Number).filter(Number.isFinite);
+   if(pack.length){
+    const repair=pack.map(n=>({attempt_id:a.id,question_no:n,user_id:profile().id,selected_option:null,is_doubtful:false,seconds_spent:0}));
+    const ins=await retryJwt(()=>sb.from("bcks_substansi_answers").insert(repair));
+    if(ins.error)throw new Error("Baris soal sesi belum terbentuk dan pemulihan otomatis gagal: "+(ins.error.message||"unknown error"));
+    const reread=await retryJwt(()=>sb.from("bcks_substansi_answers").select("*").eq("attempt_id",a.id));
+    if(reread.error)throw reread.error;
+    rows=reread.data||[];
+   }
+  }
+  const existing=(rows||[]).map(x=>Number(x.question_no)).filter(Number.isFinite);
+  if(!existing.length)throw new Error("Sesi tidak memiliki nomor soal yang valid. Tutup modul lalu mulai sesi kembali.");
   let order=[];try{order=JSON.parse(localStorage.getItem("bcksAttemptOrder:"+a.id)||"[]")}catch{}
-  const existing=(rows||[]).map(x=>Number(x.question_no));
+  order=(order||[]).map(Number).filter(Number.isFinite);
   if(!order.length||order.some(n=>!existing.includes(Number(n))))order=shuffle(existing);
   const map=new Map((rows||[]).map(x=>[Number(x.question_no),x]));
   await beginAttempt(a,order,map);
