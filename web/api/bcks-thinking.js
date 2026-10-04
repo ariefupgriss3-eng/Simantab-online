@@ -2,8 +2,7 @@ const {AI_COACH_PROMPT,RECOVERY_PROMPT,TRANSFER_EVALUATOR_PROMPT}=require("../li
 
 const SUPABASE_URL="https://tizxfzvgglkokzvsiwkg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_EfCKPSelNMo1X3whBFszJw_Ui6SuRIB";
-const PRIMARY_MODEL="openai/gpt-5.6-sol";
-const FREE_FALLBACK_MODEL="inclusionai/ling-3.0-tiny-free";
+const PRIMARY_MODEL="google/gemini-2.5-flash-lite";
 const allowedNext=new Set(["CONTINUE_HINT","RETRY_REASONING","GO_TO_TRANSFER"]);
 const allowedTransfer=new Set(["TRANSFER_MASTERED","PARTIAL_TRANSFER","NOT_YET"]);
 
@@ -78,28 +77,15 @@ async function callGatewayModel(apiKey,model,system,input,schemaName,schema,useS
   if(!validateSchemaShape(parsed,schema))throw new Error("Respons AI tidak memenuhi kontrak JSON.");
   return {output:parsed,model:outer?.model||model};
 }
-function shouldUseFreeFallback(error){
-  const m=String(error?.message||error||"").toLowerCase();
-  return m.includes("free tier users do not have access")
-    ||m.includes("upgrade to paid credits")
-    ||m.includes("model access")
-    ||m.includes("no providers available");
-}
 async function gateway(system,input,schemaName,schema){
   const apiKey=process.env.AI_GATEWAY_API_KEY;
   if(!apiKey)throw new Error("AI Gateway belum dikonfigurasi.");
   try{
-    return await callGatewayModel(apiKey,PRIMARY_MODEL,system,input,schemaName,schema,true);
-  }catch(primaryError){
-    if(!shouldUseFreeFallback(primaryError))throw primaryError;
-    console.warn("BCKS_AI_PRIMARY_FALLBACK",String(primaryError?.message||primaryError));
-    try{
-      return await callGatewayModel(apiKey,FREE_FALLBACK_MODEL,system,input,schemaName,schema,false);
-    }catch(firstFallbackError){
-      // One repair retry for free models that occasionally wrap or deviate from JSON.
-      const repairSystem=system+"\n\nPENTING: Respons sebelumnya tidak lolos validasi. Balas hanya JSON valid persis sesuai schema, tanpa kalimat tambahan.";
-      return await callGatewayModel(apiKey,FREE_FALLBACK_MODEL,repairSystem,input,schemaName,schema,false);
-    }
+    return await callGatewayModel(apiKey,PRIMARY_MODEL,system,input,schemaName,schema,false);
+  }catch(firstError){
+    console.warn("BCKS_AI_REPAIR_RETRY",String(firstError?.message||firstError));
+    const repairSystem=system+"\n\nPENTING: Respons sebelumnya tidak lolos validasi. Balas hanya JSON valid persis sesuai schema, tanpa kalimat tambahan.";
+    return await callGatewayModel(apiKey,PRIMARY_MODEL,repairSystem,input,schemaName,schema,false);
   }
 }
 const coachSchema={
