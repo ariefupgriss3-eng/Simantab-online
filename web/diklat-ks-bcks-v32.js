@@ -342,6 +342,28 @@ window.ksbKabidApprove=async(id,approve)=>{
  toast(approve?'Usulan disetujui Kabid.':'Usulan dikembalikan untuk perbaikan.');
  await renderLeadershipDiklat();
 };
+async function bindKabidSimulatorDirect(){
+ if(!isKabid())return;
+ const openBtn=$('ksbOpenSimulatorDashboard'),toggleBtn=$('ksbToggleSimulatorAccess'),state=$('ksbSimAccessState');
+ if(openBtn)openBtn.onclick=async()=>{
+  if(typeof window.__simantabOpenBcksLeader==='function')return window.__simantabOpenBcksLeader();
+  toast('Dashboard simulasi sedang disiapkan. Coba kembali beberapa detik.',true);
+ };
+ let access=null;
+ try{
+  if(typeof window.__simantabGetBcksAccessStatus==='function')access=await window.__simantabGetBcksAccessStatus();
+  if(state)state.innerHTML='<b>Status akses umum:</b> '+(access?.is_open?'DIBUKA':'DITUTUP')+(access?.session?.label?' • '+esc(access.session.label):'');
+ }catch(e){if(state)state.innerHTML='<b>Status akses umum:</b> belum dapat dibaca.'}
+ if(toggleBtn)toggleBtn.onclick=async()=>{
+  if(typeof window.__simantabSetBcksAccess!=='function')return toast('Kontrol simulasi sedang disiapkan. Coba kembali beberapa detik.',true);
+  try{
+   const latest=typeof window.__simantabGetBcksAccessStatus==='function'?await window.__simantabGetBcksAccessStatus():access;
+   await window.__simantabSetBcksAccess(!latest?.is_open);
+   if(typeof window.__simantabGetBcksAccessStatus==='function')access=await window.__simantabGetBcksAccessStatus();
+   if(state)state.innerHTML='<b>Status akses umum:</b> '+(access?.is_open?'DIBUKA':'DITUTUP')+(access?.session?.label?' • '+esc(access.session.label):'');
+  }catch(e){toast(e.message||String(e),true)}
+ };
+}
 async function renderLeadershipDiklat(){
  const body=$('diklatKsBcksBody');if(!body)return;
  body.innerHTML='<div class="card"><div class="small">Memuat monitoring Diklat KS/BCKS…</div></div>';
@@ -356,9 +378,11 @@ async function renderLeadershipDiklat(){
    <div class="info"><b>Monitoring ${esc(leaderLabel)}.</b> Hasil AI Verifikator Otomatis dan AI Verifikator Agregat ditampilkan pada setiap peserta. AI Otomatis memeriksa isi 7 berkas; AI Agregat mencocokkan hasil AI tersebut dengan berkas aktif yang sedang tersimpan.${isKabidView?' Kabid dapat menjalankan AI Verifikator Agregat dari tombol di bawah.':''}</div>
    ${isKabidView?'':'<div style="margin-top:10px"><button class="btn soft" onclick="showTab(\'leadershipDirections\')">📝 Buka Arahan Pimpinan</button></div>'}
   </div>
+  ${isKabidView?'<div class="card" id="ksbKabidSimulatorCard" style="margin-bottom:12px"><div class="label">SIMULASI SELEKSI SUBSTANSI</div><h3 style="margin:5px 0">🧠 Dashboard Simulasi dan Thinking Culture</h3><div class="small">Monitoring Basic, Premium One, Pro, Thinking Culture, AI Coach, serta kesiapan peserta. Akses uji Feronika bersifat khusus akun uji dan tidak membuka akses umum.</div><div id="ksbSimAccessState" class="small" style="margin-top:8px"><b>Status akses umum:</b> memeriksa…</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn primary" id="ksbOpenSimulatorDashboard" type="button">Buka Dashboard Simulasi</button><button class="btn soft" id="ksbToggleSimulatorAccess" type="button">Kontrol Akses Simulasi</button></div></div>':''}
   ${aggSummary}
   ${leaderKsbSummary(rows)}
   <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>KS Pengusul</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Kasi/Subkoor Pembagi</th><th>Status / Proses</th><th>Hasil AI</th>${isKabidView?'<th>Persetujuan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{},coordinator=names.get(s.assigned_by)||{},aiAssignment=String(s.assignment_note||'').startsWith('AI Bagi Tugas');return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${esc(coordinator.full_name||'-')}${aiAssignment?'<div class="small">🤖 AI Bagi Tugas</div>':''}</td><td>${coordKsbPill(s.workflow_state)}</td><td>${aiCompactHtml(s.id,vis)}</td>${isKabidView?`<td>${kabidKsbAction(s,names)||'—'}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
+  await bindKabidSimulatorDirect();
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 async function reviewerData(){
@@ -615,5 +639,5 @@ async function render(){ensureSection();ensureNav();if(isPrivateApplicant()){awa
 await resolveApplicantSchoolStatus();
 ensureSection();ensureNav();const nav=$('nav');if(nav&&!isPrivateApplicant()){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
 const priorShow=window.showTab;window.showTab=async id=>{await resolveApplicantSchoolStatus();if(id==='diklatKsBcks'&&isPrivateApplicant())return priorShow('profile');ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
-window.__simantabDiklatKsBcks={version:53,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:54,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
