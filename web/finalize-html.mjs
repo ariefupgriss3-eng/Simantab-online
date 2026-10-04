@@ -263,6 +263,16 @@ const bcksPremiumThinkingCode=await fs.readFile(new URL(`./${bcksPremiumThinking
 if(!/SIMANTAB_PREMIUM_ONE_THINKING_V5/.test(bcksPremiumThinkingCode))throw new Error('Premium One Thinking v5 tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksPremiumThinkingFile),bcksPremiumThinkingCode);
 
+const bcksPremiumTwoDataFile='bcks-premium-two-v1-data.js';
+const bcksPremiumTwoDataCode=await fs.readFile(new URL(`./${bcksPremiumTwoDataFile}`,import.meta.url),'utf8');
+if(!/PREMIUM TWO v1\.0 DRAFT/.test(bcksPremiumTwoDataCode))throw new Error('Premium Two v1 data tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksPremiumTwoDataFile),bcksPremiumTwoDataCode);
+
+const bcksPremiumTwoThinkingFile='bcks-premium-two-thinking-v1.js';
+const bcksPremiumTwoThinkingCode=await fs.readFile(new URL(`./${bcksPremiumTwoThinkingFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_PREMIUM_TWO_THINKING_V1/.test(bcksPremiumTwoThinkingCode))throw new Error('Premium Two Thinking v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksPremiumTwoThinkingFile),bcksPremiumTwoThinkingCode);
+
 const bcksSubstansiSimulatorFile='bcks-substansi-simulator-v5.js';
 const bcksSubstansiSimulatorCode=await fs.readFile(new URL(`./${bcksSubstansiSimulatorFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE/.test(bcksSubstansiSimulatorCode))throw new Error('BCKS substansi simulator v5 tidak valid.');
@@ -336,7 +346,9 @@ const modules=[
  ['performance-achievement.js',4],
  ['bcks-premium-one-v5-data.js',2],
  ['bcks-premium-thinking-v5.js',5],
- ['bcks-substansi-simulator-v5.js',44],
+ ['bcks-premium-two-v1-data.js',1],
+ ['bcks-premium-two-thinking-v1.js',1],
+ ['bcks-substansi-simulator-v5.js',45],
  ['bcks-individual-readiness.js',2]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
