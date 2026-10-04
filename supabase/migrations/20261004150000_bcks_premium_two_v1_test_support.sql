@@ -1,6 +1,18 @@
 -- Premium Two v1.0 internal test support.
 -- Public schedule remains unchanged. Level 30 is test-only.
 
+alter table public.bcks_substansi_attempts
+  drop constraint if exists bcks_substansi_attempts_session_level_check;
+alter table public.bcks_substansi_attempts
+  add constraint bcks_substansi_attempts_session_level_check
+  check ((session_level between 0 and 3) or session_level=30);
+
+alter table public.bcks_substansi_test_access
+  drop constraint if exists bcks_substansi_test_access_session_level_check;
+alter table public.bcks_substansi_test_access
+  add constraint bcks_substansi_test_access_session_level_check
+  check ((session_level between 1 and 3) or session_level=30);
+
 alter table public.bcks_substansi_answer_keys
   drop constraint if exists bcks_substansi_answer_keys_question_no_check;
 
