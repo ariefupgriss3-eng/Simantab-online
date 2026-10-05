@@ -348,6 +348,7 @@ Deno.serve(async(req)=>{
       ok:true,scope_label:scopeLabel,scope_levels:scopeLevels,participants:0,attempted:0,not_attempted:0,
       readiness:{SANGAT_SIAP:0,SIAP:0,PERLU_PENGUATAN:0,PERLU_PENDAMPINGAN_INTENSIF:0},
       average_score:0,competencies:[],individuals:[],
+      telemetry:{tracked:0,perlu_telaah:0,note:"Telemetry adalah indikator perilaku untuk telaah manusia, bukan bukti otomatis kecurangan."},
       note:"Basic menggunakan hasil terakhir. Premium dan Pro menggunakan hasil resmi pertama; pengulangan Premium/Pro tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
     });
 
@@ -361,6 +362,31 @@ Deno.serve(async(req)=>{
     for(const a of countedAttempts) if(!latest.has(a.user_id)) latest.set(a.user_id,a);
     const latestAttempts=[...latest.values()];
     const attemptIds=latestAttempts.map((a:any)=>a.id);
+
+    const {data:telemetryAttempts,error:teleAtE}=await admin.from("bcks_substansi_attempts")
+      .select("id,user_id,status,session_level,started_at,submitted_at")
+      .eq("mode","SIMULASI").eq("is_test",false).in("session_level",[2,3,4]).in("status",["IN_PROGRESS","SUBMITTED"])
+      .in("user_id",ids).order("started_at",{ascending:false});
+    if(teleAtE) throw teleAtE;
+    const telemetryAttemptByUser=new Map<string,any>();
+    for(const a of telemetryAttempts||[]) if(!telemetryAttemptByUser.has(a.user_id)) telemetryAttemptByUser.set(a.user_id,a);
+    const telemetryAttemptIds=[...telemetryAttemptByUser.values()].map((a:any)=>a.id);
+    let telemetryRows:any[]=[];
+    if(telemetryAttemptIds.length){
+      const {data,error}=await admin.rpc("bcks_substansi_telemetry_summary",{p_attempt_ids:telemetryAttemptIds});
+      if(error) throw error;
+      telemetryRows=data||[];
+    }
+    const telemetryByAttempt=new Map<string,any>((telemetryRows||[]).map((x:any)=>[x.attempt_id,x]));
+    const telemetryIndicator=(m:any)=>{
+      if(!m||Number(m.event_count||0)===0) return "BELUM_ADA_DATA";
+      const immediate=Number(m.immediate_answer_after_pause_count||0);
+      const pauses=Number(m.unusual_pause_count||0);
+      const switches=Number(m.tab_switch_count||0);
+      return immediate>=2||(pauses>=3&&switches>=3)?"PERLU_TELAAH":"BELUM_PERLU_TELAAH";
+    };
+    const telemetryTracked=[...telemetryAttemptByUser.values()].filter((a:any)=>telemetryByAttempt.has(a.id)).length;
+    const telemetryReview=[...telemetryAttemptByUser.values()].filter((a:any)=>telemetryIndicator(telemetryByAttempt.get(a.id))==="PERLU_TELAAH").length;
 
     let scoreRows:any[]=[];
     if(attemptIds.length){
@@ -400,6 +426,9 @@ Deno.serve(async(req)=>{
     const individuals=scopedParticipants
       .map((p:any)=>{
         const a:any=latest.get(p.user_id);
+        const ta:any=telemetryAttemptByUser.get(p.user_id);
+        const tm:any=ta?telemetryByAttempt.get(ta.id):null;
+        const indicator=telemetryIndicator(tm);
         return {
           user_id:p.user_id,
           full_name:p.full_name,
@@ -414,7 +443,22 @@ Deno.serve(async(req)=>{
           readiness_label:a?.readiness_label||null,
           priority_competency:a?.priority_competency||null,
           submitted_at:a?.submitted_at||null,
-          competency_scores:a?(scoresByAttempt.get(a.id)||{}):{}
+          competency_scores:a?(scoresByAttempt.get(a.id)||{}):{},
+          telemetry:{
+            attempt_id:ta?.id||null,
+            session_level:ta?.session_level??null,
+            attempt_status:ta?.status||null,
+            indicator,
+            event_count:Number(tm?.event_count||0),
+            tab_switch_count:Number(tm?.tab_switch_count||0),
+            blur_count:Number(tm?.blur_count||0),
+            revision_count:Number(tm?.revision_count||0),
+            unusual_pause_count:Number(tm?.unusual_pause_count||0),
+            immediate_answer_after_pause_count:Number(tm?.immediate_answer_after_pause_count||0),
+            total_away_seconds:Number(tm?.total_away_seconds||0),
+            max_away_seconds:Number(tm?.max_away_seconds||0),
+            total_question_dwell_seconds:Number(tm?.total_question_dwell_seconds||0)
+          }
         };
       })
       .sort((a:any,b:any)=>{
@@ -431,6 +475,12 @@ Deno.serve(async(req)=>{
       attempted:latestAttempts.length,
       not_attempted:Math.max(0,ids.length-latestAttempts.length),
       readiness,average_score:avg,competencies,individuals,
+      telemetry:{
+        tracked:telemetryTracked,
+        perlu_telaah:telemetryReview,
+        thresholds:{away_seconds_min:30,away_seconds_max:180,answer_after_return_seconds_max:15,repeated_immediate_answers:2},
+        note:"Telemetry adalah indikator perilaku untuk telaah manusia. Status PERLU_TELAAH tidak membuktikan kecurangan dan tidak mengubah nilai peserta."
+      },
       note:"Dashboard memakai hasil terakhir Basic atau hasil resmi Premium/Pro yang paling baru. Pengulangan Premium/Pro pada level yang sama tidak diperhitungkan. Kategori adalah indikator latihan SIMANTAB, bukan passing grade resmi."
     });
   }
