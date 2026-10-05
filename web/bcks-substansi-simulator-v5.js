@@ -420,11 +420,28 @@ async function resumeAttempt(a){
    order=serverOrder.length===existing.length?serverOrder:shuffle(existing);
   }
   const map=new Map((rows||[]).map(x=>[Number(x.question_no),x]));
-  await beginAttempt(a,order,map);
+  const answeredRows=(rows||[]).filter(x=>x.selected_option&&x.answered_at).sort((a,b)=>new Date(b.answered_at).getTime()-new Date(a.answered_at).getTime());
+  let resumeIndex=0;
+  if(answeredRows.length){
+    const lastNo=Number(answeredRows[0].question_no);
+    const lastIdx=order.indexOf(lastNo);
+    if(lastIdx>=0){
+      const later=order.findIndex((n,i)=>i>lastIdx&&!map.get(Number(n))?.selected_option);
+      if(later>=0)resumeIndex=later;
+      else{
+        const firstUnanswered=order.findIndex(n=>!map.get(Number(n))?.selected_option);
+        resumeIndex=firstUnanswered>=0?firstUnanswered:lastIdx;
+      }
+    }
+  }else{
+    const firstUnanswered=order.findIndex(n=>!map.get(Number(n))?.selected_option);
+    resumeIndex=firstUnanswered>=0?firstUnanswered:0;
+  }
+  await beginAttempt(a,order,map,resumeIndex);
  }catch(e){alert(e.message||e)}
 }
-async function beginAttempt(attempt,order,answers){
- state={attempt,order,index:0,answers,questionStart:Date.now(),identity:{...participantIdentityCache},telemetryQuestionNo:null,telemetryQuestionOpenedAt:null,telemetryDisplayNo:null,telemetryLastReturn:null};
+async function beginAttempt(attempt,order,answers,initialIndex=0){
+ state={attempt,order,index:Math.max(0,Math.min(order.length-1,Number(initialIndex)||0)),answers,questionStart:Date.now(),identity:{...participantIdentityCache},telemetryQuestionNo:null,telemetryQuestionOpenedAt:null,telemetryDisplayNo:null,telemetryLastReturn:null};
  telemetryHiddenAt=null;telemetryBlurAt=null;
  if(telemetryEnabled()){
   queueTelemetry("SESSION_START",{question_no:null,display_no:null,metadata:{resumed:answers instanceof Map&&answers.size>0,session_level:Number(attempt.session_level||0)}});
@@ -706,5 +723,5 @@ window.__simantabOpenBcksSubstansi=openHome;
 window.__simantabOpenBcksLeader=openLeader;
 window.__simantabGetBcksAccessStatus=accessStatus;
 window.__simantabSetBcksAccess=async(open)=>setAccessFromKabid(!!open);
-window.__simantabBcksSubstansiSimulator={version:8.5,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:8.6,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
