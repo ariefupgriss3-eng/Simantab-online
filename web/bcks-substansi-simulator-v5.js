@@ -48,6 +48,7 @@ function displayLetterFor(attemptId,questionNo,originalLetter){
  const di=optionOrderFor(attemptId,questionNo).indexOf(oi);
  return di>=0?LETTERS[di]:"-";
 }
+window.__simantabDisplayLetterFor=displayLetterFor;
 function watermarkMarkup(identity,attemptId){
  const full=String(identity?.full_name||profile().full_name||"PESERTA").trim()||"PESERTA";
  const unit=String(identity?.unit_kerja||"").trim();
