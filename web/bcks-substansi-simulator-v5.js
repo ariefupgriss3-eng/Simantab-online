@@ -654,7 +654,14 @@ async function openLeader(){
   const mon=d.session_monitoring||{};
   const sess=mon.session||access.session||null;
   const prev=d.previous_session||null;
-  const telemetryFlagged=(mon.individuals||[]).filter(x=>x.telemetry?.indicator==="PERLU_TELAAH");
+  const telemetryFlagged=(mon.individuals||[])
+    .filter(x=>["PERLU_TELAAH","PRIORITAS_TELAAH"].includes(x.telemetry?.indicator))
+    .sort((a,b)=>{
+      const rank=v=>v==="PRIORITAS_TELAAH"?0:1;
+      return rank(a.telemetry?.indicator)-rank(b.telemetry?.indicator)
+        || Number(b.telemetry?.immediate_answer_after_pause_count||0)-Number(a.telemetry?.immediate_answer_after_pause_count||0)
+        || Number(b.telemetry?.unusual_pause_count||0)-Number(a.telemetry?.unusual_pause_count||0);
+    });
   const activeLabel=sess?.label||"Sesi";
   const activeTime=sess?([sess.date,sess.start_time&&sess.end_time?`${sess.start_time}–${sess.end_time} WIB`:""].filter(Boolean).join(" • ")):"";
   const previousLabel=prev?.label||"Sesi Sebelumnya";
@@ -667,12 +674,14 @@ async function openLeader(){
    <div class="bsub-stat"><div class="bsub-label">Sedang Mengerjakan</div><div class="bsub-numstat">${mon.in_progress||0}</div></div>
    <div class="bsub-stat"><div class="bsub-label">Sudah Selesai</div><div class="bsub-numstat">${mon.submitted||0}</div></div>
    <div class="bsub-stat"><div class="bsub-label">Telemetry Terlacak</div><div class="bsub-numstat">${mon.telemetry?.tracked||0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Normal</div><div class="bsub-numstat">${mon.telemetry?.normal||0}</div></div>
    <div class="bsub-stat"><div class="bsub-label">Perlu Telaah</div><div class="bsub-numstat">${mon.telemetry?.perlu_telaah||0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Prioritas Telaah</div><div class="bsub-numstat">${mon.telemetry?.prioritas_telaah||0}</div></div>
    ${Number(mon.expired||0)>0?`<div class="bsub-card bsub-wide" style="margin:0"><div class="bsub-note"><b>Sesi kedaluwarsa:</b> ${mon.expired}. Status ini terpisah dari “belum mulai”.</div></div>`:""}
 
-   <div class="bsub-card bsub-wide" style="margin:0"><h3>🧭 Telemetry Perilaku • ${esc(activeLabel)}</h3><div class="bsub-note">Dicatat: waktu per soal, perpindahan tab/window, revisi jawaban, serta jeda tidak biasa. <b>PERLU TELAAH bukan bukti kecurangan dan tidak mengubah nilai.</b></div>
-   ${telemetryFlagged.length?`<div style="overflow:auto;margin-top:10px"><table class="bsub-table"><thead><tr><th>Peserta</th><th>Unit</th><th>Tab keluar</th><th>Jeda 30–180 dtk</th><th>Jawab ≤15 dtk setelah kembali</th><th>Revisi</th></tr></thead><tbody>${telemetryFlagged.map(x=>`<tr><td><b>${esc(x.full_name||"-")}</b></td><td>${esc(x.unit_kerja||x.school_name||"-")}</td><td>${x.telemetry?.tab_switch_count||0}</td><td>${x.telemetry?.unusual_pause_count||0}</td><td><b>${x.telemetry?.immediate_answer_after_pause_count||0}</b></td><td>${x.telemetry?.revision_count||0}</td></tr>`).join("")}</tbody></table></div>`:`<div class="bsub-note" style="margin-top:10px">${(mon.telemetry?.tracked||0)>0?"Belum ada pola berulang yang memenuhi ambang PERLU TELAAH.":"Belum ada data telemetry pada sesi ini."}</div>`}
-   <div class="bsub-note" style="margin-top:8px">Telemetry digunakan untuk <b>telaah manusia</b>, bukan hukuman otomatis. Pola jeda atau perpindahan aplikasi dapat memiliki alasan yang sah.</div></div>
+   <div class="bsub-card bsub-wide" style="margin:0"><h3>🧭 Telemetry Perilaku • ${esc(activeLabel)}</h3><div class="bsub-note">Klasifikasi 3 tingkat: <b style="color:#177245">NORMAL</b>, <b style="color:#a66a00">PERLU TELAAH</b>, dan <b style="color:#a44528">PRIORITAS TELAAH</b>. Bobot terkuat diberikan pada pola <b>jeda 30–180 detik → kembali → menjawab ≤15 detik</b>. Jumlah tab keluar saja tidak cukup untuk menaikkan status.</div>
+   ${telemetryFlagged.length?`<div style="overflow:auto;margin-top:10px"><table class="bsub-table"><thead><tr><th>Status</th><th>Peserta</th><th>Unit</th><th>Tab keluar</th><th>Jeda 30–180 dtk</th><th>Jawab ≤15 dtk setelah kembali</th><th>Revisi</th></tr></thead><tbody>${telemetryFlagged.map(x=>{const p=x.telemetry?.indicator==="PRIORITAS_TELAAH";return `<tr><td><b style="color:${p?"#a44528":"#a66a00"}">${p?"PRIORITAS TELAAH":"PERLU TELAAH"}</b></td><td><b>${esc(x.full_name||"-")}</b></td><td>${esc(x.unit_kerja||x.school_name||"-")}</td><td>${x.telemetry?.tab_switch_count||0}</td><td>${x.telemetry?.unusual_pause_count||0}</td><td><b>${x.telemetry?.immediate_answer_after_pause_count||0}</b></td><td>${x.telemetry?.revision_count||0}</td></tr>`}).join("")}</tbody></table></div>`:`<div class="bsub-note" style="margin-top:10px">${(mon.telemetry?.tracked||0)>0?"Seluruh telemetry yang terlacak masih berada pada tingkat NORMAL.":"Belum ada data telemetry pada sesi ini."}</div>`}
+   <div class="bsub-note" style="margin-top:8px"><b>Prioritas Telaah</b>: pola jawaban cepat setelah jeda muncul sangat berulang (≥5 kali, atau ≥3 kali dengan rasio ≥60% dari jeda yang terdeteksi). <b>Perlu Telaah</b>: pola tersebut muncul ≥2 kali, atau terdapat perpindahan/jeda yang sangat tinggi. Semua status tetap membutuhkan penilaian manusia dan <b>tidak mengubah nilai otomatis</b>.</div></div>
 
    <div class="bsub-card bsub-wide" style="margin:0"><h3>📊 Hasil Sesi Sebelumnya — ${esc(previousLabel)}</h3><div class="bsub-note">Bagian berikut hanya menampilkan hasil ${esc(previousLabel)}, sehingga tidak disalahartikan sebagai hasil ${esc(activeLabel)}.</div></div>
    <div class="bsub-stat"><div class="bsub-label">Peserta</div><div class="bsub-numstat">${d.participants||0}</div></div>
@@ -723,5 +732,5 @@ window.__simantabOpenBcksSubstansi=openHome;
 window.__simantabOpenBcksLeader=openLeader;
 window.__simantabGetBcksAccessStatus=accessStatus;
 window.__simantabSetBcksAccess=async(open)=>setAccessFromKabid(!!open);
-window.__simantabBcksSubstansiSimulator={version:8.6,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:8.7,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();

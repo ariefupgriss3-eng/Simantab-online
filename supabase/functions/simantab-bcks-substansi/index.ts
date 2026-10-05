@@ -360,7 +360,10 @@ Deno.serve(async(req)=>{
       const immediate=Number(m.immediate_answer_after_pause_count||0);
       const pauses=Number(m.unusual_pause_count||0);
       const switches=Number(m.tab_switch_count||0);
-      return immediate>=2||(pauses>=3&&switches>=3)?"PERLU_TELAAH":"BELUM_PERLU_TELAAH";
+      const ratio=pauses>0?immediate/pauses:0;
+      if(immediate>=5||(immediate>=3&&pauses>=5&&ratio>=0.60)) return "PRIORITAS_TELAAH";
+      if(immediate>=2||(pauses>=10&&switches>=20)) return "PERLU_TELAAH";
+      return "NORMAL";
     };
 
     if(!ids.length) return json({
@@ -369,10 +372,10 @@ Deno.serve(async(req)=>{
       session_monitoring:{
         session:monitorSession?{level:monitorSession.level,label:monitorSession.label,date:monitorSession.date,start_time:monitorSession.start_time,end_time:monitorSession.end_time}:null,
         is_active:!!liveSession,participants:0,not_started:0,in_progress:0,submitted:0,expired:0,individuals:[],
-        telemetry:{tracked:0,perlu_telaah:0,note:"Telemetry adalah indikator perilaku untuk telaah manusia, bukan bukti otomatis kecurangan."}
+        telemetry:{tracked:0,normal:0,perlu_telaah:0,prioritas_telaah:0,note:"Telemetry adalah indikator perilaku untuk telaah manusia, bukan bukti otomatis kecurangan."}
       },
       previous_session:previousSession?{level:previousSession.level,label:previousSession.label}:null,
-      telemetry:{tracked:0,perlu_telaah:0,note:"Telemetry adalah indikator perilaku untuk telaah manusia, bukan bukti otomatis kecurangan."},
+      telemetry:{tracked:0,normal:0,perlu_telaah:0,prioritas_telaah:0,note:"Telemetry adalah indikator perilaku untuk telaah manusia, bukan bukti otomatis kecurangan."},
       note:"Monitoring sesi aktif dipisahkan dari hasil sesi sebelumnya agar angka tidak tercampur."
     });
 
@@ -417,6 +420,8 @@ Deno.serve(async(req)=>{
     const telemetryByAttempt=new Map<string,any>((telemetryRows||[]).map((x:any)=>[x.attempt_id,x]));
     const telemetryTracked=currentAttempts.filter((a:any)=>Number(telemetryByAttempt.get(a.id)?.event_count||0)>0).length;
     const telemetryReview=currentAttempts.filter((a:any)=>telemetryIndicator(telemetryByAttempt.get(a.id))==="PERLU_TELAAH").length;
+    const telemetryPriority=currentAttempts.filter((a:any)=>telemetryIndicator(telemetryByAttempt.get(a.id))==="PRIORITAS_TELAAH").length;
+    const telemetryNormal=currentAttempts.filter((a:any)=>telemetryIndicator(telemetryByAttempt.get(a.id))==="NORMAL").length;
 
     const sessionIndividuals=scopedParticipants.map((p:any)=>{
       const a:any=currentByUser.get(p.user_id);
@@ -473,9 +478,18 @@ Deno.serve(async(req)=>{
       individuals:sessionIndividuals,
       telemetry:{
         tracked:telemetryTracked,
+        normal:telemetryNormal,
         perlu_telaah:telemetryReview,
-        thresholds:{away_seconds_min:30,away_seconds_max:180,answer_after_return_seconds_max:15,repeated_immediate_answers:2},
-        note:"Telemetry adalah indikator perilaku untuk telaah manusia. Status PERLU_TELAAH tidak membuktikan kecurangan dan tidak mengubah nilai peserta."
+        prioritas_telaah:telemetryPriority,
+        thresholds:{
+          away_seconds_min:30,
+          away_seconds_max:180,
+          answer_after_return_seconds_max:15,
+          perlu_telaah_immediate_min:2,
+          prioritas_immediate_min:5,
+          prioritas_ratio_min:0.60
+        },
+        note:"Telemetry memiliki tiga tingkat: NORMAL, PERLU_TELAAH, dan PRIORITAS_TELAAH. Bobot terkuat diberikan pada pola jeda 30–180 detik lalu jawaban dalam ≤15 detik. Semua status hanya indikator untuk telaah manusia dan tidak mengubah nilai peserta."
       }
     };
 
