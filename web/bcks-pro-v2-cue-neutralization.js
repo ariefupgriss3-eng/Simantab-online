@@ -1,6 +1,7 @@
 /* SIMANTAB_BCKS_PRO_V2_CUE_NEUTRALIZATION */
 (()=>{
 const P={
+"141":{"0":"Menetapkan peran dan keluaran tiap petugas beserta batas waktu serta mekanisme pelaporan sehingga tanggung jawab akhir dapat dipahami dengan jelas."},
 "112":{"0":"Mengumpulkan umpan balik terarah tentang pemahaman dan inisiatif tim kemudian menelaah kaitannya dengan kualitas koordinasi serta hasil kerja setelah instruksi diberikan."},
 "210":{"1":"Menolak keuntungan pribadi dan memastikan panitia menilai semua penawaran secara independen dengan kriteria serta dokumentasi proses yang dapat diperiksa."},
 "212":{"1":"Membedakan keputusan yang memerlukan respons cepat dari ruang pengembangan kemudian membuka pilihan lain secara terarah dan memantau inisiatif guru setelahnya."},
