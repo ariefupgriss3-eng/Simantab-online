@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 import { PREMIUM_V5_META } from "./premium-v5.ts";
 import { PREMIUM_TWO_V1_META } from "./premium-two-v1.ts";
+import { buildProV1Meta } from "./pro-v1.ts";
 
 const CORS={
   "Access-Control-Allow-Origin":"*",
@@ -11,6 +12,7 @@ const CORS={
 const J=(body:any,status=200)=>new Response(JSON.stringify(body),{status,headers:CORS});
 const AI_URL="https://simantab-online.vercel.app/api/bcks-thinking";
 const LETTERS=["A","B","C","D","E"];
+const PRO_IDS=new Set([112,113,114,210,213,208,209,211,212,214,1,3,7,10,126,127,128,218,220,222,225,226,227,228,16,20,24,26,140,141,142,233,238,242,237,239,240,241,29,30,36,40,154,155,156,248,252,256,251,253,254,255,48,50,53,55,169,170,264,267,269,263,265,266,268,270,57,59,66,70]);
 
 Deno.serve(async(req)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:CORS});
@@ -49,8 +51,9 @@ Deno.serve(async(req)=>{
       const pack=(Array.isArray(a.package_questions)?a.package_questions:[]).map((n:any)=>Number(n));
       const isPremiumOne=pack.length===70&&pack.every((n:number)=>n>=1001&&n<=1070);
       const isPremiumTwo=pack.length===70&&pack.every((n:number)=>n>=2001&&n<=2070);
-      const premiumKind=isPremiumOne?"PREMIUM_ONE":isPremiumTwo?"PREMIUM_TWO":null;
-      return {attempt:a,pack,isPremiumOne,isPremiumTwo,premiumKind};
+      const isPro=pack.length===70&&new Set(pack).size===70&&pack.every((n:number)=>PRO_IDS.has(n));
+      const premiumKind=isPremiumOne?"PREMIUM_ONE":isPremiumTwo?"PREMIUM_TWO":isPro?"PRO":null;
+      return {attempt:a,pack,isPremiumOne,isPremiumTwo,isPro,premiumKind};
     };
     const originalAnswer=async(attemptId:string,qno:number)=>{
       const {data,error}=await admin.from("bcks_substansi_answers")
@@ -76,19 +79,27 @@ Deno.serve(async(req)=>{
     const requireCase=async(attemptId:string,qno:number)=>{
       const ctx=await getAttempt(attemptId);
       if(ctx.attempt.status!=="SUBMITTED")throw new Error("Thinking Culture tersedia setelah sesi diselesaikan.");
-      if(!ctx.premiumKind||!ctx.pack.includes(qno))throw new Error("Kasus Premium tidak tersedia.");
-      const meta:any=ctx.premiumKind==="PREMIUM_TWO"
-        ?PREMIUM_TWO_V1_META[String(qno)]
-        :PREMIUM_V5_META[String(qno)];
+      if(!ctx.premiumKind||!ctx.pack.includes(qno))throw new Error("Kasus Thinking Culture tidak tersedia.");
+      let meta:any=null;
+      if(ctx.premiumKind==="PRO"){
+        const {data:keyRow,error:keyErr}=await admin.from("bcks_substansi_answer_keys")
+          .select("correct_option,subcompetency").eq("question_no",qno).maybeSingle();
+        if(keyErr||!keyRow?.correct_option)throw new Error("Metadata kunci Pro tidak tersedia.");
+        meta=buildProV1Meta(String(keyRow.subcompetency||""),String(keyRow.correct_option||""));
+      }else{
+        meta=ctx.premiumKind==="PREMIUM_TWO"
+          ?PREMIUM_TWO_V1_META[String(qno)]
+          :PREMIUM_V5_META[String(qno)];
+      }
       if(!meta)throw new Error("Metadata kasus tidak tersedia.");
       return {...ctx,meta};
     };
 
     if(action==="items"){
       const attemptId=String(body?.attempt_id||"").trim();
-      const {attempt,pack,isPremiumOne,isPremiumTwo,premiumKind}=await getAttempt(attemptId);
+      const {attempt,pack,isPremiumOne,isPremiumTwo,isPro,premiumKind}=await getAttempt(attemptId);
       if(attempt.status!=="SUBMITTED")return J({error:"Thinking Culture tersedia setelah sesi diselesaikan."},409);
-      if(!premiumKind)return J({ok:true,premium_v5:false,premium_two_v1:false,premium_kind:null});
+      if(!premiumKind)return J({ok:true,premium_v5:false,premium_two_v1:false,pro_v1:false,premium_kind:null});
       const [{data:answers,error:ae},{data:learn,error:le}]=await Promise.all([
         admin.from("bcks_substansi_answers").select("question_no,selected_option,is_doubtful,seconds_spent").eq("attempt_id",attemptId),
         admin.from("bcks_premium_learning").select("question_no,highest_hint,recovery_success,transfer_status,mastery_state").eq("attempt_id",attemptId)
@@ -102,7 +113,7 @@ Deno.serve(async(req)=>{
           seconds_spent:Number(a.seconds_spent||0),highest_hint:Number(l.highest_hint||0),
           recovery_success:!!l.recovery_success,transfer_status:l.transfer_status||null,mastery_state:l.mastery_state||null};
       });
-      return J({ok:true,premium_v5:isPremiumOne,premium_two_v1:isPremiumTwo,premium_kind:premiumKind,attempt_id:attemptId,rows});
+      return J({ok:true,premium_v5:isPremiumOne,premium_two_v1:isPremiumTwo,pro_v1:isPro,premium_kind:premiumKind,attempt_id:attemptId,rows});
     }
 
     if(action==="coach_step"){
