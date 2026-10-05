@@ -379,20 +379,40 @@ Deno.serve(async(req)=>{
       note:"Monitoring sesi aktif dipisahkan dari hasil sesi sebelumnya agar angka tidak tercampur."
     });
 
-    // Monitoring sesi yang sedang berjalan (atau sesi terjadwal terakhir bila di luar jendela waktu).
+    // Monitoring sesi resmi + akses khusus yang sedang aktif pada level yang sama.
+    // Attempt akses khusus ditampilkan pada daftar individu, tetapi dipisahkan dari statistik resmi.
     let currentRows:any[]=[];
+    const activeSpecialAccessByUser=new Map<string,any>();
     if(monitorSession){
+      const nowIso=new Date(nowMs).toISOString();
+      const {data:specialRows,error:specialErr}=await admin.from("bcks_substansi_test_access")
+        .select("user_id,session_level,starts_at,expires_at")
+        .eq("session_level",Number(monitorSession.level))
+        .lte("starts_at",nowIso).gt("expires_at",nowIso)
+        .in("user_id",ids);
+      if(specialErr) throw specialErr;
+      for(const x of specialRows||[]) activeSpecialAccessByUser.set(String(x.user_id),x);
+
       const {data,error}=await admin.from("bcks_substansi_attempts")
-        .select("id,user_id,status,session_level,started_at,submitted_at,score,correct_count,total_questions,readiness_label,priority_competency,is_test,is_official_result")
-        .eq("mode","SIMULASI").eq("is_test",false).eq("session_level",Number(monitorSession.level))
+        .select("id,user_id,status,session_level,started_at,expires_at,submitted_at,score,correct_count,total_questions,readiness_label,priority_competency,is_test,is_official_result")
+        .eq("mode","SIMULASI").eq("session_level",Number(monitorSession.level))
         .in("user_id",ids).order("started_at",{ascending:false});
       if(error) throw error;
-      currentRows=data||[];
+      currentRows=(data||[]).filter((a:any)=>a.is_test===false||(a.is_test===true&&activeSpecialAccessByUser.has(String(a.user_id))));
     }
     const currentByUser=new Map<string,any>();
-    for(const a of currentRows) if(!currentByUser.has(a.user_id)) currentByUser.set(a.user_id,a);
+    for(const a of currentRows){
+      const key=String(a.user_id);
+      const existing=currentByUser.get(key);
+      const isActiveSpecial=a.is_test===true&&activeSpecialAccessByUser.has(key);
+      const existingIsActiveSpecial=existing?.is_test===true&&activeSpecialAccessByUser.has(key);
+      // Akses khusus aktif selalu diprioritaskan untuk tampilan individu.
+      if(!existing||(!existingIsActiveSpecial&&isActiveSpecial)) currentByUser.set(key,a);
+    }
     const currentAttempts=[...currentByUser.values()];
     const currentAttemptIds=currentAttempts.map((a:any)=>a.id);
+    const officialCurrentAttempts=currentAttempts.filter((a:any)=>a.is_test===false);
+    const specialCurrentAttempts=currentAttempts.filter((a:any)=>a.is_test===true&&activeSpecialAccessByUser.has(String(a.user_id)));
 
     let currentScoreRows:any[]=[];
     if(currentAttemptIds.length){
@@ -434,7 +454,12 @@ Deno.serve(async(req)=>{
         jenjang:p.jenjang,
         attempt_id:a?.id||null,
         attempt_status:a?.status||"NOT_STARTED",
+        access_type:a?.is_test===true&&activeSpecialAccessByUser.has(String(p.user_id))?"KHUSUS":"RESMI",
+        special_access:a?.is_test===true&&activeSpecialAccessByUser.has(String(p.user_id))
+          ? activeSpecialAccessByUser.get(String(p.user_id))
+          : null,
         started_at:a?.started_at||null,
+        expires_at:a?.expires_at||null,
         submitted_at:a?.submitted_at||null,
         score:a?.status==="SUBMITTED"?Number(a.score||0):null,
         correct_count:a?.status==="SUBMITTED"?Number(a.correct_count||0):null,
@@ -466,15 +491,22 @@ Deno.serve(async(req)=>{
         level:Number(monitorSession.level),label:monitorSession.label,date:monitorSession.date,
         start_time:monitorSession.start_time,end_time:monitorSession.end_time
       }:null,
-      is_active:!!liveSession,
+      is_active:!!liveSession||activeSpecialAccessByUser.size>0,
       participants:ids.length,
-      not_started:Math.max(0,ids.length-currentAttempts.length),
-      in_progress:currentAttempts.filter((a:any)=>a.status==="IN_PROGRESS").length,
-      submitted:currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length,
-      expired:currentAttempts.filter((a:any)=>a.status==="EXPIRED").length,
-      average_score:currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length
-        ? Math.round(currentAttempts.filter((a:any)=>a.status==="SUBMITTED").reduce((sum:number,a:any)=>sum+Number(a.score||0),0)/currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length*100)/100
+      not_started:Math.max(0,ids.length-officialCurrentAttempts.length),
+      in_progress:officialCurrentAttempts.filter((a:any)=>a.status==="IN_PROGRESS").length,
+      submitted:officialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").length,
+      expired:officialCurrentAttempts.filter((a:any)=>a.status==="EXPIRED").length,
+      average_score:officialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").length
+        ? Math.round(officialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").reduce((sum:number,a:any)=>sum+Number(a.score||0),0)/officialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").length*100)/100
         : 0,
+      special_access:{
+        active_windows:activeSpecialAccessByUser.size,
+        attempts:specialCurrentAttempts.length,
+        in_progress:specialCurrentAttempts.filter((a:any)=>a.status==="IN_PROGRESS").length,
+        submitted:specialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").length,
+        expired:specialCurrentAttempts.filter((a:any)=>a.status==="EXPIRED").length
+      },
       individuals:sessionIndividuals,
       telemetry:{
         tracked:telemetryTracked,
