@@ -25,7 +25,7 @@ const HIGH_DISCRIMINATION=new Set([1,3,7,10,13,16,20,21,24,26,29,30,36,40,42,43,
 const THINKING_SESSIONS=[{"level":1,"date":"2026-10-03","start_time":"09:00","end_time":"15:00","label":"Basic","questions":[101,102,103,104,105,106,107,2,4,5,6,8,9,202,115,116,117,118,119,120,121,15,17,18,19,21,22,216,129,130,131,132,133,134,135,31,32,33,34,35,37,229,143,144,145,146,147,148,149,43,44,45,46,47,243,244,157,158,159,160,161,162,163,58,60,61,62,63,257,258],"difficulty_composition":{"mudah":35,"sedang":28,"sulit":7}},{"level":2,"date":"2026-10-05","start_time":"13:00","end_time":"16:00","label":"Premium One","questions":[1001,1002,1003,1004,1005,1006,1007,1008,1009,1010,1011,1012,1013,1014,1015,1016,1017,1018,1019,1020,1021,1022,1023,1024,1025,1026,1027,1028,1029,1030,1031,1032,1033,1034,1035,1036,1037,1038,1039,1040,1041,1042,1043,1044,1045,1046,1047,1048,1049,1050,1051,1052,1053,1054,1055,1056,1057,1058,1059,1060,1061,1062,1063,1064,1065,1066,1067,1068,1069,1070],"difficulty_composition":{"mudah":21,"sedang":28,"sulit":21}},{"level":3,"date":"2026-10-08","start_time":"13:00","end_time":"16:00","label":"Premium Two","questions":[2001,2002,2003,2004,2005,2006,2007,2008,2009,2010,2011,2012,2013,2014,2015,2016,2017,2018,2019,2020,2021,2022,2023,2024,2025,2026,2027,2028,2029,2030,2031,2032,2033,2034,2035,2036,2037,2038,2039,2040,2041,2042,2043,2044,2045,2046,2047,2048,2049,2050,2051,2052,2053,2054,2055,2056,2057,2058,2059,2060,2061,2062,2063,2064,2065,2066,2067,2068,2069,2070],"difficulty_composition":{"mudah":0,"sedang":28,"sulit":42}},{"level":4,"date":"2026-10-10","start_time":"09:00","end_time":"12:00","label":"Pro","questions":[112,113,114,210,213,208,209,211,212,214,1,3,7,10,126,127,128,218,220,222,225,226,227,228,16,20,24,26,140,141,142,233,238,242,237,239,240,241,29,30,36,40,154,155,156,248,252,256,251,253,254,255,48,50,53,55,169,170,264,267,269,263,265,266,268,270,57,59,66,70],"difficulty_composition":{"mudah":14,"sedang":14,"sulit":42}}];
 const sessionStart=s=>Date.parse(s.date+"T"+(s.start_time||"09:00")+":00+07:00");
 const sessionEnd=s=>Date.parse(s.date+"T"+(s.end_time||"15:00")+":00+07:00");
-const localScheduledSession=(now=Date.now())=>THINKING_SESSIONS.find(s=>now>=sessionStart(s)&&now<sessionEnd(s));
+const localScheduledSession=(now=serverNowMs())=>THINKING_SESSIONS.find(s=>now>=sessionStart(s)&&now<sessionEnd(s));
 const sessionNote="<b>Simulasi dan Thinking Culture</b><br>3 Oktober: Level 1 · Basic · 70 soal<br>5 Oktober: Level 2 · Premium One · 13.00–16.00 WIB · 70 soal<br>8 Oktober: Level 3 · Premium Two · 13.00–16.00 WIB · 70 soal<br>10 Oktober: Level 4 · Pro · 09.00–12.00 WIB · 70 soal<br>Soal antarsesi berbeda. Setiap paket: 14 soal per kompetensi. Gunakan AI Coach/Thinking Culture untuk menelaah alasan keputusan dan merefleksikan proses berpikir.";
 const ITEM_DIFFICULTY={"101":"mudah","102":"mudah","103":"mudah","104":"mudah","105":"mudah","106":"mudah","107":"mudah","108":"mudah","109":"mudah","110":"mudah","111":"mudah","112":"mudah","113":"mudah","114":"mudah","2":"sedang","4":"sedang","5":"sedang","6":"sedang","8":"sedang","9":"sedang","11":"sedang","12":"sedang","13":"sedang","14":"sedang","201":"sedang","204":"sedang","210":"sedang","213":"sedang","202":"sulit","203":"sulit","205":"sulit","206":"sulit","207":"sulit","208":"sulit","209":"sulit","211":"sulit","212":"sulit","214":"sulit","1":"sulit","3":"sulit","7":"sulit","10":"sulit","115":"mudah","116":"mudah","117":"mudah","118":"mudah","119":"mudah","120":"mudah","121":"mudah","122":"mudah","123":"mudah","124":"mudah","125":"mudah","126":"mudah","127":"mudah","128":"mudah","15":"sedang","17":"sedang","18":"sedang","19":"sedang","21":"sedang","22":"sedang","23":"sedang","25":"sedang","27":"sedang","28":"sedang","215":"sedang","218":"sedang","220":"sedang","222":"sedang","216":"sulit","217":"sulit","219":"sulit","221":"sulit","223":"sulit","224":"sulit","225":"sulit","226":"sulit","227":"sulit","228":"sulit","16":"sulit","20":"sulit","24":"sulit","26":"sulit","129":"mudah","130":"mudah","131":"mudah","132":"mudah","133":"mudah","134":"mudah","135":"mudah","136":"mudah","137":"mudah","138":"mudah","139":"mudah","140":"mudah","141":"mudah","142":"mudah","31":"sedang","32":"sedang","33":"sedang","34":"sedang","35":"sedang","37":"sedang","38":"sedang","39":"sedang","41":"sedang","42":"sedang","230":"sedang","233":"sedang","238":"sedang","242":"sedang","229":"sulit","231":"sulit","232":"sulit","234":"sulit","235":"sulit","236":"sulit","237":"sulit","239":"sulit","240":"sulit","241":"sulit","29":"sulit","30":"sulit","36":"sulit","40":"sulit","143":"mudah","144":"mudah","145":"mudah","146":"mudah","147":"mudah","148":"mudah","149":"mudah","150":"mudah","151":"mudah","152":"mudah","153":"mudah","154":"mudah","155":"mudah","156":"mudah","43":"sedang","44":"sedang","45":"sedang","46":"sedang","47":"sedang","49":"sedang","51":"sedang","52":"sedang","54":"sedang","56":"sedang","245":"sedang","248":"sedang","252":"sedang","256":"sedang","243":"sulit","244":"sulit","246":"sulit","247":"sulit","249":"sulit","250":"sulit","251":"sulit","253":"sulit","254":"sulit","255":"sulit","48":"sulit","50":"sulit","53":"sulit","55":"sulit","157":"mudah","158":"mudah","159":"mudah","160":"mudah","161":"mudah","162":"mudah","163":"mudah","164":"mudah","165":"mudah","166":"mudah","167":"mudah","168":"mudah","169":"mudah","170":"mudah","58":"sedang","60":"sedang","61":"sedang","62":"sedang","63":"sedang","64":"sedang","65":"sedang","67":"sedang","68":"sedang","69":"sedang","259":"sedang","264":"sedang","267":"sedang","269":"sedang","257":"sulit","258":"sulit","260":"sulit","261":"sulit","262":"sulit","263":"sulit","265":"sulit","266":"sulit","268":"sulit","270":"sulit","57":"sulit","59":"sulit","66":"sulit","70":"sulit"};
 const PREMIUM_V5_DIFFICULTY_PATTERN=["mudah","sedang","sedang","sulit","mudah","sedang","sulit","mudah","sedang","sulit"];
@@ -107,8 +107,15 @@ const downloadBcksResult=async(attemptId,format)=>{
  }catch(e){alert(e.message||e)}
 };
 let participantIdentityCache={full_name:String(profile().full_name||"").trim(),unit_kerja:""};
+let serverClockEpochMs=null,serverClockPerfMs=null;
+const serverNowMs=()=>serverClockEpochMs===null?Date.now():serverClockEpochMs+(performance.now()-serverClockPerfMs);
+const syncServerClock=data=>{
+ const t=Date.parse(String(data?.server_now||""));
+ if(Number.isFinite(t)){serverClockEpochMs=t;serverClockPerfMs=performance.now()}
+};
 const accessStatus=async()=>{
  const data=await api({action:"access_status"});
+ syncServerClock(data);
  if(data?.participant_identity)participantIdentityCache={
   full_name:String(data.participant_identity.full_name||profile().full_name||"").trim(),
   unit_kerja:String(data.participant_identity.unit_kerja||"").trim()
@@ -325,7 +332,7 @@ async function openHome(){
    modal("Simulasi dan Thinking Culture BCKS",'<div class="bsub-card"><h3>🔒 Akses Belum Dibuka</h3><div class="bsub-note">Simulasi dan Thinking Culture masih dinonaktifkan. Akses otomatis: Premium One 5 Oktober 13.00–16.00 WIB, Premium Two 8 Oktober 13.00–16.00 WIB, dan Pro 10 Oktober 09.00–12.00 WIB. Kabid tetap dapat menutup/membuka ulang akses selama jendela sesi.</div></div>');
    return;
   }
-   const attempts=await loadAttempts(),now=Date.now(),sessionLevel=Number(access.session?.level||0);
+   const attempts=await loadAttempts(),now=serverNowMs(),sessionLevel=Number(access.session?.level||0);
    const {data:scheduledRows,error:scheduledErr}=await retryJwt(()=>sb.from("bcks_substansi_attempts").select("*").eq("user_id",profile().id).eq("mode","SIMULASI").eq("session_level",sessionLevel).eq("is_test",access.is_test===true).order("started_at",{ascending:false}));
    if(scheduledErr)throw scheduledErr;
    const scheduledAttempt=(scheduledRows||[])[0]||null;
@@ -372,13 +379,13 @@ async function startAttempt(mode,target=null){
     if(existingErr)throw existingErr;
     const prior=(existing||[])[0];
     if(prior){
-     if(prior.status==="IN_PROGRESS"&&new Date(prior.expires_at).getTime()>Date.now()){alert("Sesi terjadwal level ini sudah dimulai. Gunakan tombol Lanjutkan Sesi Aktif.");await openHome();return}
+     if(prior.status==="IN_PROGRESS"&&new Date(prior.expires_at).getTime()>serverNowMs()){alert("Sesi terjadwal level ini sudah dimulai. Gunakan tombol Lanjutkan Sesi Aktif.");await openHome();return}
      alert("Kesempatan Premium/Pro pada level ini sudah digunakan. Setiap peserta hanya dapat mengerjakan satu kali per level.");
      await openHome();return;
     }
    }
   let qnos=isSim?[]:shuffle(bank.filter(x=>x[1]===target).map(x=>x[0])).slice(0,total);
-  const payload={user_id:profile().id,session_level:session.level,mode,target_competency:isSim?null:target,expires_at:new Date(Math.min(Date.now()+mins*60000,new Date(access.test_expires_at||session.date+"T"+(session.end_time||"15:00")+":00+07:00").getTime())).toISOString(),total_questions:total};
+  const payload={user_id:profile().id,session_level:session.level,mode,target_competency:isSim?null:target,expires_at:new Date(Math.min(serverNowMs()+mins*60000,new Date(access.test_expires_at||session.date+"T"+(session.end_time||"15:00")+":00+07:00").getTime())).toISOString(),total_questions:total};
   const {data:a,error}=await retryJwt(()=>sb.from("bcks_substansi_attempts").insert(payload).select("*").single());if(error)throw error;
   if(isSim){
    const serverOrder=(Array.isArray(a.package_questions)?a.package_questions:[]).map(Number).filter(Number.isFinite);
@@ -430,7 +437,7 @@ function startTimer(){
  clearInterval(timer);
  const tick=()=>{
   if(!state)return;
-  const left=Math.max(0,new Date(state.attempt.expires_at).getTime()-Date.now()),s=Math.ceil(left/1000),m=Math.floor(s/60),ss=s%60;
+  const left=Math.max(0,new Date(state.attempt.expires_at).getTime()-serverNowMs()),s=Math.ceil(left/1000),m=Math.floor(s/60),ss=s%60;
   if($("bcksSubTimer"))$("bcksSubTimer").textContent=String(m).padStart(2,"0")+":"+String(ss).padStart(2,"0");
   if(left<=0){clearInterval(timer);timer=null;finishAttempt(true)}
  };tick();timer=setInterval(tick,1000);
@@ -699,5 +706,5 @@ window.__simantabOpenBcksSubstansi=openHome;
 window.__simantabOpenBcksLeader=openLeader;
 window.__simantabGetBcksAccessStatus=accessStatus;
 window.__simantabSetBcksAccess=async(open)=>setAccessFromKabid(!!open);
-window.__simantabBcksSubstansiSimulator={version:8.4,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:8.5,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
