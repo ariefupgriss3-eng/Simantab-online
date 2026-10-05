@@ -286,6 +286,11 @@ const bcksProV2DistractorCode=await fs.readFile(new URL(`./${bcksProV2Distractor
 if(!/SIMANTAB_BCKS_PRO_V2_DISTRACTOR_HARDENING/.test(bcksProV2DistractorCode))throw new Error('Pro v2 distractor hardening tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksProV2DistractorFile),bcksProV2DistractorCode);
 
+const bcksProV2CueFile='bcks-pro-v2-cue-neutralization.js';
+const bcksProV2CueCode=await fs.readFile(new URL(`./${bcksProV2CueFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_BCKS_PRO_V2_CUE_NEUTRALIZATION/.test(bcksProV2CueCode))throw new Error('Pro v2 cue neutralization tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksProV2CueFile),bcksProV2CueCode);
+
 const bcksProV2StemsFile='bcks-pro-v2-stems.js';
 const bcksProV2StemsCode=await fs.readFile(new URL(`./${bcksProV2StemsFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_BCKS_PRO_V2_NARRATIVE_STEMS/.test(bcksProV2StemsCode))throw new Error('Pro v2 narrative stems tidak valid.');
@@ -374,6 +379,7 @@ const modules=[
  ['bcks-pro-v2-options-06.js',1],
  ['bcks-pro-v2-options-07.js',1],
  ['bcks-pro-v2-distractor-hardening.js',1],
+ ['bcks-pro-v2-cue-neutralization.js',1],
  ['bcks-pro-v2-stems.js',1],
  ['bcks-substansi-simulator-v5.js',48],
  ['bcks-individual-readiness.js',2]
