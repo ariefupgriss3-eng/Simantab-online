@@ -627,20 +627,38 @@ async function openLeader(){
  try{
   modal("Peta Kesiapan • Simulasi dan Thinking Culture","<div class=\"bsub-card\">Memuat agregat…</div>");
   const [d,access]=await Promise.all([api({action:"kabid_summary"}),accessStatus()]);
-  const telemetryFlagged=(d.individuals||[]).filter(x=>x.telemetry?.indicator==="PERLU_TELAAH");
+  const mon=d.session_monitoring||{};
+  const sess=mon.session||access.session||null;
+  const prev=d.previous_session||null;
+  const telemetryFlagged=(mon.individuals||[]).filter(x=>x.telemetry?.indicator==="PERLU_TELAAH");
+  const activeLabel=sess?.label||"Sesi";
+  const activeTime=sess?([sess.date,sess.start_time&&sess.end_time?`${sess.start_time}–${sess.end_time} WIB`:""].filter(Boolean).join(" • ")):"";
+  const previousLabel=prev?.label||"Sesi Sebelumnya";
   $("bcksSubModalBody").innerHTML=`<div class="bsub-home">
-   <div class="bsub-card bsub-wide" style="margin:0;border-color:${access.is_open?"#9dd3b4":"#e4b5a8"}"><h3>${access.is_open?"🟢 Akses Simulasi DIBUKA":"🔒 Akses Simulasi DITUTUP"}</h3><div class="bsub-note">Peserta KS ${access.is_open?"dapat memulai Simulasi dan Thinking Culture dan AI Coach.":"belum dapat memulai Simulasi dan Thinking Culture maupun AI Coach."}</div>${access.can_manage?'<div class="bsub-actions"><button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccess">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button></div>':''}</div>
-   <div class="bsub-stat"><div class="bsub-label">Peserta aktif</div><div class="bsub-numstat">${d.participants}</div></div>
-   <div class="bsub-stat"><div class="bsub-label">Sudah simulasi</div><div class="bsub-numstat">${d.attempted}</div></div>
-   <div class="bsub-stat"><div class="bsub-label">Belum</div><div class="bsub-numstat">${d.not_attempted}</div></div>
+   <div class="bsub-card bsub-wide" style="margin:0;border-color:${access.is_open?"#9dd3b4":"#e4b5a8"}"><h3>${access.is_open?"🟢 Akses Simulasi DIBUKA":"🔒 Akses Simulasi DITUTUP"}</h3><div class="bsub-note">${sess?`<b>${esc(activeLabel)}</b> • ${esc(activeTime)}<br>`:""}Peserta KS ${access.is_open?"dapat memulai sesi sesuai jadwal.":"belum dapat memulai sesi."}</div>${access.can_manage?'<div class="bsub-actions"><button class="bsub-btn '+(access.is_open?'warn':'')+'" id="bcksToggleAccess">'+(access.is_open?'Tutup Akses Simulasi':'Buka Akses Simulasi')+'</button></div>':''}</div>
+
+   <div class="bsub-card bsub-wide" style="margin:0"><h3>📡 ${esc(activeLabel)} — ${mon.is_active?"Sesi Aktif":"Monitoring Sesi"}</h3><div class="bsub-note">Angka di bagian ini hanya untuk sesi ${esc(activeLabel)} dan tidak dicampur dengan hasil sesi sebelumnya.</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Peserta</div><div class="bsub-numstat">${mon.participants??d.participants??0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Belum Mulai</div><div class="bsub-numstat">${mon.not_started||0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Sedang Mengerjakan</div><div class="bsub-numstat">${mon.in_progress||0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Sudah Selesai</div><div class="bsub-numstat">${mon.submitted||0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Telemetry Terlacak</div><div class="bsub-numstat">${mon.telemetry?.tracked||0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Perlu Telaah</div><div class="bsub-numstat">${mon.telemetry?.perlu_telaah||0}</div></div>
+   ${Number(mon.expired||0)>0?`<div class="bsub-card bsub-wide" style="margin:0"><div class="bsub-note"><b>Sesi kedaluwarsa:</b> ${mon.expired}. Status ini terpisah dari “belum mulai”.</div></div>`:""}
+
+   <div class="bsub-card bsub-wide" style="margin:0"><h3>🧭 Telemetry Perilaku • ${esc(activeLabel)}</h3><div class="bsub-note">Dicatat: waktu per soal, perpindahan tab/window, revisi jawaban, serta jeda tidak biasa. <b>PERLU TELAAH bukan bukti kecurangan dan tidak mengubah nilai.</b></div>
+   ${telemetryFlagged.length?`<div style="overflow:auto;margin-top:10px"><table class="bsub-table"><thead><tr><th>Peserta</th><th>Unit</th><th>Tab keluar</th><th>Jeda 30–180 dtk</th><th>Jawab ≤15 dtk setelah kembali</th><th>Revisi</th></tr></thead><tbody>${telemetryFlagged.map(x=>`<tr><td><b>${esc(x.full_name||"-")}</b></td><td>${esc(x.unit_kerja||x.school_name||"-")}</td><td>${x.telemetry?.tab_switch_count||0}</td><td>${x.telemetry?.unusual_pause_count||0}</td><td><b>${x.telemetry?.immediate_answer_after_pause_count||0}</b></td><td>${x.telemetry?.revision_count||0}</td></tr>`).join("")}</tbody></table></div>`:`<div class="bsub-note" style="margin-top:10px">${(mon.telemetry?.tracked||0)>0?"Belum ada pola berulang yang memenuhi ambang PERLU TELAAH.":"Belum ada data telemetry pada sesi ini."}</div>`}
+   <div class="bsub-note" style="margin-top:8px">Telemetry digunakan untuk <b>telaah manusia</b>, bukan hukuman otomatis. Pola jeda atau perpindahan aplikasi dapat memiliki alasan yang sah.</div></div>
+
+   <div class="bsub-card bsub-wide" style="margin:0"><h3>📊 Hasil Sesi Sebelumnya — ${esc(previousLabel)}</h3><div class="bsub-note">Bagian berikut hanya menampilkan hasil ${esc(previousLabel)}, sehingga tidak disalahartikan sebagai hasil ${esc(activeLabel)}.</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Peserta</div><div class="bsub-numstat">${d.participants||0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Sudah Selesai</div><div class="bsub-numstat">${d.attempted||0}</div></div>
+   <div class="bsub-stat"><div class="bsub-label">Belum</div><div class="bsub-numstat">${d.not_attempted||0}</div></div>
    <div class="bsub-stat"><div class="bsub-label">Rata-rata</div><div class="bsub-numstat">${pct(d.average_score)}</div></div>
-   <div class="bsub-stat"><div class="bsub-label">Telemetry</div><div class="bsub-numstat">${d.telemetry?.perlu_telaah||0}</div><div class="bsub-note">perlu telaah</div></div>
-   <div class="bsub-card bsub-half" style="margin:0"><h3>Indeks Kesiapan</h3><table class="bsub-table"><tbody><tr><td>Sangat Siap</td><td><b>${d.readiness.SANGAT_SIAP||0}</b></td></tr><tr><td>Siap</td><td><b>${d.readiness.SIAP||0}</b></td></tr><tr><td>Perlu Penguatan</td><td><b>${d.readiness.PERLU_PENGUATAN||0}</b></td></tr><tr><td>Perlu Pendampingan Intensif</td><td><b>${d.readiness.PERLU_PENDAMPINGAN_INTENSIF||0}</b></td></tr></tbody></table></div>
-   <div class="bsub-card bsub-half" style="margin:0"><h3>Peta 5 Kompetensi</h3><table class="bsub-table"><thead><tr><th>Kompetensi</th><th>Rerata</th><th>&lt;70</th></tr></thead><tbody>${(d.competencies||[]).map(x=>`<tr><td>${esc(x.label)}</td><td><b>${pct(x.average)}%</b></td><td>${x.below70}</td></tr>`).join("")}</tbody></table></div>
-   <div class="bsub-card bsub-wide" style="margin:0"><h3>🧭 Telemetry Perilaku • Indikator untuk Telaah</h3><div class="bsub-note">Dicatat pada Premium One, Premium Two, dan Pro: waktu per soal, perpindahan tab/window, revisi jawaban, serta jeda tidak biasa. <b>PERLU TELAAH bukan bukti kecurangan dan tidak mengubah nilai.</b></div>
-   ${telemetryFlagged.length?`<div style="overflow:auto;margin-top:10px"><table class="bsub-table"><thead><tr><th>Peserta</th><th>Unit</th><th>Level</th><th>Tab keluar</th><th>Jeda 30–180 dtk</th><th>Jawab ≤15 dtk setelah kembali</th><th>Revisi</th></tr></thead><tbody>${telemetryFlagged.map(x=>`<tr><td><b>${esc(x.full_name||"-")}</b></td><td>${esc(x.unit_kerja||x.school_name||"-")}</td><td>${x.telemetry?.session_level||"-"}</td><td>${x.telemetry?.tab_switch_count||0}</td><td>${x.telemetry?.unusual_pause_count||0}</td><td><b>${x.telemetry?.immediate_answer_after_pause_count||0}</b></td><td>${x.telemetry?.revision_count||0}</td></tr>`).join("")}</tbody></table></div>`:`<div class="bsub-note" style="margin-top:10px">${(d.telemetry?.tracked||0)>0?"Belum ada pola berulang yang memenuhi ambang PERLU TELAAH.":"Belum ada data telemetry pada sesi Premium/Pro."}</div>`}
-   <div class="bsub-note" style="margin-top:8px">Ambang indikator: pola berulang jawaban ≤15 detik setelah kembali dari jeda 30–180 detik, atau beberapa jeda/perpindahan tab yang berulang. Semua temuan tetap memerlukan penilaian manusia dan konteks peserta.</div></div>
-   <div class="bsub-card bsub-wide" style="margin:0"><b>Interpretasi</b><div class="bsub-note">Ringkasan memakai simulasi terakhir setiap peserta. Gunakan untuk menentukan materi pembekalan; jangan digunakan sebagai keputusan lulus/tidak lulus resmi.</div></div>
+
+   <div class="bsub-card bsub-half" style="margin:0"><h3>Indeks Kesiapan • ${esc(previousLabel)}</h3><table class="bsub-table"><tbody><tr><td>Sangat Siap</td><td><b>${d.readiness?.SANGAT_SIAP||0}</b></td></tr><tr><td>Siap</td><td><b>${d.readiness?.SIAP||0}</b></td></tr><tr><td>Perlu Penguatan</td><td><b>${d.readiness?.PERLU_PENGUATAN||0}</b></td></tr><tr><td>Perlu Pendampingan Intensif</td><td><b>${d.readiness?.PERLU_PENDAMPINGAN_INTENSIF||0}</b></td></tr></tbody></table></div>
+   <div class="bsub-card bsub-half" style="margin:0"><h3>Peta 5 Kompetensi • ${esc(previousLabel)}</h3><table class="bsub-table"><thead><tr><th>Kompetensi</th><th>Rerata</th><th>&lt;70</th></tr></thead><tbody>${(d.competencies||[]).map(x=>`<tr><td>${esc(x.label)}</td><td><b>${pct(x.average)}%</b></td><td>${x.below70}</td></tr>`).join("")}</tbody></table></div>
+   <div class="bsub-card bsub-wide" style="margin:0"><b>Interpretasi</b><div class="bsub-note">Monitoring sesi aktif dan hasil sesi sebelumnya sengaja dipisahkan. Data kesiapan digunakan untuk pembekalan; bukan keputusan lulus/tidak lulus resmi.</div></div>
   </div>`;
   if(access.can_manage&&$("bcksToggleAccess"))$("bcksToggleAccess").onclick=async()=>{try{const changed=await setAccessFromKabid(!access.is_open);if(changed)await openLeader()}catch(e){alert(e.message||e)}};
  }catch(e){alert(e.message||e);closeModal()}
@@ -681,5 +699,5 @@ window.__simantabOpenBcksSubstansi=openHome;
 window.__simantabOpenBcksLeader=openLeader;
 window.__simantabGetBcksAccessStatus=accessStatus;
 window.__simantabSetBcksAccess=async(open)=>setAccessFromKabid(!!open);
-window.__simantabBcksSubstansiSimulator={version:8.3,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:8.4,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
