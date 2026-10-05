@@ -273,6 +273,14 @@ const bcksPremiumTwoThinkingCode=await fs.readFile(new URL(`./${bcksPremiumTwoTh
 if(!/SIMANTAB_PREMIUM_TWO_THINKING_V1/.test(bcksPremiumTwoThinkingCode))throw new Error('Premium Two Thinking v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksPremiumTwoThinkingFile),bcksPremiumTwoThinkingCode);
 
+const bcksProV2OptionFiles=Array.from({length:7},(_,i)=>`bcks-pro-v2-options-${String(i+1).padStart(2,'0')}.js`);
+for(const [idx,file] of bcksProV2OptionFiles.entries()){
+ const code=await fs.readFile(new URL(`./${file}`,import.meta.url),'utf8');
+ const marker=`SIMANTAB_BCKS_PRO_V2_BALANCED_OPTIONS_${String(idx+1).padStart(2,'0')}`;
+ if(!code.includes(marker))throw new Error(`Pro v2 balanced options batch ${idx+1} tidak valid.`);
+ await fs.writeFile(path.join(staticDir,file),code);
+}
+
 const bcksSubstansiSimulatorFile='bcks-substansi-simulator-v5.js';
 const bcksSubstansiSimulatorCode=await fs.readFile(new URL(`./${bcksSubstansiSimulatorFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE/.test(bcksSubstansiSimulatorCode))throw new Error('BCKS substansi simulator v5 tidak valid.');
@@ -348,7 +356,14 @@ const modules=[
  ['bcks-premium-thinking-v5.js',5],
  ['bcks-premium-two-v1-data.js',1],
  ['bcks-premium-two-thinking-v1.js',1],
- ['bcks-substansi-simulator-v5.js',46],
+ ['bcks-pro-v2-options-01.js',1],
+ ['bcks-pro-v2-options-02.js',1],
+ ['bcks-pro-v2-options-03.js',1],
+ ['bcks-pro-v2-options-04.js',1],
+ ['bcks-pro-v2-options-05.js',1],
+ ['bcks-pro-v2-options-06.js',1],
+ ['bcks-pro-v2-options-07.js',1],
+ ['bcks-substansi-simulator-v5.js',47],
  ['bcks-individual-readiness.js',2]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
