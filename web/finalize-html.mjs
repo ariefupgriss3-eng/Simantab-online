@@ -281,6 +281,11 @@ for(const [idx,file] of bcksProV2OptionFiles.entries()){
  await fs.writeFile(path.join(staticDir,file),code);
 }
 
+const bcksProV2StemsFile='bcks-pro-v2-stems.js';
+const bcksProV2StemsCode=await fs.readFile(new URL(`./${bcksProV2StemsFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_BCKS_PRO_V2_NARRATIVE_STEMS/.test(bcksProV2StemsCode))throw new Error('Pro v2 narrative stems tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksProV2StemsFile),bcksProV2StemsCode);
+
 const bcksSubstansiSimulatorFile='bcks-substansi-simulator-v5.js';
 const bcksSubstansiSimulatorCode=await fs.readFile(new URL(`./${bcksSubstansiSimulatorFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE/.test(bcksSubstansiSimulatorCode))throw new Error('BCKS substansi simulator v5 tidak valid.');
@@ -363,7 +368,8 @@ const modules=[
  ['bcks-pro-v2-options-05.js',1],
  ['bcks-pro-v2-options-06.js',1],
  ['bcks-pro-v2-options-07.js',1],
- ['bcks-substansi-simulator-v5.js',47],
+ ['bcks-pro-v2-stems.js',1],
+ ['bcks-substansi-simulator-v5.js',48],
  ['bcks-individual-readiness.js',2]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
