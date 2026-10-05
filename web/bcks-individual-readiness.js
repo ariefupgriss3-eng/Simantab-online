@@ -127,7 +127,11 @@
       const done=isCurrent?String(r.attempt_status||"")==="SUBMITTED":!!r.attempted;
       return "<tr>"+
         "<td>"+(i+1)+"</td>"+
-        "<td><b>"+esc(r.full_name||"-")+"</b><div class='bcki-note'>"+esc(r.unit_kerja||r.school_name||"-")+"</div></td>"+
+        "<td><b>"+esc(r.full_name||"-")+"</b>"+
+          (isCurrent&&r.access_type==="KHUSUS"?" <span style='display:inline-block;padding:2px 6px;border-radius:999px;background:#fff3cd;color:#7a5500;font-size:10px;font-weight:900'>AKSES KHUSUS</span>":"")+
+          "<div class='bcki-note'>"+esc(r.unit_kerja||r.school_name||"-")+"</div>"+
+          (isCurrent&&r.access_type==="KHUSUS"&&r.special_access?"<div class='bcki-note'><b>Jendela khusus:</b> "+new Date(r.special_access.starts_at).toLocaleString("id-ID",{timeZone:"Asia/Jakarta",hour:"2-digit",minute:"2-digit"})+"–"+new Date(r.special_access.expires_at).toLocaleString("id-ID",{timeZone:"Asia/Jakarta",hour:"2-digit",minute:"2-digit"})+" WIB</div>":"")+
+        "</td>"+
         "<td>"+esc(r.jenjang||"-")+"</td>"+
         "<td>"+workflowStatusHtml(r,isCurrent)+"</td>"+
         "<td><b>"+(done&&r.score!==null&&r.score!==undefined?pct(r.score):"-")+"</b></td>"+
@@ -174,9 +178,12 @@
         "<div class='bcki-stat'><div class='bcki-label'>Telemetry Terlacak</div><div class='bcki-num'>"+(mon.telemetry?.tracked||0)+"</div></div>"+
         "<div class='bcki-stat'><div class='bcki-label'>Normal</div><div class='bcki-num'>"+(mon.telemetry?.normal||0)+"</div></div>"+
         "<div class='bcki-stat'><div class='bcki-label'>Perlu Telaah</div><div class='bcki-num'>"+(mon.telemetry?.perlu_telaah||0)+"</div></div>"+
-        "<div class='bcki-stat'><div class='bcki-label'>Prioritas Telaah</div><div class='bcki-num'>"+(mon.telemetry?.prioritas_telaah||0)+"</div></div>";
+        "<div class='bcki-stat'><div class='bcki-label'>Prioritas Telaah</div><div class='bcki-num'>"+(mon.telemetry?.prioritas_telaah||0)+"</div></div>"+
+        (Number(mon.special_access?.active_windows||0)>0
+          ? "<div class='bcki-stat'><div class='bcki-label'>Akses Khusus Aktif</div><div class='bcki-num'>"+(mon.special_access?.active_windows||0)+"</div><div class='bcki-note'>Sedang mengerjakan: "+(mon.special_access?.in_progress||0)+"</div></div>"
+          : "");
       heading.textContent="Daftar Individu — "+label;
-      note.innerHTML="Menampilkan status dan hasil <b>"+esc(label)+"</b>. Peserta yang masih mengerjakan belum memiliki nilai/kesiapan final. Telemetry memiliki tiga tingkat (Normal, Perlu Telaah, Prioritas Telaah) dan hanya digunakan sebagai indikator untuk telaah manusia.";
+      note.innerHTML="Menampilkan status dan hasil <b>"+esc(label)+"</b>. Attempt resmi dan <b>Akses Khusus yang sedang aktif</b> dapat dipantau pada daftar individu. Statistik resmi tetap dipisahkan dari attempt akses khusus. Peserta yang masih mengerjakan belum memiliki nilai/kesiapan final. Telemetry memiliki tiga tingkat dan hanya digunakan sebagai indikator untuk telaah manusia.";
     }else{
       stats.innerHTML=
         "<div class='bcki-stat'><div class='bcki-label'>Peserta</div><div class='bcki-num'>"+(dashboardData.participants||0)+"</div></div>"+
@@ -266,5 +273,5 @@
   const observer=new MutationObserver(()=>setTimeout(inject,80));
   observer.observe(document.body,{childList:true,subtree:true});
   for(const ms of [150,500,1200,2200])setTimeout(inject,ms);
-  window.__simantabBcksIndividualReadiness={version:4,resultExport:true,roles:[...ALLOWED]};
+  window.__simantabBcksIndividualReadiness={version:5,resultExport:true,roles:[...ALLOWED]};
 })();
