@@ -151,6 +151,7 @@ Deno.serve(async(req)=>{
     const testActive=!!test&&Date.now()>=Date.parse(test.starts_at)&&Date.now()<Date.parse(test.expires_at);
     return json({
       ok:true,
+      server_now:new Date().toISOString(),
       participant_eligible:participantEligible,
       participant_identity:{
         full_name:String(eligRow?.full_name||profile?.full_name||"").trim(),
