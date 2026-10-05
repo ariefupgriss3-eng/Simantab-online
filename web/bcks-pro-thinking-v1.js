@@ -4,6 +4,7 @@ const getSb=()=>window.__simantabSb||null;
 const profile=()=>window.__simantabProfile||{};
 window.__simantabProThinkingReady=true;
 const LETTERS=["A","B","C","D","E"];
+const displayLetter=(attemptId,qno,canonical)=>typeof window.__simantabDisplayLetterFor==="function"?window.__simantabDisplayLetterFor(attemptId,qno,canonical):canonical;
 const esc=v=>String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 const bank=()=>new Map((window.__simantabProV1Bank||[]).map(q=>[Number(q[0]),q]));
 async function invoke(body){
@@ -66,7 +67,7 @@ window.__simantabProThinkingV1=async function(attemptId){
   const completed=!!current.transfer_status||!!st.result;
   let html='<div class="ptv5-modal"><div class="ptv5-head"><div><h2 style="margin:0;color:#103f68">Thinking Culture • PRO</h2><div class="ptv5-note"><b>Bantuan Memilih Jawaban Berjenjang H1–H4</b><br>H1 Fakta → H2 Masalah/Akar → H3 Perbandingan → H4 Prinsip</div></div><button class="ptv5-btn soft" id="ptv5Close">Tutup</button></div>';
   html+='<div class="ptv5-card"><label><b>Pilih kasus untuk dipelajari</b></label><select id="ptv5Case" class="ptv5-text" style="margin-top:7px">'+rows.map(r=>'<option value="'+r.question_no+'" '+(r.question_no===current.question_no?'selected':'')+'>Soal '+r.display_no+(r.transfer_status?' · selesai':'')+'</option>').join("")+'</select>';
-  html+='<div class="ptv5-q" style="margin-top:12px">'+esc(q[2])+'</div><div class="ptv5-note" style="margin-top:8px"><b>Jawaban awal:</b> '+esc(current.selected_option||"-")+'. '+esc(initText)+'</div><div class="ptv5-note"><b>Catatan:</b> jawaban pertama tetap menjadi nilai simulasi. Thinking Culture adalah proses belajar setelah tes.</div></div>';
+  html+='<div class="ptv5-q" style="margin-top:12px">'+esc(q[2])+'</div><div class="ptv5-note" style="margin-top:8px"><b>Jawaban awal:</b> '+esc(displayLetter(attemptId,current.question_no,current.selected_option)||"-")+'. '+esc(initText)+'</div><div class="ptv5-note"><b>Catatan:</b> jawaban pertama tetap menjadi nilai simulasi. Thinking Culture adalah proses belajar setelah tes.</div></div>';
   if(completed){
    const status=st.result?.transfer_status||current.transfer_status;
    html+='<div class="ptv5-card ptv5-good"><span class="ptv5-badge">Cek Pemahaman</span><h3>'+esc(statusText(status))+'</h3>'+(st.result?.feedback?'<div class="ptv5-note">'+esc(st.result.feedback)+'</div>':'')+'<div class="ptv5-actions"><button class="ptv5-btn" id="ptv5NextCase">Pelajari kasus berikutnya</button></div></div>';
