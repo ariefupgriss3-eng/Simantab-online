@@ -375,7 +375,7 @@ Deno.serve(async(req)=>{
         telemetry:{tracked:0,normal:0,perlu_telaah:0,prioritas_telaah:0,note:"Telemetry adalah indikator perilaku untuk telaah manusia, bukan bukti otomatis kecurangan."}
       },
       previous_session:previousSession?{level:previousSession.level,label:previousSession.label}:null,
-      telemetry:{tracked:0,perlu_telaah:0,note:"Telemetry adalah indikator perilaku untuk telaah manusia, bukan bukti otomatis kecurangan."},
+      telemetry:{tracked:0,normal:0,perlu_telaah:0,prioritas_telaah:0,note:"Telemetry adalah indikator perilaku untuk telaah manusia, bukan bukti otomatis kecurangan."},
       note:"Monitoring sesi aktif dipisahkan dari hasil sesi sebelumnya agar angka tidak tercampur."
     });
 
