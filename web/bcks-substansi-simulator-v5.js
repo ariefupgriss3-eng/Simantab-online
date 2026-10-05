@@ -116,6 +116,74 @@ const accessStatus=async()=>{
  return data;
 };
 let eligibility=null,state=null,timer=null,observer=null,reinjectQueued=false,injectInFlight=false;
+let telemetryQueue=[],telemetryFlushBusy=false,telemetryHiddenAt=null,telemetryBlurAt=null;
+
+const telemetryEnabled=()=>!!state&&state.attempt?.mode==="SIMULASI"&&[2,3,4,30].includes(Number(state.attempt?.session_level));
+const clampTelemetrySeconds=v=>{
+ const n=Math.round(Number(v||0));
+ return Number.isFinite(n)?Math.max(0,Math.min(7200,n)):null;
+};
+function telemetryContext(){
+ if(!telemetryEnabled())return {question_no:null,display_no:null};
+ const no=Number(state.order?.[state.index]);
+ return {
+  question_no:Number.isFinite(no)&&no>0?no:null,
+  display_no:Number.isFinite(state.index)&&state.index>=0?state.index+1:null
+ };
+}
+function queueTelemetry(eventType,extra={}){
+ if(!telemetryEnabled())return;
+ const ctx=telemetryContext();
+ telemetryQueue.push({
+  attempt_id:state.attempt.id,
+  user_id:profile().id,
+  question_no:extra.question_no??ctx.question_no,
+  display_no:extra.display_no??ctx.display_no,
+  event_type:eventType,
+  client_ts:new Date().toISOString(),
+  away_seconds:clampTelemetrySeconds(extra.away_seconds),
+  dwell_seconds:clampTelemetrySeconds(extra.dwell_seconds),
+  revision:extra.revision===true,
+  after_return_seconds:clampTelemetrySeconds(extra.after_return_seconds),
+  metadata:extra.metadata&&typeof extra.metadata==="object"?extra.metadata:{}
+ });
+ if(telemetryQueue.length>=8)flushTelemetry().catch(()=>{});
+}
+async function flushTelemetry(){
+ if(telemetryFlushBusy||!telemetryQueue.length)return;
+ telemetryFlushBusy=true;
+ const batch=telemetryQueue.splice(0,24);
+ try{
+  const {error}=await retryJwt(()=>sb.from("bcks_substansi_telemetry_events").insert(batch));
+  if(error)throw error;
+ }catch(e){
+  telemetryQueue=[...batch,...telemetryQueue].slice(0,72);
+  console.warn("BCKS_TELEMETRY_NONBLOCKING",e?.message||e);
+ }finally{
+  telemetryFlushBusy=false;
+ }
+}
+function telemetryLeaveQuestion(){
+ if(!telemetryEnabled()||!state?.telemetryQuestionNo||!state?.telemetryQuestionOpenedAt)return;
+ const dwell=(Date.now()-state.telemetryQuestionOpenedAt)/1000;
+ queueTelemetry("QUESTION_LEAVE",{
+  question_no:Number(state.telemetryQuestionNo),
+  display_no:Number(state.telemetryDisplayNo||state.index+1),
+  dwell_seconds:dwell
+ });
+ state.telemetryQuestionNo=null;
+ state.telemetryQuestionOpenedAt=null;
+ state.telemetryDisplayNo=null;
+}
+function telemetryEnterQuestion(no){
+ if(!telemetryEnabled())return;
+ if(state.telemetryQuestionNo===Number(no))return;
+ if(state.telemetryQuestionNo)telemetryLeaveQuestion();
+ state.telemetryQuestionNo=Number(no);
+ state.telemetryDisplayNo=state.index+1;
+ state.telemetryQuestionOpenedAt=Date.now();
+ queueTelemetry("QUESTION_ENTER",{question_no:Number(no),display_no:state.index+1});
+}
 
 function style(){
  if($("bcksSubStyle"))return;
@@ -135,7 +203,7 @@ function style(){
  @media(max-width:800px){.bsub-overlay{padding:0}.bsub-modal{border-radius:0}.bsub-grid{grid-template-columns:1fr}.bsub-side{position:static}.bsub-stat{grid-column:span 6}.bsub-half{grid-column:span 12}.bsub-qtext{font-size:14px}.bsub-top h2{font-size:14px}.bsub-timer{font-size:16px}}
  `;document.head.appendChild(st);
 }
-function closeModal(){clearInterval(timer);timer=null;$("bcksSubOverlay")?.remove();state=null}
+function closeModal(){telemetryLeaveQuestion();flushTelemetry().catch(()=>{});clearInterval(timer);timer=null;$("bcksSubOverlay")?.remove();state=null}
 function modal(title,html,timerText=""){
  style();$("bcksSubOverlay")?.remove();
  const el=document.createElement("div");el.id="bcksSubOverlay";el.className="bsub-overlay";el.innerHTML=`<div class="bsub-modal"><div class="bsub-top"><h2>${esc(title)}</h2><div style="display:flex;align-items:center;gap:12px"><div id="bcksSubTimer" class="bsub-timer">${esc(timerText)}</div><button class="bsub-btn soft" id="bcksSubClose">Tutup</button></div></div><div class="bsub-body" id="bcksSubModalBody">${html}</div></div>`;document.body.appendChild(el);$("bcksSubClose").onclick=()=>closeModal();return el;
@@ -349,7 +417,12 @@ async function resumeAttempt(a){
  }catch(e){alert(e.message||e)}
 }
 async function beginAttempt(attempt,order,answers){
- state={attempt,order,index:0,answers,questionStart:Date.now(),identity:{...participantIdentityCache}};
+ state={attempt,order,index:0,answers,questionStart:Date.now(),identity:{...participantIdentityCache},telemetryQuestionNo:null,telemetryQuestionOpenedAt:null,telemetryDisplayNo:null,telemetryLastReturn:null};
+ telemetryHiddenAt=null;telemetryBlurAt=null;
+ if(telemetryEnabled()){
+  queueTelemetry("SESSION_START",{question_no:null,display_no:null,metadata:{resumed:answers instanceof Map&&answers.size>0,session_level:Number(attempt.session_level||0)}});
+  flushTelemetry().catch(()=>{});
+ }
  modal(attempt.mode==="SIMULASI"?"Simulasi dan Thinking Culture • Level "+attempt.session_level+" • "+attempt.total_questions+" Soal":"AI Coach Adaptif • "+attempt.target_competency,"<div id=\"bcksAttemptRoot\"></div>");
  renderQuestion();startTimer();
 }
@@ -371,6 +444,7 @@ function renderQuestion(){
   clearInterval(timer);timer=null;
   return;
  }
+ telemetryEnterQuestion(no);
  const ans=state.answers.get(no)||{},answered=state.order.filter(n=>state.answers.get(Number(n))?.selected_option).length,hard=HIGH_DISCRIMINATION.has(no),optionOrder=state.attempt.mode==="SIMULASI"?optionOrderFor(state.attempt.id,no):[0,1,2,3,4],watermark=state.attempt.mode==="SIMULASI"?watermarkMarkup(state.identity,state.attempt.id):"",focus=bapakFocus(q),focusText=focus.map(x=>x.label).join(" + "),coachGuide=state.attempt.mode==="COACH"?`<div class="bsub-card" style="margin:10px 0 0;padding:11px;background:#fffdf2;border-color:#ead9a2"><b>🧠 AI Coach • BAPAK Adaptif</b><div class="bsub-note" style="margin-top:5px">Fokus kasus: <b>${esc(focusText)}</b><br>${focus.map(x=>`• <b>${esc(x.label)}</b>: ${esc(x.guide)}`).join("<br>")}<br><span style="opacity:.8">Filter lain tetap digunakan bila relevan. Fokus ditentukan dari konteks kasus, bukan dari kunci jawaban.</span></div></div>`:"";
  root.innerHTML=`<div class="bsub-grid"><div class="bsub-q">${watermark}<div class="bsub-qcontent"><div class="bsub-qnum">SOAL ${state.index+1} DARI ${state.order.length} • ${esc(q[1])}${hard?" • HOTS":""}</div><div class="bsub-qtext">${esc(q[2])}</div>
  ${optionOrder.map((origIdx,displayIdx)=>`<label class="bsub-opt"><input type="radio" name="bsubAns" value="${LETTERS[origIdx]}" ${ans.selected_option===LETTERS[origIdx]?"checked":""}><span class="bsub-letter">${LETTERS[displayIdx]}.</span><span>${esc(q[3][origIdx])}</span></label>`).join("")}
@@ -391,11 +465,26 @@ async function saveAnswer(no,selected,doubt){
  const patch={selected_option:selected===undefined?old.selected_option:selected,is_doubtful:doubt===null?!!old.is_doubtful:!!doubt,seconds_spent:spent,answered_at:new Date().toISOString()};
  const {error}=await retryJwt(()=>sb.from("bcks_substansi_answers").update(patch).eq("attempt_id",state.attempt.id).eq("question_no",Number(no)));
  if(error){alert("Jawaban belum tersimpan: "+error.message);return}
+ const changed=selected!==undefined&&selected!==old.selected_option;
+ if(changed&&telemetryEnabled()){
+  const ret=state.telemetryLastReturn&&Number(state.telemetryLastReturn.question_no)===Number(no)?state.telemetryLastReturn:null;
+  const afterReturn=ret?Math.max(0,(Date.now()-ret.at)/1000):null;
+  queueTelemetry("ANSWER_CHANGE",{
+   question_no:Number(no),
+   display_no:state.index+1,
+   away_seconds:ret?.away_seconds??null,
+   after_return_seconds:afterReturn,
+   revision:!!old.selected_option&&old.selected_option!==selected,
+   metadata:{had_previous_answer:!!old.selected_option}
+  });
+  if(ret)state.telemetryLastReturn=null;
+  flushTelemetry().catch(()=>{});
+ }
  state.answers.set(Number(no),{...old,...patch});state.questionStart=Date.now();renderQuestion();
 }
-function goto(i){if(!state)return;state.index=Math.max(0,Math.min(state.order.length-1,i));renderQuestion()}
+function goto(i){if(!state)return;telemetryLeaveQuestion();flushTelemetry().catch(()=>{});state.index=Math.max(0,Math.min(state.order.length-1,i));renderQuestion()}
 function summaryAttempt(){
- if(!state)return;const answered=state.order.filter(n=>state.answers.get(Number(n))?.selected_option).length,doubt=state.order.filter(n=>state.answers.get(Number(n))?.is_doubtful).length;
+ if(!state)return;telemetryLeaveQuestion();flushTelemetry().catch(()=>{});const answered=state.order.filter(n=>state.answers.get(Number(n))?.selected_option).length,doubt=state.order.filter(n=>state.answers.get(Number(n))?.is_doubtful).length;
  $("bcksAttemptRoot").innerHTML=`<div class="bsub-card"><h3>Ringkasan Jawaban</h3><div class="bsub-home"><div class="bsub-stat"><div class="bsub-label">Terjawab</div><div class="bsub-numstat">${answered}</div></div><div class="bsub-stat"><div class="bsub-label">Belum</div><div class="bsub-numstat">${state.order.length-answered}</div></div><div class="bsub-stat"><div class="bsub-label">Ragu-ragu</div><div class="bsub-numstat">${doubt}</div></div></div><div class="bsub-actions"><button class="bsub-btn soft" id="bsubBackQ">Kembali ke Soal</button><button class="bsub-btn warn" id="bsubSubmitFinal">Kirim & Nilai</button></div></div>`;
  $("bsubBackQ").onclick=()=>renderQuestion();$("bsubSubmitFinal").onclick=()=>finishAttempt(false);
 }
@@ -403,6 +492,11 @@ async function finishAttempt(auto=false){
  if(!state)return;const a=state.attempt;
  if(!auto&&!confirm("Kirim jawaban dan akhiri sesi? Setelah dikirim jawaban tidak dapat diubah."))return;
  try{
+  telemetryLeaveQuestion();
+  if(telemetryEnabled()){
+   queueTelemetry("SESSION_SUBMIT",{question_no:null,display_no:null,metadata:{auto_submit:auto===true}});
+   await Promise.race([flushTelemetry(),wait(800)]).catch(()=>{});
+  }
   const data=await api({action:"finish",attempt_id:a.id});
   clearInterval(timer);timer=null;localStorage.removeItem("bcksAttemptOrder:"+a.id);
   const att=data.attempt,scores=data.scores||[],coach=data.coach||{};
@@ -547,11 +641,40 @@ async function openLeader(){
  }catch(e){alert(e.message||e);closeModal()}
 }
 
+document.addEventListener("visibilitychange",()=>{
+ if(!telemetryEnabled())return;
+ if(document.hidden){
+  telemetryHiddenAt=Date.now();
+  queueTelemetry("VISIBILITY_HIDDEN");
+  flushTelemetry().catch(()=>{});
+ }else{
+  const away=telemetryHiddenAt?Math.max(0,(Date.now()-telemetryHiddenAt)/1000):0;
+  telemetryHiddenAt=null;
+  const ctx=telemetryContext();
+  state.telemetryLastReturn={at:Date.now(),away_seconds:away,question_no:ctx.question_no};
+  queueTelemetry("VISIBILITY_VISIBLE",{away_seconds:away});
+  flushTelemetry().catch(()=>{});
+ }
+});
+window.addEventListener("blur",()=>{
+ if(!telemetryEnabled())return;
+ telemetryBlurAt=Date.now();
+ queueTelemetry("WINDOW_BLUR");
+});
+window.addEventListener("focus",()=>{
+ if(!telemetryEnabled())return;
+ const away=telemetryBlurAt?Math.max(0,(Date.now()-telemetryBlurAt)/1000):0;
+ telemetryBlurAt=null;
+ queueTelemetry("WINDOW_FOCUS",{away_seconds:away});
+ flushTelemetry().catch(()=>{});
+});
+window.addEventListener("pagehide",()=>{telemetryLeaveQuestion();flushTelemetry().catch(()=>{})});
+
 style();
 for(const ms of [100,400,900,1800])setTimeout(()=>{installObserver();injectCard()},ms);
 window.__simantabOpenBcksSubstansi=openHome;
 window.__simantabOpenBcksLeader=openLeader;
 window.__simantabGetBcksAccessStatus=accessStatus;
 window.__simantabSetBcksAccess=async(open)=>setAccessFromKabid(!!open);
-window.__simantabBcksSubstansiSimulator={version:8.2,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
+window.__simantabBcksSubstansiSimulator={version:8.3,duplicateGuard:true,kabidAccessGate:true,defaultAccessOpen:false,advancedSjt:true,highDiscriminationItems:95,stableReinject:true,placement:"AFTER_WORKFLOW",questions:70,sessionQuestionCounts:[70,70,70],thinkingCulture:true,thinkingCultureSyntax:4,bapakAdaptive:true,postAttemptJournal:true,singlePremiumProAttempt:true,officialFirstPremiumPro:true,behavioralTelemetry:true,humanReviewOnly:true,durationMinutes:120,coachQuestions:10,answerKey:"SERVER_ONLY",officialPassingGrade:false};
 })();
