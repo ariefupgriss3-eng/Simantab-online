@@ -63,42 +63,128 @@
     return v===null||v===undefined?"-":pct(v)+"%";
   }
 
-  function statusHtml(row){
-    if(!row.attempted)return '<span style="font-weight:850;color:#6b7f90">Belum Simulasi</span>';
+  function workflowStatusHtml(row,isCurrent){
+    if(isCurrent){
+      const st=String(row.attempt_status||"NOT_STARTED");
+      if(st==="IN_PROGRESS")return '<span style="font-weight:900;color:#155fa8">Sedang Mengerjakan</span>';
+      if(st==="SUBMITTED")return '<span class="bcki-ok">Selesai</span>';
+      if(st==="EXPIRED")return '<span class="bcki-bad">Kedaluwarsa</span>';
+      return '<span style="font-weight:850;color:#6b7f90">Belum Mulai</span>';
+    }
+    return row.attempted?'<span class="bcki-ok">Selesai</span>':'<span style="font-weight:850;color:#6b7f90">Belum Simulasi</span>';
+  }
+
+  function readinessHtml(row){
+    if(!row.readiness_label)return "-";
     const good=row.readiness_label==="SANGAT_SIAP"||row.readiness_label==="SIAP";
     return '<span class="'+(good?"bcki-ok":"bcki-bad")+'">'+esc(fmt(row.readiness_label))+"</span>";
   }
 
-  function renderRows(rows){
+  function telemetryHtml(row,isCurrent){
+    if(!isCurrent)return "-";
+    const t=row.telemetry||{};
+    if(String(row.attempt_status||"NOT_STARTED")==="NOT_STARTED")return "-";
+    if(t.indicator==="PERLU_TELAAH")return '<span class="bcki-bad">Perlu Telaah</span>';
+    if(Number(t.event_count||0)>0)return '<span class="bcki-ok">Terlacak</span>';
+    return '<span style="color:#6b7f90;font-weight:850">Belum Ada</span>';
+  }
+
+  let dashboardData=null,currentView="CURRENT";
+
+  function activeRows(){
+    return dashboardData?.session_monitoring?.individuals||[];
+  }
+  function previousRows(){
+    return dashboardData?.individuals||[];
+  }
+  function filterOptions(isCurrent){
+    return isCurrent
+      ? "<option value='ALL'>Semua</option><option value='DONE'>Sudah Selesai</option><option value='RUNNING'>Sedang Mengerjakan</option><option value='PENDING'>Belum Mulai</option><option value='REVIEW'>Perlu Telaah</option>"
+      : "<option value='ALL'>Semua</option><option value='DONE'>Sudah Simulasi</option><option value='PENDING'>Belum Simulasi</option>";
+  }
+
+  function renderRows(){
     const tbody=document.getElementById("bckiRows");
-    if(!tbody)return;
+    if(!tbody||!dashboardData)return;
+    const isCurrent=currentView==="CURRENT";
+    const rows=isCurrent?activeRows():previousRows();
     const q=String(document.getElementById("bckiSearch")?.value||"").trim().toLowerCase();
     const mode=String(document.getElementById("bckiFilter")?.value||"ALL");
     const filtered=(rows||[]).filter(r=>{
-      const hit=!q||String(r.full_name||"").toLowerCase().includes(q)||String(r.unit_kerja||"").toLowerCase().includes(q);
-      const ok=mode==="ALL"||(mode==="DONE"&&r.attempted)||(mode==="PENDING"&&!r.attempted);
+      const hit=!q||String(r.full_name||"").toLowerCase().includes(q)||String(r.unit_kerja||r.school_name||"").toLowerCase().includes(q);
+      let ok=true;
+      if(isCurrent){
+        const st=String(r.attempt_status||"NOT_STARTED");
+        ok=mode==="ALL"||(mode==="DONE"&&st==="SUBMITTED")||(mode==="RUNNING"&&st==="IN_PROGRESS")||(mode==="PENDING"&&st==="NOT_STARTED")||(mode==="REVIEW"&&r.telemetry?.indicator==="PERLU_TELAAH");
+      }else{
+        ok=mode==="ALL"||(mode==="DONE"&&r.attempted)||(mode==="PENDING"&&!r.attempted);
+      }
       return hit&&ok;
     });
-    tbody.innerHTML=filtered.length?filtered.map((r,i)=>
-      "<tr>"+
-      "<td>"+(i+1)+"</td>"+
-      "<td><b>"+esc(r.full_name||"-")+"</b><div class='bcki-note'>"+esc(r.unit_kerja||r.school_name||"-")+"</div></td>"+
-      "<td>"+esc(r.jenjang||"-")+"</td>"+
-      "<td><b>"+(r.attempted?pct(r.score):"-")+"</b></td>"+
-      "<td>"+statusHtml(r)+"</td>"+
-      "<td>"+esc(r.priority_competency||"-")+"</td>"+
-      "<td>"+readinessCell(r,"KEPRIBADIAN")+"</td>"+
-      "<td>"+readinessCell(r,"SOSIAL")+"</td>"+
-      "<td>"+readinessCell(r,"MANAJERIAL")+"</td>"+
-      "<td>"+readinessCell(r,"KEWIRAUSAHAAN")+"</td>"+
-      "<td>"+readinessCell(r,"SUPERVISI")+"</td>"+
-      "<td>"+(r.attempted?"<button class='bcki-btn' style='margin:0;padding:6px 8px;font-size:10px' data-bcki-docx='"+esc(r.attempt_id)+"'>DOCX</button> <button class='bcki-btn' style='margin:0;padding:6px 8px;font-size:10px' data-bcki-pdf='"+esc(r.attempt_id)+"'>PDF</button>":"-")+"</td>"+
-      "</tr>"
-    ).join(""):"<tr><td colspan='12' class='bcki-note'>Tidak ada peserta yang sesuai pencarian/filter.</td></tr>";
+    tbody.innerHTML=filtered.length?filtered.map((r,i)=>{
+      const done=isCurrent?String(r.attempt_status||"")==="SUBMITTED":!!r.attempted;
+      return "<tr>"+
+        "<td>"+(i+1)+"</td>"+
+        "<td><b>"+esc(r.full_name||"-")+"</b><div class='bcki-note'>"+esc(r.unit_kerja||r.school_name||"-")+"</div></td>"+
+        "<td>"+esc(r.jenjang||"-")+"</td>"+
+        "<td>"+workflowStatusHtml(r,isCurrent)+"</td>"+
+        "<td><b>"+(done&&r.score!==null&&r.score!==undefined?pct(r.score):"-")+"</b></td>"+
+        "<td>"+readinessHtml(r)+"</td>"+
+        "<td>"+esc(r.priority_competency||"-")+"</td>"+
+        "<td>"+readinessCell(r,"KEPRIBADIAN")+"</td>"+
+        "<td>"+readinessCell(r,"SOSIAL")+"</td>"+
+        "<td>"+readinessCell(r,"MANAJERIAL")+"</td>"+
+        "<td>"+readinessCell(r,"KEWIRAUSAHAAN")+"</td>"+
+        "<td>"+readinessCell(r,"SUPERVISI")+"</td>"+
+        "<td>"+telemetryHtml(r,isCurrent)+"</td>"+
+        "<td>"+(done&&r.attempt_id?"<button class='bcki-btn' style='margin:0;padding:6px 8px;font-size:10px' data-bcki-docx='"+esc(r.attempt_id)+"'>DOCX</button> <button class='bcki-btn' style='margin:0;padding:6px 8px;font-size:10px' data-bcki-pdf='"+esc(r.attempt_id)+"'>PDF</button>":"-")+"</td>"+
+        "</tr>";
+    }).join(""):"<tr><td colspan='14' class='bcki-note'>Tidak ada peserta yang sesuai pencarian/filter.</td></tr>";
     const count=document.getElementById("bckiCount");
     if(count)count.textContent=filtered.length+" peserta";
     document.querySelectorAll("[data-bcki-docx]").forEach(b=>b.onclick=()=>downloadResult(b.dataset.bckiDocx,"docx"));
     document.querySelectorAll("[data-bcki-pdf]").forEach(b=>b.onclick=()=>downloadResult(b.dataset.bckiPdf,"pdf"));
+  }
+
+  function renderView(){
+    if(!dashboardData)return;
+    const isCurrent=currentView==="CURRENT";
+    const mon=dashboardData.session_monitoring||{};
+    const sess=mon.session||{};
+    const prev=dashboardData.previous_session||{};
+    const label=isCurrent?(sess.label||"Sesi Aktif"):(prev.label||"Sesi Sebelumnya");
+    const stats=document.getElementById("bckiStats");
+    const heading=document.getElementById("bckiListTitle");
+    const note=document.getElementById("bckiListNote");
+    const filter=document.getElementById("bckiFilter");
+    document.querySelectorAll("[data-bcki-view]").forEach(b=>{
+      const active=b.dataset.bckiView===currentView;
+      b.style.background=active?"#155fa8":"#eef5fb";
+      b.style.color=active?"#fff":"#155fa8";
+    });
+    if(isCurrent){
+      stats.innerHTML=
+        "<div class='bcki-stat'><div class='bcki-label'>Peserta</div><div class='bcki-num'>"+(mon.participants||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Belum Mulai</div><div class='bcki-num'>"+(mon.not_started||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Sedang Mengerjakan</div><div class='bcki-num'>"+(mon.in_progress||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Sudah Selesai</div><div class='bcki-num'>"+(mon.submitted||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Rata-rata Selesai</div><div class='bcki-num'>"+pct(mon.average_score||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Telemetry Terlacak</div><div class='bcki-num'>"+(mon.telemetry?.tracked||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Perlu Telaah</div><div class='bcki-num'>"+(mon.telemetry?.perlu_telaah||0)+"</div></div>";
+      heading.textContent="Daftar Individu — "+label;
+      note.innerHTML="Menampilkan status dan hasil <b>"+esc(label)+"</b>. Peserta yang masih mengerjakan belum memiliki nilai/kesiapan final. Telemetry hanya indikator untuk telaah manusia.";
+    }else{
+      stats.innerHTML=
+        "<div class='bcki-stat'><div class='bcki-label'>Peserta</div><div class='bcki-num'>"+(dashboardData.participants||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Sudah Simulasi</div><div class='bcki-num'>"+(dashboardData.attempted||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Belum</div><div class='bcki-num'>"+(dashboardData.not_attempted||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Rata-rata</div><div class='bcki-num'>"+pct(dashboardData.average_score||0)+"</div></div>";
+      heading.textContent="Daftar Individu — Hasil "+label;
+      note.innerHTML="Menampilkan hasil sesi sebelumnya <b>"+esc(label)+"</b>, terpisah dari sesi aktif.";
+    }
+    filter.innerHTML=filterOptions(isCurrent);
+    filter.value="ALL";
+    renderRows();
   }
 
   async function openDashboard(){
@@ -111,27 +197,33 @@
     document.body.appendChild(overlay);
     document.getElementById("bckiClose").onclick=()=>overlay.remove();
     try{
-      const d=await api({action:"kabid_summary"});
-      const rows=d.individuals||[];
+      dashboardData=await api({action:"kabid_summary"});
+      currentView="CURRENT";
+      const d=dashboardData;
+      const mon=d.session_monitoring||{};
+      const sess=mon.session||{};
+      const prev=d.previous_session||{};
       const body=document.getElementById("bckiBody");
       body.innerHTML=
         "<div class='bcki-grid'>"+
-        "<div class='bcki-card bcki-wide' style='margin:0'><h3>Ruang Lingkup: "+esc(d.scope_label||"Sesuai Kewenangan")+"</h3><div class='bcki-note'>Data individu hanya ditampilkan sesuai kewenangan jenjang akun yang sedang masuk.</div></div>"+
-        "<div class='bcki-stat'><div class='bcki-label'>Peserta</div><div class='bcki-num'>"+d.participants+"</div></div>"+
-        "<div class='bcki-stat'><div class='bcki-label'>Sudah Simulasi</div><div class='bcki-num'>"+d.attempted+"</div></div>"+
-        "<div class='bcki-stat'><div class='bcki-label'>Belum</div><div class='bcki-num'>"+d.not_attempted+"</div></div>"+
-        "<div class='bcki-stat'><div class='bcki-label'>Rata-rata</div><div class='bcki-num'>"+pct(d.average_score)+"</div></div>"+
-        "<div class='bcki-card bcki-wide' style='margin:0'><h3>Daftar Kesiapan Individu</h3>"+
-        "<div style='display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 10px'>"+
+        "<div class='bcki-card bcki-wide' style='margin:0'><h3>Ruang Lingkup: "+esc(d.scope_label||"Sesuai Kewenangan")+"</h3><div class='bcki-note'>Data individu hanya ditampilkan sesuai kewenangan jenjang akun yang sedang masuk.</div>"+
+        "<div style='display:flex;gap:8px;flex-wrap:wrap;margin-top:12px'>"+
+        "<button class='bcki-btn' style='margin:0' data-bcki-view='CURRENT'>"+esc(sess.label||"Sesi Aktif")+" • "+(mon.is_active?"Sesi Aktif":"Monitoring")+"</button>"+
+        (prev?.label?"<button class='bcki-btn' style='margin:0;background:#eef5fb;color:#155fa8' data-bcki-view='PREVIOUS'>"+esc(prev.label)+" • Hasil Sebelumnya</button>":"")+
+        "</div></div>"+
+        "<div id='bckiStats' class='bcki-wide bcki-grid' style='grid-column:span 12'></div>"+
+        "<div class='bcki-card bcki-wide' style='margin:0'><h3 id='bckiListTitle'>Daftar Individu</h3><div id='bckiListNote' class='bcki-note'></div>"+
+        "<div style='display:flex;gap:8px;flex-wrap:wrap;margin:10px 0'>"+
         "<input id='bckiSearch' type='search' placeholder='Cari nama / unit kerja…' style='flex:1;min-width:210px;padding:10px;border:1px solid #cbd8e3;border-radius:10px'>"+
-        "<select id='bckiFilter' style='padding:10px;border:1px solid #cbd8e3;border-radius:10px;background:#fff'><option value='ALL'>Semua</option><option value='DONE'>Sudah Simulasi</option><option value='PENDING'>Belum Simulasi</option></select>"+
+        "<select id='bckiFilter' style='padding:10px;border:1px solid #cbd8e3;border-radius:10px;background:#fff'></select>"+
         "<span id='bckiCount' class='bcki-note' style='align-self:center;font-weight:850'></span></div>"+
-        "<div style='overflow:auto;max-height:470px'><table class='bcki-table' style='min-width:1080px'><thead style='position:sticky;top:0;background:#fff'><tr><th>No</th><th>Peserta / Unit</th><th>Jenjang</th><th>Nilai</th><th>Status</th><th>Prioritas</th><th>Kep</th><th>Sos</th><th>Man</th><th>Kew</th><th>Sup</th><th>Unduh</th></tr></thead><tbody id='bckiRows'></tbody></table></div>"+
-        "<div class='bcki-note' style='margin-top:8px'>Kep = Kepribadian • Sos = Sosial • Man = Manajerial • Kew = Kewirausahaan • Sup = Supervisi. Hasil merupakan indikator latihan SIMANTAB, bukan passing grade resmi.</div>"+
+        "<div style='overflow:auto;max-height:470px'><table class='bcki-table' style='min-width:1320px'><thead style='position:sticky;top:0;background:#fff'><tr><th>No</th><th>Peserta / Unit</th><th>Jenjang</th><th>Status</th><th>Nilai</th><th>Kesiapan</th><th>Prioritas</th><th>Kep</th><th>Sos</th><th>Man</th><th>Kew</th><th>Sup</th><th>Telemetry</th><th>Unduh</th></tr></thead><tbody id='bckiRows'></tbody></table></div>"+
+        "<div class='bcki-note' style='margin-top:8px'>Kep = Kepribadian • Sos = Sosial • Man = Manajerial • Kew = Kewirausahaan • Sup = Supervisi. Telemetry tidak mengubah nilai dan bukan bukti otomatis kecurangan.</div>"+
         "</div></div>";
-      renderRows(rows);
-      document.getElementById("bckiSearch").oninput=()=>renderRows(rows);
-      document.getElementById("bckiFilter").onchange=()=>renderRows(rows);
+      document.querySelectorAll("[data-bcki-view]").forEach(b=>b.onclick=()=>{currentView=b.dataset.bckiView;document.getElementById("bckiSearch").value="";renderView()});
+      document.getElementById("bckiSearch").oninput=renderRows;
+      document.getElementById("bckiFilter").onchange=renderRows;
+      renderView();
     }catch(e){
       document.getElementById("bckiBody").innerHTML="<div class='bcki-card'><h3>Data belum dapat dimuat</h3><div class='bcki-note'>"+esc(e.message||e)+"</div></div>";
     }
@@ -170,5 +262,5 @@
   const observer=new MutationObserver(()=>setTimeout(inject,80));
   observer.observe(document.body,{childList:true,subtree:true});
   for(const ms of [150,500,1200,2200])setTimeout(inject,ms);
-  window.__simantabBcksIndividualReadiness={version:2,resultExport:true,roles:[...ALLOWED]};
+  window.__simantabBcksIndividualReadiness={version:3,resultExport:true,roles:[...ALLOWED]};
 })();

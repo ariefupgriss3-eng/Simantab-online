@@ -388,7 +388,7 @@ const modules=[
  ['bcks-pro-v2-stems.js',1],
  ['bcks-pro-thinking-v1.js',2],
  ['bcks-substansi-simulator-v5.js',52],
- ['bcks-individual-readiness.js',2]
+ ['bcks-individual-readiness.js',3]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
