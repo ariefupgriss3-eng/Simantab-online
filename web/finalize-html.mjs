@@ -296,6 +296,11 @@ const bcksProV2StemsCode=await fs.readFile(new URL(`./${bcksProV2StemsFile}`,imp
 if(!/SIMANTAB_BCKS_PRO_V2_NARRATIVE_STEMS/.test(bcksProV2StemsCode))throw new Error('Pro v2 narrative stems tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksProV2StemsFile),bcksProV2StemsCode);
 
+const bcksProThinkingFile='bcks-pro-thinking-v1.js';
+const bcksProThinkingCode=await fs.readFile(new URL(`./${bcksProThinkingFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_PRO_THINKING_V1/.test(bcksProThinkingCode))throw new Error('Pro Thinking Culture v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksProThinkingFile),bcksProThinkingCode);
+
 const bcksSubstansiSimulatorFile='bcks-substansi-simulator-v5.js';
 const bcksSubstansiSimulatorCode=await fs.readFile(new URL(`./${bcksSubstansiSimulatorFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE/.test(bcksSubstansiSimulatorCode))throw new Error('BCKS substansi simulator v5 tidak valid.');
@@ -381,7 +386,8 @@ const modules=[
  ['bcks-pro-v2-distractor-hardening.js',1],
  ['bcks-pro-v2-cue-neutralization.js',1],
  ['bcks-pro-v2-stems.js',1],
- ['bcks-substansi-simulator-v5.js',48],
+ ['bcks-pro-thinking-v1.js',1],
+ ['bcks-substansi-simulator-v5.js',49],
  ['bcks-individual-readiness.js',2]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
