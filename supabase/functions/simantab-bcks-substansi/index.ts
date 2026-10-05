@@ -379,7 +379,7 @@ Deno.serve(async(req)=>{
     let currentRows:any[]=[];
     if(monitorSession){
       const {data,error}=await admin.from("bcks_substansi_attempts")
-        .select("id,user_id,status,session_level,started_at,submitted_at,score,correct_count,total_questions,is_test,is_official_result")
+        .select("id,user_id,status,session_level,started_at,submitted_at,score,correct_count,total_questions,readiness_label,priority_competency,is_test,is_official_result")
         .eq("mode","SIMULASI").eq("is_test",false).eq("session_level",Number(monitorSession.level))
         .in("user_id",ids).order("started_at",{ascending:false});
       if(error) throw error;
@@ -389,6 +389,23 @@ Deno.serve(async(req)=>{
     for(const a of currentRows) if(!currentByUser.has(a.user_id)) currentByUser.set(a.user_id,a);
     const currentAttempts=[...currentByUser.values()];
     const currentAttemptIds=currentAttempts.map((a:any)=>a.id);
+
+    let currentScoreRows:any[]=[];
+    if(currentAttemptIds.length){
+      const {data,error}=await admin.from("bcks_substansi_competency_scores")
+        .select("attempt_id,competency,correct_count,total_count,percentage").in("attempt_id",currentAttemptIds);
+      if(error) throw error;
+      currentScoreRows=data||[];
+    }
+    const currentScoresByAttempt=new Map<string,any>();
+    for(const row of currentScoreRows){
+      if(!currentScoresByAttempt.has(row.attempt_id)) currentScoresByAttempt.set(row.attempt_id,{});
+      currentScoresByAttempt.get(row.attempt_id)[row.competency]={
+        percentage:Number(row.percentage||0),
+        correct_count:Number(row.correct_count||0),
+        total_count:Number(row.total_count||0)
+      };
+    }
 
     let telemetryRows:any[]=[];
     if(currentAttemptIds.length&&[2,3,4,30].includes(Number(monitorSession?.level))){
@@ -414,6 +431,11 @@ Deno.serve(async(req)=>{
         started_at:a?.started_at||null,
         submitted_at:a?.submitted_at||null,
         score:a?.status==="SUBMITTED"?Number(a.score||0):null,
+        correct_count:a?.status==="SUBMITTED"?Number(a.correct_count||0):null,
+        total_questions:a?.total_questions??null,
+        readiness_label:a?.status==="SUBMITTED"?(a.readiness_label||null):null,
+        priority_competency:a?.status==="SUBMITTED"?(a.priority_competency||null):null,
+        competency_scores:a?.status==="SUBMITTED"?(currentScoresByAttempt.get(a.id)||{}):{},
         telemetry:{
           indicator:telemetryIndicator(tm),
           event_count:Number(tm?.event_count||0),
@@ -444,6 +466,9 @@ Deno.serve(async(req)=>{
       in_progress:currentAttempts.filter((a:any)=>a.status==="IN_PROGRESS").length,
       submitted:currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length,
       expired:currentAttempts.filter((a:any)=>a.status==="EXPIRED").length,
+      average_score:currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length
+        ? Math.round(currentAttempts.filter((a:any)=>a.status==="SUBMITTED").reduce((sum:number,a:any)=>sum+Number(a.score||0),0)/currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length*100)/100
+        : 0,
       individuals:sessionIndividuals,
       telemetry:{
         tracked:telemetryTracked,
