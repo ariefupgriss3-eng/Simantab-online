@@ -387,7 +387,7 @@ const modules=[
  ['bcks-pro-v2-cue-neutralization.js',1],
  ['bcks-pro-v2-stems.js',1],
  ['bcks-pro-thinking-v1.js',2],
- ['bcks-substansi-simulator-v5.js',52],
+ ['bcks-substansi-simulator-v5.js',53],
  ['bcks-individual-readiness.js',3]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
