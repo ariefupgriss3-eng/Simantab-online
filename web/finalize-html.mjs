@@ -281,10 +281,25 @@ for(const [idx,file] of bcksProV2OptionFiles.entries()){
  await fs.writeFile(path.join(staticDir,file),code);
 }
 
+const bcksProV2DistractorFile='bcks-pro-v2-distractor-hardening.js';
+const bcksProV2DistractorCode=await fs.readFile(new URL(`./${bcksProV2DistractorFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_BCKS_PRO_V2_DISTRACTOR_HARDENING/.test(bcksProV2DistractorCode))throw new Error('Pro v2 distractor hardening tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksProV2DistractorFile),bcksProV2DistractorCode);
+
+const bcksProV2CueFile='bcks-pro-v2-cue-neutralization.js';
+const bcksProV2CueCode=await fs.readFile(new URL(`./${bcksProV2CueFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_BCKS_PRO_V2_CUE_NEUTRALIZATION/.test(bcksProV2CueCode))throw new Error('Pro v2 cue neutralization tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksProV2CueFile),bcksProV2CueCode);
+
 const bcksProV2StemsFile='bcks-pro-v2-stems.js';
 const bcksProV2StemsCode=await fs.readFile(new URL(`./${bcksProV2StemsFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_BCKS_PRO_V2_NARRATIVE_STEMS/.test(bcksProV2StemsCode))throw new Error('Pro v2 narrative stems tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksProV2StemsFile),bcksProV2StemsCode);
+
+const bcksProThinkingFile='bcks-pro-thinking-v1.js';
+const bcksProThinkingCode=await fs.readFile(new URL(`./${bcksProThinkingFile}`,import.meta.url),'utf8');
+if(!/SIMANTAB_PRO_THINKING_V1/.test(bcksProThinkingCode))throw new Error('Pro Thinking Culture v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,bcksProThinkingFile),bcksProThinkingCode);
 
 const bcksSubstansiSimulatorFile='bcks-substansi-simulator-v5.js';
 const bcksSubstansiSimulatorCode=await fs.readFile(new URL(`./${bcksSubstansiSimulatorFile}`,import.meta.url),'utf8');
@@ -368,8 +383,11 @@ const modules=[
  ['bcks-pro-v2-options-05.js',1],
  ['bcks-pro-v2-options-06.js',1],
  ['bcks-pro-v2-options-07.js',1],
+ ['bcks-pro-v2-distractor-hardening.js',1],
+ ['bcks-pro-v2-cue-neutralization.js',1],
  ['bcks-pro-v2-stems.js',1],
- ['bcks-substansi-simulator-v5.js',48],
+ ['bcks-pro-thinking-v1.js',2],
+ ['bcks-substansi-simulator-v5.js',50],
  ['bcks-individual-readiness.js',2]
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
