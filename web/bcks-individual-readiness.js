@@ -84,8 +84,10 @@
     if(!isCurrent)return "-";
     const t=row.telemetry||{};
     if(String(row.attempt_status||"NOT_STARTED")==="NOT_STARTED")return "-";
-    if(t.indicator==="PERLU_TELAAH")return '<span class="bcki-bad">Perlu Telaah</span>';
-    if(Number(t.event_count||0)>0)return '<span class="bcki-ok">Terlacak</span>';
+    if(t.indicator==="PRIORITAS_TELAAH")return '<span class="bcki-bad">Prioritas Telaah</span>';
+    if(t.indicator==="PERLU_TELAAH")return '<span style="color:#a66a00;font-weight:900">Perlu Telaah</span>';
+    if(t.indicator==="NORMAL")return '<span class="bcki-ok">Normal</span>';
+    if(Number(t.event_count||0)>0)return '<span class="bcki-ok">Normal</span>';
     return '<span style="color:#6b7f90;font-weight:850">Belum Ada</span>';
   }
 
@@ -99,7 +101,7 @@
   }
   function filterOptions(isCurrent){
     return isCurrent
-      ? "<option value='ALL'>Semua</option><option value='DONE'>Sudah Selesai</option><option value='RUNNING'>Sedang Mengerjakan</option><option value='PENDING'>Belum Mulai</option><option value='REVIEW'>Perlu Telaah</option>"
+      ? "<option value='ALL'>Semua</option><option value='DONE'>Sudah Selesai</option><option value='RUNNING'>Sedang Mengerjakan</option><option value='PENDING'>Belum Mulai</option><option value='NORMAL'>Telemetry Normal</option><option value='REVIEW'>Perlu Telaah</option><option value='PRIORITY'>Prioritas Telaah</option>"
       : "<option value='ALL'>Semua</option><option value='DONE'>Sudah Simulasi</option><option value='PENDING'>Belum Simulasi</option>";
   }
 
@@ -115,7 +117,7 @@
       let ok=true;
       if(isCurrent){
         const st=String(r.attempt_status||"NOT_STARTED");
-        ok=mode==="ALL"||(mode==="DONE"&&st==="SUBMITTED")||(mode==="RUNNING"&&st==="IN_PROGRESS")||(mode==="PENDING"&&st==="NOT_STARTED")||(mode==="REVIEW"&&r.telemetry?.indicator==="PERLU_TELAAH");
+        ok=mode==="ALL"||(mode==="DONE"&&st==="SUBMITTED")||(mode==="RUNNING"&&st==="IN_PROGRESS")||(mode==="PENDING"&&st==="NOT_STARTED")||(mode==="NORMAL"&&r.telemetry?.indicator==="NORMAL")||(mode==="REVIEW"&&r.telemetry?.indicator==="PERLU_TELAAH")||(mode==="PRIORITY"&&r.telemetry?.indicator==="PRIORITAS_TELAAH");
       }else{
         ok=mode==="ALL"||(mode==="DONE"&&r.attempted)||(mode==="PENDING"&&!r.attempted);
       }
@@ -170,9 +172,11 @@
         "<div class='bcki-stat'><div class='bcki-label'>Sudah Selesai</div><div class='bcki-num'>"+(mon.submitted||0)+"</div></div>"+
         "<div class='bcki-stat'><div class='bcki-label'>Rata-rata Selesai</div><div class='bcki-num'>"+pct(mon.average_score||0)+"</div></div>"+
         "<div class='bcki-stat'><div class='bcki-label'>Telemetry Terlacak</div><div class='bcki-num'>"+(mon.telemetry?.tracked||0)+"</div></div>"+
-        "<div class='bcki-stat'><div class='bcki-label'>Perlu Telaah</div><div class='bcki-num'>"+(mon.telemetry?.perlu_telaah||0)+"</div></div>";
+        "<div class='bcki-stat'><div class='bcki-label'>Normal</div><div class='bcki-num'>"+(mon.telemetry?.normal||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Perlu Telaah</div><div class='bcki-num'>"+(mon.telemetry?.perlu_telaah||0)+"</div></div>"+
+        "<div class='bcki-stat'><div class='bcki-label'>Prioritas Telaah</div><div class='bcki-num'>"+(mon.telemetry?.prioritas_telaah||0)+"</div></div>";
       heading.textContent="Daftar Individu — "+label;
-      note.innerHTML="Menampilkan status dan hasil <b>"+esc(label)+"</b>. Peserta yang masih mengerjakan belum memiliki nilai/kesiapan final. Telemetry hanya indikator untuk telaah manusia.";
+      note.innerHTML="Menampilkan status dan hasil <b>"+esc(label)+"</b>. Peserta yang masih mengerjakan belum memiliki nilai/kesiapan final. Telemetry memiliki tiga tingkat (Normal, Perlu Telaah, Prioritas Telaah) dan hanya digunakan sebagai indikator untuk telaah manusia.";
     }else{
       stats.innerHTML=
         "<div class='bcki-stat'><div class='bcki-label'>Peserta</div><div class='bcki-num'>"+(dashboardData.participants||0)+"</div></div>"+
@@ -262,5 +266,5 @@
   const observer=new MutationObserver(()=>setTimeout(inject,80));
   observer.observe(document.body,{childList:true,subtree:true});
   for(const ms of [150,500,1200,2200])setTimeout(inject,ms);
-  window.__simantabBcksIndividualReadiness={version:3,resultExport:true,roles:[...ALLOWED]};
+  window.__simantabBcksIndividualReadiness={version:4,resultExport:true,roles:[...ALLOWED]};
 })();
