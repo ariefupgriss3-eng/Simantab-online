@@ -1,0 +1,15 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+const outputPath='.vercel/output/static/index.html';
+const staticDir='.vercel/output/static';
+const file='rgtk-monitoring.js';
+const source=await fs.readFile(new URL('./'+file,import.meta.url),'utf8');
+if(!/SIMANTAB_RGTK_MONITORING_V1/.test(source))throw new Error('RGTK monitoring v1 tidak valid.');
+await fs.writeFile(path.join(staticDir,file),source);
+let html=await fs.readFile(outputPath,'utf8');
+html=html.replace(/\s*<script\s+type="module"\s+src="\.\/rgtk-monitoring\.js\?v=\d+"\s*><\/script>\s*/g,'\n');
+if(!html.includes('</body>'))throw new Error('Tag </body> tidak ditemukan.');
+html=html.replace('</body>','<script type="module" src="./rgtk-monitoring.js?v=1"></script>\n</body>');
+if((html.match(/\.\/rgtk-monitoring\.js\?v=1/g)||[]).length!==1)throw new Error('RGTK monitoring harus tepat satu kali.');
+await fs.writeFile(outputPath,html);
+console.log(JSON.stringify({rgtkMonitoring:true,version:1,actor:'PENGAWAS',productionDatabaseUntouched:true,demo:'?rgtk_demo=1'}));
