@@ -349,9 +349,13 @@ Deno.serve(async(req)=>{
     const scheduled=THINKING_SESSIONS.filter((s:any)=>!s.test_only).sort((a:any,b:any)=>sessionStart(a)-sessionStart(b));
     const liveSession=activeSession(nowMs)||null;
     const nowIsoForMonitor=new Date(nowMs).toISOString();
+    const jakartaNow=new Date(nowMs+7*60*60*1000);
+    const jakartaDayStartIso=new Date(Date.UTC(
+      jakartaNow.getUTCFullYear(),jakartaNow.getUTCMonth(),jakartaNow.getUTCDate()
+    )-7*60*60*1000).toISOString();
 
-    // Bila tidak ada sesi resmi yang sedang aktif tetapi terdapat akses khusus aktif,
-    // monitor level akses khusus tersebut agar Premium Two/Pro langsung muncul di dashboard.
+    // Jika tidak ada sesi resmi aktif, akses khusus hari ini tetap menjadi sesi monitor
+    // sampai pergantian hari, termasuk setelah jendela aksesnya berakhir.
     let specialMonitorLevel:number|null=null;
     if(!liveSession&&ids.length){
       const {data:activeSpecialMonitor,error:activeSpecialMonitorErr}=await admin.from("bcks_substansi_test_access")
@@ -362,6 +366,17 @@ Deno.serve(async(req)=>{
         .limit(1);
       if(activeSpecialMonitorErr) throw activeSpecialMonitorErr;
       specialMonitorLevel=activeSpecialMonitor?.length?Number(activeSpecialMonitor[0].session_level):null;
+
+      if(specialMonitorLevel==null){
+        const {data:recentSpecialMonitor,error:recentSpecialMonitorErr}=await admin.from("bcks_substansi_test_access")
+          .select("session_level,starts_at,expires_at")
+          .gte("starts_at",jakartaDayStartIso).lte("starts_at",nowIsoForMonitor)
+          .in("user_id",ids)
+          .order("starts_at",{ascending:false})
+          .limit(1);
+        if(recentSpecialMonitorErr) throw recentSpecialMonitorErr;
+        specialMonitorLevel=recentSpecialMonitor?.length?Number(recentSpecialMonitor[0].session_level):null;
+      }
     }
 
     const latestStarted=[...scheduled].reverse().find((s:any)=>sessionStart(s)<=nowMs)||null;
@@ -402,36 +417,40 @@ Deno.serve(async(req)=>{
     // Attempt akses khusus ditampilkan pada daftar individu, tetapi dipisahkan dari statistik resmi.
     let currentRows:any[]=[];
     const activeSpecialAccessByUser=new Map<string,any>();
+    const visibleSpecialAccessByUser=new Map<string,any>();
     if(monitorSession){
       const nowIso=new Date(nowMs).toISOString();
       const {data:specialRows,error:specialErr}=await admin.from("bcks_substansi_test_access")
         .select("user_id,session_level,starts_at,expires_at")
         .eq("session_level",Number(monitorSession.level))
-        .lte("starts_at",nowIso).gt("expires_at",nowIso)
+        .gte("starts_at",jakartaDayStartIso).lte("starts_at",nowIso)
         .in("user_id",ids);
       if(specialErr) throw specialErr;
-      for(const x of specialRows||[]) activeSpecialAccessByUser.set(String(x.user_id),x);
+      for(const x of specialRows||[]){
+        visibleSpecialAccessByUser.set(String(x.user_id),x);
+        if(Date.parse(String(x.expires_at))>nowMs) activeSpecialAccessByUser.set(String(x.user_id),x);
+      }
 
       const {data,error}=await admin.from("bcks_substansi_attempts")
         .select("id,user_id,status,session_level,started_at,expires_at,submitted_at,score,correct_count,total_questions,readiness_label,priority_competency,is_test,is_official_result")
         .eq("mode","SIMULASI").eq("session_level",Number(monitorSession.level))
         .in("user_id",ids).order("started_at",{ascending:false});
       if(error) throw error;
-      currentRows=(data||[]).filter((a:any)=>a.is_test===false||(a.is_test===true&&activeSpecialAccessByUser.has(String(a.user_id))));
+      currentRows=(data||[]).filter((a:any)=>a.is_test===false||(a.is_test===true&&visibleSpecialAccessByUser.has(String(a.user_id))));
     }
     const currentByUser=new Map<string,any>();
     for(const a of currentRows){
       const key=String(a.user_id);
       const existing=currentByUser.get(key);
-      const isActiveSpecial=a.is_test===true&&activeSpecialAccessByUser.has(key);
-      const existingIsActiveSpecial=existing?.is_test===true&&activeSpecialAccessByUser.has(key);
+      const isActiveSpecial=a.is_test===true&&visibleSpecialAccessByUser.has(key);
+      const existingIsActiveSpecial=existing?.is_test===true&&visibleSpecialAccessByUser.has(key);
       // Akses khusus aktif selalu diprioritaskan untuk tampilan individu.
       if(!existing||(!existingIsActiveSpecial&&isActiveSpecial)) currentByUser.set(key,a);
     }
     const currentAttempts=[...currentByUser.values()];
     const currentAttemptIds=currentAttempts.map((a:any)=>a.id);
     const officialCurrentAttempts=currentAttempts.filter((a:any)=>a.is_test===false);
-    const specialCurrentAttempts=currentAttempts.filter((a:any)=>a.is_test===true&&activeSpecialAccessByUser.has(String(a.user_id)));
+    const specialCurrentAttempts=currentAttempts.filter((a:any)=>a.is_test===true&&visibleSpecialAccessByUser.has(String(a.user_id)));
 
     let currentScoreRows:any[]=[];
     if(currentAttemptIds.length){
@@ -475,7 +494,7 @@ Deno.serve(async(req)=>{
         attempt_status:a?.status||"NOT_STARTED",
         access_type:a?.is_test===true&&activeSpecialAccessByUser.has(String(p.user_id))?"KHUSUS":"RESMI",
         special_access:a?.is_test===true&&activeSpecialAccessByUser.has(String(p.user_id))
-          ? activeSpecialAccessByUser.get(String(p.user_id))
+          ? visibleSpecialAccessByUser.get(String(p.user_id))
           : null,
         started_at:a?.started_at||null,
         expires_at:a?.expires_at||null,
