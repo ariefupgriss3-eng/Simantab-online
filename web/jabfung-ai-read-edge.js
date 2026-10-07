@@ -9,6 +9,17 @@ const toB64=buf=>{const b=new Uint8Array(buf);let s='';for(let i=0;i<b.length;i+
 const txt=j=>typeof j?.output_text==='string'?j.output_text:(j?.output||[]).flatMap(x=>x?.content||[]).filter(x=>typeof x?.text==='string').map(x=>x.text).join('\n');
 const parse=s=>{const t=String(s||'').trim().replace(/^\`\`\`(?:json)?/i,'').replace(/\`\`\`$/,'').trim();try{return JSON.parse(t)}catch{}const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a>=0&&b>a)return JSON.parse(t.slice(a,b+1));throw new Error('Output AI tidak valid JSON')};
 async function validUser(token){const r=await fetch(SUPABASE_URL+'/auth/v1/user',{headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+token}});return r.ok}
+async function claimAiQuota(token,submissionId){
+  const r=await fetch(SUPABASE_URL+'/rest/v1/rpc/jabfung_ai_claim_request',{
+    method:'POST',
+    headers:{apikey:SUPABASE_KEY,Authorization:'Bearer '+token,'Content-Type':'application/json'},
+    body:JSON.stringify({p_submission_id:submissionId})
+  });
+  const raw=await r.text();
+  let j={};try{j=JSON.parse(raw)}catch{}
+  if(!r.ok)throw new Error(j?.message||j?.error||raw||('Quota HTTP '+r.status));
+  return j||{};
+}
 async function sha256Hex(buf){const h=await crypto.subtle.digest('SHA-256',buf);return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,'0')).join('')}
 
 function expectedRule(code,label){
@@ -84,7 +95,7 @@ async function analyzeOne(gateway,participant,spec,loaded){
   const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{
     method:'POST',
     headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},
-    body:JSON.stringify({model,input:[{type:'message',role:'user',content}],max_output_tokens:1500})
+    body:JSON.stringify({model,input:[{type:'message',role:'user',content}],max_output_tokens:1200})
   });
   const aj=await ar.json().catch(()=>({}));
   if(!ar.ok)throw new Error(aj?.error?.message||aj?.error||('AI Gateway HTTP '+ar.status));
@@ -102,7 +113,7 @@ async function mapLimit(items,limit,fn){
 export default async function handler(req){
   if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});
   const gateway=process.env.AI_GATEWAY_API_KEY||process.env.VERCEL_OIDC_TOKEN||'';
-  if(req.method==='GET')return J({ok:true,configured:!!gateway,engine:'JABFUNG_DOC_AI_V1',model:'google/gemini-2.5-flash-lite',authenticity:'visual-indicator-only'});
+  if(req.method==='GET')return J({ok:true,configured:!!gateway,engine:'JABFUNG_DOC_AI_V2_COST_GUARD',model:'google/gemini-2.5-flash-lite',authenticity:'visual-indicator-only'});
   if(req.method!=='POST')return J({error:'Method not allowed'},405);
 
   try{
@@ -111,6 +122,10 @@ export default async function handler(req){
     if(!gateway)return J({error:'AI Gateway belum tersedia.'},503);
 
     const body=await req.json();
+    const submissionId=String(body?.submission_id||'').trim();
+    if(!submissionId)return J({error:'submission_id wajib.'},400);
+    const quota=await claimAiQuota(token,submissionId);
+    if(quota?.allowed===false)return J({error:quota.message||'Batas penggunaan AI tercapai.',rate_limited:true,reason:quota.reason||'RATE_LIMIT'},429);
     const participant=body?.participant||{};
     const requirements=Array.isArray(body?.requirements)?body.requirements:[];
     const docs=Array.isArray(body?.documents)?body.documents:[];
@@ -142,7 +157,7 @@ export default async function handler(req){
     const overall_status=counts.teknis?'GAGAL_TEKNIS':((counts.perbaikan||counts.tidak||counts.telaah)?'PERLU_TELAAH':'SESUAI');
     return J({
       ok:true,
-      engine:'JABFUNG_DOC_AI_V1',
+      engine:'JABFUNG_DOC_AI_V2_COST_GUARD',
       model:'google/gemini-2.5-flash-lite',
       overall_status,
       counts,
