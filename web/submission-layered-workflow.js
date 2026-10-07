@@ -93,6 +93,10 @@ function candidateStaff(d,sub){
   const r=String(x.role||'');
   return x.is_active&&x.account_channel==='DINAS'&&(r.startsWith('STAFF_')||r.startsWith('ADMIN_'));
  });
+ const exactIds=new Set((d.tasks||[])
+   .filter(t=>t.is_active&&String(t.capability||'').toUpperCase()===String(sub?.service_type||'').toUpperCase())
+   .map(t=>t.user_id));
+ if(exactIds.size)arr=arr.filter(x=>exactIds.has(x.id));
  arr.sort((a,b)=>String(a.full_name||'').localeCompare(String(b.full_name||''),'id'));
  return arr;
 }
@@ -234,7 +238,7 @@ window.layerOpenAssign=id=>{
  const d=currentData;if(!d)return;const s=d.subs.find(x=>x.id===id);if(!s)return;
  const cand=candidateStaff(d,s);let m=$('layerAssignModal');m?.remove();m=document.createElement('div');m.id='layerAssignModal';m.className='lwf-modal';m.onclick=e=>{if(e.target===m)m.remove()};
  const choices=staffChoicesHtml(cand,'layer-assignee-check');
- m.innerHTML=`<div class="lwf-box" style="width:min(680px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • dapat memilih lebih dari satu admin/staf internal</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Verifikator</label>${choices}</div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
+ m.innerHTML=`<div class="lwf-box" style="width:min(680px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • ${candidateStaff(d,s).length===1?'admin layanan sudah ditetapkan':'pilih admin/staf sesuai kewenangan layanan'}</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Verifikator</label>${choices}</div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
 };
 window.layerSaveAssign=async id=>{const ids=[...document.querySelectorAll('#layerAssignModal .layer-assignee-check:checked')].map(x=>x.value),msg=$('layerAssignMsg');if(!ids.length){msg.textContent='Pilih minimal satu admin/staf internal.';return}msg.textContent='Menyimpan penugasan...';const {error}=await sb.rpc('submission_assign_staff_multi',{p_submission_id:id,p_assignee_user_ids:ids,p_note:$('layerAssignNote')?.value?.trim()||null});if(error){msg.textContent=error.message;return}$('layerAssignModal')?.remove();await refreshWorkflowSurface()};
 async function askAction(id,fn,approve,promptText){
