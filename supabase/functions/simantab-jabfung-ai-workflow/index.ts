@@ -8,6 +8,10 @@ const C={
 };
 const J=(b:any,s=200)=>new Response(JSON.stringify(b),{status:s,headers:C});
 const MAX_FILE=1572864;
+const sha256Text=async(s:string)=>{
+  const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+  return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("");
+};
 
 Deno.serve(async(req)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:C});
@@ -64,6 +68,43 @@ Deno.serve(async(req)=>{
       });
     }
 
+    const fingerprintParts=(files||[])
+      .filter((f:any)=>!!f.requirement_code)
+      .map((f:any)=>[f.requirement_code,f.id,f.file_size,f.created_at])
+      .sort((a:any,b:any)=>String(a[0]).localeCompare(String(b[0])));
+    const sourceFingerprint=await sha256Text(JSON.stringify(fingerprintParts));
+    const cacheCutoff=new Date(Date.now()-24*60*60*1000).toISOString();
+    const {data:cached}=await admin.from("jabfung_ai_verification_runs")
+      .select("id,overall_status,sesuai_count,perbaikan_count,tidak_sesuai_count,telaah_count,technical_count,result,completed_at")
+      .eq("submission_id",id)
+      .eq("source_fingerprint",sourceFingerprint)
+      .gte("completed_at",cacheCutoff)
+      .order("completed_at",{ascending:false})
+      .limit(1)
+      .maybeSingle();
+
+    if(cached?.id){
+      const result:any=cached.result||{};
+      return J({
+        ok:true,
+        run_id:cached.id,
+        overall_status:cached.overall_status,
+        counts:result.counts||{
+          sesuai:cached.sesuai_count||0,
+          perbaikan:cached.perbaikan_count||0,
+          tidak:cached.tidak_sesuai_count||0,
+          telaah:cached.telaah_count||0,
+          teknis:cached.technical_count||0
+        },
+        results:Array.isArray(result.results)?result.results:[],
+        cache_hit:true,
+        cached_at:cached.completed_at,
+        advisory:true,
+        human_final:true,
+        disclaimer:"Hasil AI identik dengan berkas yang sama dalam 24 jam terakhir, sehingga sistem memakai cache untuk menghemat biaya. Keabsahan final tetap diverifikasi manusia."
+      });
+    }
+
     let ai:any={
       ok:true,engine:"JABFUNG_DOC_AI_V1",model:"google/gemini-2.5-flash-lite",
       overall_status:missingRequired.length?"PERLU_TELAAH":"SESUAI",
@@ -77,6 +118,7 @@ Deno.serve(async(req)=>{
         method:"POST",
         headers:{"Content-Type":"application/json","Authorization":"Bearer "+token},
         body:JSON.stringify({
+          submission_id:id,
           participant:{
             full_name:ownerProfile?.full_name||"",
             nip:ownerProfile?.nip||"",
@@ -159,6 +201,7 @@ Deno.serve(async(req)=>{
       tidak_sesuai_count:counts.tidak,
       telaah_count:counts.telaah,
       technical_count:counts.teknis,
+      source_fingerprint:sourceFingerprint,
       summary,
       result:{...ai,overall_status:overall,counts,results:ordered},
       completed_at:new Date().toISOString()
