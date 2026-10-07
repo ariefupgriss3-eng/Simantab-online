@@ -531,12 +531,14 @@ Deno.serve(async(req)=>{
       }:null,
       is_active:!!liveSession||activeSpecialAccessByUser.size>0,
       participants:ids.length,
-      not_started:Math.max(0,ids.length-officialCurrentAttempts.length),
-      in_progress:officialCurrentAttempts.filter((a:any)=>a.status==="IN_PROGRESS").length,
-      submitted:officialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").length,
-      expired:officialCurrentAttempts.filter((a:any)=>a.status==="EXPIRED").length,
-      average_score:officialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").length
-        ? Math.round(officialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").reduce((sum:number,a:any)=>sum+Number(a.score||0),0)/officialCurrentAttempts.filter((a:any)=>a.status==="SUBMITTED").length*100)/100
+      // Ringkasan monitoring menghitung attempt yang benar-benar sedang/sempat dipantau,
+      // termasuk akses khusus. Status hasil resmi tetap tersedia terpisah pada attempt.
+      not_started:Math.max(0,ids.length-currentAttempts.length),
+      in_progress:currentAttempts.filter((a:any)=>a.status==="IN_PROGRESS").length,
+      submitted:currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length,
+      expired:currentAttempts.filter((a:any)=>a.status==="EXPIRED").length,
+      average_score:currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length
+        ? Math.round(currentAttempts.filter((a:any)=>a.status==="SUBMITTED").reduce((sum:number,a:any)=>sum+Number(a.score||0),0)/currentAttempts.filter((a:any)=>a.status==="SUBMITTED").length*100)/100
         : 0,
       special_access:{
         active_windows:activeSpecialAccessByUser.size,
