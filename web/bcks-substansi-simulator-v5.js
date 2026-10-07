@@ -487,8 +487,18 @@ async function saveAnswer(no,selected,doubt){
  const old=state.answers.get(Number(no))||{question_no:Number(no),selected_option:null,is_doubtful:false,seconds_spent:0};
  const spent=Math.min(7200,Number(old.seconds_spent||0)+Math.max(0,Math.round((Date.now()-state.questionStart)/1000)));
  const patch={selected_option:selected===undefined?old.selected_option:selected,is_doubtful:doubt===null?!!old.is_doubtful:!!doubt,seconds_spent:spent,answered_at:new Date().toISOString()};
- const {error}=await retryJwt(()=>sb.from("bcks_substansi_answers").update(patch).eq("attempt_id",state.attempt.id).eq("question_no",Number(no)));
- if(error){alert("Jawaban belum tersimpan: "+error.message);return}
+ const {data:saved,error}=await retryJwt(()=>sb.from("bcks_substansi_answers")
+  .update(patch)
+  .eq("attempt_id",state.attempt.id)
+  .eq("question_no",Number(no))
+  .select("attempt_id,question_no")
+  .maybeSingle());
+ if(error||!saved){
+  clearInterval(timer);timer=null;
+  const reason=error?.message||"sesi/jawaban tidak lagi terhubung ke server";
+  alert("JAWABAN TIDAK TERSIMPAN. Sesi dihentikan untuk mencegah kehilangan data. Jangan refresh atau tutup halaman. Hubungi admin/Kabid.\n\nDetail: "+reason);
+  return;
+ }
  const changed=selected!==undefined&&selected!==old.selected_option;
  if(changed&&telemetryEnabled()){
   const ret=state.telemetryLastReturn&&Number(state.telemetryLastReturn.question_no)===Number(no)?state.telemetryLastReturn:null;
