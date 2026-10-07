@@ -15,7 +15,7 @@ html=html.replaceAll("{jabatan:'Subkoor PPTK TK/PAUD',nama:'Condro',tugas:'Layan
 html=html.replace("<p>${esc(x.tugas)}</p>","<p style=\"white-space:pre-line\">${esc(x.tugas)}</p>");
 
 html=html.replaceAll("{t:'E_JABFUNG',e:'🧭',n:'Usul & Konsultasi e-Jabfung',d:'Usul dan konsultasi e-Jabfung. Aplikasi BKD: appbkd.batangkab.go.id',url:'https://appbkd.batangkab.go.id/'}","{t:'E_JABFUNG',e:'🧭',n:'Usul SK Kenaikan Jenjang Jabfung',d:'Pengajuan SK kenaikan jenjang Jabatan Fungsional. Unggah berkas persyaratan maksimal 1,5 MB per file.'}");
-html=html.replaceAll("{t:'E_JABFUNG',e:'🧭',n:'Usul SK Kenaikan Jenjang Jabfung',d:'Pengajuan SK kenaikan jenjang Jabatan Fungsional. Unggah berkas persyaratan maksimal 1,5 MB per file.'}","{t:'E_JABFUNG',e:'🧭',n:'Usul SK Kenaikan Jenjang Jabfung',d:'Pengajuan SK kenaikan jenjang Jabatan Fungsional. Unggah berkas persyaratan maksimal 1,5 MB per file.'}");
+html=html.replaceAll("{t:'E_JABFUNG',e:'🧭',n:'Usul SK Kenaikan Jenjang Jabfung',d:'Pengajuan SK kenaikan jenjang Jabatan Fungsional. Unggah berkas persyaratan maksimal 1,5 MB per file.',url:'https://appbkd.batangkab.go.id/'}","{t:'E_JABFUNG',e:'🧭',n:'Usul SK Kenaikan Jenjang Jabfung',d:'Pengajuan SK kenaikan jenjang Jabatan Fungsional. Unggah berkas persyaratan maksimal 1,5 MB per file.'}");
 html=html.replaceAll('Pilih jenis layanan, isi keperluan, lalu unggah berkas maksimal 500 KB per file.','Pilih jenis layanan dan unggah berkas sesuai ketentuan masing-masing layanan. Batas umum 500 KB; Jabfung maksimal 1,5 MB per file.');
 
 if(!html.includes("t:'KLARIFIKASI_PAK'")){
