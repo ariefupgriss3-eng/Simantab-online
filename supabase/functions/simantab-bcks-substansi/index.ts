@@ -348,8 +348,27 @@ Deno.serve(async(req)=>{
     const nowMs=Date.now();
     const scheduled=THINKING_SESSIONS.filter((s:any)=>!s.test_only).sort((a:any,b:any)=>sessionStart(a)-sessionStart(b));
     const liveSession=activeSession(nowMs)||null;
+    const nowIsoForMonitor=new Date(nowMs).toISOString();
+
+    // Bila tidak ada sesi resmi yang sedang aktif tetapi terdapat akses khusus aktif,
+    // monitor level akses khusus tersebut agar Premium Two/Pro langsung muncul di dashboard.
+    let specialMonitorLevel:number|null=null;
+    if(!liveSession&&ids.length){
+      const {data:activeSpecialMonitor,error:activeSpecialMonitorErr}=await admin.from("bcks_substansi_test_access")
+        .select("session_level,starts_at,expires_at")
+        .lte("starts_at",nowIsoForMonitor).gt("expires_at",nowIsoForMonitor)
+        .in("user_id",ids)
+        .order("starts_at",{ascending:false})
+        .limit(1);
+      if(activeSpecialMonitorErr) throw activeSpecialMonitorErr;
+      specialMonitorLevel=activeSpecialMonitor?.length?Number(activeSpecialMonitor[0].session_level):null;
+    }
+
     const latestStarted=[...scheduled].reverse().find((s:any)=>sessionStart(s)<=nowMs)||null;
-    const monitorSession=liveSession||latestStarted;
+    const specialMonitorSession=specialMonitorLevel!=null
+      ? THINKING_SESSIONS.find((s:any)=>Number(s.level)===specialMonitorLevel)||null
+      : null;
+    const monitorSession=liveSession||specialMonitorSession||latestStarted;
     const previousSession=monitorSession
       ? [...scheduled].filter((s:any)=>sessionStart(s)<sessionStart(monitorSession)).sort((a:any,b:any)=>sessionStart(b)-sessionStart(a))[0]||null
       : null;
