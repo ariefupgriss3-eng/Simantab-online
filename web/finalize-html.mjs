@@ -313,6 +313,7 @@ await fs.writeFile(path.join(staticDir,bcksIndividualReadinessFile),bcksIndividu
 
 const modules=[
  ['kp-enhancement.js',4],
+ ['jabfung-jenjang-enhancement.js',1],
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',9],
  ['registration-approval.js',2],
