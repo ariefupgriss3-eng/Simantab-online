@@ -53,3 +53,40 @@ jobs:
           if-no-files-found: error
           retention-days: 1
           include-hidden-files: false
+      - name: Prepare public dependency bundle for isolated build
+        if: contains(github.event.head_commit.message, '[offline-vendor-bundle]')
+        shell: bash
+        run: |
+          cd web
+          npm install --ignore-scripts --no-audit --no-fund --package-lock=false
+          mkdir -p staging-vendor-dist
+          cp node_modules/jspdf/dist/jspdf.umd.min.js staging-vendor-dist/
+          cp node_modules/jspdf-autotable/dist/jspdf.plugin.autotable.min.js staging-vendor-dist/
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs/promises';
+          const urls=[
+            'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js',
+            'https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js'
+          ];
+          let installed=false;
+          for(const url of urls){
+            try{
+              const response=await fetch(url,{signal:AbortSignal.timeout(18000)});
+              if(!response.ok)continue;
+              const code=await response.text();
+              if(code.length<10000||!code.includes('createClient'))continue;
+              await fs.writeFile('staging-vendor-dist/supabase-local.js',code);
+              installed=true;
+              break;
+            }catch{}
+          }
+          if(!installed)throw new Error('Cannot retrieve public Supabase browser bundle');
+          NODE
+      - name: Downloadable public dependencies for private offline test
+        if: contains(github.event.head_commit.message, '[offline-vendor-bundle]')
+        uses: actions/upload-artifact@v4
+        with:
+          name: simantab-public-vendor-bundle
+          path: web/staging-vendor-dist/
+          if-no-files-found: error
+          retention-days: 1
