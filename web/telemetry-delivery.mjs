@@ -57,7 +57,9 @@ export function createTelemetryDelivery({
     },milliseconds);
   };
   const isPermanent=(error)=>{
-    const status=Number(error?.status||error?.code||error?.response?.status);
+    const sqlState=String(error?.code||'');
+    if(/^23[0-9A-Z]{3}$/.test(sqlState)||/^22[0-9A-Z]{3}$/.test(sqlState))return true;
+    const status=Number(error?.status||error?.response?.status);
     return Number.isInteger(status)&&status>=400&&status<500&&![408,425,429].includes(status);
   };
   function add(event) {
