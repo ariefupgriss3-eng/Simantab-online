@@ -1,0 +1,41 @@
+name: SIMANTAB Cloudflare Staging Safety Checks
+
+on:
+  push:
+    branches:
+      - migration/cloudflare-staging
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify-safety:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax
+        run: |
+          node --check web/secure-build.mjs
+          node --check web/cloudflare-staging/snapshot-source.mjs
+          node --check web/cloudflare-staging/worker.mjs
+      - name: Test staging worker and source isolation
+        run: |
+          node --test web/cloudflare-staging/worker.test.mjs web/cloudflare-staging/snapshot-source.test.mjs
+      - name: Ensure no production fetch without an audited local snapshot
+        shell: bash
+        run: |
+          cd web
+          if SIMANTAB_CLOUDFLARE_STAGING=1 node secure-build.mjs > /tmp/simantab-staging-log 2>&1; then
+            echo "ERROR: Staging build must refuse to run without a snapshot"
+            exit 1
+          fi
+          if ! grep -q "Snapshot SIMANTAB untuk Cloudflare belum diberikan" /tmp/simantab-staging-log; then
+            echo "ERROR: Missing-snapshot refusal has changed unexpectedly"
+            exit 1
+          fi
+          echo "PASS: Staging build refuses a missing local snapshot"
