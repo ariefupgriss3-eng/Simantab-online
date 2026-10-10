@@ -11,16 +11,26 @@ const sources=[
 ];
 
 let code='',source='';
-for(const url of sources){
- try{
-  const r=await fetch(url,{redirect:'follow',cache:'no-store'});
-  if(!r.ok)continue;
-  const text=await r.text();
-  if(text.length<10000||!text.includes('createClient'))continue;
-  code=text;source=url;break;
- }catch{}
+if(process.env.SIMANTAB_CLOUDFLARE_STAGING==='1'){
+  // A private, pre-downloaded PUBLIC dependency. Never fetch in staging builds.
+  const local=process.env.SIMANTAB_STAGING_SUPABASE_BUNDLE_FILE;
+  if(!local)throw new Error('SIMANTAB staging requires a local Supabase browser bundle; network download forbidden.');
+  code=await fs.readFile(local,'utf8');
+  source='offline-local-dependency';
+  if(code.length<10000||!code.includes('createClient'))
+    throw new Error('Invalid offline Supabase browser bundle.');
+}else{
+  for(const url of sources){
+   try{
+    const r=await fetch(url,{redirect:'follow',cache:'no-store'});
+    if(!r.ok)continue;
+    const text=await r.text();
+    if(text.length<10000||!text.includes('createClient'))continue;
+    code=text;source=url;break;
+   }catch{}
+  }
+  if(!code)throw new Error('Bundle Supabase lokal gagal diunduh saat build.');
 }
-if(!code)throw new Error('Bundle Supabase lokal gagal diunduh saat build.');
 await fs.writeFile(bundlePath,code);
 
 let html=await fs.readFile(outputPath,'utf8');
