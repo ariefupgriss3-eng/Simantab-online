@@ -1,4 +1,5 @@
 // SIMANTAB Cloudflare staging: no data access, AI billing, or production effects.
+import {handleStagingMock,STAGING_MOCK_PATHS} from './mock-api.mjs';
 function json(status,payload) {
   return new Response(JSON.stringify(payload),{
     status,
@@ -19,6 +20,14 @@ export default {
         productionDataConnected:false,
         aiGatewayConnected:false
       });
+    }
+    // Only explicitly enabled, test-key-protected fixtures are available here.
+    // Every live /api/{service} route remains disconnected, returning 503.
+    const mockPrefix='/api/staging/mock/';
+    if(url.pathname.startsWith(mockPrefix)){
+      const service=url.pathname.slice(mockPrefix.length);
+      if(STAGING_MOCK_PATHS.includes(service))return handleStagingMock(request,env,service);
+      return json(404,{error:'Unknown synthetic staging fixture'});
     }
     if(url.pathname.startsWith('/api/')) {
       return json(503,{
