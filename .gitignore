@@ -31,3 +31,9 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# SIMANTAB Cloudflare staging: never commit source snapshots or deployed assets
+web/cloudflare-staging/source/
+web/cloudflare-staging/snapshots/
+web/cloudflare-staging/.wrangler/
+web/.vercel/
