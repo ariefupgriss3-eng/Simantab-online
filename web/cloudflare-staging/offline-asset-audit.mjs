@@ -21,7 +21,10 @@ function refs(html,tag,attribute) {
 function localRef(raw) {
   if(/^data:/i.test(raw))return null;
   if(!raw.startsWith('./')&&!raw.startsWith('/'))throw new Error('Nonlocal asset reference: '+raw.slice(0,70));
+  const originalPath=raw.split(/[?#]/,1)[0];
+  if(raw.startsWith('//')||originalPath.split('/').some(segment=>segment==='..'||segment==='.'))throw new Error('Unexpected asset path: '+raw.slice(0,70));
   const url=new URL(raw,'https://staging.invalid/');
+  if(url.origin!=='https://staging.invalid')throw new Error('Unexpected asset origin.');
   const name=url.pathname.replace(/^\\/+/, '');
   if(!name||name.includes('/')||name==='.'||name==='..')throw new Error('Unexpected asset path: '+raw.slice(0,70));
   return name;
