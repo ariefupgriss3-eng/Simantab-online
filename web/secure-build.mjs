@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { localSnapshotResponse } from './cloudflare-staging/snapshot-source.mjs';
 
 // Preview-only reconstruction wrapper for the pre-restoration SIMANTAB structure.
 // The historical build chain is kept intact, but its base HTML is sourced from
@@ -7,6 +8,11 @@ import fs from 'node:fs/promises';
 // this exact branch checkout, never from mutable remote main.
 
 const PROD_PREFIX = 'https://simantab-online.vercel.app/';
+const CLOUDFLARE_STAGING = process.env.SIMANTAB_CLOUDFLARE_STAGING === '1';
+const SNAPSHOT_FILE = process.env.SIMANTAB_STAGING_SNAPSHOT_FILE;
+if (CLOUDFLARE_STAGING && !SNAPSHOT_FILE) {
+  throw new Error('Snapshot SIMANTAB untuk Cloudflare belum diberikan. Tidak boleh mengambil HTML dari Vercel produksi.');
+}
 const RAW_PREFIX = 'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/';
 const nativeFetch = globalThis.fetch.bind(globalThis);
 
@@ -63,6 +69,10 @@ globalThis.fetch = async (input, init = {}) => {
   }
 
   if (url.startsWith(PROD_PREFIX)) {
+    // Strict staging mode never fetches the live Vercel site (including icons/manifest).
+    if (CLOUDFLARE_STAGING) {
+      return localSnapshotResponse(url, PROD_PREFIX, SNAPSHOT_FILE, normalizeBaseHtml);
+    }
     const response = await nativeFetch(input, { ...init, cache: 'no-store', redirect: 'follow' });
     if (!response.ok) return response;
     const suffix = url.slice(PROD_PREFIX.length);
