@@ -14,8 +14,8 @@ const EXPECTED_GENERATED_PWA=new Set([
 const FINAL_PWA_SOURCE='simantab-icon-192.png';
 function refs(html,tag,attribute) {
   const result=[];
-  const rx=new RegExp('<'+tag+'\\b[^>]*\\b'+attribute+'\\s*=\\s*(["\\'])(.*?)\\1','gi');
-  for(const match of html.matchAll(rx))result.push(match[2]);
+  const rx=new RegExp('<'+tag+'\\b[^>]*\\b'+attribute+'\\s*=\\s*"([^"]*)"','gi');
+  for(const match of html.matchAll(rx))result.push(match[1]);
   return result;
 }
 function localRef(raw) {
