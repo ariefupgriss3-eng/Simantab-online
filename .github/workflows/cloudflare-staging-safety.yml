@@ -45,3 +45,11 @@ jobs:
             exit 1
           fi
           echo "PASS: Staging build refuses a missing local snapshot"
+      - name: Package public staging source for isolated local build
+        uses: actions/upload-artifact@v4
+        with:
+          name: simantab-public-source-only
+          path: web/
+          if-no-files-found: error
+          retention-days: 1
+          include-hidden-files: false
