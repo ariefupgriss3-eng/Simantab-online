@@ -25,7 +25,7 @@ function localRef(raw) {
   if(raw.startsWith('//')||originalPath.split('/').some(segment=>segment==='..'||segment==='.'))throw new Error('Unexpected asset path: '+raw.slice(0,70));
   const url=new URL(raw,'https://staging.invalid/');
   if(url.origin!=='https://staging.invalid')throw new Error('Unexpected asset origin.');
-  const name=url.pathname.replace(/^\\/+/, '');
+  const name=url.pathname.startsWith('/')?url.pathname.slice(1):url.pathname;
   if(!name||name.includes('/')||name==='.'||name==='..')throw new Error('Unexpected asset path: '+raw.slice(0,70));
   return name;
 }
