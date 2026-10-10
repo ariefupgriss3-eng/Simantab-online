@@ -81,6 +81,45 @@ test('maximum pending events is enforced without dropping older events',()=>{
   assert.equal(delivery.diagnostics().pending,2);
   assert.equal(delivery.diagnostics().overflow,1);
 });
+test('PostgreSQL SQLSTATE 23514 is permanent without HTTP status',async()=>{
+  let calls=0;
+  const clockNow=clock();
+  const delivery=createTelemetryDelivery({
+    send:async()=>{calls++;throw Object.assign(new Error('constraint'),{code:'23514'})},
+    delay:clockNow.delay,cancel:clockNow.cancel
+  });
+  delivery.add(event('ANSWER_CHANGE'));
+  const first=await delivery.flush();
+  assert.equal(first.blocked,true);
+  assert.equal(delivery.diagnostics().permanentErrors,1);
+  assert.equal(delivery.diagnostics().retries,0);
+  await delivery.flush();
+  assert.equal(calls,1);
+  assert.equal(clockNow.pending.length,0);
+});
+test('SQLSTATE validation error 22P02 is permanent and safe',async()=>{
+  let calls=0;
+  const delivery=createTelemetryDelivery({
+    send:async()=>{calls++;throw Object.assign(new Error('invalid input'),{code:'22P02'})},
+    delay:()=>1,cancel:()=>{}
+  });
+  delivery.add(event('SESSION_START'));
+  assert.equal((await delivery.flush()).blocked,true);
+  assert.equal(calls,1);
+});
+test('HTTP 429 is transient and allowed to retry',async()=>{
+  let calls=0;
+  const timer=clock();
+  const delivery=createTelemetryDelivery({
+    send:async()=>{calls++;if(calls===1)throw Object.assign(new Error('rate limited'),{status:429})},
+    delay:timer.delay,cancel:timer.cancel
+  });
+  delivery.add(event('QUESTION_ENTER'));
+  assert.equal((await delivery.flush()).retrying,true);
+  assert.equal(timer.pending.length,1);
+  assert.equal((await delivery.flush()).sent,1);
+  assert.equal(calls,2);
+});
 test('simultaneous flush calls send one batch, not duplicates',async()=>{
   let calls=0,release;
   const delivery=createTelemetryDelivery({send:async()=>{calls++;await new Promise(r=>release=r)}});
