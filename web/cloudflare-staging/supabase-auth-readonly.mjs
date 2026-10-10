@@ -13,7 +13,7 @@ const PROJECT_URL='https://'+EXISTING_PROJECT_REF+'.supabase.co';
 const USER_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ACCESS_TOKEN=/^[A-Za-z0-9._~+\/=-]{12,4096}$/;
 const PROFILE_COLUMNS='id,role,is_active,approval_status,account_channel,must_change_password,position,school_npsn';
-const TASK_COLUMNS='capability,is_active';
+const TASK_COLUMNS='user_id,capability,is_active';
 const READ_TIMEOUT_MS=7000;
 const rejected=()=>new Error('Supabase read-only identity verification unavailable');
 
@@ -106,7 +106,7 @@ export function createReadonlySupabaseAuthAdapter({
       select:TASK_COLUMNS,user_id:'eq.'+id,is_active:'eq.true',limit:'100'
     });
     if(!Array.isArray(rows)||rows.length>100)throw rejected();
-    if(rows.some(r=>!r||typeof r.capability!=='string'||r.is_active!==true))
+    if(rows.some(r=>!r||r.user_id!==id||typeof r.capability!=='string'||r.is_active!==true))
       throw rejected();
     return rows.map(row=>({capability:row.capability,is_active:true}));
   }
