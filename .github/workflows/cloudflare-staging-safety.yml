@@ -25,13 +25,14 @@ jobs:
           node --check web/cloudflare-staging/worker.mjs
           node --check web/cloudflare-staging/mock-api.mjs
           node --check web/cloudflare-staging/auth-boundary.mjs
+          node --check web/cloudflare-staging/supabase-auth-readonly.mjs
           node --check web/cloudflare-staging/offline-asset-audit.mjs
           node --check web/cloudflare-staging/copy-icon.mjs
           node --check web/telemetry-delivery.mjs
           node --check web/bcks-substansi-simulator-v5.js
       - name: Test staging worker and source isolation
         run: |
-          node --test web/cloudflare-staging/worker.test.mjs web/cloudflare-staging/mock-api.test.mjs web/cloudflare-staging/auth-boundary.test.mjs web/cloudflare-staging/snapshot-source.test.mjs web/cloudflare-staging/offline-asset-audit.test.mjs web/cloudflare-staging/copy-icon.test.mjs web/cloudflare-staging/pwa-build-smoke.test.mjs
+          node --test web/cloudflare-staging/worker.test.mjs web/cloudflare-staging/mock-api.test.mjs web/cloudflare-staging/auth-boundary.test.mjs web/cloudflare-staging/supabase-auth-readonly.test.mjs web/cloudflare-staging/snapshot-source.test.mjs web/cloudflare-staging/offline-asset-audit.test.mjs web/cloudflare-staging/copy-icon.test.mjs web/cloudflare-staging/pwa-build-smoke.test.mjs
       - name: Run telemetry regression suite
         run: node --test web/telemetry-delivery.test.mjs
       - name: Ensure no production fetch without an audited local snapshot
