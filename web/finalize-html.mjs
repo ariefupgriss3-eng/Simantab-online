@@ -301,6 +301,12 @@ const bcksProThinkingCode=await fs.readFile(new URL(`./${bcksProThinkingFile}`,i
 if(!/SIMANTAB_PRO_THINKING_V1/.test(bcksProThinkingCode))throw new Error('Pro Thinking Culture v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksProThinkingFile),bcksProThinkingCode);
 
+// Cloudflare staging: copy the pure telemetry delivery dependency before the simulator module.
+const bcksTelemetryDeliveryFile='telemetry-delivery.mjs';
+const bcksTelemetryDeliveryCode=await fs.readFile(new URL(`./${bcksTelemetryDeliveryFile}`,import.meta.url),'utf8');
+if(!bcksTelemetryDeliveryCode.includes('SIMANTAB telemetry transport'))throw new Error('Telemetry delivery module missing or invalid.');
+await fs.writeFile(path.join(staticDir,bcksTelemetryDeliveryFile),bcksTelemetryDeliveryCode);
+
 const bcksSubstansiSimulatorFile='bcks-substansi-simulator-v5.js';
 const bcksSubstansiSimulatorCode=await fs.readFile(new URL(`./${bcksSubstansiSimulatorFile}`,import.meta.url),'utf8');
 if(!/SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE/.test(bcksSubstansiSimulatorCode))throw new Error('BCKS substansi simulator v5 tidak valid.');
