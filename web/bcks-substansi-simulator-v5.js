@@ -1,4 +1,5 @@
 /* SIMANTAB_BCKS_SUBSTANSI_SIMULATOR_V5_KABID_ACCESS_GATE */
+import {createTelemetryDelivery} from './telemetry-delivery.mjs';
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<1200&&(!window.__simantabSb||!window.__simantabProfile);i++)await wait(50);
@@ -123,7 +124,16 @@ const accessStatus=async()=>{
  return data;
 };
 let eligibility=null,state=null,timer=null,observer=null,reinjectQueued=false,injectInFlight=false;
-let telemetryQueue=[],telemetryFlushBusy=false,telemetryHiddenAt=null,telemetryBlurAt=null;
+let telemetryHiddenAt=null,telemetryBlurAt=null;
+// Staging-only reliable transport. Answer saves and exam scoring remain untouched.
+const telemetryDelivery=createTelemetryDelivery({
+ send:async batch=>{
+  const {error}=await retryJwt(()=>sb.from("bcks_substansi_telemetry_events").insert(batch));
+  if(error)throw error;
+ },
+ onDiagnostic:info=>console.warn("BCKS_TELEMETRY_STAGING_DIAGNOSTIC",info)
+});
+window.addEventListener("online",()=>{telemetryDelivery.flush().catch(()=>{})});
 
 const telemetryEnabled=()=>!!state&&state.attempt?.mode==="SIMULASI"&&[2,3,4,30].includes(Number(state.attempt?.session_level));
 const clampTelemetrySeconds=v=>{
@@ -141,7 +151,7 @@ function telemetryContext(){
 function queueTelemetry(eventType,extra={}){
  if(!telemetryEnabled())return;
  const ctx=telemetryContext();
- telemetryQueue.push({
+ telemetryDelivery.add({
   attempt_id:state.attempt.id,
   user_id:profile().id,
   question_no:extra.question_no??ctx.question_no,
@@ -154,21 +164,9 @@ function queueTelemetry(eventType,extra={}){
   after_return_seconds:clampTelemetrySeconds(extra.after_return_seconds),
   metadata:extra.metadata&&typeof extra.metadata==="object"?extra.metadata:{}
  });
- if(telemetryQueue.length>=8)flushTelemetry().catch(()=>{});
 }
 async function flushTelemetry(){
- if(telemetryFlushBusy||!telemetryQueue.length)return;
- telemetryFlushBusy=true;
- const batch=telemetryQueue.splice(0,24);
- try{
-  const {error}=await retryJwt(()=>sb.from("bcks_substansi_telemetry_events").insert(batch));
-  if(error)throw error;
- }catch(e){
-  telemetryQueue=[...batch,...telemetryQueue].slice(0,72);
-  console.warn("BCKS_TELEMETRY_NONBLOCKING",e?.message||e);
- }finally{
-  telemetryFlushBusy=false;
- }
+ return telemetryDelivery.flush();
 }
 function telemetryLeaveQuestion(){
  if(!telemetryEnabled()||!state?.telemetryQuestionNo||!state?.telemetryQuestionOpenedAt)return;
