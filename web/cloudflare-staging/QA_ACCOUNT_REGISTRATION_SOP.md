@@ -1,4 +1,4 @@
-# SOP Penyiapan Satu Akun QA SIMANTAB (Tanpa Mengubah Produksi)
+# SOP Penyiapan Satu Akun QA SIMANTAB (Persiapan Nonproduksi; Registrasi Terpisah)
 
 **Status dokumen:** rancangan prosedur; **belum ada akun dibuat**. SOP ini disusun berdasarkan:
 - `web/registration-ui-final.js` (alur UI registrasi)
