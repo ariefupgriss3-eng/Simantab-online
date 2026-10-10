@@ -23,9 +23,13 @@ jobs:
           node --check web/secure-build.mjs
           node --check web/cloudflare-staging/snapshot-source.mjs
           node --check web/cloudflare-staging/worker.mjs
+          node --check web/telemetry-delivery.mjs
+          node --check web/bcks-substansi-simulator-v5.js
       - name: Test staging worker and source isolation
         run: |
           node --test web/cloudflare-staging/worker.test.mjs web/cloudflare-staging/snapshot-source.test.mjs
+      - name: Run telemetry regression suite
+        run: node --test web/telemetry-delivery.test.mjs
       - name: Ensure no production fetch without an audited local snapshot
         shell: bash
         run: |
