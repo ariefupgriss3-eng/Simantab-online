@@ -100,7 +100,7 @@ export function createTelemetryDelivery({
           if(isPermanent(error)){
             blocked=true;
             count.permanentErrors++;
-            diagnostic('PERMANENT_HTTP_ERROR',{status:Number(error?.status||error?.code||error?.response?.status)});
+            diagnostic('PERMANENT_HTTP_ERROR',{status:Number(error?.status||error?.response?.status||0)||null,sqlstate:String(error?.code||'').slice(0,5)});
             return {sent,pending:queued.length,blocked:true};
           }
           consecutiveFailures++;
