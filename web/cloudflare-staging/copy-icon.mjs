@@ -9,6 +9,8 @@ export function validatePwaPng(bytes) {
   if(bytes.subarray(0,8).toString('hex')!=='89504e470d0a1a0a'
      || bytes.toString('ascii',12,16)!=='IHDR')
     throw new Error('SIMANTAB staging icon must contain real PNG bytes, not renamed JPEG.');
+  if(bytes.readUInt32BE(8)!==13||bytes.subarray(-12).toString('hex')!=='0000000049454e44ae426082')
+    throw new Error('SIMANTAB icon PNG has an invalid IHDR or IEND structure.');
   const w=bytes.readUInt32BE(16),h=bytes.readUInt32BE(20);
   if(w!==192||h!==192)
     throw new Error('SIMANTAB PWA icon must be exactly 192x192 pixels.');
