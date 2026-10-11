@@ -51,3 +51,14 @@ Kode pada `web/operator-multi-usulan-preview.js` adalah **demo tanpa jaringan**.
 - SQL kandidat v2 sebelumnya belum digabungkan menjadi migrasi karena audit RLS, trigger, storage, dan regresi belum lulus di staging.
 
 **Uji yang sudah dilakukan dalam audit percakapan:** 17 pemeriksaan fungsi cakupan, 13 simulasi interaksi pratinjau, 5 pemeriksaan flag build; semuanya lulus di lingkungan pemeriksaan terisolasi. Ini **bukan** bukti bahwa database Supabase/auth/storage atau deployment Vercel sudah teruji.
+
+## Backend DRAFT-only — perkembangan 12 Oktober 2026
+
+- `01-staging-schema-RPC-DRAFT-DO-NOT-DEPLOY.sql`: **belum dijalankan**. Dipakai setelah ada *Supabase staging* yang benar-benar terisolasi. Mencakup penugasan per NPSN/kecamatan, identitas guru/KS, dan RPC `operator_create_draft` dengan `auth.uid()`, role operator, persyaratan status DRAFT, enam subtype Cuti, serta pemetaan KGB/Cuti.
+- `operator-staging-rpc-adapter.mjs`: adaptor untuk calon integrasi staging, mengirim hanya payload pemohon yang diperlukan, **tidak mengirim identitas operator, status, atau persetujuan dari browser**. Modul ini belum disertakan ke build aplikasi.
+- `operator-staging-rpc-adapter.test.mjs`: pengujian mock murni yang tidak terhubung ke database.
+- `audit-backend-2026-10-12.md`: hasil audit read-only terhadap kebijakan RLS dan alur produksi. Data aktif: 51 SMP Negeri, 445 SD Negeri, 15 kecamatan.
+- **Belum ada RPC untuk mengirim usulan resmi**. Formulir Cuti memiliki enam subtype di kode frontend, tetapi katalog `service_requirements` untuk Cuti/KGB tidak berisi entri; kelengkapan KGB juga belum ditetapkan pada layanan server.
+- Sebelum aktivasi harus mengunci akses langsung Cuti/KGB dari akun GTK dan KS biasa **bersamaan dengan** penggantian formulir, tanpa memutus usulan historis dan alur staf.
+
+Tidak ada perubahan pada `main`, pengguna produksi, Supabase, ataupun Vercel. Build cabang review tetap menonaktifkan QA preview secara default.
