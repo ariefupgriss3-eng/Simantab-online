@@ -4,13 +4,13 @@ import {evaluateOperatorScope,assessDraft,districtName,validateSubject} from './
 
 const pid='user-qa-1';
 const base={id:pid,role:'OPERATOR_SMP',is_active:true,approval_status:'APPROVED',account_channel:'GTK',school_npsn:'20322721'};
-const smpAssignment={user_id:pid,operator_kind:'SMP',school_npsn:'20322721',district:null,is_active:true};
+const smpAssignment={user_id:pid,operator_kind:'SMP',school_npsn:'20322721',kecamatan:null,is_active:true};
 const smp={npsn:'20322721',jenjang:'SMP',kecamatan:'Kec. Batang',school_status:'NEGERI',is_active:true};
 const otherSmp={...smp,npsn:'20322771'};
 const sd={npsn:'90000001',jenjang:'SD',kecamatan:'Kec. Batang',school_status:'NEGERI',is_active:true};
 const otherSd={...sd,npsn:'90000002',kecamatan:'Kec. Kandeman'};
 const korwilProfile={...base,role:'OPERATOR_KORWIL',school_npsn:null};
-const korwilAssignment={user_id:pid,operator_kind:'KORWIL',school_npsn:null,district:'Batang',is_active:true};
+const korwilAssignment={user_id:pid,operator_kind:'KORWIL',school_npsn:null,kecamatan:'Kec. Batang',is_active:true};
 const args=(profile=base,assignment=smpAssignment,school=smp,serviceType='KGB')=>({sessionUserId:pid,profile,assignment,school,serviceType});
 
 test('SMP own NPSN: permit multi-service routing to correct staff',()=>{
@@ -48,4 +48,4 @@ test('subject attestation and NIP validated independently',()=>{
  assert.equal(assessDraft({...args(),subject,attested:false}).allowed,false);
  assert.equal(assessDraft({...args(),subject:{...subject,nip:'123!'},attested:true}).allowed,false);
 });
-test('district name normalization handles Kec. prefix',()=>assert.equal(districtName(' Kec. Batang '),'BATANG'));
+test('district key requires master-data canonical label',()=>assert.equal(districtName(' Kec. Batang '),'KEC. BATANG'));
