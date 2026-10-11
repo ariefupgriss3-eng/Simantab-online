@@ -6,7 +6,8 @@ export const COORDINATORS = Object.freeze({ SMP:'KASI_SMP', SD:'KASI_SD' });
 
 function normalized(value) { return String(value ?? '').trim().toUpperCase(); }
 export function districtName(value) {
-  return normalized(value).replace(/^KEC(?:AMATAN)?\.?\s*/, '').replace(/\s+/g, ' ');
+  // Exact school_master district labels are required for backend parity.
+  return normalized(value).replace(/\s+/g, ' ');
 }
 function schoolIsState(s) { return ['NEGERI','N'].includes(normalized(s?.school_status)); }
 
@@ -28,7 +29,7 @@ export function evaluateOperatorScope({ sessionUserId, profile, assignment, scho
     return { allowed:true, school_npsn:school.npsn, coordinator:COORDINATORS.SMP, staff:ROUTES[service] };
   }
   if (kind === 'KORWIL' && role === 'OPERATOR_KORWIL' && level === 'SD' &&
-      assignment.school_npsn == null && !!districtName(assignment.district) &&
+      assignment.school_npsn == null && !!districtName(assignment.kecamatan) &&
       districtName(assignment.district) === districtName(school.kecamatan)) {
     return { allowed:true, school_npsn:school.npsn, coordinator:COORDINATORS.SD, staff:ROUTES[service] };
   }
