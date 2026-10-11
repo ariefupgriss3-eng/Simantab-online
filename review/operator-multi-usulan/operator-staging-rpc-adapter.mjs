@@ -4,6 +4,7 @@
  */
 const services = new Set(['CUTI','KGB']);
 const positions = new Set(['GURU','KEPALA_SEKOLAH']);
+const cutiTypes = new Set(['TAHUNAN','SAKIT','MELAHIRKAN','ALASAN_PENTING','BESAR_UMROH','BESAR_HAJI']);
 function val(x) { return String(x ?? '').trim(); }
 
 export function buildOperatorDraftPayload(form,requestKey) {
@@ -12,11 +13,14 @@ export function buildOperatorDraftPayload(form,requestKey) {
   const position=val(form.position).toUpperCase();
   const name=val(form.name), nip=val(form.nip), npsn=val(form.npsn);
   const title=val(form.title),description=val(form.description);
+  const leaveType=val(form.leaveType).toUpperCase() || null;
   if(!services.has(service) || !positions.has(position)) throw new Error('Layanan atau jabatan tidak dikenal.');
   if(!/^[0-9]{8}$/.test(npsn) || !/^[0-9]{8,20}$/.test(nip) || name.length<3 || name.length>180 ||
      title.length>200 || description.length>4000) {
     throw new Error('Data pemohon tidak valid.');
   }
+  if((service==='CUTI' && !cutiTypes.has(leaveType)) ||
+     (service==='KGB' && leaveType!==null)) throw new Error('Jenis Cuti tidak valid.');
   if(form.attested!==true) throw new Error('Konfirmasi identitas pemohon wajib.');
   if(typeof requestKey!=='string' ||
      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestKey)) {
@@ -27,7 +31,7 @@ export function buildOperatorDraftPayload(form,requestKey) {
   return {
     p_request_key:requestKey,p_npsn:npsn,p_name:name,p_nip:nip,
     p_position:position,p_service_type:service,
-    p_title:title||null,p_description:description
+    p_title:title||null,p_description:description,p_leave_type:leaveType
   };
 }
 
