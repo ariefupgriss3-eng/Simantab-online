@@ -72,6 +72,7 @@ DROP POLICY IF EXISTS operator_deny_direct_insert ON public.submissions;
 CREATE POLICY operator_deny_direct_insert ON public.submissions
   AS RESTRICTIVE FOR INSERT TO authenticated
   WITH CHECK (
+    private.current_role() <> '' AND
     private.current_role() NOT IN ('OPERATOR_SMP','OPERATOR_KORWIL')
   );
 
@@ -79,9 +80,11 @@ DROP POLICY IF EXISTS operator_deny_direct_update ON public.submissions;
 CREATE POLICY operator_deny_direct_update ON public.submissions
   AS RESTRICTIVE FOR UPDATE TO authenticated
   USING (
+    private.current_role() <> '' AND
     private.current_role() NOT IN ('OPERATOR_SMP','OPERATOR_KORWIL')
   )
   WITH CHECK (
+    private.current_role() <> '' AND
     private.current_role() NOT IN ('OPERATOR_SMP','OPERATOR_KORWIL')
   );
 
@@ -89,6 +92,7 @@ DROP POLICY IF EXISTS operator_deny_direct_delete ON public.submissions;
 CREATE POLICY operator_deny_direct_delete ON public.submissions
   AS RESTRICTIVE FOR DELETE TO authenticated
   USING (
+    private.current_role() <> '' AND
     private.current_role() NOT IN ('OPERATOR_SMP','OPERATOR_KORWIL')
   );
 
@@ -100,7 +104,8 @@ CREATE OR REPLACE FUNCTION public.operator_create_draft(
   p_position text,
   p_service_type text,
   p_title text DEFAULT NULL,
-  p_description text DEFAULT ''
+  p_description text DEFAULT '',
+  p_leave_type text DEFAULT NULL
 )
 RETURNS uuid
 LANGUAGE plpgsql
@@ -116,6 +121,7 @@ DECLARE
   v_existing public.operator_submission_subjects%ROWTYPE;
   v_sub_id uuid;
   v_service text := upper(btrim(coalesce(p_service_type,'')));
+  v_leave_type text := nullif(upper(btrim(coalesce(p_leave_type,''))),'');
   v_name text := btrim(coalesce(p_name,''));
   v_nip text := btrim(coalesce(p_nip,''));
   v_npsn text := btrim(coalesce(p_npsn,''));
@@ -133,6 +139,13 @@ BEGIN
      OR v_position NOT IN ('GURU','KEPALA_SEKOLAH')
      OR length(coalesce(p_description,''))>4000 THEN
     RAISE EXCEPTION 'Data pemohon, sekolah, layanan, atau request_key tidak valid.';
+  END IF;
+
+  IF (v_service='CUTI' AND v_leave_type NOT IN
+      ('TAHUNAN','SAKIT','MELAHIRKAN','ALASAN_PENTING','BESAR_UMROH','BESAR_HAJI'))
+      OR (v_service='KGB' AND v_leave_type IS NOT NULL)
+      OR (v_service='CUTI' AND v_leave_type IS NULL) THEN
+    RAISE EXCEPTION 'Jenis Cuti tidak valid, atau jenis Cuti disertakan untuk KGB.';
   END IF;
 
   v_title := coalesce(nullif(btrim(coalesce(p_title,'')),''),v_service||' — '||v_name);
@@ -198,17 +211,20 @@ BEGIN
        v_existing.applicant_name=v_name AND
        v_existing.applicant_nip=v_nip AND
        v_existing.applicant_position=v_position AND
-       v_existing.service_type=v_service THEN
+       v_existing.service_type=v_service AND
+       (SELECT old_sub.leave_type FROM public.submissions old_sub
+         WHERE old_sub.id=v_existing.submission_id)
+         IS NOT DISTINCT FROM v_leave_type THEN
       RETURN v_existing.submission_id;
     END IF;
     RAISE EXCEPTION 'Request key sudah digunakan untuk data lain.';
   END IF;
 
   INSERT INTO public.submissions
-    (user_id,service_type,title,description,status,
+    (user_id,service_type,leave_type,title,description,status,
      scope_level,coordinator_role,assigned_role)
   VALUES
-    (v_uid,v_service,v_title,coalesce(p_description,''),'DRAFT',
+    (v_uid,v_service,v_leave_type,v_title,coalesce(p_description,''),'DRAFT',
      v_scope,private.coordinator_for_scope(v_scope),
      private.recommended_staff_role(v_service))
   RETURNING id INTO v_sub_id;
@@ -225,11 +241,11 @@ END;
 $function$;
 
 REVOKE ALL ON FUNCTION public.operator_create_draft(
-  uuid,text,text,text,text,text,text,text
+  uuid,text,text,text,text,text,text,text,text
 ) FROM PUBLIC,anon;
 
 GRANT EXECUTE ON FUNCTION public.operator_create_draft(
-  uuid,text,text,text,text,text,text,text
+  uuid,text,text,text,text,text,text,text,text
 ) TO authenticated;
 
 COMMIT;
