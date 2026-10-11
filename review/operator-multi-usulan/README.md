@@ -38,3 +38,16 @@ Semua tes bersifat offline; tidak tersambung Supabase dan tidak membuat transaks
 Review kontrak tabel dan API → uji DDL & RPC dalam database staging dengan data fiktif → autentikasi/RLS/storage → uji regresi seluruh layanan → pilot satu SMP dan satu Korwil → undangan operator berdasarkan SK → aktivasi bertahap 66 akun.
 
 Audit lokal yang pernah dilaporkan: 7/7 skenario aturan wilayah lolos; **ini tidak setara uji RLS atau autentikasi produksi**.
+
+## Integrasi pratinjau di cabang review (12 Oktober 2026)
+
+Kode pada `web/operator-multi-usulan-preview.js` adalah **demo tanpa jaringan**. Form menyediakan pilihan Operator SMP dan Korwil, banyak pemohon fiktif, deduplikasi per NIP+NPSN+layanan, validasi kewenangan, dan rute Cuti/KGB. Semua data di memori browser dan hilang saat halaman ditutup. Tidak ada upload, RPC, atau update Supabase.
+
+- Satu file pratinjau mandiri: [`preview-offline.html`](./preview-offline.html). Unduh lalu buka dengan Chrome/Edge pada Windows 11. Pilih Operator SMP atau Korwil; tidak diperlukan akun dan tidak ada layanan internet.
+- Integrasi bertahap pada rangkaian build cabang review: `web/package.json` kini memanggil `web/inject-operator-multi-usulan-preview.mjs` **paling akhir**. Tanpa `SIMANTAB_OPERATOR_QA_PREVIEW=1`, skrip tidak mengubah HTML maupun menambahkan aset.
+- Dengan flag QA, modul dipasang setelah sesi profil operator tersedia, tetapi **masih hanya pratinjau tanpa backend** dan diberi banner "SIMULASI — TIDAK TERKIRIM". Jangan memakai flag ini pada Vercel produksi.
+- Akun produksi `qa_simantab_01` masih **GTK** sehingga tidak disulap menjadi operator oleh flag. Pengujian login operator pada staging membutuhkan profil/penugasan operator fiktif yang sah.
+- Unit test: `node --test review/operator-multi-usulan/authorization.test.mjs review/operator-multi-usulan/preview-smoke.test.mjs`.
+- SQL kandidat v2 sebelumnya belum digabungkan menjadi migrasi karena audit RLS, trigger, storage, dan regresi belum lulus di staging.
+
+**Uji yang sudah dilakukan dalam audit percakapan:** 17 pemeriksaan fungsi cakupan, 13 simulasi interaksi pratinjau, 5 pemeriksaan flag build; semuanya lulus di lingkungan pemeriksaan terisolasi. Ini **bukan** bukti bahwa database Supabase/auth/storage atau deployment Vercel sudah teruji.
