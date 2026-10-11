@@ -30,7 +30,7 @@ export function evaluateOperatorScope({ sessionUserId, profile, assignment, scho
   }
   if (kind === 'KORWIL' && role === 'OPERATOR_KORWIL' && level === 'SD' &&
       assignment.school_npsn == null && !!districtName(assignment.kecamatan) &&
-      districtName(assignment.district) === districtName(school.kecamatan)) {
+      districtName(assignment.kecamatan) === districtName(school.kecamatan)) {
     return { allowed:true, school_npsn:school.npsn, coordinator:COORDINATORS.SD, staff:ROUTES[service] };
   }
   return { allowed:false, reason:'OUT_OF_SCOPE' };
