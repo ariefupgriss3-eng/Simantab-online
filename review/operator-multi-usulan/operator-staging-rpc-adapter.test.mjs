@@ -16,9 +16,10 @@ test('RPC payload contains only applicant data, never spoofable authorization/st
   const p=buildOperatorDraftPayload(form,key);
   assert.deepEqual(Object.keys(p).sort(),[
     'p_request_key','p_npsn','p_name','p_nip','p_position',
-    'p_service_type','p_title','p_description'
+    'p_service_type','p_title','p_description','p_leave_type'
   ].sort());
   assert.equal(p.p_service_type,'KGB');
+  assert.equal(p.p_leave_type,null);
   assert.equal(JSON.stringify(p).includes('FORGED_USER'),false);
   assert.equal(JSON.stringify(p).includes('COMPLETED'),false);
   assert.equal(JSON.stringify(p).includes('OTHER_DISTRICT'),false);
@@ -59,4 +60,15 @@ test('reject non-UUID idempotency key',()=>{
 test('server error is surfaced but does not claim success',async()=>{
   const mock={rpc:async()=>({data:null,error:{message:'AKSES DITOLAK'}})};
   await assert.rejects(createOperatorDraftStaging({supabase:mock,form,requestKey:key,stagingEnabled:true}),/AKSES DITOLAK/);
+});
+
+
+test('Cuti requires six recognized leave types',()=>{
+  for (const leaveType of ['TAHUNAN','SAKIT','MELAHIRKAN','ALASAN_PENTING','BESAR_UMROH','BESAR_HAJI']) {
+    const payload=buildOperatorDraftPayload({...form,service:'CUTI',leaveType},key);
+    assert.equal(payload.p_leave_type,leaveType);
+  }
+  assert.throws(()=>buildOperatorDraftPayload({...form,service:'CUTI',leaveType:''},key),/Jenis Cuti/);
+  assert.throws(()=>buildOperatorDraftPayload({...form,service:'CUTI',leaveType:'PENGATURAN_ADMIN'},key),/Jenis Cuti/);
+  assert.throws(()=>buildOperatorDraftPayload({...form,service:'KGB',leaveType:'SAKIT'},key),/Jenis Cuti/);
 });
