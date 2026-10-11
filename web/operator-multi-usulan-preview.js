@@ -2,10 +2,15 @@
  * SAFE PREVIEW: in-memory fictitious data, no fetch/storage/Supabase writes.
  * Never use client-only checks as authorization.
  */
-(() => {
+(async () => {
   'use strict';
   if (window.__SIMANTAB_OPERATOR_QA_PREVIEW__ !== true) return;
   const offline = window.__SIMANTAB_OPERATOR_QA_OFFLINE__ === true;
+  if (!offline) {
+    for (let i=0;i<200 && (!window.__simantabProfile || typeof window.showTab!=='function');i++) {
+      await new Promise(resolve => setTimeout(resolve,50));
+    }
+  }
   const profile = window.__simantabProfile || {};
   const role = String(profile.role || '').toUpperCase();
   if (!offline && !['OPERATOR_SMP','OPERATOR_KORWIL'].includes(role)) return;
