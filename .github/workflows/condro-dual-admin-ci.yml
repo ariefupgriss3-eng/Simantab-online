@@ -1,0 +1,32 @@
+name: Condro KP-Jabfung security regression
+on:
+  pull_request:
+    paths:
+      - 'web/submission-layered-workflow.js'
+      - 'web/staff-assigned-services.js'
+      - 'web/finalize-html.mjs'
+      - 'web/tests/condro-dual-role.test.mjs'
+      - 'supabase/migrations/20261012223000_condro_kp_jabfung_dual_role_rpc.sql'
+      - 'supabase/manual_rollback/20261012_condro_kp_jabfung_dual_role_rpc_rollback.sql'
+      - '.github/workflows/condro-dual-admin-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  role-and-authorization-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse frontend modules
+        run: |
+          node --check web/submission-layered-workflow.js
+          node --check web/staff-assigned-services.js
+          node --check web/finalize-html.mjs
+      - name: Run isolated capability/security tests
+        run: node --test web/tests/condro-dual-role.test.mjs
