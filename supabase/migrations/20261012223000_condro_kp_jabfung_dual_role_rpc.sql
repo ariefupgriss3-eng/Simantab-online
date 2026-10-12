@@ -16,6 +16,7 @@ BEGIN
      AND p.account_channel='DINAS' AND p.is_active=true
      AND t.capability IN ('KP','E_JABFUNG') AND t.is_active=true
  )<>2 THEN RAISE EXCEPTION 'ABORT: Condro capability grants not active'; END IF;
+ IF md5(pg_get_functiondef('public.submission_coordinator_approve(uuid,boolean,text)'::regprocedure)) <> '8638b41e6ac79c002aa2f87362a9508b' THEN RAISE EXCEPTION 'ABORT: coordinator approval RPC unexpectedly changed'; END IF;
 END $preflight$;
 
 CREATE OR REPLACE FUNCTION public.submission_assign_staff_multi(p_submission_id uuid, p_assignee_user_ids uuid[], p_note text DEFAULT NULL::text)
@@ -423,12 +424,140 @@ begin
 end;
 $function$;
 
+CREATE OR REPLACE FUNCTION public.submission_coordinator_approve(p_submission_id uuid, p_approve boolean, p_note text DEFAULT NULL::text)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'private', 'auth'
+AS $function$
+declare
+  v_uid uuid:=auth.uid();
+  v_role text:=private.current_role();
+  v_sub public.submissions%rowtype;
+  v_cycle public.submission_response_cycles%rowtype;
+begin
+  select * into v_sub from public.submissions where id=p_submission_id for update;
+  if v_sub.id is null then raise exception 'Usulan tidak ditemukan.'; end if;
+  if v_sub.workflow_state<>'MENUNGGU_APPROVAL_KOORDINATOR' then
+    raise exception 'Usulan belum menunggu approval Kasi/Subkoor.';
+  end if;
+  if v_role<>'SUPER_ADMIN' and v_role<>v_sub.coordinator_role then
+    raise exception 'Approval hanya oleh Kasi/Subkoor sesuai jenjang.';
+  end if;
+
+  if v_sub.service_type='DIKLAT_KS_BCKS' then
+    if p_approve then
+      update public.submissions
+      set coordinator_approved_by=v_uid,coordinator_approved_at=now(),
+          coordinator_approval_note=nullif(trim(coalesce(p_note,'')),''),
+          workflow_state='MENUNGGU_PERSETUJUAN_KABID',status='VERIFYING',updated_at=now()
+      where id=p_submission_id;
+      update public.ks_bcks_submission_details
+      set admin_status='DISETUJUI_KOORDINATOR',admin_note=p_note,updated_at=now()
+      where submission_id=p_submission_id;
+      insert into public.notifications(role,title,message,link)
+      values('KABID','Layanan menunggu persetujuan Kabid',coalesce(v_sub.title,v_sub.service_type)||' telah di-approve Kasi/Subkoor.','#monitoring');
+    else
+      update public.submissions
+      set coordinator_approval_note=nullif(trim(coalesce(p_note,'')),''),
+          workflow_state='VERIFIKASI_STAF',status='VERIFYING',updated_at=now()
+      where id=p_submission_id;
+      update public.ks_bcks_submission_details
+      set admin_status='DIAJUKAN',admin_note=p_note,updated_at=now()
+      where submission_id=p_submission_id;
+      insert into public.notifications(user_id,title,message,link)
+      select a.user_id,'Verifikasi perlu ditindaklanjuti',
+             coalesce(p_note,'Kasi/Subkoor mengembalikan layanan untuk ditindaklanjuti.'),
+             '#monitoring'
+      from public.submission_assignees a
+      where a.submission_id=p_submission_id;
+    end if;
+    insert into public.submission_events(submission_id,status,note,actor_id)
+    values(
+      p_submission_id,
+      case when p_approve then 'WORKFLOW_DIAPPROVE_KOORDINATOR' else 'WORKFLOW_DIKEMBALIKAN_KOORDINATOR' end,
+      coalesce(p_note,case when p_approve then 'Disetujui Kasi/Subkoor.' else 'Dikembalikan ke staf/admin.' end),
+      v_uid
+    );
+    return;
+  end if;
+
+  select * into v_cycle
+  from public.submission_response_cycles
+  where submission_id=p_submission_id
+  order by cycle_no desc
+  limit 1
+  for update;
+
+  if v_cycle.id is null then
+    raise exception 'Belum ada respon staf.';
+  end if;
+
+  -- CONDRO_KP_JABFUNG_DUAL_ROLE_20261012:
+  -- pemroses KP/Jabfung tidak dapat meng-approve responsnya sendiri.
+  if v_role='SUBKOOR_TK'
+     and v_sub.service_type in ('KP','E_JABFUNG')
+     and (v_cycle.staff_response_by=v_uid or v_sub.staff_verified_by=v_uid) then
+    raise exception 'Persetujuan sendiri ditolak. Minta pejabat lain yang berwenang (SUPER_ADMIN) memeriksa usulan ini.';
+  end if;
+
+  if p_approve and v_cycle.cycle_status<>'WAIT_COORDINATOR' then
+    raise exception 'Respon belum siap untuk di-approve Kasi/Subkoor.';
+  end if;
+  if not p_approve and v_cycle.cycle_status not in ('WAIT_COORDINATOR','RETURNED_KABID') then
+    raise exception 'Respon tidak berada pada tahap yang dapat dikembalikan ke staf/admin.';
+  end if;
+
+  if p_approve then
+    update public.submission_response_cycles
+    set coordinator_status='DISETUJUI',coordinator_approved_by=v_uid,coordinator_approved_at=now(),
+        coordinator_note=nullif(trim(coalesce(p_note,'')),''),
+        kabid_status='MENUNGGU',cycle_status='WAIT_KABID',updated_at=now()
+    where id=v_cycle.id;
+
+    update public.submissions
+    set coordinator_approved_by=v_uid,coordinator_approved_at=now(),
+        coordinator_approval_note=nullif(trim(coalesce(p_note,'')),''),
+        workflow_state='MENUNGGU_PERSETUJUAN_KABID',status='VERIFYING',updated_at=now()
+    where id=p_submission_id;
+
+    insert into public.notifications(role,title,message,link)
+    values('KABID','Respon layanan menunggu persetujuan Kabid',
+           coalesce(v_sub.title,v_sub.service_type)||' telah di-approve Kasi/Subkoor dan menunggu persetujuan Kabid.',
+           '#monitoring');
+
+    insert into public.submission_events(submission_id,status,note,actor_id)
+    values(p_submission_id,'RESPON_DIAPPROVE_KOORDINATOR',coalesce(p_note,'Respon disetujui Kasi/Subkoor.'),v_uid);
+  else
+    update public.submission_response_cycles
+    set coordinator_status='DIKEMBALIKAN',coordinator_approved_by=v_uid,coordinator_approved_at=now(),
+        coordinator_note=nullif(trim(coalesce(p_note,'')),''),
+        cycle_status='RETURNED_COORDINATOR',updated_at=now()
+    where id=v_cycle.id;
+
+    update public.submissions
+    set coordinator_approval_note=nullif(trim(coalesce(p_note,'')),''),
+        workflow_state='VERIFIKASI_STAF',status='VERIFYING',updated_at=now()
+    where id=p_submission_id;
+
+    insert into public.notifications(user_id,title,message,link)
+    select a.user_id,'Respon dikembalikan Kasi/Subkoor',
+           coalesce(p_note,'Mohon revisi respon layanan.'),'#services'
+    from public.submission_assignees a
+    where a.submission_id=p_submission_id;
+
+    insert into public.submission_events(submission_id,status,note,actor_id)
+    values(p_submission_id,'RESPON_DIKEMBALIKAN_KOORDINATOR',coalesce(p_note,'Respon dikembalikan ke staf/admin.'),v_uid);
+  end if;
+end;
+$function$;
+
 DO $postflight$
 BEGIN
  IF (
   SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
-  WHERE n.nspname='public' AND p.proname IN ('submission_assign_staff_multi','submission_assign_staff_balanced','submission_staff_respond')
+  WHERE n.nspname='public' AND p.proname IN ('submission_assign_staff_multi','submission_assign_staff_balanced','submission_staff_respond','submission_coordinator_approve')
     AND pg_get_functiondef(p.oid) LIKE '%CONDRO_KP_JABFUNG_DUAL_ROLE_20261012%'
- )<>3 THEN RAISE EXCEPTION 'ABORT: RPC postflight missing'; END IF;
+ )<>4 THEN RAISE EXCEPTION 'ABORT: RPC postflight missing'; END IF;
 END $postflight$;
 COMMIT;
