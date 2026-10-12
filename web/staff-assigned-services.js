@@ -180,6 +180,10 @@ function ensureAdditionalPanel(){
 }
 const priorShow=window.showTab;
 window.showTab=async function(id){
+ if(isAdditionalAdmin&&!canUseAdditional()){
+  $('kpJabfungAdditional')?.remove();
+  $('nav')?.querySelector('[data-tab="kpJabfungAdditional"]')?.remove();
+ }
  if(canUseAdditional()){
   ensureAdditionalPanel();
   if(id==='kpJabfungAdditional'){
