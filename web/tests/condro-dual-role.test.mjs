@@ -53,7 +53,7 @@ test('candidate staff requires designated KP/e-Jabfung capability for Subkoor',(
 });
 test('separate admin task UI preserves default coordinator view and assigned-only read',()=>{
   assert.match(assigned,/isAdditionalAdmin=role\(\)==='SUBKOOR_TK'&&additionalCapabilities\.size>0/);
-  assert.match(assigned,/if\(isAdditionalAdmin\)subs=subs\.filter\(x=>additionalCapabilities\.has\(x\.service_type\)\)/);
+  assert.match(assigned,/if\(canUseAdditional\(\)\)subs=subs\.filter\(x=>additionalCapabilities\.has\(x\.service_type\)\)/);
   assert.match(assigned,/!assigned\.subs\.some\(x=>x\.id===id\)/);
   assert.match(assigned,/kpJabfungAdditionalBody/);
   assert.match(assigned,/id==='services'&&isStaff\(\)/);
