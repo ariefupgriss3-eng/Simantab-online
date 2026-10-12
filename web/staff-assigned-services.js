@@ -7,6 +7,7 @@
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V7_VERIFY_ACTION_VISIBLE */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V8_RESET_DRAFT_ASSIGNED */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V9_AI_MONITOR_ONLY */
+/* SIMANTAB_STAFF_ASSIGNED_SERVICES_V10_DUAL_CAPABILITY_SUBKOOR */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -14,7 +15,15 @@ const sb=window.__simantabSb,$=id=>document.getElementById(id),p=()=>window.__si
 if(!sb||!window.showTab)return;
 const role=()=>String(p().role||'');
 const isStaff=()=>role().startsWith('STAFF_')||role().startsWith('ADMIN_');
-if(!isStaff())return;
+// Kewenangan tambahan berbasis penugasan; gagal baca berarti tidak ada akses tambahan.
+let additionalCapabilities=new Set();
+if(role()==='SUBKOOR_TK'&&p().id){
+ const grant=await sb.from('team_task_assignments').select('capability')
+   .eq('user_id',p().id).eq('is_active',true).in('capability',['KP','E_JABFUNG']);
+ if(!grant.error)additionalCapabilities=new Set((grant.data||[]).map(x=>x.capability).filter(x=>['KP','E_JABFUNG'].includes(x)));
+}
+const isAdditionalAdmin=role()==='SUBKOOR_TK'&&additionalCapabilities.size>0;
+if(!isStaff()&&!isAdditionalAdmin)return;
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 const LABEL={
@@ -50,6 +59,7 @@ async function loadAssigned(){
  const by=new Map(subs.map(x=>[x.id,x]));
  for(const x of legacy.data||[])if(!by.has(x.id))by.set(x.id,x);
  subs=[...by.values()].sort((a,b)=>new Date(b.submitted_at||b.updated_at||0)-new Date(a.submitted_at||a.updated_at||0));
+ if(isAdditionalAdmin)subs=subs.filter(x=>additionalCapabilities.has(x.service_type));
  const subIds=subs.map(x=>x.id),latestCycles=new Map;
  if(subIds.length){
   const cq=await sb.from('submission_response_cycles').select('submission_id,cycle_no,cycle_status,staff_response,staff_response_by,staff_response_at,gtk_reply,gtk_replied_at,coordinator_note,kabid_note,delivered_at').in('submission_id',subIds).order('cycle_no',{ascending:false});
@@ -66,13 +76,13 @@ async function loadAssigned(){
  return{subs,profiles:new Map(prof.map(x=>[x.id,x]))};
 }
 async function renderStaffServices(){
- const body=$('servicesBody');if(!body)return;
- if($('servicesDesc'))$('servicesDesc').textContent='Usulan yang ditugaskan kepada akun Anda sebagai penanggung jawab monitoring. Verifikasi Administrasi Diklat KS/BCKS diputuskan otomatis oleh AI.';
+ const body=$(isAdditionalAdmin?'kpJabfungAdditionalBody':'servicesBody');if(!body)return;
+ if(!isAdditionalAdmin&&$('servicesDesc'))$('servicesDesc').textContent='Usulan yang ditugaskan kepada akun Anda sebagai penanggung jawab monitoring. Verifikasi Administrasi Diklat KS/BCKS diputuskan otomatis oleh AI.';
  body.innerHTML='<div class="card empty">Memuat tugas layanan...</div>';
  try{
   const d=await loadAssigned(),rows=d.subs;
   const active=rows.filter(x=>x.workflow_state==='VERIFIKASI_STAF').length;
-  body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang berada pada tahap penugasan/monitoring. Untuk Diklat KS/BCKS, keputusan verifikasi dilakukan otomatis oleh AI; staf/admin tidak perlu menekan tombol Verifikasi. Klik <b>Lihat Isi Usulan</b> untuk monitoring.</div>'+
+  body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang berada pada tahap penugasan/monitoring. '+(isAdditionalAdmin?'Hanya layanan KP dan e-Jabfung dengan penugasan resmi yang ditampilkan.':'Untuk Diklat KS/BCKS, keputusan verifikasi dilakukan otomatis oleh AI; staf/admin tidak perlu menekan tombol Verifikasi.')+' Klik <b>Lihat Isi Usulan</b> untuk monitoring.</div>'+
   '<div class="card">'+(rows.length?'<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Pemohon</th><th>Layanan</th><th>Isi / Maksud GTK</th><th>Respon Admin/Staf</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+
   rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+((s.service_type==='DIKLAT_KS_BCKS'&&s.workflow_state!=='DRAFT')?'<div style="margin-top:6px"><button class="btn soft" onclick="staffResetKsToDraft(\''+s.id+'\')">↩ Turunkan ke Draft</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td><div style="max-width:320px;white-space:normal">'+((s.__cycle?.staff_response||s.staff_response)?esc(s.__cycle?.staff_response||s.staff_response):'<span class="small">Belum dijawab</span>')+((s.__cycle?.staff_response_at||s.staff_response_at)?'<div class="small" style="margin-top:4px">'+fmt(s.__cycle?.staff_response_at||s.staff_response_at)+'</div>':'')+'</div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
   '</tbody></table></div>':'<div class="empty">Belum ada usulan yang ditugaskan kepada akun Anda.</div>')+'</div>';
@@ -80,6 +90,10 @@ async function renderStaffServices(){
 }
 window.staffOpenSubmissionDetail=async id=>{
  try{
+  if(isAdditionalAdmin){
+   const assigned=await loadAssigned();
+   if(!assigned.subs.some(x=>x.id===id))throw new Error('Usulan KP/Jabfung tidak ditugaskan kepada akun Anda.');
+  }
   const [s,f,cy]=await Promise.all([
    sb.from('submissions').select('id,user_id,service_type,title,description,scope_level,workflow_state,assignment_note,staff_response,staff_response_by,staff_response_at,submitted_at').eq('id',id).single(),
    sb.from('submission_files').select('id,storage_path,file_name,file_size,mime_type,requirement_code,created_at').eq('submission_id',id).order('created_at'),
@@ -144,12 +158,40 @@ window.staffVerifyAssigned=async(id,ok)=>{
  alert(ok?'Verifikasi berhasil. Usulan diteruskan ke Persetujuan Kabid.':'Usulan dikembalikan untuk perbaikan.');
  await renderStaffServices();
 };
+function ensureAdditionalPanel(){
+ if(!isAdditionalAdmin)return;
+ const serviceSection=$('services'),nav=$('nav');
+ if(!serviceSection||!serviceSection.parentNode||!nav)return;
+ if(!$('kpJabfungAdditional')){
+  const section=document.createElement('section');
+  section.className='section';section.id='kpJabfungAdditional';
+  section.innerHTML='<div class="head"><div><h2>Admin Tambahan KP & Jabfung</h2><p class="small">Hanya usulan KP/Jabfung yang ditugaskan kepada akun Anda. Kewenangan Subkoor TK/PAUD tidak berubah.</p></div></div><div id="kpJabfungAdditionalBody" class="card empty">Memuat tugas tambahan...</div>';
+  serviceSection.parentNode.appendChild(section);
+ }
+ if(!nav.querySelector('[data-tab="kpJabfungAdditional"]')){
+  const b=document.createElement('button');
+  b.className='navbtn';b.dataset.tab='kpJabfungAdditional';
+  b.innerHTML='<span class="ico">🗂️</span> Admin KP / Jabfung';
+  b.onclick=()=>window.showTab('kpJabfungAdditional');
+  nav.appendChild(b);
+ }
+}
 const priorShow=window.showTab;
 window.showTab=async function(id){
+ if(isAdditionalAdmin){
+  ensureAdditionalPanel();
+  if(id==='kpJabfungAdditional'){
+   document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===id));
+   document.querySelectorAll('.navbtn[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));
+   await renderStaffServices();
+   return;
+  }
+ }
  const r=await priorShow.apply(this,arguments);
  if(id==='services'&&isStaff())await renderStaffServices();
  return r;
 };
-if(document.querySelector('#services.active'))await renderStaffServices();
-window.__simantabStaffAssignedServices={version:9,verifyActionInDetail:false,aiMonitorOnlyForDiklat:true,resetAssignedKsToDraft:true,resetAfterLevelUp:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
+if(isAdditionalAdmin)ensureAdditionalPanel();
+if(isStaff()&&document.querySelector('#services.active'))await renderStaffServices();
+window.__simantabStaffAssignedServices={version:10,dualCapabilitySubkoor:isAdditionalAdmin,verifyActionInDetail:false,aiMonitorOnlyForDiklat:true,resetAssignedKsToDraft:true,resetAfterLevelUp:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
 })();
