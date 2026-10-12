@@ -68,6 +68,9 @@ test('SQL migration has guards, assigned-only capability checks and rollback',()
   assert.match(migration,/t\.is_active=true/);
   assert.match(migration,/p\.account_channel='DINAS'/);
   assert.match(migration,/v_sub\.assigned_user_id is distinct from v_uid/);
+  assert.match(migration,/CREATE OR REPLACE FUNCTION public\.submission_coordinator_approve/);
+  assert.match(migration,/v_cycle\.staff_response_by=v_uid or v_sub\.staff_verified_by=v_uid/);
+  assert.match(migration,/Persetujuan sendiri ditolak/);
   assert.match(rollback,/CONDITIONAL ROLLBACK/);
   assert.match(rollback,/ABORT rollback/);
 });
