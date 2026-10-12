@@ -23,7 +23,9 @@ if(role()==='SUBKOOR_TK'&&p().id){
  if(!grant.error)additionalCapabilities=new Set((grant.data||[]).map(x=>x.capability).filter(x=>['KP','E_JABFUNG'].includes(x)));
 }
 const isAdditionalAdmin=role()==='SUBKOOR_TK'&&additionalCapabilities.size>0;
-if(!isStaff()&&!isAdditionalAdmin)return;
+const grantedAccountId=p().id;
+const canUseAdditional=()=>isAdditionalAdmin&&p().id===grantedAccountId&&role()==='SUBKOOR_TK';
+if(!isStaff()&&!canUseAdditional())return;
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 const LABEL={
@@ -59,7 +61,7 @@ async function loadAssigned(){
  const by=new Map(subs.map(x=>[x.id,x]));
  for(const x of legacy.data||[])if(!by.has(x.id))by.set(x.id,x);
  subs=[...by.values()].sort((a,b)=>new Date(b.submitted_at||b.updated_at||0)-new Date(a.submitted_at||a.updated_at||0));
- if(isAdditionalAdmin)subs=subs.filter(x=>additionalCapabilities.has(x.service_type));
+ if(canUseAdditional())subs=subs.filter(x=>additionalCapabilities.has(x.service_type));
  const subIds=subs.map(x=>x.id),latestCycles=new Map;
  if(subIds.length){
   const cq=await sb.from('submission_response_cycles').select('submission_id,cycle_no,cycle_status,staff_response,staff_response_by,staff_response_at,gtk_reply,gtk_replied_at,coordinator_note,kabid_note,delivered_at').in('submission_id',subIds).order('cycle_no',{ascending:false});
@@ -76,13 +78,13 @@ async function loadAssigned(){
  return{subs,profiles:new Map(prof.map(x=>[x.id,x]))};
 }
 async function renderStaffServices(){
- const body=$(isAdditionalAdmin?'kpJabfungAdditionalBody':'servicesBody');if(!body)return;
- if(!isAdditionalAdmin&&$('servicesDesc'))$('servicesDesc').textContent='Usulan yang ditugaskan kepada akun Anda sebagai penanggung jawab monitoring. Verifikasi Administrasi Diklat KS/BCKS diputuskan otomatis oleh AI.';
+ const body=$(canUseAdditional()?'kpJabfungAdditionalBody':'servicesBody');if(!body)return;
+ if(!canUseAdditional()&&$('servicesDesc'))$('servicesDesc').textContent='Usulan yang ditugaskan kepada akun Anda sebagai penanggung jawab monitoring. Verifikasi Administrasi Diklat KS/BCKS diputuskan otomatis oleh AI.';
  body.innerHTML='<div class="card empty">Memuat tugas layanan...</div>';
  try{
   const d=await loadAssigned(),rows=d.subs;
   const active=rows.filter(x=>x.workflow_state==='VERIFIKASI_STAF').length;
-  body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang berada pada tahap penugasan/monitoring. '+(isAdditionalAdmin?'Hanya layanan KP dan e-Jabfung dengan penugasan resmi yang ditampilkan.':'Untuk Diklat KS/BCKS, keputusan verifikasi dilakukan otomatis oleh AI; staf/admin tidak perlu menekan tombol Verifikasi.')+' Klik <b>Lihat Isi Usulan</b> untuk monitoring.</div>'+
+  body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang berada pada tahap penugasan/monitoring. '+(canUseAdditional()?'Hanya layanan KP dan e-Jabfung dengan penugasan resmi yang ditampilkan.':'Untuk Diklat KS/BCKS, keputusan verifikasi dilakukan otomatis oleh AI; staf/admin tidak perlu menekan tombol Verifikasi.')+' Klik <b>Lihat Isi Usulan</b> untuk monitoring.</div>'+
   '<div class="card">'+(rows.length?'<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Pemohon</th><th>Layanan</th><th>Isi / Maksud GTK</th><th>Respon Admin/Staf</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+
   rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+((s.service_type==='DIKLAT_KS_BCKS'&&s.workflow_state!=='DRAFT')?'<div style="margin-top:6px"><button class="btn soft" onclick="staffResetKsToDraft(\''+s.id+'\')">↩ Turunkan ke Draft</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td><div style="max-width:320px;white-space:normal">'+((s.__cycle?.staff_response||s.staff_response)?esc(s.__cycle?.staff_response||s.staff_response):'<span class="small">Belum dijawab</span>')+((s.__cycle?.staff_response_at||s.staff_response_at)?'<div class="small" style="margin-top:4px">'+fmt(s.__cycle?.staff_response_at||s.staff_response_at)+'</div>':'')+'</div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
   '</tbody></table></div>':'<div class="empty">Belum ada usulan yang ditugaskan kepada akun Anda.</div>')+'</div>';
@@ -90,7 +92,7 @@ async function renderStaffServices(){
 }
 window.staffOpenSubmissionDetail=async id=>{
  try{
-  if(isAdditionalAdmin){
+  if(canUseAdditional()){
    const assigned=await loadAssigned();
    if(!assigned.subs.some(x=>x.id===id))throw new Error('Usulan KP/Jabfung tidak ditugaskan kepada akun Anda.');
   }
@@ -178,7 +180,7 @@ function ensureAdditionalPanel(){
 }
 const priorShow=window.showTab;
 window.showTab=async function(id){
- if(isAdditionalAdmin){
+ if(canUseAdditional()){
   ensureAdditionalPanel();
   if(id==='kpJabfungAdditional'){
    document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===id));
@@ -191,7 +193,7 @@ window.showTab=async function(id){
  if(id==='services'&&isStaff())await renderStaffServices();
  return r;
 };
-if(isAdditionalAdmin)ensureAdditionalPanel();
+if(canUseAdditional())ensureAdditionalPanel();
 if(isStaff()&&document.querySelector('#services.active'))await renderStaffServices();
-window.__simantabStaffAssignedServices={version:10,dualCapabilitySubkoor:isAdditionalAdmin,verifyActionInDetail:false,aiMonitorOnlyForDiklat:true,resetAssignedKsToDraft:true,resetAfterLevelUp:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
+window.__simantabStaffAssignedServices={version:10,dualCapabilitySubkoor:canUseAdditional(),verifyActionInDetail:false,aiMonitorOnlyForDiklat:true,resetAssignedKsToDraft:true,resetAfterLevelUp:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
 })();
