@@ -17,7 +17,7 @@ const LEADERS=new Set(['KEPALA_DINAS','SEKRETARIS_DINAS']);
 const COORDS=new Set(['KASI_SD','KASI_SMP','SUBKOOR_TK']);
 const COORD_SCOPE={KASI_SD:'SD',KASI_SMP:'SMP',SUBKOOR_TK:'TK_PAUD_PNF'};
 const ASSIGNABLE_SCOPES=new Set(['SD','SMP','TK_PAUD_PNF']);
-const canAssignSubmission=s=>s?.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR'&&ASSIGNABLE_SCOPES.has(s.scope_level)&&(role()==='SUPER_ADMIN'||role()==='KABID'||role()===s.coordinator_role);
+const canAssignSubmission=s=>s?.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR'&&(role()==='SUPER_ADMIN'||(role()==='KABID'&&ASSIGNABLE_SCOPES.has(s.scope_level))||role()===s.coordinator_role);
 const COORD_STAGE_LABEL={
  MENUNGGU_DISPOSISI_KOORDINATOR:'Bagi Tugas',
  VERIFIKASI_STAF:'Verifikasi Admin/Staf',
