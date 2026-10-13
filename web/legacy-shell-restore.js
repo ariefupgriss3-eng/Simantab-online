@@ -35,7 +35,7 @@ function ensureSections(){
 function navButton(id,icon,label){const b=document.createElement('button');b.className='navbtn';b.dataset.tab=id;b.setAttribute('onclick',`showTab('${id}')`);b.innerHTML=`<span class="ico">${icon}</span>${label}`;return b}
 function navHead(text){const d=document.createElement('div');d.className='navhead';d.textContent=text;return d}
 function ensureNav(){
- const nav=$('nav');if(!nav||!profile().role)return;
+ const nav=$('nav');if(!nav||!profile().role||profile().role==='PENGAWAS')return; // Exclusive Pengawas navigation is managed by pengawas-menu-scope.
  if(isDinas()){
   if(!nav.querySelector('[data-tab="activities"]')){const dash=nav.querySelector('[data-tab="dashboard"]');dash?.after(navButton('activities','📅','Kegiatan Bidang'))}
   if(!nav.querySelector('[data-tab="schoolMaster"]')){const dist=nav.querySelector('[data-tab="distribution"]');if(dist)dist.before(navButton('schoolMaster','🏫','Master Sekolah Dapodik'))}
