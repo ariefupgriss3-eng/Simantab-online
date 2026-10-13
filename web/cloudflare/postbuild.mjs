@@ -13,6 +13,7 @@ const needsModule = await fs.readFile(path.join(output, 'gtk-needs-progress.js')
 const disciplineModule = await fs.readFile(path.join(output, 'discipline-evidence.js'), 'utf8');
 const offlineMonitoringModule = await fs.readFile(path.join(output, 'offline-consultation-monitoring.js'), 'utf8');
 const korwilMonitoringModule = await fs.readFile(path.join(output, 'korwil-submission-monitoring.js'), 'utf8');
+const operatorAdminModule = await fs.readFile(path.join(output,'institution-operators-admin.js'),'utf8');
 const legacyMenu = await fs.readFile(path.join(output, 'legacy-shell-restore.js'), 'utf8');
 const rgtkMenu = await fs.readFile(path.join(output, 'rgtk-monitoring.js'), 'utf8');
 const workflowMenu = await fs.readFile(path.join(output, 'team-workflow-authority.js'), 'utf8');
@@ -63,6 +64,12 @@ assert(html.includes('./korwil-submission-monitoring.js?v=1') &&
        korwilMonitoringModule.includes("x.kind==='KORWIL'") &&
        korwilMonitoringModule.includes('readOnly:true'),
  'Monitoring usulan GTK Korwil belum aman atau belum terpasang.');
+assert(html.includes('./institution-operators-admin.js?v=1') &&
+       operatorAdminModule.includes('SIMANTAB_INSTITUTION_OPERATORS_ADMIN_V1_PREVIEW') &&
+       operatorAdminModule.includes("p().role==='SUPER_ADMIN'") &&
+       operatorAdminModule.includes("action:'invite'") &&
+       operatorAdminModule.includes('activationDisabled:true'),
+ 'Modul operator institusi hanya boleh berada di preview dengan aktivasi tertutup.');
 assert(module.includes('SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG'),
   'Kode katalog layanan Pengawas tidak cocok.');
 assert(module.includes('simantab:profile-ready'), 'Menu Pengawas masih menggunakan timeout login.');
@@ -145,7 +152,10 @@ console.log(JSON.stringify({
   korwilDashboardVersion: 5,
   korwilMonitoringVersion: 1,
   offlineMonitoringExcludeKorwil: true,
-  korwilMonitoringServerRpcPending: true,
+  korwilMonitoringServerRpcPending: false,
+  institutionOperatorSlots: 66,
+  institutionOperatorInvitationAdmin: true,
+  institutionOperatorLoginBlocked: true,
   dabinDashboardVersion: 3,
   supervisorNavigationGuards: ['redistribusi','diklat','workflow','rgtk','legacy'],
   securityHeaders: true,
