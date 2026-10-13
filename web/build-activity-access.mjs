@@ -18,10 +18,11 @@ const MODS=[
  ['discipline-evidence.js','SIMANTAB_DISCIPLINE_EVIDENCE_V4',4],
  ['pengawas-nip-tcs-link.js','SIMANTAB_PENGAWAS_NIP_TCS_LINK_V1',1],
  ['simanteb-branding.js','SIMANTEB_BRANDING_V1',1],
- ['pengawas-menu-scope.js','SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG',6],
+ ['supervisor-scope-policy.js','SIMANTAB_SUPERVISOR_SCOPE_POLICY_V1',1],
+ ['pengawas-menu-scope.js','SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG',7],
  ['pengawas-login-channel.js','SIMANTEB_PENGAWAS_LOGIN_CHANNEL_V1',1],
- ['pengawas-dashboard-kadin.js','SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V2_LEVEL_AND_DABIN_SCOPE',3],
- ['korwil-scope-dashboard.js','SIMANTEB_KORWIL_SCOPE_DASHBOARD_V3',3],
+ ['pengawas-dashboard-kadin.js','SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V3_EXPLICIT_DABIN_ONLY',4],
+ ['korwil-scope-dashboard.js','SIMANTEB_KORWIL_SCOPE_DASHBOARD_V4_DISTRICT_TK_SD_PNF',4],
  ['korwil-dashboard-title.js','SIMANTEB_KORWIL_DASHBOARD_TITLE_V1',1],
  ['cuti-requirements.js','SIMANTEB_CUTI_REQUIREMENTS_V1',1],
  ['super-admin-merge-pengawas.js','SIMANTEB_SUPER_ADMIN_MERGE_PENGAWAS_V1',1]
@@ -42,9 +43,6 @@ for(const [file,marker,version] of MODS){
    const before=code;
    code=code.replace(/async function loadSchoolMaster\(\)\{[\s\S]*?\n\}\nasync function loadAdminData/,"async function loadSchoolMaster(){return;}\nasync function loadAdminData");
    if(code===before)throw new Error('Legacy loadSchoolMaster tidak berhasil dinonaktifkan.');
- }
- if(file==='pengawas-dashboard-kadin.js'){
-   code=code.replace("async function render(force=false){if(profile().role!=='PENGAWAS')return;","async function render(force=false){if(profile().role!=='PENGAWAS'||/korwil/i.test(String(profile().position||'')))return;");
  }
  const tmp=`/tmp/${file}.mjs`;await fs.writeFile(tmp,code);const check=spawnSync(process.execPath,['--check',tmp],{encoding:'utf8'});if(check.status!==0)throw new Error(`Syntax ${file} gagal: ${(check.stderr||check.stdout||'').trim()}`);
  const safe=file.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');html=html.replace(new RegExp(`<script\\s+type=["']module["']\\s+src=["']\\./${safe}(?:\\?v=\\d+)?["']><\\/script>\\s*`,'gi'),'');
