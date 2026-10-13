@@ -19,8 +19,14 @@ if(cloudflare){
  if(!monitorSource.includes('SIMANTAB_KORWIL_SUBMISSION_MONITORING_V1_READONLY')||!monitorSource.includes("sb.rpc('korwil_monitor_submissions')"))throw new Error('Monitoring Korwil tidak aman.');
  await fs.writeFile(path.join(staticDir,monitorFile),monitorSource);
  html=html.replace('</body>','<script type="module" src="./korwil-submission-monitoring.js?v=1"></script>\n</body>');
+ const adminFile='institution-operators-admin.js';
+ const adminSource=await fs.readFile(new URL('./'+adminFile,import.meta.url),'utf8');
+ if(!adminSource.includes('SIMANTAB_INSTITUTION_OPERATORS_ADMIN_V1_PREVIEW')||!adminSource.includes("action:'invite'"))throw new Error('Operator administration module invalid');
+ await fs.writeFile(path.join(staticDir,adminFile),adminSource);
+ html=html.replace('</body>','<script type="module" src="./institution-operators-admin.js?v=1"></script>\n</body>');
 }
 if((html.match(new RegExp('\\./offline-consultation-monitoring\\.js\\?v='+version,'g'))||[]).length!==1)throw new Error('Offline consultation monitoring harus tepat satu kali.');
 if(cloudflare&&(html.match(/\.\/korwil-submission-monitoring\.js\?v=1/g)||[]).length!==1)throw new Error('Monitoring Korwil harus tepat satu kali.');
+if(cloudflare&&(html.match(/\.\/institution-operators-admin\.js\?v=1/g)||[]).length!==1)throw new Error('Operator Admin harus tepat satu kali.');
 await fs.writeFile(outputPath,html);
 console.log(JSON.stringify({offlineConsultationMonitoring:true,version,cloudflareExcludeKorwil:cloudflare,korwilSubmissionsReadOnly:cloudflare}));
