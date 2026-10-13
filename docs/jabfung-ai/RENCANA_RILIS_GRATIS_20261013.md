@@ -46,3 +46,24 @@
 - OCR pertama bukan keputusan administratif, bukan deteksi palsu/asli, dan bukan pengganti validasi TTE/QR.
 - Tidak memodifikasi riwayat kegagalan AI historis pada database.
 - PR sebelumnya untuk remediasi API berbayar #169 tetap **terpisah** dari alternatif gratis #170.
+
+## Keputusan 13 Oktober 2026 — lanjut tanpa pengujian baru
+
+**Arahan pengguna:** melanjutkan pekerjaan tanpa melakukan uji Android fisik/QA tambahan. Ini adalah keputusan **melewati pelaksanaan uji**, bukan bukti bahwa uji tersebut lulus, bukan otorisasi biaya, dan bukan persetujuan eksplisit untuk mengubah produksi.
+
+**Pekerjaan yang boleh dilanjutkan sekarang:** audit statis sumber dan persiapan rencana rilis pada branch PR #170 saja. Tidak menjalankan perintah tes, tidak membuka paket dengan akun ASN, tidak melakukan merge, migrasi SQL, perubahan env, deployment Vercel/Supabase, atau aktivasi layanan berbayar.
+
+### Hasil audit statis (tanpa mengeksekusi perubahan)
+
+1. `web/jabfung-ai-read-edge.js` dan `supabase/functions/simantab-jabfung-ai-workflow/index.ts` memiliki respons `FREE_LOCAL_ONLY` untuk POST, sebelum jalur lama ke AI berbayar. **Namun pengaman ini hanya efektif jika kedua endpoint versi baru benar-benar terpasang.** Sebelum itu, klien PWA lama masih berpotensi mengakses AI berbayar.
+2. Kode lama yang mengakses `ai-gateway.vercel.sh` atau endpoint Jabfung tetap berada di bawah early return pada branch. Untuk hardening selanjutnya, sebaiknya hapus kode berbayar tak-terjangkau setelah desain kompatibilitas disetujui; jangan mengartikan early return di branch sebagai pengaman aktif produksi.
+3. `web/build.mjs` melakukan bootstrap dari URL produksi dan mengunduh sejumlah patch dari `main`. Sumber eksternal tersebut **tidak dikunci ke commit SHA**. Rilis reproducible dan keterikatan versi belum dapat dijamin dari peninjauan sumber saja.
+4. OCR baru memakai pustaka yang di-host sendiri dan tidak memakai token model per dokumen. Kuota bandwidth, fungsi hosting, penyimpanan, dan penggunaan sumber daya perangkat **tetap mungkin berlaku**.
+5. Hasil OCR hanya `TERBACA_AWAL` atau `PERLU_TELAAH`; verifikasi keaslian TTE/QR, keabsahan SK, persetujuan usulan, dan kewenangan berkas harus tetap melalui petugas serta RLS/Storage yang sah. Integrasi izin akun dan alur kirim usulan **tidak terbukti melalui pengujian nyata**.
+6. Lingkungan Supabase yang teridentifikasi adalah proyek `SIMANTAB-ONLINE` (`tizxfzvgglkokzvsiwkg`), **bukan database QA terpisah yang siap dipakai**. Jangan membuat salinan berisi data ASN hanya demi melewati pengujian.
+
+### Status persetujuan dan penanganan risiko
+
+- **No-go otomatis untuk produksi:** menghilangkan pengujian bukan izin deploy; perlu perintah eksplisit terpisah yang menyebut **SIMANTAB-ONLINE produksi** beserta penerimaan risiko tanpa uji fisik/integrasi.
+- Apabila izin itu diberikan, batas tindakan harus ditetapkan jelas; prioritas keamanan ialah fail-closed server untuk klien lama, verifikasi tak ada provider berbayar, baseline/rollback, kemudian UI OCR lokal. Jangan mengubah RLS, submissions atau submission_files tanpa izin khusus.
+- Tidak ada pengujian baru atau perubahan produksi dalam pembaruan dokumen ini.
