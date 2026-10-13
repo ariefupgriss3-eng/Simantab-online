@@ -7,6 +7,7 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V9 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V10_HIDE_INACTIVE_REQUESTERS */
 /* SIMANTAB_COORDINATOR_SERVICE_AGGREGATE_V2 */
+/* SIMANTAB_KABID_SERVICE_ASSIGNMENT_V1_20261013 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<600&&(!window.__simantabSb||!window.showTab);i++)await wait(50);
@@ -15,6 +16,8 @@ const p=()=>window.__simantabProfile||{},role=()=>String(p().role||'');
 const LEADERS=new Set(['KEPALA_DINAS','SEKRETARIS_DINAS']);
 const COORDS=new Set(['KASI_SD','KASI_SMP','SUBKOOR_TK']);
 const COORD_SCOPE={KASI_SD:'SD',KASI_SMP:'SMP',SUBKOOR_TK:'TK_PAUD_PNF'};
+const ASSIGNABLE_SCOPES=new Set(['SD','SMP','TK_PAUD_PNF']);
+const canAssignSubmission=s=>s?.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR'&&ASSIGNABLE_SCOPES.has(s.scope_level)&&(role()==='SUPER_ADMIN'||role()==='KABID'||role()===s.coordinator_role);
 const COORD_STAGE_LABEL={
  MENUNGGU_DISPOSISI_KOORDINATOR:'Bagi Tugas',
  VERIFIKASI_STAF:'Verifikasi Admin/Staf',
@@ -102,7 +105,7 @@ function candidateStaff(d,sub){
 }
 function actionHtml(s,d){
  const r=role(),uid=p().id;
- if((r==='SUPER_ADMIN'||r===s.coordinator_role)&&s.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR')
+ if(canAssignSubmission(s))
    return `<button class="btn primary" onclick="layerOpenAssign('${s.id}')">👤 Bagi Tugas</button>`;
  if((r==='SUPER_ADMIN'||assigneeIds(d,s.id).includes(uid)||s.assigned_user_id===uid)&&s.workflow_state==='VERIFIKASI_STAF'){
    if(s.service_type==='DIKLAT_KS_BCKS')return `<button class="btn success" onclick="layerStaffVerify('${s.id}',true)">✓ Verifikasi</button><button class="btn danger" onclick="layerStaffVerify('${s.id}',false)">↺ Perbaikan</button>`;
@@ -153,10 +156,10 @@ function coordinatorServiceTable(rows,d){
 function coordinatorBulkHtml(rows){
  const pending=rows.filter(x=>x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR');
  const groups=new Map;
- for(const s of pending){const k=s.service_type||'OTHER';if(!groups.has(k))groups.set(k,[]);groups.get(k).push(s)}
+ for(const s of pending){if(!canAssignSubmission(s))continue;const k=(s.scope_level||'')+'|'+(s.service_type||'OTHER');if(!groups.has(k))groups.set(k,[]);groups.get(k).push(s)}
  const items=[...groups.entries()].filter(([,list])=>list.length>=2).sort((a,b)=>String(labelService(a[0])).localeCompare(String(labelService(b[0])),'id'));
  if(!items.length)return'';
- return `<div class="card" style="margin-top:12px"><div class="label">PEMBAGIAN TUGAS AGREGAT</div><div class="small" style="margin:4px 0 8px">Usulan dengan jenis layanan yang sama dibagi otomatis dan merata. Satu usulan hanya mendapat satu petugas.</div><div class="lwf-bulkbar">${items.map(([service,list])=>`<button class="lwf-bulkbtn" onclick="layerOpenBulkAssign('${esc(service)}')">⚖️ ${esc(labelService(service))} <b>(${list.length})</b></button>`).join('')}</div></div>`;
+ return `<div class="card" style="margin-top:12px"><div class="label">PEMBAGIAN TUGAS AGREGAT</div><div class="small" style="margin:4px 0 8px">Usulan satu layanan dan satu jenjang dibagi secara merata; tidak pernah digabungkan lintas jenjang.</div><div class="lwf-bulkbar">${items.map(([key,list])=>{const [scope,service]=key.split('|');return `<button class="lwf-bulkbtn" onclick="layerOpenBulkAssign('${esc(service)}','${esc(scope)}')">⚖️ ${esc(SCOPE_LABEL[scope]||scope)} — ${esc(labelService(service))} <b>(${list.length})</b></button>`}).join('')}</div></div>`;
 }
 function staffChoicesHtml(cand,klass){
  if(!cand.length)return'<div class="notice">Belum ada admin/staf internal aktif yang tersedia.</div>';
@@ -167,19 +170,21 @@ window.layerBulkPreview=()=>{
  const n=Number(box.dataset.submissionCount||0),m=box.querySelectorAll('.layer-bulk-assignee:checked').length,out=$('layerBulkPreview');
  if(out)out.innerHTML=m?`<b>${n} usulan</b> akan dibagi ke <b>${m} petugas</b>. Perkiraan masing-masing ${Math.floor(n/m)}–${Math.ceil(n/m)} usulan, menyesuaikan beban aktif.`:'Pilih minimal satu admin/staf internal.';
 };
-window.layerOpenBulkAssign=serviceType=>{
+window.layerOpenBulkAssign=(serviceType,requestedScope=null)=>{
  const d=currentData;if(!d)return;
- const scope=COORD_SCOPE[role()];
- const rows=d.subs.filter(x=>x.scope_level===scope&&x.service_type===serviceType&&x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR');
+ const scope=COORD_SCOPE[role()]||((role()==='KABID'||role()==='SUPER_ADMIN')?requestedScope:null);
+ if(!ASSIGNABLE_SCOPES.has(scope))return;
+ const rows=d.subs.filter(x=>x.scope_level===scope&&x.service_type===serviceType&&canAssignSubmission(x));
  if(rows.length<2){alert('Pembagian agregat membutuhkan minimal 2 usulan sejenis pada tahap Bagi Tugas.');return}
  const cand=candidateStaff(d,rows[0]);let m=$('layerBulkAssignModal');m?.remove();m=document.createElement('div');m.id='layerBulkAssignModal';m.className='lwf-modal';m.dataset.submissionCount=String(rows.length);m.onclick=e=>{if(e.target===m)m.remove()};
- m.innerHTML=`<div class="lwf-box" style="width:min(760px,100%)"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><div class="label">BAGI TUGAS AGREGAT</div><h3 style="margin:3px 0">${esc(labelService(serviceType))}</h3><div class="small">${rows.length} usulan • jenjang ${esc(SCOPE_LABEL[scope]||scope)}</div></div><button class="btn soft" onclick="document.getElementById('layerBulkAssignModal')?.remove()">✕</button></div><div class="info" style="margin:12px 0"><b>Pembagian otomatis merata.</b> Setiap usulan hanya ditugaskan kepada satu admin/staf. Sistem mendahulukan petugas dengan beban aktif lebih sedikit.</div><div class="field"><label>Pilih Admin/Staf Internal</label>${staffChoicesHtml(cand,'layer-bulk-assignee')}</div><div id="layerBulkPreview" class="lwf-distribution">Pilih minimal satu admin/staf internal.</div><div class="field" style="margin-top:10px"><label>Catatan penugasan (opsional)</label><textarea id="layerBulkNote"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn soft" onclick="document.getElementById('layerBulkAssignModal')?.remove()">Batal</button><button class="btn primary" onclick="layerSaveBulkAssign('${esc(serviceType)}')">⚖️ Bagi Tugas Merata</button></div><div id="layerBulkMsg" class="small" style="margin-top:7px"></div></div>`;
+ m.innerHTML=`<div class="lwf-box" style="width:min(760px,100%)"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><div class="label">BAGI TUGAS AGREGAT</div><h3 style="margin:3px 0">${esc(labelService(serviceType))}</h3><div class="small">${rows.length} usulan • jenjang ${esc(SCOPE_LABEL[scope]||scope)}</div></div><button class="btn soft" onclick="document.getElementById('layerBulkAssignModal')?.remove()">✕</button></div><div class="info" style="margin:12px 0"><b>Pembagian otomatis merata.</b> Setiap usulan hanya ditugaskan kepada satu admin/staf. Sistem mendahulukan petugas dengan beban aktif lebih sedikit.</div><div class="field"><label>Pilih Admin/Staf Internal</label>${staffChoicesHtml(cand,'layer-bulk-assignee')}</div><div id="layerBulkPreview" class="lwf-distribution">Pilih minimal satu admin/staf internal.</div><div class="field" style="margin-top:10px"><label>Catatan penugasan (opsional)</label><textarea id="layerBulkNote"></textarea></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn soft" onclick="document.getElementById('layerBulkAssignModal')?.remove()">Batal</button><button class="btn primary" onclick="layerSaveBulkAssign('${esc(serviceType)}','${esc(scope)}')">⚖️ Bagi Tugas Merata</button></div><div id="layerBulkMsg" class="small" style="margin-top:7px"></div></div>`;
  document.body.appendChild(m);
  m.querySelectorAll('.layer-bulk-assignee').forEach(x=>x.addEventListener('change',window.layerBulkPreview));
 };
-window.layerSaveBulkAssign=async serviceType=>{
- const d=currentData,scope=COORD_SCOPE[role()],msg=$('layerBulkMsg');
- const rows=d.subs.filter(x=>x.scope_level===scope&&x.service_type===serviceType&&x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR');
+window.layerSaveBulkAssign=async (serviceType,requestedScope=null)=>{
+ const d=currentData,scope=COORD_SCOPE[role()]||((role()==='KABID'||role()==='SUPER_ADMIN')?requestedScope:null),msg=$('layerBulkMsg');
+ if(!d||!ASSIGNABLE_SCOPES.has(scope)){if(msg)msg.textContent='Lingkup penugasan tidak sah.';return}
+ const rows=d.subs.filter(x=>x.scope_level===scope&&x.service_type===serviceType&&canAssignSubmission(x));
  const ids=[...document.querySelectorAll('#layerBulkAssignModal .layer-bulk-assignee:checked')].map(x=>x.value);
  if(!ids.length){msg.textContent='Pilih minimal satu admin/staf internal.';return}
  if(rows.length<2){msg.textContent='Usulan sejenis yang belum dibagi tugas kurang dari 2.';return}
@@ -187,7 +192,7 @@ window.layerSaveBulkAssign=async serviceType=>{
  const {data,error}=await sb.rpc('submission_assign_staff_balanced',{p_submission_ids:rows.map(x=>x.id),p_assignee_user_ids:ids,p_note:$('layerBulkNote')?.value?.trim()||null});
  if(error){msg.textContent=error.message;return}
  $('layerBulkAssignModal')?.remove();
- await renderCoordinatorServices();
+ await refreshWorkflowSurface();
 };
 function coordinatorServiceSummary(rows){
  const stages=[
@@ -231,11 +236,11 @@ async function renderMonitoring(){
    body.innerHTML=`<div class="card" style="margin-bottom:12px">${workflowFlow()}<div class="info"><b>Mode Pimpinan:</b> dashboard hanya menampilkan agregat. Klik angka untuk melihat rincian seluruh GTK.</div></div>${aggregateHtml(rows)}`;
    return;
   }
-  body.innerHTML=`<div class="card" style="margin-bottom:12px">${workflowFlow()}<div class="info"><b>Kewenangan aktif:</b> ${COORDS.has(role())?'membagi tugas dan approve sesuai jenjang':role()==='KABID'?'persetujuan akhir seluruh jenjang':role()==='SUPER_ADMIN'?'administrasi penuh workflow':'memverifikasi layanan yang ditugaskan kepada akun Anda'}.</div></div><div class="card">${tableHtml(rows,d,true)}</div>`;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">${workflowFlow()}<div class="info"><b>Kewenangan aktif:</b> ${COORDS.has(role())?'membagi tugas dan approve sesuai jenjang':role()==='KABID'?'membagi tugas layanan dan memberi persetujuan akhir di seluruh jenjang':role()==='SUPER_ADMIN'?'administrasi penuh workflow':'memverifikasi layanan yang ditugaskan kepada akun Anda'}.</div></div>${role()==='KABID'?`<div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">👥 Pembagian Tugas Layanan — Seluruh Jenjang</h3><div class="small" style="margin-bottom:8px">Pilih Bagi Tugas pada usulan yang menunggu disposisi. Jenjang SD, SMP, serta TK/PAUD/PNF tetap terpisah.</div>${tableHtml(rows.filter(x=>canAssignSubmission(x)),d,true)}${coordinatorBulkHtml(rows)}</div>`:''}<div class="card">${tableHtml(rows,d,true)}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e?.message||e)}</div>`}
 }
 window.layerOpenAssign=id=>{
- const d=currentData;if(!d)return;const s=d.subs.find(x=>x.id===id);if(!s)return;
+ const d=currentData;if(!d)return;const s=d.subs.find(x=>x.id===id);if(!s||!canAssignSubmission(s))return;
  const cand=candidateStaff(d,s);let m=$('layerAssignModal');m?.remove();m=document.createElement('div');m.id='layerAssignModal';m.className='lwf-modal';m.onclick=e=>{if(e.target===m)m.remove()};
  const choices=staffChoicesHtml(cand,'layer-assignee-check');
  m.innerHTML=`<div class="lwf-box" style="width:min(680px,100%)"><div style="display:flex;justify-content:space-between;gap:8px"><div><div class="label">PEMBAGIAN TUGAS</div><h3 style="margin:3px 0">${esc(s.title||labelService(s.service_type))}</h3><div class="small">Jenjang ${esc(SCOPE_LABEL[s.scope_level]||s.scope_level)} • ${candidateStaff(d,s).length===1?'admin layanan sudah ditetapkan':'pilih admin/staf sesuai kewenangan layanan'}</div></div><button class="btn soft" onclick="document.getElementById('layerAssignModal')?.remove()">✕</button></div><div class="field"><label>Admin/Staf Verifikator</label>${choices}</div><div class="field"><label>Catatan penugasan (opsional)</label><textarea id="layerAssignNote"></textarea></div><button class="btn primary" onclick="layerSaveAssign('${id}')">Tetapkan Tugas</button><div id="layerAssignMsg" class="small" style="margin-top:7px"></div></div>`;document.body.appendChild(m);
@@ -291,5 +296,5 @@ window.showTab=async function(id){
  return r;
 };
 style();
-window.__simantabLayeredWorkflow={version:10,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true,hideInactiveRequesters:true};
+window.__simantabLayeredWorkflow={version:11,states:STATE_LABEL,renderMonitoring,renderLeaderDirections,renderCoordinatorServices,coordinatorAggregateOnly:true,kabidAssignAllScopes:true,hideInactiveRequesters:true};
 })();
