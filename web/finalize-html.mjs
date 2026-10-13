@@ -342,7 +342,7 @@ const modules=[
  ['discipline-evidence.js',4],
  ['pengawas-nip-tcs-link.js',1],
  ['simanteb-branding.js',1],
- ['pengawas-menu-scope.js',2],
+ ['pengawas-menu-scope.js',4],
  ['pengawas-login-channel.js',1],
  ['pengawas-dashboard-kadin.js',2],
  ['korwil-scope-dashboard.js',3],
