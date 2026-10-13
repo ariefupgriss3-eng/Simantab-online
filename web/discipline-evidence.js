@@ -3,7 +3,7 @@
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id),p=()=>window.__simantabProfile||{};if(!sb)return;
-const MAX=512000,MIME=['application/pdf','image/jpeg','image/png'];
+const MAX=1572864,MIME=['application/pdf','image/jpeg','image/png'];
 const SCOPE_LABEL={TK_PAUD_PNF:'TK',SD:'SD',SMP:'SMP'};
 const GROUPS=[
  {title:'A. Pembinaan Level Sekolah — 4 Berkas',codes:[['SEKOLAH_BAP','BAP'],['SEKOLAH_UNDANGAN','Undangan'],['SEKOLAH_DAFTAR_HADIR','Daftar Hadir'],['SEKOLAH_REKOMENDASI_KORWIL','Rekomendasi diketahui Pengawas/Korwil']]},
@@ -16,7 +16,7 @@ const canSyncTcs=()=>['SUPER_ADMIN','KABID'].includes(role());
 const safeName=n=>String(n||'file').normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-90);
 const statusLabel=s=>({OPEN:'Open',PROCESS:'Proses',CLOSED:'Selesai'})[s]||s,typeLabel=s=>s==='PERCERAIAN'?'Usul Perceraian GTK':'Pembinaan Disiplin';
 let schools=[],dabinProfiles=[],sdDabinRows=[],sdDabinByNpsn=new Map(),caseCache=[],profileMap=new Map(),syncAttempted=false,syncInfo=null;
-function validateFile(f){if(!f)return '';if(f.size>MAX)return 'Ukuran maksimal 500 KB.';if(!MIME.includes(f.type))return 'Format harus PDF/JPG/PNG.';return ''}
+function validateFile(f){if(!f)return '';if(f.size>MAX)return 'Ukuran maksimal 1,5 MB.';if(!MIME.includes(f.type))return 'Format harus PDF/JPG/PNG.';return ''}
 function schoolForm(s){return String(s?.bentuk_pendidikan||s?.jenjang||'').toUpperCase()}
 function korwilSchools(level='TK'){const pos=position().toLowerCase();return schools.filter(s=>schoolForm(s)===level&&s.kecamatan&&pos.includes(String(s.kecamatan).toLowerCase()))}
 function proposerCanUpload(row){return row?.created_by===p().id&&role()==='PENGAWAS'}
