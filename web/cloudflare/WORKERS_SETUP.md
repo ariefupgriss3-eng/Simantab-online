@@ -35,3 +35,9 @@ Referensi resmi:
 https://developers.cloudflare.com/workers/get-started/dashboard/
 https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
 https://developers.cloudflare.com/workers/static-assets/
+
+## Build pertama GitHub → Cloudflare
+
+GitHub Cloudflare App telah diberi akses hanya ke repositori SIMANTAB oleh pemilik akun. Commit dokumentasi pada cabang migrasi ini digunakan untuk memicu percobaan build pertama melalui koneksi GitHub–Cloudflare, tanpa menyentuh branch `main`, Supabase, atau layanan Vercel.
+
+Status deployment belum boleh disebut berhasil sebelum log build Cloudflare menunjukkan sukses dan Worker menyajikan antarmuka SIMANTAB. Dua endpoint AI tetap memerlukan migrasi terpisah.
