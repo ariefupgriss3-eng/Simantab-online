@@ -4,10 +4,12 @@
 -- Source: pg_get_functiondef of live production RPCs at 2026-10-13.
 DO $kabid_guard$
 BEGIN
- IF position('if v_role<>''SUPER_ADMIN'' and v_role<>v_coord then' in pg_get_functiondef('public.submission_assign_staff_balanced(uuid[],uuid[],text)'::regprocedure))=0 THEN
+ IF position('if v_role<>''SUPER_ADMIN'' and v_role<>v_coord then' in pg_get_functiondef('public.submission_assign_staff_balanced(uuid[],uuid[],text)'::regprocedure))=0
+ AND position('if v_role not in (''SUPER_ADMIN'',''KABID'') and v_role<>v_coord then' in pg_get_functiondef('public.submission_assign_staff_balanced(uuid[],uuid[],text)'::regprocedure))=0 THEN
    RAISE EXCEPTION 'Unexpected existing balanced assignment RPC; abort.';
  END IF;
- IF position('if v_role<>''SUPER_ADMIN'' and v_role<>v_sub.coordinator_role then' in pg_get_functiondef('public.submission_assign_staff_multi(uuid,uuid[],text)'::regprocedure))=0 THEN
+ IF position('if v_role<>''SUPER_ADMIN'' and v_role<>v_sub.coordinator_role then' in pg_get_functiondef('public.submission_assign_staff_multi(uuid,uuid[],text)'::regprocedure))=0
+ AND position('if v_role not in (''SUPER_ADMIN'',''KABID'') and v_role<>v_sub.coordinator_role then' in pg_get_functiondef('public.submission_assign_staff_multi(uuid,uuid[],text)'::regprocedure))=0 THEN
    RAISE EXCEPTION 'Unexpected existing multi assignment RPC; abort.';
  END IF;
 END
