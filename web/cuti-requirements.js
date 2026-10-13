@@ -3,7 +3,7 @@
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.openSubmission||!window.__simantabProfile);i++)await wait(50);
 const sb=window.__simantabSb,$=id=>document.getElementById(id),p=()=>window.__simantabProfile||{};if(!sb)return;
-const MAX=512000,ACCEPT='.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png',MIME=['application/pdf','image/jpeg','image/png'];
+const MAX=1572864,ACCEPT='.pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png',MIME=['application/pdf','image/jpeg','image/png'];
 const TYPES={
  TAHUNAN:{label:'Cuti Tahunan',docs:[['CUTI_FORMULIR','Formulir Cuti'],['CUTI_SK_TERAKHIR','SK Terakhir']]},
  SAKIT:{label:'Cuti Sakit',docs:[['CUTI_FORMULIR','Formulir Cuti'],['CUTI_SK_TERAKHIR','SK Terakhir'],['CUTI_SURAT_SAKIT_DOKTER','Surat Keterangan Sakit dari Dokter Keluarga / Puskesmas / Rumah Sakit']]},
@@ -16,8 +16,8 @@ const ALL_LABEL=Object.fromEntries(Object.values(TYPES).flatMap(x=>x.docs));
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const safe=n=>String(n||'file').normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-100);
 let cutiActive=false;
-function fileBad(f){if(!f)return 'Berkas wajib dipilih.';if(f.size>MAX)return 'Ukuran maksimal 500 KB.';if(!MIME.includes(f.type))return 'Format harus PDF/JPG/PNG.';return ''}
-function renderDocs(){const type=$('cutiType')?.value||'',box=$('cutiDocs');if(!box)return;const cfg=TYPES[type];if(!cfg){box.innerHTML='<div class="notice">Pilih jenis cuti untuk menampilkan persyaratan berkas.</div>';return}box.innerHTML=`${cfg.note?`<div class="info" style="margin-bottom:10px">${esc(cfg.note)}</div>`:''}<div class="grid">${cfg.docs.map(([code,label],i)=>`<div class="field s6"><label>${i+1}. ${esc(label)} <span style="color:#b42318">*</span></label><input id="cutiFile_${code}" type="file" accept="${ACCEPT}"><div class="small">PDF/JPG/PNG • maksimal 500 KB.</div></div>`).join('')}</div><div class="info"><b>${cfg.docs.length} berkas wajib.</b> Usulan tidak dapat dinyatakan selesai sebelum seluruh dokumen lengkap.</div>`}
+function fileBad(f){if(!f)return 'Berkas wajib dipilih.';if(f.size>MAX)return 'Ukuran maksimal 1,5 MB.';if(!MIME.includes(f.type))return 'Format harus PDF/JPG/PNG.';return ''}
+function renderDocs(){const type=$('cutiType')?.value||'',box=$('cutiDocs');if(!box)return;const cfg=TYPES[type];if(!cfg){box.innerHTML='<div class="notice">Pilih jenis cuti untuk menampilkan persyaratan berkas.</div>';return}box.innerHTML=`${cfg.note?`<div class="info" style="margin-bottom:10px">${esc(cfg.note)}</div>`:''}<div class="grid">${cfg.docs.map(([code,label],i)=>`<div class="field s6"><label>${i+1}. ${esc(label)} <span style="color:#b42318">*</span></label><input id="cutiFile_${code}" type="file" accept="${ACCEPT}"><div class="small">PDF/JPG/PNG • maksimal 1,5 MB.</div></div>`).join('')}</div><div class="info"><b>${cfg.docs.length} berkas wajib.</b> Usulan tidak dapat dinyatakan selesai sebelum seluruh dokumen lengkap.</div>`}
 window.renderCutiRequirements=renderDocs;
 function renderForm(){
  cutiActive=true;const title=$('newSubTitle');if(title)title.textContent='Pengajuan Cuti';
