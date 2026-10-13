@@ -81,9 +81,9 @@ test('active Jabfung form contains no paid gateway invocation',()=>{
  assert.match(ui,/Tanpa AI Berbayar/);
  assert.match(freeUi,/OCR_BROWSER_LOCAL/);
  assert.doesNotMatch(freeUi,/ai-gateway\.vercel\.sh|generativelanguage\.googleapis\.com|fetch\('https:\/\/api/);
- assert.doesNotMatch(freeUi,/cdn\\.jsdelivr\\.net|unpkg\\.com/);
- assert.match(freeUi,/ocr\\/pdf\\.mjs/);
- assert.match(freeUi,/workerPath:libs\\.worker/);
+ assert.doesNotMatch(freeUi,/cdn\.jsdelivr\.net|unpkg\.com/);
+ assert.match(freeUi,/ocr\/pdf\.mjs/);
+ assert.match(freeUi,/workerPath:libs\.worker/);
  assert.match(fin,/jabfung-free-verifier-core\.mjs/);
  assert.match(fin,/jabfung-free-verifier-ui\.mjs/);
 });
