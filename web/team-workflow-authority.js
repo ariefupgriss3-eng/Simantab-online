@@ -17,6 +17,9 @@ let workflowEditingActivityId=null;
 const isAdmin=()=>!!p().is_admin;
 const role=()=>p().role||'';
 function injectWorkflowNav(){
+ // Exclusive Pengawas sidebar is managed by a database-grant-gated module.
+ // Never re-inject extra promotion/discipline navigation for this role.
+ if(role()==='PENGAWAS')return;
  const nav=$('nav');if(!nav||$('workflowNavGroup'))return;
  const r=role(),discipline=['SUPER_ADMIN','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','PENGAWAS'].includes(r),promotion=['SUPER_ADMIN','KABID','STAFF_PROMOSI','PENGAWAS'].includes(r);
  if(!discipline&&!promotion)return;
