@@ -28,7 +28,8 @@ const MODS=[
 ];
 for(const [file,marker,version] of MODS){
  let code='';
- const forceRemote=['pengawas-menu-scope.js','pengawas-dashboard-kadin.js','korwil-scope-dashboard.js','korwil-dashboard-title.js','cuti-requirements.js','super-admin-merge-pengawas.js'].includes(file);
+ // Cloudflare preview must build from this branch, never quietly load outdated UI from main.
+ const forceRemote=process.env.SIMANTAB_BUILD_TARGET!=='cloudflare' && ['pengawas-menu-scope.js','pengawas-dashboard-kadin.js','korwil-scope-dashboard.js','korwil-dashboard-title.js','cuti-requirements.js','super-admin-merge-pengawas.js'].includes(file);
  if(!forceRemote){try{code=await fs.readFile(file,'utf8')}catch(_){}}
  if(!code){
   const url=`https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/${file}?cb=${Date.now()}-${Math.random()}`;
