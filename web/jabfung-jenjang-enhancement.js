@@ -57,7 +57,9 @@
   window.submitJabfungJenjang=async()=>{
     const msg=document.getElementById('jabfungMsg');
     const btn=document.getElementById('jabfungSendBtn');
+    if(!btn || btn.disabled) return;
     let createdSub=null;
+    let needsStaffRecovery=false;
     try{
       const profile=getProfile();
       if(!profile.id) throw new Error('Profil login belum tersedia. Silakan masuk ulang.');
@@ -71,28 +73,47 @@
 
       btn.disabled=true;
       msg.className='small';
-      msg.textContent='Mengirim usulan dan dokumen Jabfung...';
+      msg.textContent='Memeriksa identitas dan sesi login...';
 
+      // RLS checks auth.uid(), not the profile cached in the page.
+      // Verify both identities using the same Supabase client that will insert the row.
+      const {data:identity,error:identityErr}=await sb.auth.getUser();
+      const authUser=identity?.user;
+      if(identityErr||!authUser?.id) throw new Error('Sesi login tidak valid atau telah berakhir. Keluar dari SIMANTAB, masuk kembali, lalu pilih ulang berkas.');
+      if(authUser.id!==profile.id) throw new Error('Identitas login berbeda dengan profil yang tampil. Keluar dari SIMANTAB lalu login kembali dengan akun yang benar.');
+      const {data:account,error:accountErr}=await sb.from('profiles')
+        .select('id,is_active,approval_status').eq('id',authUser.id).maybeSingle();
+      if(accountErr) throw new Error('Gagal memastikan status akun. Coba login ulang; jika tetap gagal, hubungi admin.');
+      if(!account || !account.is_active || account.approval_status!=='APPROVED')
+        throw new Error('Akun belum aktif/disetujui untuk mengirim usulan. Hubungi admin SIMANTAB.');
+
+      msg.textContent='Mengirim usulan dan dokumen Jabfung...';
       const notes=document.getElementById('jabfungNotes')?.value.trim()||'';
       const {data:sub,error:subErr}=await sb.from('submissions').insert({
-        user_id:profile.id,
+        user_id:authUser.id,
         service_type:'E_JABFUNG',
         title:'Usul SK Kenaikan Jenjang Jabatan (Jabfung)',
         description:notes
       }).select('*').single();
-      if(subErr) throw subErr;
+      if(subErr){
+        if(subErr.code==='42501' || /row.level security/i.test(subErr.message||'')){
+          console.error('JABFUNG_RLS_DENIED',{phase:'create_submission',code:subErr.code});
+          throw new Error('Pengiriman ditolak oleh kebijakan keamanan sistem (RLS). Tidak ada usulan yang tersimpan. Login ulang, kemudian hubungi admin jika masih gagal.');
+        }
+        throw subErr;
+      }
       createdSub=sub;
 
       for(const input of inputs){
         const f=input.files?.[0];
         if(!f) continue;
         const safe=f.name.normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-100);
-        const path=`${profile.id}/${sub.id}/jabfung/${crypto.randomUUID()}_${safe}`;
+        const path=`${authUser.id}/${sub.id}/jabfung/${crypto.randomUUID()}_${safe}`;
         const {error:upErr}=await sb.storage.from('simantab-documents').upload(path,f,{contentType:f.type,upsert:false});
         if(upErr) throw upErr;
         const {error:metaErr}=await sb.from('submission_files').insert({
           submission_id:sub.id,
-          user_id:profile.id,
+          user_id:authUser.id,
           storage_path:path,
           file_name:f.name,
           file_size:f.size,
@@ -120,10 +141,13 @@
     }catch(e){
       if(msg){
         msg.className='err';
-        msg.textContent=(createdSub?'Usulan sudah terbentuk, tetapi terjadi kendala saat unggah: ':'')+(e.message||String(e));
+        needsStaffRecovery=!!createdSub;
+        msg.textContent=(createdSub
+          ?'Usulan sudah dibuat, tetapi unggah berkas belum tuntas. Jangan kirim ulang agar tidak duplikat; periksa Status Usulan dan hubungi admin dengan nomor usulan '+createdSub.id+'. Penyebab: '
+          :'')+(e.message||String(e));
       }
     }finally{
-      if(btn) btn.disabled=false;
+      if(btn && !needsStaffRecovery) btn.disabled=false;
     }
   };
 
