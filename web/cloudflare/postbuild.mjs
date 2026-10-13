@@ -11,6 +11,8 @@ const policyModule = await fs.readFile(path.join(output, 'supervisor-scope-polic
 const korwilModule = await fs.readFile(path.join(output, 'korwil-scope-dashboard.js'), 'utf8');
 const needsModule = await fs.readFile(path.join(output, 'gtk-needs-progress.js'), 'utf8');
 const disciplineModule = await fs.readFile(path.join(output, 'discipline-evidence.js'), 'utf8');
+const offlineMonitoringModule = await fs.readFile(path.join(output, 'offline-consultation-monitoring.js'), 'utf8');
+const korwilMonitoringModule = await fs.readFile(path.join(output, 'korwil-submission-monitoring.js'), 'utf8');
 const legacyMenu = await fs.readFile(path.join(output, 'legacy-shell-restore.js'), 'utf8');
 const rgtkMenu = await fs.readFile(path.join(output, 'rgtk-monitoring.js'), 'utf8');
 const workflowMenu = await fs.readFile(path.join(output, 'team-workflow-authority.js'), 'utf8');
@@ -51,6 +53,16 @@ assert(korwilModule.includes('postLoginRecovery:true') &&
  'Dashboard Korwil belum pulih setelah login.');
 assert(module.includes("roleName=grantKind==='KORWIL'?'Korwil Kecamatan'"),
  'Label akun Korwil masih memakai teks role Pengawas.');
+assert(html.includes('./offline-consultation-monitoring.js?v=4') &&
+       offlineMonitoringModule.includes('SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V4_EXCLUDE_SUPERVISORS') &&
+       offlineMonitoringModule.includes("if(['PENGAWAS','KORWIL'].includes(role()))return"),
+ 'Konsultasi luring masih muncul dalam Monitoring Korwil.');
+assert(html.includes('./korwil-submission-monitoring.js?v=1') &&
+       korwilMonitoringModule.includes('SIMANTAB_KORWIL_SUBMISSION_MONITORING_V1_READONLY') &&
+       korwilMonitoringModule.includes("sb.rpc('korwil_monitor_submissions')") &&
+       korwilMonitoringModule.includes("x.kind==='KORWIL'") &&
+       korwilMonitoringModule.includes('readOnly:true'),
+ 'Monitoring usulan GTK Korwil belum aman atau belum terpasang.');
 assert(module.includes('SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG'),
   'Kode katalog layanan Pengawas tidak cocok.');
 assert(module.includes('simantab:profile-ready'), 'Menu Pengawas masih menggunakan timeout login.');
@@ -131,6 +143,9 @@ console.log(JSON.stringify({
   menuPengawasCacheVersion: 8,
   supervisorScopeVersion: 1,
   korwilDashboardVersion: 5,
+  korwilMonitoringVersion: 1,
+  offlineMonitoringExcludeKorwil: true,
+  korwilMonitoringServerRpcPending: true,
   dabinDashboardVersion: 3,
   supervisorNavigationGuards: ['redistribusi','diklat','workflow','rgtk','legacy'],
   securityHeaders: true,
