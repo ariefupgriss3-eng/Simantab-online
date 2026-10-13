@@ -101,7 +101,21 @@ window.disciplineSaveCase=async()=>{
  if(!subject||!npsn){msg.className='err';msg.textContent='Nama GTK dan sekolah wajib dipilih.';return}
  if(level==='SD'&&!dabinNip){msg.className='err';msg.textContent='Pengawas Dabin SD dari TCS belum ditemukan untuk sekolah ini.';return}
  if(level!=='SD'&&!dabin){msg.className='err';msg.textContent='Pengawas Dabin wajib dipilih.';return}
- const payload={case_type:type,case_level:'BERJENJANG',target_school_npsn:npsn,dabin_supervisor_id:dabin||null,dabin_supervisor_nip:dabinNip||null,dabin_supervisor_name:dabinName||null,subject_name:subject,summary,status:'OPEN',created_by:p().id,updated_at:new Date().toISOString()};
+ const scopeLevel=level==='TK'?'TK_PAUD_PNF':level;
+ const coordinatorRole=level==='TK'?'SUBKOOR_TK':level==='SD'?'KASI_SD':'KASI_SMP';
+ const selectedSchool=schools.find(x=>String(x.npsn)===String(npsn));
+ if(!selectedSchool||schoolForm(selectedSchool)!==level){
+  msg.className='err';msg.textContent='Sekolah tidak sesuai penugasan Korwil/Dabin atau jenjang. Segarkan daftar sekolah.';return;
+ }
+ if(level==='TK'){
+  msg.className='notice';
+  msg.textContent='Usulan TK belum dapat disimpan: izin server Korwil untuk jenjang TK/PAUD/PNF masih memerlukan penyelarasan. Jangan mengubah jenjang menjadi SD untuk melewati pembatasan.';
+  return;
+ }
+ const payload={case_type:type,case_level:'BERJENJANG',scope_level:scopeLevel,coordinator_role:coordinatorRole,
+   school_name:selectedSchool.school_name,target_school_npsn:npsn,
+   dabin_supervisor_id:dabin||null,dabin_supervisor_nip:dabinNip||null,dabin_supervisor_name:dabinName||null,
+   subject_name:subject,summary,status:'OPEN',created_by:p().id,updated_at:new Date().toISOString()};
  const {data:row,error}=await sb.from('supervision_cases').insert(payload).select('*').single();if(error){msg.className='err';msg.textContent=error.message;return}caseCache.push(row);
  for(const code of ALL){const f=$(`new_${code}`)?.files?.[0];if(!f)continue;const bad=validateFile(f);if(bad){msg.className='err';msg.textContent=`Usulan tersimpan. ${LABEL[code]} gagal: ${bad}`;await renderDisciplineEvidence();return}try{await uploadEvidence(row.id,code,f)}catch(e){msg.className='err';msg.textContent=`Usulan tersimpan. Unggah ${LABEL[code]} gagal: ${e?.message||e}`;await renderDisciplineEvidence();return}}
  await renderDisciplineEvidence();
