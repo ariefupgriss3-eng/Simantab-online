@@ -62,6 +62,28 @@ Delta file yang diizinkan di artefak hasil hanya:
 dan direktori \`static/ocr/**\`. Semua file aplikasi di luar Jabfung
 dibandingkan SHA-256 dan harus identik dengan baseline.
 
+## Pembuktian referensi produksi (baca-saja, 13 Oktober 2026)
+
+Tautan artefak deployment spesifik yang dibaca:
+`https://simantab-online-9ntew97go-mariefrohman-6773.vercel.app/`
+— mengembalikan HTTP 200 dan HTML publik. **Script Jabfung pada HTML tersebut
+adalah `./jabfung-jenjang-enhancement.js?v=2`, bukan `?v=4`.**
+Karena itu, penerapan overlay telah diperbaiki agar cocok **hanya** dengan
+anchor `?v=2` yang benar-benar diamati; bila baseline berbeda, proses
+berhenti, tidak melakukan penggantian spekulatif.
+
+Pada deployment spesifik tersebut:
+- `/jabfung-jenjang-enhancement.js?v=2` => HTTP 200 (versi lama).
+- `/jabfung-free-verifier-ui.mjs` => HTTP 404 (belum tersedia).
+- `/ocr/pdf.mjs` => HTTP 404 (belum tersedia).
+- `/api/jabfung-ai-read` => HTTP 410 (pengaman Vercel sudah aktif).
+
+Akses HTML dan aset melalui HTTPS **belum cukup** untuk menyusun ulang
+seluruh Vercel Build Output API v3: manifest, fungsi edge/server, serta
+file deployment lain tidak dapat disimpulkan hanya dari sumber HTML.
+Jika file-tree API tidak tersedia, tetap **NO-GO** untuk rilis frontend
+tanpa menyalin semua artefak baseline dengan integritas yang diverifikasi.
+
 ## Status pemblokir saat ini
 
 - Pemeriksaan API Vercel \`list_deployment_files\` untuk deployment baseline
