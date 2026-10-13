@@ -4,7 +4,7 @@ await import('./build-workflow.mjs');
 const path='.vercel/output/static/index.html';
 let html=await fs.readFile(path,'utf8');
 const MODS=[
- ['legacy-shell-restore.js','SIMANTAB_LEGACY_SHELL_RESTORE_V1',2],
+ ['legacy-shell-restore.js','SIMANTAB_LEGACY_SHELL_RESTORE_V1',3],
  ['school-master-restore-fix.js','SIMANTAB_SCHOOL_MASTER_RESTORE_FIX_V2',3],
  ['team-display-fix.js','SIMANTAB_TEAM_DISPLAY_FIX_V1',2],
  ['admin-data-summary-fix.js','SIMANTAB_ADMIN_DATA_SUMMARY_FIX_V1',1],
