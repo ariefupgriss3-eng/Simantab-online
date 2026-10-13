@@ -7,6 +7,8 @@ on:
       - 'web/jabfung-jenjang-enhancement.js'
       - 'web/build.mjs'
       - 'web/finalize-html.mjs'
+      - 'web/package.json'
+      - 'web/vendor-jabfung-ocr.mjs'
       - 'web/tests/jabfung-free-verifier.test.mjs'
       - '.github/workflows/jabfung-free-local-ci.yml'
   workflow_dispatch:
@@ -31,3 +33,14 @@ jobs:
           node --check web/finalize-html.mjs
       - name: Test free local rules
         run: node --test web/tests/jabfung-free-verifier.test.mjs
+      - name: Verify self-hosted OCR asset packaging from pinned npm packages
+        run: |
+          cd web
+          npm install --ignore-scripts --no-audit --no-fund
+          mkdir -p .vercel/output/static
+          node vendor-jabfung-ocr.mjs
+          test -s .vercel/output/static/ocr/pdf.mjs
+          test -s .vercel/output/static/ocr/pdf.worker.mjs
+          test -s .vercel/output/static/ocr/tesseract.esm.min.js
+          test -s .vercel/output/static/ocr/tesseract.worker.min.js
+          test -s .vercel/output/static/ocr/lang/eng.traineddata.gz
