@@ -15,7 +15,14 @@ const sha256Text=async(s:string)=>{
 
 Deno.serve(async(req)=>{
   if(req.method==="OPTIONS")return new Response("ok",{headers:C});
-  if(req.method==="GET")return J({ok:true,engine:"JABFUNG_DOC_AI_V1",policy:"ADVISORY_HUMAN_FINAL"});
+  if(req.method==="GET")return J({ok:true,engine:"JABFUNG_LOCAL_OCR_V1",mode:"FREE_LOCAL_ONLY",paidGateway:false});
+  // JABFUNG_FREE_FAIL_CLOSED_20261013:
+  // Old clients must never trigger a paid provider after free mode is deployed.
+  // No database writes, signed URLs, or AI provider requests are executed.
+  if(req.method==="POST")return J({
+    error:"Verifikator Jabfung kini memakai OCR gratis di perangkat. Muat ulang halaman lalu gunakan Periksa Berkas Gratis.",
+    code:"FREE_LOCAL_ONLY",paidGateway:false
+  },503);
   try{
     const token=(req.headers.get("Authorization")||"").replace(/^Bearer\s+/,"");
     if(!token)return J({error:"Unauthorized"},401);
