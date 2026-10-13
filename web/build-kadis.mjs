@@ -16,7 +16,7 @@ html=html.replace("<p>${esc(x.tugas)}</p>","<p style=\"white-space:pre-line\">${
 
 html=html.replaceAll("{t:'E_JABFUNG',e:'🧭',n:'Usul & Konsultasi e-Jabfung',d:'Usul dan konsultasi e-Jabfung. Aplikasi BKD: appbkd.batangkab.go.id',url:'https://appbkd.batangkab.go.id/'}","{t:'E_JABFUNG',e:'🧭',n:'Usul SK Kenaikan Jenjang Jabfung',d:'Pengajuan SK kenaikan jenjang Jabatan Fungsional. Unggah berkas persyaratan maksimal 1,5 MB per file.'}");
 html=html.replaceAll("{t:'E_JABFUNG',e:'🧭',n:'Usul SK Kenaikan Jenjang Jabfung',d:'Pengajuan SK kenaikan jenjang Jabatan Fungsional. Unggah berkas persyaratan maksimal 1,5 MB per file.',url:'https://appbkd.batangkab.go.id/'}","{t:'E_JABFUNG',e:'🧭',n:'Usul SK Kenaikan Jenjang Jabfung',d:'Pengajuan SK kenaikan jenjang Jabatan Fungsional. Unggah berkas persyaratan maksimal 1,5 MB per file.'}");
-html=html.replaceAll('Pilih jenis layanan, isi keperluan, lalu unggah berkas maksimal 1,5 MB per file.','Pilih jenis layanan dan unggah berkas sesuai ketentuan masing-masing layanan. Batas unggah 1,5 MB per berkas untuk seluruh layanan.');
+html=html.replaceAll('Pilih jenis layanan, isi keperluan, lalu unggah berkas maksimal 500 KB per file.','Pilih jenis layanan dan unggah berkas sesuai ketentuan masing-masing layanan. Batas unggah 1,5 MB per berkas untuk seluruh layanan.');
 
 if(!html.includes("t:'KLARIFIKASI_PAK'")){
  const serviceAnchor=" {t:'LAINNYA',e:'📁',n:'Layanan Lainnya',d:'Administrasi ketenagaan lainnya.'}\n];";
