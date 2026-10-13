@@ -6,6 +6,8 @@ const htmlPath = path.join(output, 'index.html');
 const modulePath = path.join(output, 'pengawas-menu-scope.js');
 const html = await fs.readFile(htmlPath, 'utf8');
 const module = await fs.readFile(modulePath, 'utf8');
+const legacyMenu = await fs.readFile(path.join(output, 'legacy-shell-restore.js'), 'utf8');
+const rgtkMenu = await fs.readFile(path.join(output, 'rgtk-monitoring.js'), 'utf8');
 
 function assert(ok, message) {
   if (!ok) throw new Error('[Cloudflare migration build] ' + message);
@@ -19,6 +21,12 @@ assert(module.includes('Riwayat Usulan Saya'),
   'Katalog dan riwayat usulan Pengawas belum tersedia.');
 assert(module.includes('discipline_submitter_grants'),
   'Pemeriksaan izin khusus Korwil/Pengawas SMP tidak tersedia.');
+assert(legacyMenu.includes("profile().role==='PENGAWAS')return;"),
+  'Modul legacy masih berpotensi menambahkan ulang menu Pengawas tanpa henti.');
+assert(rgtkMenu.includes("if(ROLE()==='PENGAWAS')return;"),
+  'Modul RGTK masih berpotensi menambahkan ulang menu Pengawas tanpa henti.');
+assert(html.includes('./legacy-shell-restore.js?v=3'), 'Cache version modul legacy belum diperbarui.');
+assert(html.includes('./rgtk-monitoring.js?v=2'), 'Cache version modul RGTK belum diperbarui.');
 
 const required = ['manifest.json', 'sw.js', 'pwa-install.js', 'gtk-redistribution-analysis.js'];
 for (const file of required) {
