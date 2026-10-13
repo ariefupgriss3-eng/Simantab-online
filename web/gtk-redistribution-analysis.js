@@ -178,6 +178,9 @@ function ensureSection(){
  return sec;
 }
 function ensureNav(){
+ // Supervisor menu already contains its own Analisis Redistribusi entry.
+ // Do not repeatedly reinsert the same tab or fight the supervisor nav observer.
+ if(['PENGAWAS','KORWIL'].includes(role()))return;
  const nav=$('nav');if(!nav)return;
  let b=nav.querySelector('.navbtn[data-tab="gtkRedistributionAnalysis"]');if(b)return;
  b=document.createElement('button');b.className='navbtn';b.dataset.tab='gtkRedistributionAnalysis';
