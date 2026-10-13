@@ -1,0 +1,35 @@
+{
+  "release": "JABFUNG_OCR_LOCAL_ASSET_MANIFEST_V1",
+  "verifiedAt": "2026-10-13",
+  "source": {
+    "repo": "ariefupgriss3-eng/Simantab-online",
+    "workflowRun": 38338787750,
+    "artifactId": 11785781838,
+    "zipFilename": "SIMANTAB-Jabfung-OCR-Local-Preview-20261013.zip",
+    "zipSizeBytes": 26859206,
+    "zipSha256": "aa2cde78b0acd84f497e0475c9577fabe6719e018d8f27a052ba9e667d00075f",
+    "archiveEntryCount": 26
+  },
+  "assets": {
+    "ocr/pdf.mjs": "a209a2124baa35cbb9015b809926f1bcec9dd1c247296290e205dd9d76cb9128",
+    "ocr/pdf.worker.mjs": "7c237f83fa56bce645d8af51d183c9c56ba7b2d2928ff42754dc7020bea36323",
+    "ocr/tesseract.esm.min.js": "da6267cfe5036ae718a59eece3b5744a4655b0b8faa9f16259362b783d74c9bb",
+    "ocr/tesseract.worker.min.js": "38645599043239c0eb6db08a6504a92dcdc292200535f3e9339cd77c4443b842",
+    "ocr/core/tesseract-core-lstm.wasm.js": "775a35df6f2ae100e02609443e6bd5cafcd07983dd6175454ca4a432a7730687",
+    "ocr/lang/ind.traineddata.gz": "46130be88c603e5a38e2fe5420540d8712f177fbaf46c904aaacccddcc0bc308",
+    "ocr/lang/eng.traineddata.gz": "ed350f3752f81ee8f38769edc14d92d997dababe23b565c59879372cc46a2468",
+    "jabfung-free-verifier-core.mjs": "d34e69830b82694a9f9758a01a00aa68be8f6455e7bf5340edc6054921c22603",
+    "jabfung-free-verifier-ui.mjs": "a8bec8f3adab485aa8a1405c832077ffe4b72654b4b97624db60a0b59d654f11"
+  },
+  "productionBaseline": {
+    "deploymentId": "dpl_8LpSihFq89LDHmbFJbjHQJjqyT9Q",
+    "htmlScript": "./jabfung-jenjang-enhancement.js?v=2",
+    "htmlAccessible": true,
+    "completeBuildOutputAvailable": false
+  },
+  "notes": [
+    "ZIP checksum and individual entry digests were computed from bytes of the downloaded GitHub Actions artifact in this session.",
+    "This manifest does not prove physical Android OCR or production integration.",
+    "Do not deploy full SIMANTAB rebuild as a substitute for immutable baseline overlay."
+  ]
+}

@@ -1,5 +1,6 @@
 /* SIMANTAB_JABFUNG_JENJANG_UI_V1 */
 /* SIMANTAB_JABFUNG_AI_VERIFIER_V2 */
+/* SIMANTAB_JABFUNG_AI_FREE_LOCAL_V4_20261013 */
 (async()=>{
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   for(let i=0;i<120 && (!window.openSubmission || !window.showTab || !window.__simantabSb);i++) await sleep(50);
@@ -28,13 +29,13 @@
       const reqs=await getRequirements();
       const docs=reqs.filter(r=>r.requirement_type==='DOCUMENT');
       section.innerHTML=`<div class="head"><div><h2>Usul SK Kenaikan Jenjang Jabatan (Jabfung)</h2><p>Unggah setiap berkas pada item yang sesuai. Maksimal 1,5 MB per file.</p></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
-      <div class="card" style="margin-bottom:13px"><div class="info"><b>AI Verifikator aktif.</b> Setelah berkas dikirim, AI meneliti kesesuaian isi, keterbacaan/blur, serta indikator visual stempel, tanda tangan, TTE atau QR. <b>AI tidak menetapkan dokumen asli/palsu</b>; keabsahan final tetap ditetapkan petugas melalui dokumen sumber atau verifikasi resmi.</div></div>
+      <div class="card" style="margin-bottom:13px"><div class="info"><b>Verifikator Gratis di Perangkat.</b> Klik pemeriksaan OCR gratis sebelum atau setelah mengirim berkas. PDF teks maupun gambar diperiksa sebagai rekomendasi awal, tanpa mengirim dokumen ke penyedia AI berbayar. Hasil OCR bukan bukti keaslian SK, stempel, tanda tangan atau TTE; petugas tetap memutuskan.</div></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>Ketentuan unggah:</b> PDF/JPG/PNG, maksimal 1,5 MB per file. Berkas bertanda * wajib diunggah sebelum usulan dikirim.</div></div>
       <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">Berkas Usul Kenaikan Jenjang Jabfung</h3>
         ${docs.map(r=>`<div class="field"><label>${r.sort_order}. ${esc(r.label)} ${r.is_required?'<b style="color:#b42318">*</b>':'<span class="small">(bila ada/opsional)</span>'}</label><input class="jabfungReqFile" data-code="${esc(r.code)}" data-required="${r.is_required?'1':'0'}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><div class="small">${esc(r.description||'')}</div></div>`).join('')}
       </div>
       <div class="card" style="margin-bottom:13px"><div class="field"><label>Catatan/Keterangan Usul</label><textarea id="jabfungNotes" placeholder="Keterangan tambahan bila diperlukan"></textarea></div></div>
-      <div class="card"><button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul & Jalankan AI Verifikator</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
+      <div class="card"><button type="button" class="btn soft" onclick="__verifyJabfungFreeFromForm()">🔎 Periksa Berkas Gratis (OCR Lokal)</button> <button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul (Tanpa AI Berbayar)</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
     }catch(e){
       section.innerHTML=`<div class="card err">Gagal memuat form Jabfung: ${esc(e.message||e)}</div>`;
     }
@@ -47,11 +48,8 @@
     await renderForm();
   };
 
-  async function runAi(submissionId){
-    const {data,error}=await sb.functions.invoke('simantab-jabfung-ai-workflow',{body:{submission_id:submissionId}});
-    if(error) throw error;
-    if(data?.error) throw new Error(data.error);
-    return data;
+  async function runAi(){
+    throw new Error('AI berbayar dinonaktifkan. Gunakan OCR Gratis di Perangkat.');
   }
 
   window.submitJabfungJenjang=async()=>{
@@ -66,7 +64,7 @@
       for(const input of inputs){
         const f=input.files?.[0];
         if(input.dataset.required==='1'&&!f) throw new Error('Berkas wajib belum lengkap. Periksa semua item bertanda *.');
-        if(f && (f.size>MAX_FILE || !ALLOWED.includes(f.type))) throw new Error(`${f.name}: ukuran harus ≤ 1,5 MB dan format PDF/JPG/PNG.`);
+        if(f && (f.size<1 || f.size>MAX_FILE || !ALLOWED.includes(f.type))) throw new Error(`${f.name}: ukuran harus ≤ 1,5 MB dan format PDF/JPG/PNG.`);
       }
 
       btn.disabled=true;
@@ -102,20 +100,8 @@
         if(metaErr) throw metaErr;
       }
 
-      msg.className='small';
-      msg.textContent='Berkas berhasil dikirim. AI Verifikator sedang meneliti kesesuaian, keterbacaan, serta indikator stempel/tanda tangan...';
-      try{
-        const ai=await runAi(sub.id);
-        const c=ai?.counts||{};
-        msg.className=ai?.overall_status==='SESUAI'?'okmsg':'small';
-        msg.textContent=ai?.overall_status==='SESUAI'
-          ?`Usul terkirim. AI: ${c.sesuai||0} berkas sesuai. Keabsahan final tetap diverifikasi petugas.`
-          :`Usul terkirim. AI menemukan item yang perlu ditelaah: perbaikan ${c.perbaikan||0}, tidak sesuai ${c.tidak||0}, telaah manual ${c.telaah||0}. Status resmi belum diputuskan AI.`;
-      }catch(aiErr){
-        msg.className='small';
-        msg.textContent='Usul berhasil dikirim. AI Verifikator mengalami kendala teknis; usulan tetap tersimpan dan AI dapat dijalankan ulang oleh petugas.';
-        console.error('JABFUNG_AI_CLIENT_ERROR',aiErr);
-      }
+      msg.className='okmsg';
+      msg.textContent='Usulan Jabfung dan berkas tersimpan tanpa memanggil AI berbayar. Gunakan tombol pemeriksaan lokal untuk rekomendasi, keputusan resmi tetap oleh petugas.';
       setTimeout(()=>window.showTab('status'),1800);
     }catch(e){
       if(msg){
@@ -165,7 +151,7 @@
   window.__runJabfungAiFromModal=async id=>{
     const c=document.getElementById('jabfungAiContent');
     if(c)c.innerHTML='<div class="small">AI Verifikator sedang memeriksa dokumen. Mohon tunggu...</div>';
-    try{await runAi(id);await window.__openJabfungAiResult(id)}
+    try{ensureAiModal().classList.add('hidden');await window.__verifyJabfungFreeBySubmission(id)}
     catch(e){if(c)c.innerHTML=`<div class="err">${esc(e.message||e)}</div><button class="btn soft" onclick="__closeJabfungAi()">Tutup</button>`}
   };
 
@@ -177,7 +163,7 @@
       const {data:run,error:re}=await sb.from('jabfung_ai_verification_runs').select('*').eq('submission_id',id).order('created_at',{ascending:false}).limit(1).maybeSingle();
       if(re)throw re;
       if(!run){
-        c.innerHTML=`<div class="head"><div><h2>AI Verifikator Jabfung</h2><p>Belum ada hasil pemeriksaan AI.</p></div><button class="btn soft" onclick="__closeJabfungAi()">Tutup</button></div><div class="card"><button class="btn primary" onclick="__runJabfungAiFromModal('${id}')">🤖 Jalankan AI Verifikator</button></div>`;
+        c.innerHTML=`<div class="head"><div><h2>AI Verifikator Jabfung</h2><p>Belum ada hasil pemeriksaan AI.</p></div><button class="btn soft" onclick="__closeJabfungAi()">Tutup</button></div><div class="card"><button class="btn primary" onclick="__runJabfungAiFromModal('${id}')">🔎 Periksa Gratis di Perangkat</button></div>`;
         return;
       }
       const [{data:docs,error:de},reqs]=await Promise.all([
@@ -198,7 +184,7 @@
       <div class="card" style="margin-bottom:12px"><div class="tablewrap"><table><thead><tr><th>No</th><th>Berkas</th><th>Hasil AI</th><th>Keterbacaan</th><th>Stempel / TTD</th><th>Indikator autentisitas</th><th>Catatan AI</th></tr></thead><tbody>
       ${rows.map(x=>`<tr><td>${order[x.requirement_code]||'-'}</td><td><b>${esc(x.expected_label)}</b></td><td>${badge(x.status)}</td><td>${esc(x.readability_status||'-')} ${x.readability_score!=null?`<div class="small">${Math.round(Number(x.readability_score)*100)}%</div>`:''}</td><td>Stempel: ${x.stamp_present===true?'Ada':x.stamp_present===false?'Tidak tampak':'-'}<br>TTD/TTE: ${x.signature_present===true?'Ada':x.signature_present===false?'Tidak tampak':'-'}</td><td>${authBadge(x.authenticity_indicator)}<div class="small" style="margin-top:5px">${esc(x.authenticity_note||'')}</div></td><td>${esc(x.note||'-')}<div class="small" style="margin-top:5px">${esc(x.evidence||'')}</div></td></tr>`).join('')}
       </tbody></table></div></div>
-      <div class="card"><button class="btn primary" onclick="__runJabfungAiFromModal('${id}')">🔄 Verifikasi Ulang dengan AI</button></div>`;
+      <div class="card"><button class="btn primary" onclick="__runJabfungAiFromModal('${id}')">🔎 Periksa Dokumen Gratis (OCR Lokal)</button></div>`;
     }catch(e){
       c.innerHTML=`<div class="err">${esc(e.message||e)}</div><button class="btn soft" onclick="__closeJabfungAi()">Tutup</button>`;
     }
@@ -213,7 +199,7 @@
     d.id='myJabfungAiPanel';
     d.className='card';
     d.style.marginBottom='12px';
-    d.innerHTML=`<h3 style="margin-top:0">🤖 AI Verifikator Jabfung</h3><div class="small" style="margin-bottom:8px">Lihat hasil kesesuaian, keterbacaan, dan indikator visual stempel/tanda tangan. Keputusan final tetap oleh petugas.</div>${data.map(x=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #dfe7ef"><div><b>${esc(x.title)}</b><div class="small">${fmt(x.submitted_at)} • ${esc(x.status)}</div></div><button class="btn soft" onclick="__openJabfungAiResult('${x.id}')">Lihat Hasil AI</button></div>`).join('')}`;
+    d.innerHTML=`<h3 style="margin-top:0">🔎 Verifikator Gratis Jabfung</h3><div class="small" style="margin-bottom:8px">Periksa berkas tanpa biaya model AI. Riwayat AI lama hanya referensi dan keputusan resmi tetap oleh petugas.</div>${data.map(x=>`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #dfe7ef"><div><b>${esc(x.title)}</b><div class="small">${fmt(x.submitted_at)} • ${esc(x.status)}</div></div><button class="btn soft" onclick="__openJabfungAiResult('${x.id}')">Lihat Hasil Sebelumnya</button></div>`).join('')}`;
     target.prepend(d);
   }
 
