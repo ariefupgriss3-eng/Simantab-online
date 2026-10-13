@@ -31,7 +31,7 @@ async function loadPermission(){
 const canSyncTcs=()=>['SUPER_ADMIN','KABID'].includes(role());
 const safeName=n=>String(n||'file').normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-90);
 const statusLabel=s=>({OPEN:'Open',PROCESS:'Proses',CLOSED:'Selesai'})[s]||s,typeLabel=s=>s==='PERCERAIAN'?'Usul Perceraian GTK':'Pembinaan Disiplin';
-let schools=[],dabinProfiles=[],sdDabinRows=[],sdDabinByNpsn=new Map(),caseCache=[],profileMap=new Map(),syncAttempted=false,syncInfo=null;
+let schools=[],dabinProfiles=[],sdDabinRows=[],sdDabinByNpsn=new Map(),tkDabinByNpsn=new Map(),caseCache=[],profileMap=new Map(),syncAttempted=false,syncInfo=null;
 function validateFile(f){if(!f)return '';if(f.size>MAX)return 'Ukuran maksimal 500 KB.';if(!MIME.includes(f.type))return 'Format harus PDF/JPG/PNG.';return ''}
 function schoolForm(s){return String(s?.bentuk_pendidikan||s?.jenjang||'').toUpperCase()}
 function korwilSchools(level='TK'){return schools.filter(s=>schoolForm(s)===level&&assignedDistrict&&norm(s.kecamatan)===assignedDistrict)}
@@ -51,12 +51,26 @@ window.syncTcsSdDabin=async()=>{syncAttempted=false;await maybeSyncTcs(true);awa
 async function loadReferences(){
  if(canSyncTcs())await maybeSyncTcs();
  if(!isProposer()){if(canSyncTcs()||role()==='KEPALA_DINAS')await refreshTcsStatus();return}
- const [{data:s,error:se},{data:ps,error:pe},{data:refs,error:re}]=await Promise.all([
+ const [{data:s,error:se},{data:ps,error:pe},{data:refs,error:re},{data:tkRefs,error:te}]=await Promise.all([
   sb.from('school_master').select('npsn,school_name,bentuk_pendidikan,jenjang,kecamatan,is_active').eq('is_active',true).order('school_name'),
   sb.from('profiles').select('id,full_name,nip,position,role,is_active').eq('role','PENGAWAS').eq('is_active',true).order('full_name'),
-  sb.from('tcs_sd_dabin_reference').select('supervisor_nip,supervisor_name,supervisor_job_title,school_npsn,school_name,district,source_period,synced_at').eq('is_active',true).not('school_npsn','is',null)
+  sb.from('tcs_sd_dabin_reference').select('supervisor_nip,supervisor_name,supervisor_job_title,school_npsn,school_name,district,source_period,synced_at').eq('is_active',true).not('school_npsn','is',null),
+  sb.from('supervisor_dabin_reference').select('supervisor_nip,supervisor_name,school_npsn').eq('education_level','TK').eq('is_active',true)
  ]);
- if(se)throw se;if(pe)throw pe;if(re)throw re;schools=(s||[]).filter(x=>!isKorwil()||norm(x.kecamatan)===assignedDistrict&&['TK','SD'].includes(schoolForm(x)));dabinProfiles=(ps||[]).filter(x=>/dabin/i.test(String(x.position||'')));sdDabinRows=refs||[];sdDabinByNpsn=new Map(sdDabinRows.map(x=>[String(x.school_npsn),x]));
+ if(se)throw se;if(pe)throw pe;if(re)throw re;if(te)throw te;
+ schools=(s||[]).filter(x=>!isKorwil()||norm(x.kecamatan)===assignedDistrict&&['TK','SD'].includes(schoolForm(x)));
+ if(isDabin()){
+  const policy=window.__simantabSupervisorScope;
+  if(!policy)throw new Error('Referensi Dabin Pengawas belum tersedia.');
+  const {scope,schools:assigned}=await policy.schoolRows();
+  if(scope.kind!=='PENGAWAS')throw new Error('Penugasan Dabin SMP belum terverifikasi.');
+  const allowed=new Set(assigned.filter(x=>schoolForm(x)==='SMP').map(x=>x.npsn));
+  schools=schools.filter(x=>allowed.has(x.npsn));
+ }
+ dabinProfiles=(ps||[]).filter(x=>x.role==='PENGAWAS'&&x.is_active);
+ sdDabinRows=refs||[];
+ sdDabinByNpsn=new Map(sdDabinRows.map(x=>[String(x.school_npsn),x]));
+ tkDabinByNpsn=new Map((tkRefs||[]).map(x=>[String(x.school_npsn),x]));
  const sups=new Set(sdDabinRows.map(x=>x.supervisor_nip).filter(Boolean));syncInfo={rows:sdDabinRows.length,withNpsn:sdDabinRows.length,supervisors:sups.size,syncedAt:sdDabinRows.map(x=>x.synced_at).filter(Boolean).sort().at(-1)||null};
 }
 function schoolOptions(rows){return rows.map(s=>`<option value="${esc(s.npsn)}">${esc(s.school_name)} — ${esc(s.kecamatan||'-')}</option>`).join('')}
@@ -68,7 +82,8 @@ window.disciplineRefreshDabin=()=>{
   const ref=sdDabinByNpsn.get(npsn),profile=ref?dabinProfiles.find(x=>String(x.nip||'').trim()===String(ref.supervisor_nip||'').trim()):null;
   box.innerHTML=ref?`<div class="info"><b>${esc(ref.supervisor_name)}</b><br>NIP ${esc(ref.supervisor_nip)}<br><span class="small">Dabin SD otomatis dari TCS berdasarkan NPSN sekolah.${profile?' Akun SIMANTAB sudah tertaut.':' Akun SIMANTAB akan tertaut otomatis bila NIP sama.'}</span></div><input id="disciplineDabin" type="hidden" value="${esc(profile?.id||'')}"><input id="disciplineDabinNip" type="hidden" value="${esc(ref.supervisor_nip)}"><input id="disciplineDabinName" type="hidden" value="${esc(ref.supervisor_name)}">`:`<div class="err">Belum ada Pengawas Dabin SD TCS untuk NPSN sekolah ini. Lakukan sinkron TCS atau cek kecocokan NPSN.</div><input id="disciplineDabin" type="hidden" value=""><input id="disciplineDabinNip" type="hidden" value="">`;
  }else{
-  box.innerHTML=`<select id="disciplineDabin"><option value="">Pilih Pengawas Dabin...</option>${dabinProfiles.map(x=>`<option value="${x.id}">${esc(x.full_name)} — ${esc(x.position||'Pengawas Dabin')}</option>`).join('')}</select><input id="disciplineDabinNip" type="hidden" value="">${!dabinProfiles.length?'<div class="err">Belum ada akun aktif Pengawas Dabin untuk jenjang TK.</div>':''}`;
+  const ref=tkDabinByNpsn.get(npsn),supervisor=ref?dabinProfiles.find(x=>String(x.nip||'').trim()===String(ref.supervisor_nip||'').trim()):null;
+  box.innerHTML=ref?`<div class="info"><b>${esc(ref.supervisor_name||supervisor?.full_name||'Pengawas TK')}</b><br>NIP ${esc(ref.supervisor_nip||'-')}<br><span class="small">Pengawas Dabin TK berdasarkan NPSN sekolah.</span></div><input id="disciplineDabin" type="hidden" value="${esc(supervisor?.id||'')}"><input id="disciplineDabinNip" type="hidden" value="${esc(ref.supervisor_nip||'')}"><input id="disciplineDabinName" type="hidden" value="${esc(ref.supervisor_name||'')}">${!supervisor?'<div class="err">Akun Pengawas TK belum tertaut dengan NIP Dabin.</div>':''}`:`<div class="err">Referensi Pengawas Dabin TK untuk sekolah ini belum tersedia.</div><input id="disciplineDabin" type="hidden" value=""><input id="disciplineDabinNip" type="hidden" value="">`;
  }
 };
 function proposerForm(){
