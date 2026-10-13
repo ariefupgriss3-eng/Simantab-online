@@ -35,42 +35,69 @@ CREATE OR REPLACE FUNCTION public.jabfung_ai_claim_request(p_submission_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
- SET search_path TO 'public','private','auth'
-AS $fn$
-DECLARE
- v_uid uuid := auth.uid();
- v_owner uuid;
- v_service text;
- v_hour_count integer;
- v_day_count integer;
-BEGIN
- IF v_uid IS NULL THEN RAISE EXCEPTION 'Unauthorized'; END IF;
- SELECT user_id,service_type INTO v_owner,v_service
- FROM public.submissions WHERE id=p_submission_id;
- IF v_owner IS NULL OR v_service<>'E_JABFUNG' THEN
-  RAISE EXCEPTION 'Usulan Jabfung tidak tersedia.';
- END IF;
- IF v_owner<>v_uid AND NOT private.is_dinas() THEN
-  RAISE EXCEPTION 'Tidak berwenang.';
- END IF;
- SELECT count(*) INTO v_hour_count FROM public.jabfung_ai_gateway_requests
- WHERE user_id=v_uid AND submission_id=p_submission_id
- AND requested_at>=now()-interval '1 hour';
- IF v_hour_count>=3 THEN RETURN jsonb_build_object(
-  'allowed',false,'reason','RATE_LIMIT_SUBMISSION',
-  'message','Batas AI untuk usulan ini adalah 3 pemeriksaan per jam. Gunakan hasil terakhir atau coba kembali kemudian.');
- END IF;
- SELECT count(*) INTO v_day_count FROM public.jabfung_ai_gateway_requests
- WHERE user_id=v_uid AND requested_at>=now()-interval '24 hours';
- IF v_day_count>=60 THEN RETURN jsonb_build_object(
-  'allowed',false,'reason','RATE_LIMIT_DAILY',
-  'message','Batas penggunaan AI harian akun ini telah tercapai. Coba kembali pada periode berikutnya.');
- END IF;
- INSERT INTO public.jabfung_ai_gateway_requests(user_id,submission_id)
- VALUES(v_uid,p_submission_id);
- RETURN jsonb_build_object('allowed',true,'hour_count',v_hour_count+1,'day_count',v_day_count+1);
-END;
-$fn$;
+ SET search_path TO 'public', 'private', 'auth'
+AS $function$
+declare
+  v_uid uuid := auth.uid();
+  v_owner uuid;
+  v_service text;
+  v_hour_count integer;
+  v_day_count integer;
+begin
+  if v_uid is null then
+    raise exception 'Unauthorized';
+  end if;
+
+  select user_id, service_type
+    into v_owner, v_service
+  from public.submissions
+  where id=p_submission_id;
+
+  if v_owner is null or v_service <> 'E_JABFUNG' then
+    raise exception 'Usulan Jabfung tidak tersedia.';
+  end if;
+
+  if v_owner <> v_uid and not private.is_dinas() then
+    raise exception 'Tidak berwenang.';
+  end if;
+
+  select count(*) into v_hour_count
+  from public.jabfung_ai_gateway_requests
+  where user_id=v_uid
+    and submission_id=p_submission_id
+    and requested_at >= now() - interval '1 hour';
+
+  if v_hour_count >= 3 then
+    return jsonb_build_object(
+      'allowed',false,
+      'reason','RATE_LIMIT_SUBMISSION',
+      'message','Batas AI untuk usulan ini adalah 3 pemeriksaan per jam. Gunakan hasil terakhir atau coba kembali kemudian.'
+    );
+  end if;
+
+  select count(*) into v_day_count
+  from public.jabfung_ai_gateway_requests
+  where user_id=v_uid
+    and requested_at >= now() - interval '24 hours';
+
+  if v_day_count >= 60 then
+    return jsonb_build_object(
+      'allowed',false,
+      'reason','RATE_LIMIT_DAILY',
+      'message','Batas penggunaan AI harian akun ini telah tercapai. Coba kembali pada periode berikutnya.'
+    );
+  end if;
+
+  insert into public.jabfung_ai_gateway_requests(user_id,submission_id)
+  values(v_uid,p_submission_id);
+
+  return jsonb_build_object(
+    'allowed',true,
+    'hour_count',v_hour_count+1,
+    'day_count',v_day_count+1
+  );
+end;
+$function$;
 
 DO $postflight$
 BEGIN
