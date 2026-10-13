@@ -37,9 +37,10 @@ for (const file of required) {
 
 // Cloudflare preview only: signal authentication completion to role modules.
 // Original HTML sets window.__simantabProfile before applyProfile/buildNav.
-const loginAnchor='  applyProfile(); buildNav();';
-assert(html.split(loginAnchor).length===2, 'Titik autentikasi setelah buildNav tidak unik.');
-html=html.replace(loginAnchor,loginAnchor+" window.dispatchEvent(new Event('simantab:profile-ready'));");
+const loginAnchor=/\bapplyProfile\(\);\s*buildNav\(\);/g;
+const loginMatches=[...html.matchAll(loginAnchor)];
+assert(loginMatches.length===1, 'Titik autentikasi setelah buildNav tidak unik.');
+html=html.replace(loginAnchor,match=>match+" window.dispatchEvent(new Event('simantab:profile-ready'));");
 
 // The Cloudflare preview should never cache old login bundles via the PWA worker.
 // Production PWA support on Vercel/main remains untouched.
