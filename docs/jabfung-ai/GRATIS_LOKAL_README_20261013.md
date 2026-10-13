@@ -19,9 +19,9 @@ Mode default menghapus pemanggilan Vercel AI Gateway dan Supabase AI workflow da
 - Status **TERBACA_AWAL** atau **PERLU_TELAAH**, tidak pernah menyimpulkan "ASLI", "PALSU", atau persetujuan resmi.
 
 ## Batasan dan risiko (penting)
-- **Jangan merge ke produksi dulu**. Modul prototype masih mengambil kode PDF.js dan Tesseract.js dari URL CDN publik, walaupun bytes berkas tidak dikirim ke layanan AI. Kode pihak ketiga yang berjalan di browser merupakan risiko privasi/supply-chain; sebelum go-live, **vendor dan self-host seluruh kode/worker/WASM/langdata** di domain SIMANTAB, pin SHA/integrity.
-- OCR bukan LLM vision multimodal. Dokumen buram, scan yang buruk, stempel dan TTE tetap harus ditelaah manusia; tidak dapat memastikan keaslian atau memverifikasi QR/TTE ke penerbit.
-- Tes kode sintetis bukan uji browser pada perangkat Android, dan belum membuktikan CDN assets kompatibel.
+- **Jangan merge ke produksi dulu**. Pustaka PDF.js, Tesseract OCR, worker, WASM, dan data bahasa sekarang disalin dari paket npm berversi tetap ke direktori statis origin SIMANTAB. CI berhasil memverifikasi paketnya. Uji browser dan keamanan dependensi masih wajib.
+- OCR bukan LLM vision multimodal. Dokumen buram, scan yang buruk, stempel dan TTE tetap harus ditelaah manusia; tidak dapat memastikan keaslian atau memverifikasi QR/TTE ke penerbit. Paket OCR tahap awal menggunakan bahasa `eng`; uji Bahasa Indonesia masih diperlukan.
+- Tes kode sintetis dan pengemasan library bukan uji browser pada perangkat Android. Jalur worker/WASM dan performa OCR pada perangkat sasaran belum divalidasi.
 - UI gratis **tidak menulis verdict ke tabel AI database**; ini disengaja agar hasil yang dibuat di klien tidak dipercaya server sebagai keputusan resmi atau bisa dipalsukan.
 - UI baru tidak memanggil provider berbayar. Namun **Edge Function lama masih terpasang di server**; untuk menjamin biaya provider nol dari seluruh klien (termasuk klien lama), perlu migrasi terpisah berupa hard-disable server-side setelah persetujuan dan audit.
 - Data pribadi guru/ASN harus dilarang masuk log/telemetry publik, dan penilaian final dilakukan pejabat berwenang.
@@ -30,9 +30,9 @@ Mode default menghapus pemanggilan Vercel AI Gateway dan Supabase AI workflow da
 ## Persiapan QA yang harus lulus sebelum deployment
 - [x] Implementasi sumber UI dan aturan pra-verifikasi lokal dibuat di branch terpisah.
 - [x] Tidak ada panggilan AI berbayar pada script UI Jabfung yang sudah diperbarui.
-- [ ] GitHub Actions suite source/regresi lulus HEAD terbaru.
+- [x] GitHub Actions suite source/regresi dan pengemasan pustaka self-hosted lulus (13 Oktober 2026).
 - [ ] Uji Android/PWA, desktop, PDF teks dan PDF scan 1–3 halaman, foto JPG/PNG, formulir 12 dokumen.
-- [ ] Self-host seluruh pustaka OCR dan data bahasa dari origin SIMANTAB.
+- [x] Menyiapkan self-host pustaka OCR dan data bahasa melalui proses build lokal; belum diuji dalam browser produksi.
 - [ ] Pemeriksaan otorisasi Supabase JWT/RLS untuk pengajuan lama dan baru, menggunakan akun sintetis nonproduksi.
 - [ ] Verifikasi penanganan file 0 byte pada dua dokumen produksi tanpa memodifikasinya.
 - [ ] Patch server-side opt-out panggilan provider agar PWA lama tak membebankan biaya AI.
