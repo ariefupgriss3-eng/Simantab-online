@@ -102,7 +102,21 @@ const navHtml=()=>'<div class="navhead">'+(grantKind==='KORWIL'?'Menu Korwil':gr
  rows().map(([tab,ico,name])=>'<button type="button" class="navbtn" data-tab="'+esc(tab)+'" onclick="showTab(\''+tab+'\')"><span class="ico">'+ico+'</span>'+name+'</button>').join('');
 function patchNav(){
  if(!isSupervisor())return;
- const nav=document.getElementById('nav');if(!nav)return;
+ const sidebar=document.getElementById('sidebar');
+ const originalNav=document.getElementById('nav');
+ if(!sidebar||!originalNav)return;
+ // Legacy integrations still use #nav but cannot change the visible supervisor sidebar.
+ // Keeping the legacy nav intact allows other nav observers to settle without fighting.
+ originalNav.style.setProperty('display','none','important');
+ originalNav.setAttribute('aria-hidden','true');
+ let nav=document.getElementById('pengawasStableNav');
+ if(!nav){
+  nav=document.createElement('div');
+  nav.id='pengawasStableNav';
+  nav.setAttribute('role','navigation');
+  nav.setAttribute('aria-label','Menu khusus Pengawas');
+  sidebar.appendChild(nav);
+ }
  const tabs=rows().map(x=>x[0]).join(',');
  const present=[...nav.querySelectorAll('.navbtn')].map(x=>x.dataset.tab).join(',');
  const title=nav.querySelector('.navhead')?.textContent||'';
@@ -110,7 +124,7 @@ function patchNav(){
  if(present!==tabs||nav.querySelectorAll('.navhead').length!==1||title!==expectedTitle){
   nav.innerHTML=navHtml();
  }
- const activeId=[...document.querySelectorAll('main .section.active')].map(s=>s.id)[0]||'dashboard';
+ const activeId=[...document.querySelectorAll('main .section.active')].map(x=>x.id)[0]||'dashboard';
  nav.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active',b.dataset.tab===activeId));
 }
 function patchLabels(){
@@ -183,24 +197,15 @@ if(typeof prevRefresh==='function')window.refreshAll=async function(...args){
 apply();
 await loadSensitivePermission();
 apply();
-const nav=document.getElementById('nav');
-if(nav){
- // Pastikan menu dari modul lain tidak menambah opsi di luar daftar khusus Pengawas.
- // Coalesce competing legacy observers into a macrotask; never recursively rewrite
- // the sidebar from MutationObserver microtasks (which can freeze Chrome).
- let navPatchTimer=null;
- const observer=new MutationObserver(()=>{
-  if(!isSupervisor()||navPatchTimer!==null)return;
-  navPatchTimer=setTimeout(()=>{navPatchTimer=null;patchNav()},180);
- });
- observer.observe(nav,{childList:true,subtree:false});
-}
+// The stable sidebar has no competing MutationObservers.
+ // Active state is updated on showTab/refresh and the grant check above.
 for(const ms of [100,300,700,1500,3000])setTimeout(apply,ms);
 window.__simantebPengawasMenu={
  version:4,
  get allowed(){return rows().map(x=>x[0])},
  get labels(){return rows().map(x=>x[2])},
  get sensitivePermission(){return grantKind?{kind:grantKind,scope:grantScope}:null},
- domObserver:true
+ domObserver:false,
+ isolatedNavigation:true
 };
 })();
