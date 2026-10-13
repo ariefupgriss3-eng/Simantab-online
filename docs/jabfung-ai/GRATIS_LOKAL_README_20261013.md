@@ -20,7 +20,7 @@ Mode default menghapus pemanggilan Vercel AI Gateway dan Supabase AI workflow da
 
 ## Batasan dan risiko (penting)
 - **Jangan merge ke produksi dulu**. Pustaka PDF.js, Tesseract OCR, worker, WASM, dan data bahasa sekarang disalin dari paket npm berversi tetap ke direktori statis origin SIMANTAB. CI berhasil memverifikasi paketnya. Uji browser dan keamanan dependensi masih wajib.
-- OCR bukan LLM vision multimodal. Dokumen buram, scan yang buruk, stempel dan TTE tetap harus ditelaah manusia; tidak dapat memastikan keaslian atau memverifikasi QR/TTE ke penerbit. Paket OCR tahap awal menggunakan bahasa `eng`; uji Bahasa Indonesia masih diperlukan.
+- OCR bukan LLM vision multimodal. Dokumen buram, scan yang buruk, stempel dan TTE tetap harus ditelaah manusia; tidak dapat memastikan keaslian atau memverifikasi QR/TTE ke penerbit. Paket OCR sekarang mencakup data bahasa Indonesia (`ind`) dan Inggris (`eng`) secara lokal; akurasi pada berbagai variasi dokumen Indonesia masih perlu diuji.
 - Tes kode sintetis dan pengemasan library bukan uji browser pada perangkat Android. Jalur worker/WASM dan performa OCR pada perangkat sasaran belum divalidasi.
 - UI gratis **tidak menulis verdict ke tabel AI database**; ini disengaja agar hasil yang dibuat di klien tidak dipercaya server sebagai keputusan resmi atau bisa dipalsukan.
 - UI baru tidak memanggil provider berbayar. **Patch penolakan panggilan AI berbayar untuk klien PWA lama juga telah disiapkan** dalam `web/jabfung-ai-read-edge.js` dan `supabase/functions/simantab-jabfung-ai-workflow/index.ts`. Keduanya masih dalam PR draft, belum terpasang pada server. Tanpa menerapkan guard server-side, PWA lama masih dapat menimbulkan panggilan model berbayar.
