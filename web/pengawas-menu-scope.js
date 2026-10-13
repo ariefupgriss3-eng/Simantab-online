@@ -186,7 +186,13 @@ apply();
 const nav=document.getElementById('nav');
 if(nav){
  // Pastikan menu dari modul lain tidak menambah opsi di luar daftar khusus Pengawas.
- const observer=new MutationObserver(()=>{if(isSupervisor())patchNav()});
+ // Coalesce competing legacy observers into a macrotask; never recursively rewrite
+ // the sidebar from MutationObserver microtasks (which can freeze Chrome).
+ let navPatchTimer=null;
+ const observer=new MutationObserver(()=>{
+  if(!isSupervisor()||navPatchTimer!==null)return;
+  navPatchTimer=setTimeout(()=>{navPatchTimer=null;patchNav()},180);
+ });
  observer.observe(nav,{childList:true,subtree:false});
 }
 for(const ms of [100,300,700,1500,3000])setTimeout(apply,ms);
