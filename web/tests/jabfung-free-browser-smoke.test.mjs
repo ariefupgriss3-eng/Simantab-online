@@ -103,6 +103,33 @@ test('Chromium desktop PDF plus mobile-size image OCR; no external network', {ti
  assert.match(pdfResult.progress,/Selesai/);
  assert.match(pdfResult.text,/Terbaca awal/,'PDF text must be really extracted by PDF.js');
  assert.ok(!pdfResult.text.includes('Pembacaan lokal belum berhasil'));
+ // Build an image-only PDF from a synthetic canvas. This forces PDF.js OCR fallback.
+ const sampleImage=await desktop.page.evaluate(()=>{
+  const cv=document.createElement('canvas');cv.width=1600;cv.height=500;
+  const c=cv.getContext('2d');c.fillStyle='white';c.fillRect(0,0,1600,500);
+  c.fillStyle='black';c.font='bold 68px Arial';
+  c.fillText('SASARAN KINERJA PEGAWAI 2025',45,110);
+  c.font='48px Arial';
+  c.fillText('Dokumen sintetis untuk tes PDF scan',45,210);
+  c.fillText('Pemeriksaan kinerja guru oleh petugas',45,290);
+  c.fillText('Tanpa data pribadi atau surat resmi',45,365);
+  return cv.toDataURL('image/png');
+ });
+ const scannedPdf=new jsPDF({unit:'pt'});
+ scannedPdf.addImage(sampleImage,'PNG',35,65,540,170);
+ const scannedBytes=Array.from(new Uint8Array(scannedPdf.output('arraybuffer')));
+ const scannedResult=await desktop.page.evaluate(async bytes=>{
+  const input=document.querySelector('.jabfungReqFile'),dt=new DataTransfer();
+  dt.items.add(new File([new Uint8Array(bytes)],'SKP_2025_SCAN_SINTETIS.pdf',{type:'application/pdf'}));
+  input.files=dt.files;
+  await window.__verifyJabfungFreeFromForm();
+  const modal=document.getElementById('jabfungFreeVerifierModal');
+  return {progress:modal.querySelector('#jabfungFreeProgress').textContent,
+   text:modal.querySelector('#jabfungFreeResults').textContent};
+ },scannedBytes);
+ assert.match(scannedResult.progress,/Selesai/);
+ assert.ok(!scannedResult.text.includes('Pembacaan lokal belum berhasil'),
+  'Image-only PDF must use a working OCR fallback, not return a worker error');
  assert.deepEqual(desktop.errors,[]);
  await desktop.context.close();
 
@@ -136,6 +163,7 @@ test('Chromium desktop PDF plus mobile-size image OCR; no external network', {ti
  await mobile.context.close();
  assert.deepEqual(blocked,[],'No paid AI/CDN or other external requests');
  console.log(JSON.stringify({desktopPDF:pdfResult.progress,mobileEmulatedPNG:pngResult.progress,
+  scannedPdfOCR:scannedResult.progress,
   externalRequests:blocked.length,paidModelCalls:0,
   caveat:'Browser viewport emulation is not a real Android device'}));
 });
