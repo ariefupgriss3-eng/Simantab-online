@@ -1,5 +1,6 @@
 /* SIMANTAB_JABFUNG_JENJANG_UI_V1 */
 /* SIMANTAB_JABFUNG_AI_VERIFIER_V2 */
+/* SIMANTAB_JABFUNG_AI_VERIFIER_V3_SAFE_UPLOAD */
 (async()=>{
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   for(let i=0;i<120 && (!window.openSubmission || !window.showTab || !window.__simantabSb);i++) await sleep(50);
@@ -66,7 +67,8 @@
       for(const input of inputs){
         const f=input.files?.[0];
         if(input.dataset.required==='1'&&!f) throw new Error('Berkas wajib belum lengkap. Periksa semua item bertanda *.');
-        if(f && (f.size>MAX_FILE || !ALLOWED.includes(f.type))) throw new Error(`${f.name}: ukuran harus ≤ 1,5 MB dan format PDF/JPG/PNG.`);
+        if(f && (f.size<1 || f.size>MAX_FILE || !ALLOWED.includes(f.type)))
+          throw new Error('Berkas '+input.dataset.code+' harus berukuran 1 byte–1,5 MB dalam format PDF/JPG/PNG.');
       }
 
       btn.disabled=true;
@@ -108,7 +110,9 @@
         const ai=await runAi(sub.id);
         const c=ai?.counts||{};
         msg.className=ai?.overall_status==='SESUAI'?'okmsg':'small';
-        msg.textContent=ai?.overall_status==='SESUAI'
+        if(ai?.overall_status==='GAGAL_TEKNIS'){
+          msg.textContent='Usul Jabfung tersimpan. AI Verifikator gagal secara teknis, bukan berarti dokumen Anda tidak sesuai. Petugas akan memeriksa atau menjalankan ulang setelah layanan pulih.';
+        }else msg.textContent=ai?.overall_status==='SESUAI'
           ?`Usul terkirim. AI: ${c.sesuai||0} berkas sesuai. Keabsahan final tetap diverifikasi petugas.`
           :`Usul terkirim. AI menemukan item yang perlu ditelaah: perbaikan ${c.perbaikan||0}, tidak sesuai ${c.tidak||0}, telaah manual ${c.telaah||0}. Status resmi belum diputuskan AI.`;
       }catch(aiErr){

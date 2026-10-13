@@ -8,6 +8,7 @@ const C={
 };
 const J=(b:any,s=200)=>new Response(JSON.stringify(b),{status:s,headers:C});
 const MAX_FILE=1572864;
+// JABFUNG_AI_SAFE_AUTH_CACHE_TIMELINE_V3_20261013
 const sha256Text=async(s:string)=>{
   const h=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
   return [...new Uint8Array(h)].map(x=>x.toString(16).padStart(2,"0")).join("");
@@ -31,14 +32,28 @@ Deno.serve(async(req)=>{
 
     const [{data:caller},{data:sub},{data:reqs},{data:files}]=await Promise.all([
       admin.from("profiles").select("id,role,account_channel,is_active").eq("id",user.id).maybeSingle(),
-      admin.from("submissions").select("id,user_id,service_type,status,title,workflow_state").eq("id",id).maybeSingle(),
+      admin.from("submissions").select("id,user_id,service_type,status,title,workflow_state,coordinator_role,assigned_user_id").eq("id",id).maybeSingle(),
       admin.from("service_requirements").select("id,code,label,is_required,sort_order,description").eq("service_type","E_JABFUNG").eq("is_active",true).order("sort_order"),
       admin.from("submission_files").select("id,requirement_code,storage_path,file_name,file_size,mime_type,created_at").eq("submission_id",id).order("created_at",{ascending:false})
     ]);
     if(!caller?.is_active||!sub||sub.service_type!=="E_JABFUNG")return J({error:"Usulan Jabfung tidak tersedia."},404);
     const owner=sub.user_id===user.id;
-    const dinas=caller.account_channel==="DINAS" || !["GTK","KEPALA_SEKOLAH"].includes(String(caller.role||""));
-    if(!owner&&!dinas)return J({error:"Tidak berwenang."},403);
+    const role=String(caller.role||"");
+    const dinas=caller.account_channel==="DINAS";
+    const supervisor=dinas&&["SUPER_ADMIN","KABID","KEPALA_DINAS","SEKRETARIS_DINAS"].includes(role);
+    const coordinator=dinas&&role===sub.coordinator_role&&["KASI_SD","KASI_SMP","SUBKOOR_TK"].includes(role);
+    let appointedStaff=false;
+    if(dinas&&(role.startsWith("STAFF_")||role.startsWith("ADMIN_"))){
+      const [{data:grants,error:grantError},{data:assigned,error:assignedError}]=await Promise.all([
+        admin.from("team_task_assignments").select("capability").eq("user_id",user.id)
+          .eq("capability","E_JABFUNG").eq("is_active",true).limit(1),
+        admin.from("submission_assignees").select("user_id")
+          .eq("submission_id",id).eq("user_id",user.id).limit(1)
+      ]);
+      appointedStaff=!grantError&&!assignedError&&!!grants?.length&&
+        (sub.assigned_user_id===user.id||!!assigned?.length);
+    }
+    if(!owner&&!supervisor&&!coordinator&&!appointedStaff)return J({error:"Tidak berwenang."},403);
 
     const {data:ownerProfile}=await admin.from("profiles").select("id,full_name,nip,unit,position").eq("id",sub.user_id).maybeSingle();
 
@@ -55,7 +70,7 @@ Deno.serve(async(req)=>{
       const f=by.get(r.code);
       if(!f)continue;
       if(Number(f.file_size||0)<1||Number(f.file_size||0)>MAX_FILE){
-        return J({error:r.label+" harus berukuran maksimal 1,5 MB."},409);
+        return J({error:r.label+" kosong atau melebihi 1,5 MB. Mohon unggah ulang dokumen tersebut.",code:"INVALID_FILE_SIZE"},409);
       }
       const {data:signed,error:se}=await admin.storage.from("simantab-documents").createSignedUrl(f.storage_path,900);
       if(se)throw se;
@@ -83,7 +98,8 @@ Deno.serve(async(req)=>{
       .limit(1)
       .maybeSingle();
 
-    if(cached?.id){
+    // Do not reuse any past technical AI failure as a positive cache hit.
+    if(cached?.id&&cached.overall_status!=="GAGAL_TEKNIS"&&Number(cached.technical_count||0)===0){
       const result:any=cached.result||{};
       return J({
         ok:true,
@@ -105,6 +121,8 @@ Deno.serve(async(req)=>{
       });
     }
 
+    // Define the actual start before provider processing, to avoid completed_at < started_at.
+    const verificationStartedAt=new Date().toISOString();
     let ai:any={
       ok:true,engine:"JABFUNG_DOC_AI_V1",model:"google/gemini-2.5-flash-lite",
       overall_status:missingRequired.length?"PERLU_TELAAH":"SESUAI",
@@ -131,7 +149,11 @@ Deno.serve(async(req)=>{
       });
       const raw=await resp.text();
       let payload:any={};try{payload=JSON.parse(raw)}catch{}
-      if(!resp.ok)throw new Error(payload?.error||raw||("HTTP "+resp.status));
+      if(!resp.ok){
+        const code=typeof payload?.code==="string"&&/^[A-Z0-9_]{3,60}$/.test(payload.code)
+          ?payload.code:"AI_READER_HTTP_"+resp.status;
+        throw new Error(code); // Do not expose provider raw text or document/participant metadata.
+      }
       ai=payload;
     }
 
@@ -202,6 +224,7 @@ Deno.serve(async(req)=>{
       telaah_count:counts.telaah,
       technical_count:counts.teknis,
       source_fingerprint:sourceFingerprint,
+      started_at:verificationStartedAt,
       summary,
       result:{...ai,overall_status:overall,counts,results:ordered},
       completed_at:new Date().toISOString()
@@ -263,7 +286,10 @@ Deno.serve(async(req)=>{
       disclaimer:"AI hanya memberi indikator kesesuaian, keterbacaan, dan anomali visual stempel/tanda tangan/TTE. Keabsahan final harus diverifikasi manusia atau sumber resmi."
     });
   }catch(e:any){
-    console.error("JABFUNG_AI_WORKFLOW_ERROR",e?.message||String(e));
-    return J({error:e?.message||String(e)},400);
+    const raw=String(e?.message||e||"");
+    const code=/^(?:AI_GATEWAY_[A-Z0-9_]+|AI_OUTPUT_INVALID_JSON|SIGNED_FILE_HTTP_[45]\d\d|AI_READER_HTTP_[45]\d\d|INVALID_FILE_SIZE|INVALID_FILE_SIGNATURE|INVALID_STORAGE_SIGNED_URL)$/.test(raw)
+      ?raw:"AI_WORKFLOW_ERROR";
+    console.error("JABFUNG_AI_WORKFLOW_ERROR",JSON.stringify({code}));
+    return J({error:"Proses AI mengalami kendala teknis. Usulan tetap tersimpan dan petugas dapat memeriksanya secara manual.",code},503);
   }
 });

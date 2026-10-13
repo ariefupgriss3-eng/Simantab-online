@@ -1,0 +1,35 @@
+name: Jabfung AI offline security QA
+
+on:
+  pull_request:
+    paths:
+      - 'web/jabfung-ai-read-edge.js'
+      - 'web/jabfung-jenjang-enhancement.js'
+      - 'web/build.mjs'
+      - 'web/finalize-html.mjs'
+      - 'web/tests/jabfung-ai-offline.test.mjs'
+      - 'supabase/functions/simantab-jabfung-ai-workflow/index.ts'
+      - 'supabase/migrations/*jabfung_ai*'
+      - 'supabase/manual_rollback/*jabfung_ai*'
+      - '.github/workflows/jabfung-ai-offline-qa.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Parse isolated JavaScript files
+        run: |
+          node --check web/jabfung-jenjang-enhancement.js
+          node --check web/build.mjs
+          node --check web/finalize-html.mjs
+      - name: Run synthetic offline gateway/security suite
+        run: node --test web/tests/jabfung-ai-offline.test.mjs
