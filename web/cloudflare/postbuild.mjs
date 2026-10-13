@@ -10,6 +10,7 @@ const dashboardModule = await fs.readFile(path.join(output, 'pengawas-dashboard-
 const policyModule = await fs.readFile(path.join(output, 'supervisor-scope-policy.js'), 'utf8');
 const korwilModule = await fs.readFile(path.join(output, 'korwil-scope-dashboard.js'), 'utf8');
 const needsModule = await fs.readFile(path.join(output, 'gtk-needs-progress.js'), 'utf8');
+const disciplineModule = await fs.readFile(path.join(output, 'discipline-evidence.js'), 'utf8');
 const legacyMenu = await fs.readFile(path.join(output, 'legacy-shell-restore.js'), 'utf8');
 const rgtkMenu = await fs.readFile(path.join(output, 'rgtk-monitoring.js'), 'utf8');
 const workflowMenu = await fs.readFile(path.join(output, 'team-workflow-authority.js'), 'utf8');
@@ -22,8 +23,8 @@ function assert(ok, message) {
 assert(html.includes('SIMANTAB Online'), 'index.html bukan hasil build SIMANTAB.');
 assert(html.includes('./supervisor-scope-policy.js?v=1'), 'Modul pusat penugasan Korwil/Pengawas tidak dimuat.');
 assert(html.includes('./pengawas-dashboard-kadin.js?v=4'), 'Dashboard Pengawas Dabin belum memakai versi baru.');
-assert(html.includes('./korwil-scope-dashboard.js?v=4'), 'Dashboard Korwil belum memakai versi baru.');
-assert(html.includes('./pengawas-menu-scope.js?v=7'), 'Menu Korwil/Pengawas belum diperbarui.');
+assert(html.includes('./korwil-scope-dashboard.js?v=5'), 'Dashboard Korwil belum memakai versi pemulihan login.');
+assert(html.includes('./pengawas-menu-scope.js?v=8'), 'Menu dan label Korwil belum diperbarui.');
 assert(policyModule.includes('SIMANTAB_SUPERVISOR_SCOPE_POLICY_V1') &&
        policyModule.includes("submitter_kind==='KORWIL'") &&
        policyModule.includes("schoolNpsns") &&
@@ -34,11 +35,22 @@ assert(dashboardModule.includes('SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V3_EXPLICIT_D
        dashboardModule.includes("policy.schoolRows()") &&
        dashboardModule.includes("roleScope.kind==='KORWIL'"),
  'Dashboard Pengawas masih memperluas sekolah di luar Dabin.');
-assert(korwilModule.includes('SIMANTEB_KORWIL_SCOPE_DASHBOARD_V4_DISTRICT_TK_SD_PNF') &&
+assert(korwilModule.includes('SIMANTEB_KORWIL_SCOPE_DASHBOARD_V5_POST_LOGIN_RECOVERY') &&
        korwilModule.includes('policy.schoolRows()') &&
        !korwilModule.includes("sb.rpc('korwil_dashboard_summary')"),
  'Dashboard Korwil belum memakai master TK SD PNF berdasarkan penugasan.');
 assert(needsModule.includes('policy.schoolRows()'), 'Kebutuhan GTK Pengawas/Korwil masih memakai scope lama.');
+assert(html.includes('./discipline-evidence.js?v=5'), 'Formulir Disiplin Korwil belum menggunakan versi 5.');
+assert(disciplineModule.includes('SIMANTAB_DISCIPLINE_EVIDENCE_V5_KORWIL_GRANT') &&
+       disciplineModule.includes("submitter_kind,scope_level,kecamatan") &&
+       disciplineModule.includes("activePermission==='KORWIL'") &&
+       disciplineModule.includes('assignedDistrict'),
+ 'Modul Disiplin masih membatasi Korwil berdasarkan nama jabatan lama.');
+assert(korwilModule.includes('postLoginRecovery:true') &&
+       korwilModule.includes("title.textContent='Dashboard Biddik Kecamatan'"),
+ 'Dashboard Korwil belum pulih setelah login.');
+assert(module.includes("roleName=grantKind==='KORWIL'?'Korwil Kecamatan'"),
+ 'Label akun Korwil masih memakai teks role Pengawas.');
 assert(module.includes('SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG'),
   'Kode katalog layanan Pengawas tidak cocok.');
 assert(module.includes('simantab:profile-ready'), 'Menu Pengawas masih menggunakan timeout login.');
@@ -116,9 +128,9 @@ console.log(JSON.stringify({
   cloudflareStaticBuild: 'prepared',
   output,
   menuPengawasVersion: 4,
-  menuPengawasCacheVersion: 7,
+  menuPengawasCacheVersion: 8,
   supervisorScopeVersion: 1,
-  korwilDashboardVersion: 4,
+  korwilDashboardVersion: 5,
   dabinDashboardVersion: 3,
   supervisorNavigationGuards: ['redistribusi','diklat','workflow','rgtk','legacy'],
   securityHeaders: true,
