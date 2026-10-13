@@ -197,6 +197,18 @@ if(typeof prevRefresh==='function')window.refreshAll=async function(...args){
 apply();
 await loadSensitivePermission();
 apply();
+// Restore the legacy sidebar if this tab later authenticates as another role.
+window.addEventListener('simantab:profile-ready',()=>{
+ if(!isSupervisor()){
+  document.getElementById('pengawasStableNav')?.remove();
+  const old=document.getElementById('nav');
+  old?.style.removeProperty('display');
+  old?.removeAttribute('aria-hidden');
+  return;
+ }
+ apply();
+ loadSensitivePermission().then(apply).catch(e=>console.warn('Izin Pengawas tidak dapat dimuat:',e));
+});
 // The stable sidebar has no competing MutationObservers.
  // Active state is updated on showTab/refresh and the grant check above.
 for(const ms of [100,300,700,1500,3000])setTimeout(apply,ms);
