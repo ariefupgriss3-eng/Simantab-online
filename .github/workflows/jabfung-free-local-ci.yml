@@ -12,6 +12,7 @@ on:
       - 'web/jabfung-ai-read-edge.js'
       - 'supabase/functions/simantab-jabfung-ai-workflow/index.ts'
       - 'web/tests/jabfung-free-verifier.test.mjs'
+      - 'web/tests/jabfung-free-browser-smoke.test.mjs'
       - '.github/workflows/jabfung-free-local-ci.yml'
   workflow_dispatch:
 
@@ -21,7 +22,7 @@ permissions:
 jobs:
   free-ocr-offline-tests:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 9
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -47,3 +48,8 @@ jobs:
           test -s .vercel/output/static/ocr/tesseract.esm.min.js
           test -s .vercel/output/static/ocr/tesseract.worker.min.js
           test -s .vercel/output/static/ocr/lang/eng.traineddata.gz
+      - name: Chromium PDF and Android-size synthetic OCR test (no remote network)
+        run: |
+          cd web
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.55.0
+          node --test tests/jabfung-free-browser-smoke.test.mjs
