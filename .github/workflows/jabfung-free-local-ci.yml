@@ -1,0 +1,33 @@
+name: Jabfung free local OCR QA
+on:
+  pull_request:
+    paths:
+      - 'web/jabfung-free-verifier-core.mjs'
+      - 'web/jabfung-free-verifier-ui.mjs'
+      - 'web/jabfung-jenjang-enhancement.js'
+      - 'web/build.mjs'
+      - 'web/finalize-html.mjs'
+      - 'web/tests/jabfung-free-verifier.test.mjs'
+      - '.github/workflows/jabfung-free-local-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  free-ocr-offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check frontend (no paid APIs)
+        run: |
+          node --check web/jabfung-free-verifier-core.mjs
+          node --check web/jabfung-free-verifier-ui.mjs
+          node --check web/jabfung-jenjang-enhancement.js
+          node --check web/finalize-html.mjs
+      - name: Test free local rules
+        run: node --test web/tests/jabfung-free-verifier.test.mjs
