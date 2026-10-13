@@ -1,5 +1,6 @@
 /* SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V1 */
 /* SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V3_ALL_SUBMISSIONS */
+/* SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V4_EXCLUDE_SUPERVISORS */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -7,6 +8,8 @@ const sb=window.__simantabSb,$=id=>document.getElementById(id),p=()=>window.__si
 if(!sb||!window.showTab)return;
 
 const role=()=>String(p().role||'').toUpperCase();
+// Konsultasi luring hanya untuk monitoring Dinas, bukan tab Monitoring Korwil/Pengawas.
+if(['PENGAWAS','KORWIL'].includes(role()))return;
 const isDinas=()=>String(p().account_channel||'').toUpperCase()==='DINAS'
   || role().startsWith('STAFF_') || role().startsWith('ADMIN_')
   || ['SUPER_ADMIN','KEPALA_DINAS','SEKRETARIS_DINAS','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','PENGAWAS','KORWIL'].includes(role());
