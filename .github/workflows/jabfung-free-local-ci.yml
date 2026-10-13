@@ -48,6 +48,7 @@ jobs:
           test -s .vercel/output/static/ocr/tesseract.esm.min.js
           test -s .vercel/output/static/ocr/tesseract.worker.min.js
           test -s .vercel/output/static/ocr/lang/eng.traineddata.gz
+          test -s .vercel/output/static/ocr/lang/ind.traineddata.gz
       - name: Chromium PDF and Android-size synthetic OCR test (no remote network)
         run: |
           cd web
