@@ -1,4 +1,5 @@
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V1 */
+/* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V12_TUGAS_BELAJAR_CAPABILITY */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V4 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V5 */
 /* SIMANTAB_LAYERED_SERVICE_WORKFLOW_V6 */
@@ -89,14 +90,18 @@ function visibleRows(d){
  return d.subs.filter(x=>assigneeIds(d,x.id).includes(uid)||x.assigned_user_id===uid);
 }
 function candidateStaff(d,sub){
+ const service=String(sub?.service_type||'').toUpperCase();
+ const permittedIds=new Set((d.tasks||[])
+   .filter(t=>t.is_active&&String(t.capability||'').toUpperCase()===service)
+   .map(t=>t.user_id));
  let arr=d.profiles.filter(x=>{
   const r=String(x.role||'');
-  return x.is_active&&x.account_channel==='DINAS'&&(r.startsWith('STAFF_')||r.startsWith('ADMIN_'));
+  const staffRole=r.startsWith('STAFF_')||r.startsWith('ADMIN_');
+  // Hanya Subkoor TK yang mempunyai penugasan khusus Tugas Belajar.
+  const extraStudyAdmin=r==='SUBKOOR_TK'&&service==='TUGAS_BELAJAR'&&permittedIds.has(x.id);
+  return x.is_active&&x.account_channel==='DINAS'&&(staffRole||extraStudyAdmin);
  });
- const exactIds=new Set((d.tasks||[])
-   .filter(t=>t.is_active&&String(t.capability||'').toUpperCase()===String(sub?.service_type||'').toUpperCase())
-   .map(t=>t.user_id));
- if(exactIds.size)arr=arr.filter(x=>exactIds.has(x.id));
+ if(permittedIds.size)arr=arr.filter(x=>permittedIds.has(x.id));
  arr.sort((a,b)=>String(a.full_name||'').localeCompare(String(b.full_name||''),'id'));
  return arr;
 }
