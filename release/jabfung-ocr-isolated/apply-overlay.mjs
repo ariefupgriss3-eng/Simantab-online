@@ -37,7 +37,7 @@ if ((await getHash(path.join(base,'static/index.html'))).toLowerCase()!==expecte
 const config = JSON.parse(await fs.readFile(path.join(base,'config.json'),'utf8'));
 if (config.version!==3) throw Error('Expected immutable Vercel Build Output API v3.');
 if (!oldIndex.includes('SIMANTAB Online')) throw Error('Not a known SIMANTAB HTML baseline.');
-const oldTag='<script type="module" src="./jabfung-jenjang-enhancement.js?v=4"></script>';
+const oldTag='<script type="module" src="./jabfung-jenjang-enhancement.js?v=2"></script>'; // Exact anchor observed at immutable production deployment URL, 13 Oct 2026.
 const nextTag='<script type="module" src="./jabfung-jenjang-enhancement.js?v=5"></script>\n<script type="module" src="./jabfung-free-verifier-ui.mjs?v=1"></script>';
 const count=oldIndex.split(oldTag).length-1;
 if (count!==1 || oldIndex.includes('jabfung-free-verifier-ui.mjs')) {
