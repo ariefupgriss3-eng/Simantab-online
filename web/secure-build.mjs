@@ -7,6 +7,8 @@ import fs from 'node:fs/promises';
 // this exact branch checkout, never from mutable remote main.
 
 const PROD_PREFIX = 'https://simantab-online.vercel.app/';
+const SIMANTAB_CLOUDFLARE_BUILD = process.env.SIMANTAB_BUILD_TARGET === 'cloudflare';
+const CLOUD_BOOTSTRAP = new URL('./cloudflare/bootstrap-production-20261013.html', import.meta.url);
 const RAW_PREFIX = 'https://raw.githubusercontent.com/ariefupgriss3-eng/Simantab-online/main/web/';
 const nativeFetch = globalThis.fetch.bind(globalThis);
 
@@ -63,6 +65,22 @@ globalThis.fetch = async (input, init = {}) => {
   }
 
   if (url.startsWith(PROD_PREFIX)) {
+    if (SIMANTAB_CLOUDFLARE_BUILD) {
+      const suffix = url.slice(PROD_PREFIX.length);
+      if (suffix === '' || suffix.startsWith('?')) {
+        const html = normalizeBaseHtml(await fs.readFile(CLOUD_BOOTSTRAP, 'utf8'));
+        return new Response(html, {
+          status: 200,
+          headers: { 'content-type': 'text/html; charset=utf-8',
+                     'x-simantab-base': 'repository-bootstrap-20261013' }
+        });
+      }
+      // A Cloudflare build must never need the old Vercel origin.
+      // Callers of optional manifest/icon paths already have fallbacks.
+      return new Response('Legacy Vercel asset intentionally disabled for Cloudflare build.', {
+        status: 404, headers: { 'content-type': 'text/plain; charset=utf-8' }
+      });
+    }
     const response = await nativeFetch(input, { ...init, cache: 'no-store', redirect: 'follow' });
     if (!response.ok) return response;
     const suffix = url.slice(PROD_PREFIX.length);
@@ -83,7 +101,7 @@ globalThis.fetch = async (input, init = {}) => {
 console.log(JSON.stringify({
   reconstructionPreview: true,
   sourceSnapshot: '754730b-2026-09-11',
-  productionBootstrap: 'current-production-normalized',
+  productionBootstrap: SIMANTAB_CLOUDFLARE_BUILD ? 'repository-bootstrap-snapshot' : 'current-production-normalized',
   githubBuildModules: 'branch-checkout'
 }));
 
