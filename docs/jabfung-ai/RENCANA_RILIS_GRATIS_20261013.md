@@ -1,5 +1,5 @@
 # Rencana rilis aman — Verifikator Jabfung Gratis
-**13 Oktober 2026 • PR #170 masih draft • TIDAK ADA izin deployment produksi.**
+**13 Oktober 2026 • PR #170 tetap draft • Pengaman biaya server telah diterapkan secara terbatas; frontend OCR belum produksi.**
 
 ## Tujuan
 - OCR awal berjalan di browser memakai PDF.js + Tesseract.js bahasa **Indonesia dan Inggris** yang dikemas di origin SIMANTAB.
@@ -67,3 +67,20 @@
 - **No-go otomatis untuk produksi:** menghilangkan pengujian bukan izin deploy; perlu perintah eksplisit terpisah yang menyebut **SIMANTAB-ONLINE produksi** beserta penerimaan risiko tanpa uji fisik/integrasi.
 - Apabila izin itu diberikan, batas tindakan harus ditetapkan jelas; prioritas keamanan ialah fail-closed server untuk klien lama, verifikasi tak ada provider berbayar, baseline/rollback, kemudian UI OCR lokal. Jangan mengubah RLS, submissions atau submission_files tanpa izin khusus.
 - Tidak ada pengujian baru atau perubahan produksi dalam pembaruan dokumen ini.
+
+## Catatan eksekusi produksi terbatas — 13 Oktober 2026
+
+Pengguna menyetujui tahap produksi terbatas pada 13 Oktober 2026, **tanpa QA fisik/integrasi tambahan**. Persetujuan ini diterapkan **hanya untuk pengaman penghentian AI berbayar Jabfung**, bukan persetujuan untuk mengganti seluruh UI SIMANTAB atau mengubah tabel/RLS.
+
+### Diterapkan dan terkonfirmasi
+
+- **Supabase produksi** proyek `SIMANTAB-ONLINE` (`tizxfzvgglkokzvsiwkg`): Edge Function `simantab-jabfung-ai-workflow` diperbarui dari v2 ke **v3**. Status `ACTIVE`, `verify_jwt=true`. Pada branch sumber baru, permintaan `POST` ditolak dengan `503`, kode `FREE_LOCAL_ONLY`, sebelum kode yang dahulu memanggil Vercel/AI Gateway. Tidak ada deploy fungsi lain ataupun migrasi SQL.
+- **Vercel produksi** proyek `simantab-online` (`prj_ChfgweqCzP23QANr59NtWPSXX0oA`): project-level routing rule `aaa7b42a-c2a2-459e-befb-0daa84d2d5d4` aktif, versi `eee585a4-11b9-4529-8368-1bd7877d60fd`, pola `^/api/jabfung-ai-read/?$`, mengembalikan **HTTP 410**. Aturan ditinjau dan dipromosikan, lalu status `staged=false` diverifikasi. Tidak ada deployment frontend baru.
+- Jalur Supabase dan endpoint Vercel yang sebelumnya dapat menimbulkan panggilan model berbayar Jabfung sudah digembok pada lapisan server/routing. **Hal ini tidak mematikan layanan AI lain di SIMANTAB** dan tidak menjamin nol biaya hosting normal.
+
+### Belum diterapkan — no-go untuk penggantian seluruh UI tanpa pengamanan tambahan
+
+- **UI OCR lokal gratis belum dipasang ke produksi.** PR #170 tetap draft, belum di-merge. Tampilan Jabfung lama masih dapat menunjukkan pesan bahwa AI mengalami kendala walau dokumen usulan telah berhasil disimpan.
+- Peninjauan source menunjukkan `web/secure-build.mjs` merekonstruksi HTML dari alias produksi, sementara build `web/package.json` mengubah banyak modul SIMANTAB lintas layanan, bukan hanya Jabfung. Suite otomatis terdahulu menguji komponen OCR dan preview sintetis, **belum membuktikan keselamatan deployment penuh dengan akun dan RLS produksi**. Karena pengguna memilih tanpa QA lanjutan, risiko regresi ini tetap terbuka. Penggantian frontend penuh tidak dilakukan.
+- Jika kelak pengguna meminta pemasangan UI, gunakan paket perubahan khusus Jabfung berbasis release produksi yang dipin, pisahkan dari pemutakhiran layanan lain; tetapkan strategi rollback untuk UI **tanpa membuka kembali endpoint AI berbayar**. Tinjau kembali implikasi biaya hosting dan kuota.
+- Perubahan angka agregat dalam database produksi dapat terjadi karena transaksi pengguna yang berjalan bersamaan; jangan mengartikan dua snapshot hitungan sebagai perubahan akibat update kode pengaman. Tidak dilakukan perubahan database oleh langkah ini.
