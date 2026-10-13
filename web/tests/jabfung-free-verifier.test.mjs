@@ -87,3 +87,21 @@ test('active Jabfung form contains no paid gateway invocation',()=>{
  assert.match(fin,/jabfung-free-verifier-core\.mjs/);
  assert.match(fin,/jabfung-free-verifier-ui\.mjs/);
 });
+
+test('legacy paid AI reader endpoint fails closed without provider call',async()=>{
+ const src=read('jabfung-ai-read-edge.js');
+ const module=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));
+ const response=await module.default({method:'POST'});
+ const data=await response.json();
+ assert.equal(response.status,503);
+ assert.equal(data.code,'FREE_LOCAL_ONLY');
+ assert.equal(data.paidGateway,false);
+ assert.ok(src.indexOf("code:'FREE_LOCAL_ONLY'")<src.indexOf("const quota=await claimAiQuota"));
+});
+test('legacy Supabase Edge workflow stops before service credential usage',()=>{
+ const source=readFileSync(resolve(web,'../supabase/functions/simantab-jabfung-ai-workflow/index.ts'),'utf8');
+ const guard=source.indexOf('code:"FREE_LOCAL_ONLY"');
+ const sbAdmin=source.indexOf('const admin=createClient');
+ assert.ok(guard>=0&&sbAdmin>guard);
+ assert.match(source,/JABFUNG_FREE_FAIL_CLOSED_20261013/);
+});
