@@ -20,7 +20,7 @@ const MODS=[
  ['simanteb-branding.js','SIMANTEB_BRANDING_V1',1],
  ['pengawas-menu-scope.js','SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG',6],
  ['pengawas-login-channel.js','SIMANTEB_PENGAWAS_LOGIN_CHANNEL_V1',1],
- ['pengawas-dashboard-kadin.js','SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V1',2],
+ ['pengawas-dashboard-kadin.js','SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V2_LEVEL_AND_DABIN_SCOPE',3],
  ['korwil-scope-dashboard.js','SIMANTEB_KORWIL_SCOPE_DASHBOARD_V3',3],
  ['korwil-dashboard-title.js','SIMANTEB_KORWIL_DASHBOARD_TITLE_V1',1],
  ['cuti-requirements.js','SIMANTEB_CUTI_REQUIREMENTS_V1',1],
