@@ -7,6 +7,7 @@
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V7_VERIFY_ACTION_VISIBLE */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V8_RESET_DRAFT_ASSIGNED */
 /* SIMANTAB_STAFF_ASSIGNED_SERVICES_V9_AI_MONITOR_ONLY */
+/* SIMANTAB_STAFF_ASSIGNED_SERVICES_V10_TUGAS_BELAJAR_SUBKOOR */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<160&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -14,7 +15,16 @@ const sb=window.__simantabSb,$=id=>document.getElementById(id),p=()=>window.__si
 if(!sb||!window.showTab)return;
 const role=()=>String(p().role||'');
 const isStaff=()=>role().startsWith('STAFF_')||role().startsWith('ADMIN_');
-if(!isStaff())return;
+// Tugas Belajar hanya via capability aktif; tidak mengganti kewenangan Subkoor TK.
+let hasStudyGrant=false;
+if(role()==='SUBKOOR_TK'&&p().id){
+ const lookup=await sb.from('team_task_assignments').select('capability').eq('user_id',p().id)
+  .eq('is_active',true).eq('capability','TUGAS_BELAJAR').limit(1);
+ hasStudyGrant=!lookup.error&&Array.isArray(lookup.data)&&lookup.data.length===1;
+}
+const studyGrantAccount=p().id;
+const isAdditionalStudyAdmin=()=>hasStudyGrant&&role()==='SUBKOOR_TK'&&p().id===studyGrantAccount;
+if(!isStaff()&&!isAdditionalStudyAdmin())return;
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 const LABEL={
@@ -50,6 +60,7 @@ async function loadAssigned(){
  const by=new Map(subs.map(x=>[x.id,x]));
  for(const x of legacy.data||[])if(!by.has(x.id))by.set(x.id,x);
  subs=[...by.values()].sort((a,b)=>new Date(b.submitted_at||b.updated_at||0)-new Date(a.submitted_at||a.updated_at||0));
+ if(isAdditionalStudyAdmin())subs=subs.filter(x=>x.service_type==='TUGAS_BELAJAR');
  const subIds=subs.map(x=>x.id),latestCycles=new Map;
  if(subIds.length){
   const cq=await sb.from('submission_response_cycles').select('submission_id,cycle_no,cycle_status,staff_response,staff_response_by,staff_response_at,gtk_reply,gtk_replied_at,coordinator_note,kabid_note,delivered_at').in('submission_id',subIds).order('cycle_no',{ascending:false});
@@ -66,13 +77,13 @@ async function loadAssigned(){
  return{subs,profiles:new Map(prof.map(x=>[x.id,x]))};
 }
 async function renderStaffServices(){
- const body=$('servicesBody');if(!body)return;
- if($('servicesDesc'))$('servicesDesc').textContent='Usulan yang ditugaskan kepada akun Anda sebagai penanggung jawab monitoring. Verifikasi Administrasi Diklat KS/BCKS diputuskan otomatis oleh AI.';
+ const body=$(isAdditionalStudyAdmin()?'tugasBelajarAdminBody':'servicesBody');if(!body)return;
+ if(!isAdditionalStudyAdmin()&&$('servicesDesc'))$('servicesDesc').textContent='Usulan yang ditugaskan kepada akun Anda sebagai penanggung jawab monitoring. Verifikasi Administrasi Diklat KS/BCKS diputuskan otomatis oleh AI.';
  body.innerHTML='<div class="card empty">Memuat tugas layanan...</div>';
  try{
   const d=await loadAssigned(),rows=d.subs;
   const active=rows.filter(x=>x.workflow_state==='VERIFIKASI_STAF').length;
-  body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang berada pada tahap penugasan/monitoring. Untuk Diklat KS/BCKS, keputusan verifikasi dilakukan otomatis oleh AI; staf/admin tidak perlu menekan tombol Verifikasi. Klik <b>Lihat Isi Usulan</b> untuk monitoring.</div>'+
+  body.innerHTML='<div class="info" style="margin-bottom:12px"><b>Tugas akun ini:</b> '+active+' usulan sedang berada pada tahap penugasan/monitoring. '+(isAdditionalStudyAdmin()?'Hanya pengajuan Tugas Belajar yang ditugaskan secara resmi tampil di sini.':'Untuk Diklat KS/BCKS, keputusan verifikasi dilakukan otomatis oleh AI; staf/admin tidak perlu menekan tombol Verifikasi.')+' Klik <b>Lihat Isi Usulan</b> untuk monitoring.</div>'+
   '<div class="card">'+(rows.length?'<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Pemohon</th><th>Layanan</th><th>Isi / Maksud GTK</th><th>Respon Admin/Staf</th><th>Status</th><th>Aksi</th></tr></thead><tbody>'+
   rows.map(s=>{const u=d.profiles.get(s.user_id)||{};const purpose=s.description||s.title||'-';const actions='<button class="btn soft" onclick="staffOpenSubmissionDetail(\''+s.id+'\')">🔎 Lihat Isi Usulan</button>'+((s.service_type==='DIKLAT_KS_BCKS'&&s.workflow_state!=='DRAFT')?'<div style="margin-top:6px"><button class="btn soft" onclick="staffResetKsToDraft(\''+s.id+'\')">↩ Turunkan ke Draft</button></div>':'');return '<tr><td>'+fmt(s.submitted_at)+'</td><td><b>'+esc(u.full_name||'-')+'</b><div class="small">'+esc(u.unit||'-')+'</div></td><td>'+esc(labelService(s.service_type))+'</td><td><div style="max-width:360px;white-space:normal"><b>'+esc(s.title||labelService(s.service_type))+'</b><div class="small" style="margin-top:4px">'+esc(purpose)+'</div></div></td><td><div style="max-width:320px;white-space:normal">'+((s.__cycle?.staff_response||s.staff_response)?esc(s.__cycle?.staff_response||s.staff_response):'<span class="small">Belum dijawab</span>')+((s.__cycle?.staff_response_at||s.staff_response_at)?'<div class="small" style="margin-top:4px">'+fmt(s.__cycle?.staff_response_at||s.staff_response_at)+'</div>':'')+'</div></td><td>'+flowPill(s.workflow_state)+'</td><td>'+actions+'</td></tr>'}).join('')+
   '</tbody></table></div>':'<div class="empty">Belum ada usulan yang ditugaskan kepada akun Anda.</div>')+'</div>';
@@ -80,6 +91,10 @@ async function renderStaffServices(){
 }
 window.staffOpenSubmissionDetail=async id=>{
  try{
+  if(isAdditionalStudyAdmin()){
+   const granted=await loadAssigned();
+   if(!granted.subs.some(x=>x.id===id))throw new Error('Pengajuan Tugas Belajar ini tidak ditugaskan kepada akun Anda.');
+  }
   const [s,f,cy]=await Promise.all([
    sb.from('submissions').select('id,user_id,service_type,title,description,scope_level,workflow_state,assignment_note,staff_response,staff_response_by,staff_response_at,submitted_at').eq('id',id).single(),
    sb.from('submission_files').select('id,storage_path,file_name,file_size,mime_type,requirement_code,created_at').eq('submission_id',id).order('created_at'),
@@ -144,12 +159,44 @@ window.staffVerifyAssigned=async(id,ok)=>{
  alert(ok?'Verifikasi berhasil. Usulan diteruskan ke Persetujuan Kabid.':'Usulan dikembalikan untuk perbaikan.');
  await renderStaffServices();
 };
+function ensureStudyAdminPanel(){
+ if(!isAdditionalStudyAdmin())return;
+ const service=$('services'),nav=$('nav');
+ if(!service||!service.parentNode||!nav)return;
+ if(!$('tugasBelajarAdmin')){
+  const section=document.createElement('section');
+  section.className='section';section.id='tugasBelajarAdmin';
+  section.innerHTML='<div class="head"><div><h2>Admin Tugas Belajar</h2><p class="small">Hanya pengajuan Tugas Belajar yang ditugaskan kepada akun Anda. Peran Subkoor TK/PAUD/PNF tetap aktif.</p></div></div><div id="tugasBelajarAdminBody" class="card empty">Memuat tugas...</div>';
+  service.parentNode.appendChild(section);
+ }
+ if(!nav.querySelector('[data-tab="tugasBelajarAdmin"]')){
+  const button=document.createElement('button');
+  button.className='navbtn';button.dataset.tab='tugasBelajarAdmin';
+  button.innerHTML='<span class="ico">🎓</span> Admin Tugas Belajar';
+  button.onclick=()=>window.showTab('tugasBelajarAdmin');
+  nav.appendChild(button);
+ }
+}
 const priorShow=window.showTab;
 window.showTab=async function(id){
- const r=await priorShow.apply(this,arguments);
+ if(hasStudyGrant&&!isAdditionalStudyAdmin()){
+  $('tugasBelajarAdmin')?.remove();
+  $('nav')?.querySelector('[data-tab="tugasBelajarAdmin"]')?.remove();
+ }
+ if(isAdditionalStudyAdmin()){
+  ensureStudyAdminPanel();
+  if(id==='tugasBelajarAdmin'){
+   document.querySelectorAll('.section').forEach(x=>x.classList.toggle('active',x.id===id));
+   document.querySelectorAll('.navbtn[data-tab]').forEach(x=>x.classList.toggle('active',x.dataset.tab===id));
+   await renderStaffServices();
+   return;
+  }
+ }
+ const result=await priorShow.apply(this,arguments);
  if(id==='services'&&isStaff())await renderStaffServices();
- return r;
+ return result;
 };
-if(document.querySelector('#services.active'))await renderStaffServices();
-window.__simantabStaffAssignedServices={version:9,verifyActionInDetail:false,aiMonitorOnlyForDiklat:true,resetAssignedKsToDraft:true,resetAfterLevelUp:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
+if(isAdditionalStudyAdmin())ensureStudyAdminPanel();
+if(isStaff()&&document.querySelector('#services.active'))await renderStaffServices();
+window.__simantabStaffAssignedServices={version:10,studyAdminSubkoor:isAdditionalStudyAdmin(),verifyActionInDetail:false,aiMonitorOnlyForDiklat:true,resetAssignedKsToDraft:true,resetAfterLevelUp:true,assignedOnly:true,showsPurpose:true,showsFiles:true,staffResponse:true,responseTemplate:true,approvalCycle:true,pendingResponseInternalOnly:true};
 })();
