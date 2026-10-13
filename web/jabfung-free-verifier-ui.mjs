@@ -32,7 +32,7 @@ import {fileEligibility,verifyExtractedText,aggregateChecks,REQUIRED_LABELS} fro
    if(!ocrPromise)ocrPromise=import(libs.tesseract).then(async mod=>{
      const create=mod.createWorker||mod.default?.createWorker;
      if(typeof create!=='function')throw new Error('OCR_LIBRARY_UNAVAILABLE');
-     worker=await create('eng',1,{
+     worker=await create(['ind','eng'],1,{
        workerPath:libs.worker,corePath:libs.core,langPath:libs.language,
        gzip:true,workerBlobURL:false
      });
