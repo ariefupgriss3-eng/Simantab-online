@@ -95,7 +95,7 @@ let grantKind=null;
 let grantScope=null;
 const isSupervisor=()=>profile().role==='PENGAWAS';
 const canDiscipline=()=>!!grantKind;
-const rows=()=>canDiscipline()?[...BASE,SENSITIVE]:BASE;
+const rows=()=>{const base=grantKind==='KORWIL'?BASE.map(x=>x[0]==='dashboard'?['dashboard','▦','Dashboard Biddik Kecamatan']:x):BASE;return canDiscipline()?[...base,SENSITIVE]:base;};
 const allowed=id=>BASE_ALLOWED.has(id)||id==='newSubmission'||(id==='discipline'&&canDiscipline());
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const navHtml=()=>'<div class="navhead">'+(grantKind==='KORWIL'?'Menu Korwil':grantKind==='PENGAWAS_SMP'?'Menu Pengawas SMP':'Menu Pengawas')+'</div>'+
@@ -132,9 +132,10 @@ function patchLabels(){
  const dash=document.getElementById('dashboard');
  if(dash?.classList.contains('active')){
   const title=document.getElementById('dashTitle');
-  if(title&&title.textContent!=='Dashboard Sekolah Binaan')title.textContent='Dashboard Sekolah Binaan';
+  const expectedTitle=grantKind==='KORWIL'?'Dashboard Biddik Kecamatan':'Dashboard Sekolah Binaan';
+  if(title&&title.textContent!==expectedTitle)title.textContent=expectedTitle;
   const desc=document.getElementById('dashDesc');
-  const text='Ringkasan sekolah binaan dan layanan ketenagaan sesuai penugasan Pengawas.';
+  const text=grantKind==='KORWIL'?'Ringkasan TK, SD, dan PNF se-kecamatan penugasan Korwil.':'Ringkasan sekolah dalam Dabin aktif Pengawas.';
   if(desc&&desc.textContent!==text)desc.textContent=text;
  }
  const discipline=document.querySelector('#discipline .head h2');
