@@ -6,6 +6,7 @@ const htmlPath = path.join(output, 'index.html');
 const modulePath = path.join(output, 'pengawas-menu-scope.js');
 let html = await fs.readFile(htmlPath, 'utf8');
 const module = await fs.readFile(modulePath, 'utf8');
+const dashboardModule = await fs.readFile(path.join(output, 'pengawas-dashboard-kadin.js'), 'utf8');
 const legacyMenu = await fs.readFile(path.join(output, 'legacy-shell-restore.js'), 'utf8');
 const rgtkMenu = await fs.readFile(path.join(output, 'rgtk-monitoring.js'), 'utf8');
 const workflowMenu = await fs.readFile(path.join(output, 'team-workflow-authority.js'), 'utf8');
@@ -16,6 +17,12 @@ function assert(ok, message) {
   if (!ok) throw new Error('[Cloudflare migration build] ' + message);
 }
 assert(html.includes('SIMANTAB Online'), 'index.html bukan hasil build SIMANTAB.');
+assert(html.includes('./pengawas-dashboard-kadin.js?v=3'), 'Cache dashboard Pengawas tidak diperbarui.');
+assert(dashboardModule.includes('SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V2_LEVEL_AND_DABIN_SCOPE') &&
+       dashboardModule.includes(".in('npsn',scope.schoolNpsns)") &&
+       dashboardModule.includes('schoolLevel(x)===scope.level') &&
+       dashboardModule.includes('scope.unmapped'),
+ 'Dashboard Pengawas belum dibatasi menurut NPSN Dabin, jenjang, dan penugasan.');
 assert(html.includes('./pengawas-menu-scope.js?v=6'),
   'Menu Pengawas dengan cache key v5 tidak dimuat.');
 assert(module.includes('SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG'),
