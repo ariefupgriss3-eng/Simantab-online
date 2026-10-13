@@ -84,6 +84,7 @@ test('active Jabfung form contains no paid gateway invocation',()=>{
  assert.doesNotMatch(freeUi,/cdn\.jsdelivr\.net|unpkg\.com/);
  assert.match(freeUi,/ocr\/pdf\.mjs/);
  assert.match(freeUi,/workerPath:libs\.worker/);
+ assert.match(freeUi,/create\(\['ind','eng'\],1/);
  assert.match(fin,/jabfung-free-verifier-core\.mjs/);
  assert.match(fin,/jabfung-free-verifier-ui\.mjs/);
 });
