@@ -73,7 +73,7 @@ test('active Jabfung form contains no paid gateway invocation',()=>{
  const freeUi=read('jabfung-free-verifier-ui.mjs');
  const fin=read('finalize-html.mjs');
  new Function(ui);
- assert.doesNotThrow(()=>new Function(freeUi.replace(/^import .*from .*;$/gm,'')));
+ // ESM module syntax is verified separately with node --check (import.meta allowed).
  assert.doesNotMatch(ui,/sb\.functions\.invoke\('simantab-jabfung-ai-workflow'/);
  assert.doesNotMatch(ui,/await runAi\(sub\.id\)/);
  assert.match(ui,/__verifyJabfungFreeFromForm\(\)/);
