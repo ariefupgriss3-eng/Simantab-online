@@ -16,12 +16,17 @@ function assert(ok, message) {
   if (!ok) throw new Error('[Cloudflare migration build] ' + message);
 }
 assert(html.includes('SIMANTAB Online'), 'index.html bukan hasil build SIMANTAB.');
-assert(html.includes('./pengawas-menu-scope.js?v=5'),
+assert(html.includes('./pengawas-menu-scope.js?v=6'),
   'Menu Pengawas dengan cache key v5 tidak dimuat.');
 assert(module.includes('SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG'),
   'Kode katalog layanan Pengawas tidak cocok.');
 assert(module.includes('simantab:profile-ready'), 'Menu Pengawas masih menggunakan timeout login.');
-assert(module.includes('navPatchTimer=setTimeout'), 'Nav Pengawas masih memakai mutasi sinkron berulang.');
+assert(module.includes("nav.id='pengawasStableNav'") &&
+       module.includes("originalNav.style.setProperty('display','none','important')") &&
+       module.includes('isolatedNavigation:true'),
+  'Menu Pengawas belum dipisahkan dari nav lama.');
+assert(!module.includes('observer.observe(nav,{childList:true'),
+  'Pengamat menu lama masih dapat menulis ulang sidebar Pengawas.');
 assert(module.includes('Riwayat Usulan Saya'),
   'Katalog dan riwayat usulan Pengawas belum tersedia.');
 assert(module.includes('discipline_submitter_grants'),
