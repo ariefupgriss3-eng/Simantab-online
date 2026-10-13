@@ -9,6 +9,8 @@ on:
       - 'web/finalize-html.mjs'
       - 'web/package.json'
       - 'web/vendor-jabfung-ocr.mjs'
+      - 'web/jabfung-ai-read-edge.js'
+      - 'supabase/functions/simantab-jabfung-ai-workflow/index.ts'
       - 'web/tests/jabfung-free-verifier.test.mjs'
       - '.github/workflows/jabfung-free-local-ci.yml'
   workflow_dispatch:
@@ -30,6 +32,7 @@ jobs:
           node --check web/jabfung-free-verifier-core.mjs
           node --check web/jabfung-free-verifier-ui.mjs
           node --check web/jabfung-jenjang-enhancement.js
+          node --check web/jabfung-ai-read-edge.js
           node --check web/finalize-html.mjs
       - name: Test free local rules
         run: node --test web/tests/jabfung-free-verifier.test.mjs
