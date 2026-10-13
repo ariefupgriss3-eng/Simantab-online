@@ -9,13 +9,15 @@ const module = await fs.readFile(modulePath, 'utf8');
 const legacyMenu = await fs.readFile(path.join(output, 'legacy-shell-restore.js'), 'utf8');
 const rgtkMenu = await fs.readFile(path.join(output, 'rgtk-monitoring.js'), 'utf8');
 const workflowMenu = await fs.readFile(path.join(output, 'team-workflow-authority.js'), 'utf8');
+const redistribMenu = await fs.readFile(path.join(output, 'gtk-redistribution-analysis.js'), 'utf8');
+const diklatMenu = await fs.readFile(path.join(output, 'diklat-ks-bcks-v32.js'), 'utf8');
 
 function assert(ok, message) {
   if (!ok) throw new Error('[Cloudflare migration build] ' + message);
 }
 assert(html.includes('SIMANTAB Online'), 'index.html bukan hasil build SIMANTAB.');
 assert(html.includes('./pengawas-menu-scope.js?v=5'),
-  'Menu Pengawas versi 4 tidak dimuat.');
+  'Menu Pengawas dengan cache key v5 tidak dimuat.');
 assert(module.includes('SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG'),
   'Kode katalog layanan Pengawas tidak cocok.');
 assert(module.includes('simantab:profile-ready'), 'Menu Pengawas masih menggunakan timeout login.');
@@ -31,6 +33,10 @@ assert(rgtkMenu.includes("if(ROLE()==='PENGAWAS')return;"),
   'Modul RGTK masih berpotensi menambahkan ulang menu Pengawas tanpa henti.');
 assert(html.includes('./legacy-shell-restore.js?v=3'), 'Cache version modul legacy belum diperbarui.');
 assert(html.includes('./rgtk-monitoring.js?v=2'), 'Cache version modul RGTK belum diperbarui.');
+assert(redistribMenu.includes("if(['PENGAWAS','KORWIL'].includes(role()))return;"), 'Redistribusi masih menambahkan tombol ke sidebar Pengawas.');
+assert(diklatMenu.includes("if(profile().role==='PENGAWAS')return;"), 'Diklat KS/BCKS masih menambahkan tombol ke sidebar Pengawas.');
+assert(html.includes('./gtk-redistribution-analysis.js?v=9'), 'Cache Redistribusi GTK Cloudflare belum diganti.');
+assert(html.includes('./diklat-ks-bcks-v32.js?v=20'), 'Cache Diklat KS/BCKS Cloudflare belum diganti.');
 
 const required = ['manifest.json', 'sw.js', 'pwa-install.js', 'gtk-redistribution-analysis.js'];
 for (const file of required) {
@@ -84,6 +90,8 @@ console.log(JSON.stringify({
   cloudflareStaticBuild: 'prepared',
   output,
   menuPengawasVersion: 4,
+  menuPengawasCacheVersion: 5,
+  supervisorNavigationGuards: ['redistribusi','diklat','workflow','rgtk','legacy'],
   securityHeaders: true,
   check: 'build-time only; not an end-to-end QA approval',
   aiApis: 'separate migration required before production cutover'
