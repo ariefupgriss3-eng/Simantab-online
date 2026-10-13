@@ -33,19 +33,22 @@ for(const name of cores)copied['core/'+name]=await copy(path.join(coreRoot,name)
 for(const suffix of ['.wasm.js','.wasm']){
  if(!cores.some(name=>name.endsWith(suffix)))throw new Error('Tesseract core missing '+suffix);
 }
-let langDir=path.join(from,'@tesseract.js-data/eng');
-async function findLang(dir,depth=0){
+async function findLang(dir,lang,depth=0){
  if(depth>4)return null;
  for(const ent of await fs.readdir(dir,{withFileTypes:true})){
-  if(ent.isFile()&&ent.name==='eng.traineddata.gz')return path.join(dir,ent.name);
+  if(ent.isFile()&&ent.name===lang+'.traineddata.gz')return path.join(dir,ent.name);
   if(ent.isDirectory()){
-   const found=await findLang(path.join(dir,ent.name),depth+1);
+   const found=await findLang(path.join(dir,ent.name),lang,depth+1);
    if(found)return found;
   }
  }
  return null;
 }
-const lang=await findLang(langDir);
-if(!lang)throw new Error('Local OCR eng.traineddata.gz missing in npm package.');
-copied['lang/eng.traineddata.gz']=await copy(lang,path.join(out,'lang','eng.traineddata.gz'));
+for(const lang of ['eng','ind']){
+ const dataDir=path.join(from,'@tesseract.js-data',lang);
+ const source=await findLang(dataDir,lang);
+ if(!source)throw new Error('Local OCR '+lang+'.traineddata.gz missing in npm package.');
+ copied['lang/'+lang+'.traineddata.gz']=await copy(source,
+   path.join(out,'lang',lang+'.traineddata.gz'));
+}
 console.log(JSON.stringify({ocrVendoredFromPinnedNpm:true,files:copied,thirdPartyRuntimeCalls:false}));
