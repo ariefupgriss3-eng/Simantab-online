@@ -168,7 +168,7 @@ begin
     'assignments',v_result
   );
 end;
-$function$
+$function$;
 
 
 CREATE OR REPLACE FUNCTION public.submission_assign_staff_multi(p_submission_id uuid, p_assignee_user_ids uuid[], p_note text DEFAULT NULL::text)
@@ -251,5 +251,5 @@ begin
     v_uid
   );
 end;
-$function$
+$function$;
 
