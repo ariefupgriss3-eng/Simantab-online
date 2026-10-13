@@ -113,8 +113,13 @@ async function mapLimit(items,limit,fn){
 export default async function handler(req){
   if(req.method==='OPTIONS')return new Response('ok',{headers:CORS});
   const gateway=process.env.AI_GATEWAY_API_KEY||process.env.VERCEL_OIDC_TOKEN||'';
-  if(req.method==='GET')return J({ok:true,configured:!!gateway,engine:'JABFUNG_DOC_AI_V2_COST_GUARD',model:'google/gemini-2.5-flash-lite',authenticity:'visual-indicator-only'});
+  if(req.method==='GET')return J({ok:true,engine:'JABFUNG_LOCAL_OCR_V1',mode:'FREE_LOCAL_ONLY',paidGateway:false});
   if(req.method!=='POST')return J({error:'Method not allowed'},405);
+  // JABFUNG_FREE_FAIL_CLOSED_20261013: refuse provider calls from older PWA clients.
+  if(req.method==='POST')return J({
+    error:'Verifikator Jabfung kini menggunakan OCR lokal gratis. Silakan buka versi SIMANTAB terbaru.',
+    code:'FREE_LOCAL_ONLY',paidGateway:false
+  },503);
 
   try{
     const token=(req.headers.get('authorization')||'').replace(/^Bearer\s+/,'');

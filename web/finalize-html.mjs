@@ -311,9 +311,17 @@ const bcksIndividualReadinessCode=await fs.readFile(new URL(`./${bcksIndividualR
 if(!/SIMANTAB_BCKS_INDIVIDUAL_READINESS_V1/.test(bcksIndividualReadinessCode))throw new Error('BCKS individual readiness v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksIndividualReadinessFile),bcksIndividualReadinessCode);
 
+// Free Jabfung verifier core/UI are local branch modules, not fetched from a third-party AI.
+for(const file of ['jabfung-free-verifier-core.mjs','jabfung-free-verifier-ui.mjs']){
+  const source=await fs.readFile(new URL('./'+file,import.meta.url),'utf8');
+  if(!source.includes('SIMANTAB_JABFUNG_FREE_'))throw new Error('Missing safe free Jabfung verifier marker: '+file);
+  await fs.writeFile(path.join(staticDir,file),source);
+}
 const modules=[
  ['kp-enhancement.js',4],
- ['jabfung-jenjang-enhancement.js',2],
+ ['jabfung-jenjang-enhancement.js',4],
+ ['jabfung-free-verifier-core.mjs',1],
+ ['jabfung-free-verifier-ui.mjs',1],
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',9],
  ['registration-approval.js',2],

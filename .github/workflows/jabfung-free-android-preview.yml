@@ -1,0 +1,76 @@
+name: Jabfung OCR — Android offline preview bundle
+
+on:
+  pull_request:
+    paths:
+      - 'qa/jabfung-free-preview/**'
+      - 'web/tests/jabfung-free-preview-e2e.test.mjs'
+      - 'web/jabfung-free-verifier-core.mjs'
+      - 'web/jabfung-free-verifier-ui.mjs'
+      - 'web/vendor-jabfung-ocr.mjs'
+      - 'web/package.json'
+      - '.github/workflows/jabfung-free-android-preview.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  prepare-android-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install pinned open-source packages and package assets
+        run: |
+          cd web
+          npm install --ignore-scripts --no-audit --no-fund
+          mkdir -p .vercel/output/static
+          node vendor-jabfung-ocr.mjs
+
+      - name: Assemble fully local preview package
+        run: |
+          set -euo pipefail
+          mkdir -p preview-package/ocr
+          cp qa/jabfung-free-preview/index.html preview-package/
+          cp qa/jabfung-free-preview/demo.js preview-package/
+          cp qa/jabfung-free-preview/site.css preview-package/
+          cp qa/jabfung-free-preview/MULAI_UJI_WINDOWS.bat preview-package/
+          cp qa/jabfung-free-preview/PANDUAN_ANDROID.md preview-package/
+          cp web/jabfung-free-verifier-core.mjs preview-package/
+          cp web/jabfung-free-verifier-ui.mjs preview-package/
+          cp web/node_modules/jspdf/dist/jspdf.umd.min.js preview-package/
+          cp -R web/.vercel/output/static/ocr/. preview-package/ocr/
+          test -s preview-package/ocr/pdf.mjs
+          test -s preview-package/ocr/pdf.worker.mjs
+          test -s preview-package/ocr/tesseract.worker.min.js
+          test -s preview-package/ocr/core/tesseract-core-lstm.wasm.js
+          test -s preview-package/ocr/lang/ind.traineddata.gz
+          test -s preview-package/ocr/lang/eng.traineddata.gz
+          if grep -ERn 'https?://(ai-gateway|generativelanguage|api\.openai)' preview-package/*.js preview-package/*.mjs; then
+            echo 'Paid AI endpoint unexpectedly referenced in local preview'
+            exit 1
+          fi
+          node --check preview-package/demo.js
+          node --check preview-package/jabfung-free-verifier-ui.mjs
+          echo "LOCAL_PREVIEW_BUNDLE_READY"
+
+      - name: Run actual preview UI in Chromium (desktop and simulated Android)
+        run: |
+          cd web
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.55.0
+          cd ..
+          node --test web/tests/jabfung-free-preview-e2e.test.mjs
+
+      - name: Publish temporary QA ZIP for Windows + Android on same Wi-Fi
+        uses: actions/upload-artifact@v4
+        with:
+          name: SIMANTAB-Jabfung-OCR-Local-Preview
+          path: preview-package/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 6
