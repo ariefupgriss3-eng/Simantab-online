@@ -18,7 +18,7 @@ const MODS=[
  ['discipline-evidence.js','SIMANTAB_DISCIPLINE_EVIDENCE_V4',4],
  ['pengawas-nip-tcs-link.js','SIMANTAB_PENGAWAS_NIP_TCS_LINK_V1',1],
  ['simanteb-branding.js','SIMANTEB_BRANDING_V1',1],
- ['pengawas-menu-scope.js','SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG',5],
+ ['pengawas-menu-scope.js','SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG',6],
  ['pengawas-login-channel.js','SIMANTEB_PENGAWAS_LOGIN_CHANNEL_V1',1],
  ['pengawas-dashboard-kadin.js','SIMANTEB_PENGAWAS_KADIN_DASHBOARD_V1',2],
  ['korwil-scope-dashboard.js','SIMANTEB_KORWIL_SCOPE_DASHBOARD_V3',3],
