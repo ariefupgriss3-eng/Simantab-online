@@ -1,4 +1,4 @@
-/* SIMANTAB_DISCIPLINE_EVIDENCE_V4 */
+/* SIMANTAB_DISCIPLINE_EVIDENCE_V5_KORWIL_GRANT */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.showTab||!window.__simantabProfile);i++)await wait(50);
@@ -11,14 +11,30 @@ const GROUPS=[
 ];
 const ALL=GROUPS.flatMap(g=>g.codes.map(x=>x[0])),LABEL=Object.fromEntries(GROUPS.flatMap(g=>g.codes));
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const role=()=>p().role||'',position=()=>String(p().position||''),isKorwil=()=>role()==='PENGAWAS'&&/korwil/i.test(position()),isDabin=()=>role()==='PENGAWAS'&&/dabin/i.test(position()),isProposer=()=>isKorwil()||isDabin();
+const role=()=>p().role||'',position=()=>String(p().position||'');
+let activePermission=null,assignedDistrict='';
+const norm=v=>String(v||'').toLowerCase().replace(/^kec(?:amatan)?\.?\s*/,'').replace(/[^a-z0-9]+/g,' ').trim();
+const isKorwil=()=>role()==='PENGAWAS'&&activePermission==='KORWIL';
+const isDabin=()=>role()==='PENGAWAS'&&activePermission==='PENGAWAS_SMP';
+const isProposer=()=>isKorwil()||isDabin();
+async function loadPermission(){
+ activePermission=null;assignedDistrict='';
+ const me=p();if(me.role!=='PENGAWAS'||!me.id||me.is_active!==true||me.approval_status!=='APPROVED')return;
+ const {data,error}=await sb.from('discipline_submitter_grants').select('submitter_kind,scope_level,kecamatan')
+  .eq('user_id',me.id).eq('is_active',true);
+ if(error)throw error;
+ const eligible=(data||[]).filter(g=>g.submitter_kind==='KORWIL'&&g.scope_level==='SD'||g.submitter_kind==='PENGAWAS_SMP'&&g.scope_level==='SMP');
+ if(eligible.length!==1)return;
+ activePermission=eligible[0].submitter_kind;assignedDistrict=norm(eligible[0].kecamatan);
+ if(!assignedDistrict)activePermission=null;
+}
 const canSyncTcs=()=>['SUPER_ADMIN','KABID'].includes(role());
 const safeName=n=>String(n||'file').normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-90);
 const statusLabel=s=>({OPEN:'Open',PROCESS:'Proses',CLOSED:'Selesai'})[s]||s,typeLabel=s=>s==='PERCERAIAN'?'Usul Perceraian GTK':'Pembinaan Disiplin';
 let schools=[],dabinProfiles=[],sdDabinRows=[],sdDabinByNpsn=new Map(),caseCache=[],profileMap=new Map(),syncAttempted=false,syncInfo=null;
 function validateFile(f){if(!f)return '';if(f.size>MAX)return 'Ukuran maksimal 500 KB.';if(!MIME.includes(f.type))return 'Format harus PDF/JPG/PNG.';return ''}
 function schoolForm(s){return String(s?.bentuk_pendidikan||s?.jenjang||'').toUpperCase()}
-function korwilSchools(level='TK'){const pos=position().toLowerCase();return schools.filter(s=>schoolForm(s)===level&&s.kecamatan&&pos.includes(String(s.kecamatan).toLowerCase()))}
+function korwilSchools(level='TK'){return schools.filter(s=>schoolForm(s)===level&&assignedDistrict&&norm(s.kecamatan)===assignedDistrict)}
 function proposerCanUpload(row){return row?.created_by===p().id&&role()==='PENGAWAS'}
 function canManage(row){return role()==='KABID'||(['KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(role())&&row.coordinator_role===role())}
 function uploadGroups(prefix,files=[],canUpload=false,rowId=''){const by=new Map(files.map(f=>[f.requirement_code,f]));return GROUPS.map(g=>`<div class="card" style="box-shadow:none;margin-top:10px"><h4 style="margin:0 0 8px">${esc(g.title)}</h4><div class="grid">${g.codes.map(([code,label])=>{const f=by.get(code),inputId=`${prefix}_${code}`;return `<div class="field s6"><label>${f?'✅':'⬜'} ${esc(label)}</label>${f?`<div class="small" style="margin-bottom:6px">${esc(f.file_name)} • ${(Number(f.file_size||0)/1024).toFixed(0)} KB</div>`:''}${canUpload?`<input id="${inputId}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">`:`<div class="small">${f?'Dokumen dapat dibuka sesuai hak akses.':'Menunggu unggahan pengusul.'}</div>`}${f?`<button type="button" class="btn soft" style="margin-top:6px" onclick="disciplineOpenEvidence('${encodeURIComponent(f.storage_path)}')">Buka</button>`:''}${canUpload&&rowId?` <button type="button" class="btn soft" style="margin-top:6px" onclick="disciplineUploadEvidence('${rowId}','${code}')">${f?'Ganti':'Unggah'}</button>`:''}</div>`}).join('')}</div></div>`).join('')}
@@ -40,7 +56,7 @@ async function loadReferences(){
   sb.from('profiles').select('id,full_name,nip,position,role,is_active').eq('role','PENGAWAS').eq('is_active',true).order('full_name'),
   sb.from('tcs_sd_dabin_reference').select('supervisor_nip,supervisor_name,supervisor_job_title,school_npsn,school_name,district,source_period,synced_at').eq('is_active',true).not('school_npsn','is',null)
  ]);
- if(se)throw se;if(pe)throw pe;if(re)throw re;schools=s||[];dabinProfiles=(ps||[]).filter(x=>/dabin/i.test(String(x.position||'')));sdDabinRows=refs||[];sdDabinByNpsn=new Map(sdDabinRows.map(x=>[String(x.school_npsn),x]));
+ if(se)throw se;if(pe)throw pe;if(re)throw re;schools=(s||[]).filter(x=>!isKorwil()||norm(x.kecamatan)===assignedDistrict&&['TK','SD'].includes(schoolForm(x)));dabinProfiles=(ps||[]).filter(x=>/dabin/i.test(String(x.position||'')));sdDabinRows=refs||[];sdDabinByNpsn=new Map(sdDabinRows.map(x=>[String(x.school_npsn),x]));
  const sups=new Set(sdDabinRows.map(x=>x.supervisor_nip).filter(Boolean));syncInfo={rows:sdDabinRows.length,withNpsn:sdDabinRows.length,supervisors:sups.size,syncedAt:sdDabinRows.map(x=>x.synced_at).filter(Boolean).sort().at(-1)||null};
 }
 function schoolOptions(rows){return rows.map(s=>`<option value="${esc(s.npsn)}">${esc(s.school_name)} — ${esc(s.kecamatan||'-')}</option>`).join('')}
@@ -77,7 +93,8 @@ window.disciplineSaveCase=async()=>{
 };
 function evidencePanel(row,files){const mine=files.filter(f=>f.case_id===row.id),have=new Set(mine.map(f=>f.requirement_code)),count=ALL.filter(c=>have.has(c)).length,complete=count===7;return `<div style="margin-top:9px;padding-top:9px;border-top:1px solid var(--line)"><div class="info"><b>Kelengkapan bukti: ${count}/7</b> ${complete?'✅ Lengkap':'— belum lengkap'}<br>4 Level Sekolah + 3 Level Pengawas/Korwil.</div>${uploadGroups(`case_${row.id}`,mine,proposerCanUpload(row),row.id)}</div>`}
 async function renderDisciplineEvidence(){
- const body=$('disciplineBody');if(!body)return;const head=body.closest('.section')?.querySelector('.head p');if(head)head.textContent='Usul Pembinaan/Perceraian GTK dengan Dabin SD tersinkron TCS dan akses terbatas per pengusul.';
+ const body=$('disciplineBody');if(!body)return;
+ try{await loadPermission()}catch(e){console.warn('Penugasan Korwil/Pengawas SMP tidak dapat diverifikasi.',e);activePermission=null;assignedDistrict=''}const head=body.closest('.section')?.querySelector('.head p');if(head)head.textContent='Usul Pembinaan/Perceraian GTK dengan Dabin SD tersinkron TCS dan akses terbatas per pengusul.';
  try{await loadReferences()}catch(e){console.error(e);syncInfo={error:e?.message||String(e)}}
  const {data:rows,error}=await sb.from('supervision_cases').select('*').in('case_type',['PEMBINAAN_DISIPLIN','PERCERAIAN']).order('created_at',{ascending:false});if(error){body.innerHTML=tcsSyncCard()+`<div class="card err">${esc(error.message)}</div>`;return}caseCache=rows||[];
  let files=[];const ids=caseCache.map(x=>x.id);if(ids.length){const r=await sb.from('supervision_case_files').select('*').in('case_id',ids).order('created_at');if(r.error){body.innerHTML=tcsSyncCard()+`<div class="card err">${esc(r.error.message)}</div>`;return}files=r.data||[]}
