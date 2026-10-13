@@ -129,6 +129,9 @@ function patchNav(){
 }
 function patchLabels(){
  if(!isSupervisor())return;
+ const roleChip=document.getElementById('roleChip');
+ const roleName=grantKind==='KORWIL'?'Korwil Kecamatan':grantKind==='PENGAWAS_SMP'?'Pengawas SMP':'Pengawas';
+ if(roleChip&&roleChip.textContent!==roleName)roleChip.textContent=roleName;
  const dash=document.getElementById('dashboard');
  if(dash?.classList.contains('active')){
   const title=document.getElementById('dashTitle');
