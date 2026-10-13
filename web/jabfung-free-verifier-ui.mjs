@@ -1,7 +1,7 @@
 /* SIMANTAB_JABFUNG_FREE_UI_V1_20261013
  * Optional local OCR precheck; never sends document bytes to any AI provider.
  * PDF.js/Tesseract libraries are loaded only when explicitly requested by user.
- * PROD GATE: vendor these pinned third-party assets under SIMANTAB origin before release.
+ * Runtime assets are copied from pinned npm dependencies and served from SIMANTAB origin.
  */
 import {fileEligibility,verifyExtractedText,aggregateChecks,REQUIRED_LABELS} from './jabfung-free-verifier-core.mjs?v=1';
 
@@ -12,10 +12,15 @@ import {fileEligibility,verifyExtractedText,aggregateChecks,REQUIRED_LABELS} fro
  if(!sb)return;
  const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  let pdfLibPromise=null,ocrPromise=null,worker=null;
+ // Pinned npm packages are copied to same-origin /ocr/ by vendor-jabfung-ocr.mjs.
+ // No runtime loading of executable third-party scripts from a CDN.
  const libs={
-   pdf:'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs',
-   pdfWorker:'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs',
-   tesseract:'https://cdn.jsdelivr.net/npm/tesseract.js@6.0.1/dist/tesseract.esm.min.js'
+   pdf:'./ocr/pdf.mjs',
+   pdfWorker:new URL('./ocr/pdf.worker.mjs',import.meta.url).href,
+   tesseract:'./ocr/tesseract.esm.min.js',
+   worker:new URL('./ocr/tesseract.worker.min.js',import.meta.url).href,
+   core:new URL('./ocr/core',import.meta.url).href,
+   language:new URL('./ocr/lang',import.meta.url).href
  };
  const pdfjs=async()=>{
    if(!pdfLibPromise)pdfLibPromise=import(libs.pdf).then(m=>{
@@ -27,7 +32,10 @@ import {fileEligibility,verifyExtractedText,aggregateChecks,REQUIRED_LABELS} fro
    if(!ocrPromise)ocrPromise=import(libs.tesseract).then(async mod=>{
      const create=mod.createWorker||mod.default?.createWorker;
      if(typeof create!=='function')throw new Error('OCR_LIBRARY_UNAVAILABLE');
-     worker=await create('eng',1);
+     worker=await create('eng',1,{
+       workerPath:libs.worker,corePath:libs.core,langPath:libs.language,
+       gzip:true,workerBlobURL:false
+     });
      return worker;
    });
    return ocrPromise;
