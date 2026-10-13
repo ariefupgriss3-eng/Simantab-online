@@ -5,11 +5,22 @@ const staticDir='.vercel/output/static';
 const file='offline-consultation-monitoring.js';
 const source=await fs.readFile(new URL('./'+file,import.meta.url),'utf8');
 if(!/SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V3_ALL_SUBMISSIONS/.test(source))throw new Error('Offline consultation monitoring v3 tidak valid.');
+const cloudflare=process.env.SIMANTAB_BUILD_TARGET==='cloudflare';
+if(cloudflare&&!source.includes('SIMANTAB_OFFLINE_CONSULTATION_MONITORING_V4_EXCLUDE_SUPERVISORS'))throw new Error('Korwil masih dapat melihat konsultasi luring.');
 await fs.writeFile(path.join(staticDir,file),source);
 let html=await fs.readFile(outputPath,'utf8');
 html=html.replace(/\s*<script\s+type="module"\s+src="\.\/offline-consultation-monitoring\.js\?v=\d+"\s*><\/script>\s*/g,'\n');
 if(!html.includes('</body>'))throw new Error('Tag </body> tidak ditemukan.');
-html=html.replace('</body>','<script type="module" src="./offline-consultation-monitoring.js?v=3"></script>\n</body>');
-if((html.match(/\.\/offline-consultation-monitoring\.js\?v=3/g)||[]).length!==1)throw new Error('Offline consultation monitoring harus tepat satu kali.');
+const version=cloudflare?4:3;
+html=html.replace('</body>','<script type="module" src="./offline-consultation-monitoring.js?v='+version+'"></script>\n</body>');
+if(cloudflare){
+ const monitorFile='korwil-submission-monitoring.js';
+ const monitorSource=await fs.readFile(new URL('./'+monitorFile,import.meta.url),'utf8');
+ if(!monitorSource.includes('SIMANTAB_KORWIL_SUBMISSION_MONITORING_V1_READONLY')||!monitorSource.includes("sb.rpc('korwil_monitor_submissions')"))throw new Error('Monitoring Korwil tidak aman.');
+ await fs.writeFile(path.join(staticDir,monitorFile),monitorSource);
+ html=html.replace('</body>','<script type="module" src="./korwil-submission-monitoring.js?v=1"></script>\n</body>');
+}
+if((html.match(new RegExp('\\./offline-consultation-monitoring\\.js\\?v='+version,'g'))||[]).length!==1)throw new Error('Offline consultation monitoring harus tepat satu kali.');
+if(cloudflare&&(html.match(/\.\/korwil-submission-monitoring\.js\?v=1/g)||[]).length!==1)throw new Error('Monitoring Korwil harus tepat satu kali.');
 await fs.writeFile(outputPath,html);
-console.log(JSON.stringify({offlineConsultationMonitoring:true,version:3}));
+console.log(JSON.stringify({offlineConsultationMonitoring:true,version,cloudflareExcludeKorwil:cloudflare,korwilSubmissionsReadOnly:cloudflare}));
