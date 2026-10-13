@@ -1,4 +1,4 @@
-/* SIMANTAB_PENGAWAS_MENU_SCOPE_V3_GRANT_GATED */
+/* SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG */
 /* Hanya dua kelompok menu. Korwil/Pengawas SMP mendapat tab sensitif
    jika grant database aktif, jenjang cocok, dan akun dinyatakan sah. */
 (async()=>{
@@ -22,13 +22,70 @@ const BASE=[
  ['docs','▣','Dokumen Saya']
 ];
 const SENSITIVE=['discipline','⚖','Disiplin & Perceraian'];
+
+const STAFFING_SERVICES=[
+ ['KP','📈','Kenaikan Pangkat','Pengajuan KP dan pemeriksaan persyaratan sesuai SOP.'],
+ ['E_JABFUNG','🧭','Kenaikan Jenjang Jabfung','Usul SK kenaikan jenjang Jabatan Fungsional.'],
+ ['KLARIFIKASI_PAK','🧾','Klarifikasi PAK','Klarifikasi PAK dan dokumen pendukung.'],
+ ['KGB','💳','Kenaikan Gaji Berkala','Layanan administrasi KGB.'],
+ ['CUTI','🗓️','Cuti','Permohonan dan konsultasi cuti.'],
+ ['PENSIUN','🏁','Pensiun / Pemberhentian','Pengajuan administrasi pensiun dan pemberhentian.'],
+ ['MUTASI','🔄','Mutasi','Pengusulan atau konsultasi mutasi.'],
+ ['TUGAS_BELAJAR','🎓','Tugas Belajar','Pengusulan administrasi tugas belajar.'],
+ ['PENGEMBANGAN_KOMPETENSI','📚','Pengembangan Kompetensi','Diklat, pelatihan, dan kompetensi profesi.'],
+ ['SKP_KS_PENGAWAS','✍️','SKP Kepala Sekolah & Pengawas','Layanan SKP dengan dukungan TTE.'],
+ ['PAK_KS_PENGAWAS','📑','PAK Kepala Sekolah & Pengawas','Layanan PAK dan dokumen pendukung.'],
+ ['LAINNYA','📁','Layanan Kepegawaian Lainnya','Administrasi kepegawaian yang belum tercakup di atas.']
+];
+const SERVICE_TYPES=new Set(STAFFING_SERVICES.map(s=>s[0]));
+const statusLabel=s=>({
+ SUBMITTED:'Diajukan',VERIFYING:'Dalam Verifikasi',REVISION:'Perlu Perbaikan',
+ APPROVED:'Disetujui',COMPLETED:'Selesai',REJECTED:'Ditolak'
+}[s]||s||'Belum diproses');
+const fmtDate=v=>{try{return v?new Date(v).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'-'}catch{return'-'}};
+async function renderSupervisorServices(){
+ if(!isSupervisor())return;
+ const body=document.getElementById('servicesBody');
+ if(!body)return;
+ const desc=document.getElementById('servicesDesc');
+ if(desc)desc.textContent='Pilih layanan kepegawaian untuk pengajuan pribadi Pengawas. Dokumen dan proses mengikuti persyaratan masing-masing layanan.';
+ const cards=STAFFING_SERVICES.map(([type,ico,name,detail])=>
+  '<div class="service"><div class="emoji">'+ico+'</div><h3>'+esc(name)+'</h3><p>'+esc(detail)+'</p>'+
+  '<button class="btn soft" type="button" data-supervisor-service="'+esc(type)+'">Ajukan</button></div>').join('');
+ body.innerHTML='<div class="card" style="margin-bottom:14px"><h3 style="margin:0 0 7px">Layanan Kepegawaian Pengawas</h3>'+
+  '<div class="small">Pilih jenis layanan di bawah ini untuk memulai pengajuan. Hak memantau atau memverifikasi usulan dinas tetap mengikuti penugasan, bukan menu ini.</div></div>'+
+  '<div class="servicegrid">'+cards+'</div>'+
+  '<div class="card" style="margin-top:16px"><h3 style="margin-top:0">Riwayat Usulan Saya</h3><div id="pengawasOwnSubmissions" class="small">Memuat riwayat...</div></div>';
+ body.querySelectorAll('[data-supervisor-service]').forEach(btn=>btn.addEventListener('click',async()=>{
+  const type=btn.dataset.supervisorService;
+  if(!SERVICE_TYPES.has(type))return;
+  const item=STAFFING_SERVICES.find(x=>x[0]===type);
+  if(item&&typeof window.openSubmission==='function')await window.openSubmission(item[0],item[2]);
+ }));
+ const history=document.getElementById('pengawasOwnSubmissions');
+ if(!profile().id){history.textContent='Profil akun belum tersedia.';return}
+ try{
+  const {data,error}=await sb.from('submissions')
+   .select('id,service_type,title,status,submitted_at')
+   .eq('user_id',profile().id)
+   .order('submitted_at',{ascending:false}).limit(15);
+  if(error)throw error;
+  if(!data?.length){history.textContent='Belum ada usulan yang Anda ajukan. Pilih salah satu layanan di atas.';return}
+  history.innerHTML='<div class="tablewrap"><table><thead><tr><th>Tanggal</th><th>Layanan</th><th>Judul</th><th>Status</th></tr></thead><tbody>'+
+   data.map(x=>'<tr><td>'+esc(fmtDate(x.submitted_at))+'</td><td>'+esc(x.service_type)+'</td><td>'+esc(x.title)+'</td><td>'+esc(statusLabel(x.status))+'</td></tr>').join('')+
+   '</tbody></table></div>';
+ }catch(e){
+  history.textContent='Riwayat belum dapat dimuat: '+String(e?.message||e);
+ }
+}
+
 const BASE_ALLOWED=new Set(BASE.map(x=>x[0]));
 let grantKind=null;
 let grantScope=null;
 const isSupervisor=()=>profile().role==='PENGAWAS';
 const canDiscipline=()=>!!grantKind;
 const rows=()=>canDiscipline()?[...BASE,SENSITIVE]:BASE;
-const allowed=id=>BASE_ALLOWED.has(id)||(id==='discipline'&&canDiscipline());
+const allowed=id=>BASE_ALLOWED.has(id)||id==='newSubmission'||(id==='discipline'&&canDiscipline());
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const navHtml=()=>'<div class="navhead">'+(grantKind==='KORWIL'?'Menu Korwil':grantKind==='PENGAWAS_SMP'?'Menu Pengawas SMP':'Menu Pengawas')+'</div>'+
  rows().map(([tab,ico,name])=>'<button type="button" class="navbtn" data-tab="'+esc(tab)+'" onclick="showTab(\''+tab+'\')"><span class="ico">'+ico+'</span>'+name+'</button>').join('');
@@ -94,13 +151,21 @@ window.showTab=async function(id){
   }
   id='dashboard';
  }
- const result=await prevShow.call(this,id);
+ let result;
+ try{
+  result=await prevShow.call(this,id);
+ }catch(e){
+  if(id!=='services')throw e;
+  console.warn('Antrean dinas tidak relevan bagi layanan pribadi Pengawas.',e);
+ }
+ if(isSupervisor()&&id==='services')await renderSupervisorServices();
  apply();
  return result;
 };
 const prevRefresh=window.refreshAll;
 if(typeof prevRefresh==='function')window.refreshAll=async function(...args){
  const result=await prevRefresh.apply(this,args);
+ if(isSupervisor()&&document.getElementById('services')?.classList.contains('active'))await renderSupervisorServices();
  apply();
  return result;
 };
@@ -115,7 +180,7 @@ if(nav){
 }
 for(const ms of [100,300,700,1500,3000])setTimeout(apply,ms);
 window.__simantebPengawasMenu={
- version:3,
+ version:4,
  get allowed(){return rows().map(x=>x[0])},
  get labels(){return rows().map(x=>x[2])},
  get sensitivePermission(){return grantKind?{kind:grantKind,scope:grantScope}:null},
