@@ -1,7 +1,38 @@
 /* SIMANTAB_JABFUNG_AI_READ_V1 */
+/* JABFUNG_AI_SAFE_DIAGNOSTICS_V3_20261013 */
 const SUPABASE_URL='https://tizxfzvgglkokzvsiwkg.supabase.co';
 const SUPABASE_KEY='sb_publishable_EfCKPSelNMo1X3whBFszJw_Ui6SuRIB';
 const MAX_FILE=1572864;
+const failureCode=e=>{
+  const raw=String(e?.message||e||'');
+  if(/^AI_GATEWAY_HTTP_(?:4\d\d|5\d\d)$/.test(raw))return raw;
+  if(raw==='INVALID_STORAGE_SIGNED_URL')return raw;
+  if(raw==='INVALID_FILE_SIGNATURE')return raw;
+  if(raw==='INVALID_FILE_SIZE')return raw;
+  if(/^SIGNED_FILE_HTTP_(?:4\d\d|5\d\d)$/.test(raw))return raw;
+  if(raw.includes('Output AI tidak valid JSON'))return 'AI_OUTPUT_INVALID_JSON';
+  if(e?.name==='AbortError'||e?.name==='TimeoutError')return 'AI_GATEWAY_TIMEOUT';
+  return 'AI_GATEWAY_TRANSPORT_ERROR';
+};
+const isApprovedSignedUrl=(value,submissionId)=>{
+  try{
+    const u=new URL(String(value||'')), origin=new URL(SUPABASE_URL);
+    return u.protocol==='https:' && u.host===origin.host &&
+      u.pathname.startsWith('/storage/v1/object/sign/simantab-documents/') &&
+      u.pathname.includes('/'+encodeURIComponent(submissionId)+'/') &&
+      u.searchParams.has('token');
+  }catch{return false}
+};
+const validSignature=(buf,mime)=>{
+  const bytes=new Uint8Array(buf);
+  if(mime==='application/pdf'){
+    return bytes.length>=5 && Array.from(bytes.slice(0,Math.min(bytes.length,1024))).some((v,i,a)=>
+      v===37&&a[i+1]===80&&a[i+2]===68&&a[i+3]===70&&a[i+4]===45);
+  }
+  if(mime==='image/jpeg')return bytes.length>3&&bytes[0]===255&&bytes[1]===216&&bytes[2]===255;
+  if(mime==='image/png')return bytes.length>8&&[137,80,78,71,13,10,26,10].every((v,i)=>bytes[i]===v);
+  return false;
+};
 const CORS={'Access-Control-Allow-Origin':'*','Access-Control-Allow-Headers':'authorization,content-type','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Content-Type':'application/json'};
 const J=(x,s=200)=>new Response(JSON.stringify(x),{status:s,headers:CORS});
 const clamp=v=>Math.max(0,Math.min(1,Number(v)||0));
@@ -94,11 +125,12 @@ async function analyzeOne(gateway,participant,spec,loaded){
   const model='google/gemini-2.5-flash-lite';
   const ar=await fetch('https://ai-gateway.vercel.sh/v1/responses',{
     method:'POST',
+    signal:AbortSignal.timeout(25000),
     headers:{Authorization:'Bearer '+gateway,'Content-Type':'application/json'},
     body:JSON.stringify({model,input:[{type:'message',role:'user',content}],max_output_tokens:1200})
   });
   const aj=await ar.json().catch(()=>({}));
-  if(!ar.ok)throw new Error(aj?.error?.message||aj?.error||('AI Gateway HTTP '+ar.status));
+  if(!ar.ok)throw new Error('AI_GATEWAY_HTTP_'+ar.status);
   const parsed=parse(txt(aj));
   return normalize({...spec,participant_nip:participant.nip},parsed);
 }
@@ -131,20 +163,28 @@ export default async function handler(req){
     const docs=Array.isArray(body?.documents)?body.documents:[];
     const by=new Map(docs.map(x=>[x.requirement_code,x]));
     const active=requirements.filter(r=>by.has(r.code));
-    if(!active.length)return J({ok:true,overall_status:'PERLU_TELAAH',counts:{sesuai:0,perbaikan:0,tidak:0,telaah:0,teknis:0},results:[]});
+    if(!active.length)return J({error:'Tidak ada dokumen valid yang dapat diperiksa.',code:'NO_DOCUMENTS'},422);
 
     const loaded=[];
     for(const spec of active){
-      const d=by.get(spec.code),r=await fetch(d.signed_url);
-      if(!r.ok)throw new Error('Gagal membaca '+spec.label);
+      const d=by.get(spec.code);
+      if(!isApprovedSignedUrl(d.signed_url,submissionId))throw new Error('INVALID_STORAGE_SIGNED_URL');
+      const r=await fetch(d.signed_url,{signal:AbortSignal.timeout(15000)});
+      if(!r.ok)throw new Error('SIGNED_FILE_HTTP_'+r.status);
       const buf=await r.arrayBuffer();
-      if(buf.byteLength<1||buf.byteLength>MAX_FILE)throw new Error(spec.label+' harus berukuran 1 byte–1,5 MB.');
-      loaded.push({spec,buf,file_name:d.file_name,mime:String(d.mime_type||r.headers.get('content-type')||'application/pdf').split(';')[0],hash:await sha256Hex(buf)});
+      if(buf.byteLength<1||buf.byteLength>MAX_FILE)throw new Error('INVALID_FILE_SIZE');
+      const mime=String(d.mime_type||r.headers.get('content-type')||'').split(';')[0].toLowerCase();
+      if(!validSignature(buf,mime))throw new Error('INVALID_FILE_SIGNATURE');
+      loaded.push({spec,buf,file_name:d.file_name,mime,hash:await sha256Hex(buf)});
     }
 
     const results=await mapLimit(loaded,3,async item=>{
       try{return await analyzeOne(gateway,participant,item.spec,item)}
-      catch(e){return {requirement_code:item.spec.code,status:'PERLU_TELAAH',detected_document_type:null,detected_year:null,detected_name:null,detected_nip:null,readability_score:0,readability_status:'TIDAK_TERBACA',stamp_present:null,signature_present:null,authenticity_indicator:'TIDAK_DAPAT_DIPASTIKAN',authenticity_note:'Pemeriksaan visual AI gagal secara teknis.',confidence:0,evidence:'',note:'Pemeriksaan AI mengalami kendala teknis; verifikasi manusia diperlukan.',technical_error:true}}
+      catch(e){
+        const code=failureCode(e);
+        console.error('JABFUNG_AI_ITEM_FAIL',JSON.stringify({code}));
+        return {requirement_code:item.spec.code,status:'PERLU_TELAAH',detected_document_type:null,detected_year:null,detected_name:null,detected_nip:null,readability_score:0,readability_status:'TIDAK_TERBACA',stamp_present:null,signature_present:null,authenticity_indicator:'TIDAK_DAPAT_DIPASTIKAN',authenticity_note:'AI gagal memproses dokumen secara teknis.',confidence:0,evidence:'',note:'Gagal teknis ('+code+'); verifikasi manual dibutuhkan, bukan bukti berkas salah.',error_code:code,technical_error:true};
+      }
     });
 
     const counts={
@@ -165,7 +205,9 @@ export default async function handler(req){
       disclaimer:'AI hanya memberi indikator kesesuaian, keterbacaan, dan anomali visual. Keabsahan final stempel/tanda tangan/TTE harus ditetapkan verifikator manusia atau diverifikasi ke sumber resmi.'
     });
   }catch(e){
-    console.error('JABFUNG_AI_READ_ERROR',e?.message||String(e));
-    return J({error:e?.message||String(e)},400);
+    const code=failureCode(e);
+    console.error('JABFUNG_AI_READ_ERROR',JSON.stringify({code}));
+    return J({error:'AI Verifikator belum dapat memproses berkas; pemeriksaan oleh petugas tetap tersedia.',code},
+      code==='INVALID_FILE_SIZE'||code==='INVALID_FILE_SIGNATURE'?422:503);
   }
 }
