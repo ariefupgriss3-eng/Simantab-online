@@ -31,7 +31,7 @@
       const reqs=await getRequirements();
       const docs=reqs.filter(r=>r.requirement_type==='DOCUMENT');
       const profile=getProfile();
-      section.innerHTML=`<div class="head"><div><h2>Usul Kenaikan Pangkat</h2><p>Form khusus sesuai SOP KP. Setiap dokumen maksimal 500 KB.</p></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
+      section.innerHTML=`<div class="head"><div><h2>Usul Kenaikan Pangkat</h2><p>Form khusus sesuai SOP KP. Setiap dokumen maksimal 1,5 MB.</p></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>Alur:</b> Pengajuan → Verifikasi Administrasi → Verifikasi Kelayakan → Simpeg OPD → BKPSDM/BKN → Pertek → SK → Penyampaian → Arsip.</div>${kpSteps('PENGAJUAN')}</div>
       <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">A. Data Usulan</h3><div class="grid">
         <div class="field s4"><label>NIP</label><input id="kpNip" value="${esc(profile.nip||'')}" placeholder="NIP"></div>
@@ -51,7 +51,7 @@
         <label style="display:block;padding:8px 0"><input id="kpAkSync" type="checkbox"> Angka Kredit telah disinkronkan ke SIASN melalui E-Kinerja BKN.</label>
         <label style="display:block;padding:8px 0"><input id="kpSkpSync" type="checkbox"> SKP telah dikirim ke SIASN.</label>
       </div>
-      <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">C. Unggah Dokumen KP</h3><div class="small" style="margin-bottom:8px">PDF/JPG/PNG maksimal 500 KB per dokumen. Dokumen bertanda * wajib.</div>
+      <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">C. Unggah Dokumen KP</h3><div class="small" style="margin-bottom:8px">PDF/JPG/PNG maksimal 1,5 MB per dokumen. Dokumen bertanda * wajib.</div>
         ${docs.map(r=>`<div class="field"><label>${r.sort_order}. ${esc(r.label)} ${r.is_required?'<b style="color:#b42318">*</b>':'(opsional)'}</label><input class="kpReqFile" data-code="${esc(r.code)}" data-required="${r.is_required?'1':'0'}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><div class="small">${esc(r.description||'')}</div></div>`).join('')}
       </div>
       <div class="card"><button id="kpSendBtn" class="btn primary" onclick="submitKpSop()">📤 Kirim Usulan KP</button><div id="kpMsg"></div></div>`;
@@ -78,7 +78,7 @@
       for(const input of inputs){
         const f=input.files?.[0];
         if(input.dataset.required==='1'&&!f) throw new Error('Dokumen wajib belum lengkap. Periksa semua item bertanda *.');
-        if(f && (f.size>512000||!['application/pdf','image/jpeg','image/png'].includes(f.type))) throw new Error(`${f.name}: ukuran harus ≤ 500 KB dan format PDF/JPG/PNG.`);
+        if(f && (f.size>1572864||!['application/pdf','image/jpeg','image/png'].includes(f.type))) throw new Error(`${f.name}: ukuran harus ≤ 1,5 MB dan format PDF/JPG/PNG.`);
       }
       const proposalType=document.getElementById('kpProposalType').value;
       const compReq=document.getElementById('kpCompetencyRequired').checked;
