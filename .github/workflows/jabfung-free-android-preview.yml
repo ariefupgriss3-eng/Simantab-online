@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'qa/jabfung-free-preview/**'
+      - 'web/tests/jabfung-free-preview-e2e.test.mjs'
       - 'web/jabfung-free-verifier-core.mjs'
       - 'web/jabfung-free-verifier-ui.mjs'
       - 'web/vendor-jabfung-ocr.mjs'
@@ -17,7 +18,7 @@ permissions:
 jobs:
   prepare-android-preview:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -57,6 +58,13 @@ jobs:
           node --check preview-package/demo.js
           node --check preview-package/jabfung-free-verifier-ui.mjs
           echo "LOCAL_PREVIEW_BUNDLE_READY"
+
+      - name: Run actual preview UI in Chromium (desktop and simulated Android)
+        run: |
+          cd web
+          npm install --no-save --ignore-scripts --no-audit --no-fund playwright-core@1.55.0
+          cd ..
+          node --test web/tests/jabfung-free-preview-e2e.test.mjs
 
       - name: Publish temporary QA ZIP for Windows + Android on same Wi-Fi
         uses: actions/upload-artifact@v4
