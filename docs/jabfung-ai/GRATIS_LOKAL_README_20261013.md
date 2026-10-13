@@ -23,7 +23,7 @@ Mode default menghapus pemanggilan Vercel AI Gateway dan Supabase AI workflow da
 - OCR bukan LLM vision multimodal. Dokumen buram, scan yang buruk, stempel dan TTE tetap harus ditelaah manusia; tidak dapat memastikan keaslian atau memverifikasi QR/TTE ke penerbit. Paket OCR tahap awal menggunakan bahasa `eng`; uji Bahasa Indonesia masih diperlukan.
 - Tes kode sintetis dan pengemasan library bukan uji browser pada perangkat Android. Jalur worker/WASM dan performa OCR pada perangkat sasaran belum divalidasi.
 - UI gratis **tidak menulis verdict ke tabel AI database**; ini disengaja agar hasil yang dibuat di klien tidak dipercaya server sebagai keputusan resmi atau bisa dipalsukan.
-- UI baru tidak memanggil provider berbayar. Namun **Edge Function lama masih terpasang di server**; untuk menjamin biaya provider nol dari seluruh klien (termasuk klien lama), perlu migrasi terpisah berupa hard-disable server-side setelah persetujuan dan audit.
+- UI baru tidak memanggil provider berbayar. **Patch penolakan panggilan AI berbayar untuk klien PWA lama juga telah disiapkan** dalam `web/jabfung-ai-read-edge.js` dan `supabase/functions/simantab-jabfung-ai-workflow/index.ts`. Keduanya masih dalam PR draft, belum terpasang pada server. Tanpa menerapkan guard server-side, PWA lama masih dapat menimbulkan panggilan model berbayar.
 - Data pribadi guru/ASN harus dilarang masuk log/telemetry publik, dan penilaian final dilakukan pejabat berwenang.
 - Cache/PWA lama mungkin masih menyimpan UI lama dan memanggil AI berbayar jika tidak ditangani dalam peluncuran terpisah.
 
@@ -35,7 +35,7 @@ Mode default menghapus pemanggilan Vercel AI Gateway dan Supabase AI workflow da
 - [x] Menyiapkan self-host pustaka OCR dan data bahasa melalui proses build lokal; belum diuji dalam browser produksi.
 - [ ] Pemeriksaan otorisasi Supabase JWT/RLS untuk pengajuan lama dan baru, menggunakan akun sintetis nonproduksi.
 - [ ] Verifikasi penanganan file 0 byte pada dua dokumen produksi tanpa memodifikasinya.
-- [ ] Patch server-side opt-out panggilan provider agar PWA lama tak membebankan biaya AI.
+- [x] Patch server-side opt-out disiapkan dan diuji secara sintetis; [ ] deployment guard masih membutuhkan persetujuan tahap tersendiri.
 - [ ] Pengujian keamanan dan persetujuan Kabid terpisah sebelum prod.
 - [ ] Rencana rollback UI dan pemeliharaan alur pengajuan lengkap.
 
