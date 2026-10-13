@@ -3,7 +3,18 @@
    jika grant database aktif, jenjang cocok, dan akun dinyatakan sah. */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
-for(let i=0;i<200&&(!window.__simantabProfile||!window.showTab||!window.__simantabSb);i++)await wait(50);
+// Login is asynchronous and may happen long after initial page load.
+ // Await an explicit post-authentication event rather than timing out after 10 seconds.
+await new Promise(resolve=>{
+ const event='simantab:profile-ready';
+ const check=()=>{
+  if(!window.__simantabSb||typeof window.showTab!=='function'||!window.__simantabProfile?.role)return;
+  window.removeEventListener(event,check);
+  resolve();
+ };
+ window.addEventListener(event,check);
+ check();
+});
 const profile=()=>window.__simantabProfile||{};
 const sb=window.__simantabSb;
 if(!sb||profile().role!=='PENGAWAS')return;
