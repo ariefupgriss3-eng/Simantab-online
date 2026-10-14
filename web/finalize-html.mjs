@@ -367,7 +367,7 @@ const modules=[
  ['activity-attendance-recap.js',2],
  ['login-channel-hardening.js',3],
  ['login-click-rescue.js',3],
- ['registration-ui-final.js',6],
+ ['registration-ui-final.js',5],
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',7],
  ['session-boundary-hardening.js',1],
