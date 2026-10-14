@@ -73,26 +73,48 @@
       msg.className='small';
       msg.textContent='Mengirim usulan dan dokumen Jabfung...';
 
+      // Validate the live Auth identity and the server-side account gate before any database write.
+      // The UI profile is cached and must never be trusted as a submission owner.
+      const {data:authData,error:authError}=await sb.auth.getUser();
+      const authUserId=authData?.user?.id;
+      if(authError || !authUserId) throw new Error('Sesi login tidak valid. Silakan masuk ulang sebelum mengirim usulan.');
+      if(profile.id!==authUserId) throw new Error('Identitas akun pada halaman tidak sesuai dengan sesi login. Demi keamanan, keluar lalu masuk ulang dari satu tautan SIMANTAB.');
+      const {data:preflight,error:preflightError}=await sb.rpc('simantab_submission_preflight',{p_client_profile_id:authUserId});
+      if(preflightError) throw new Error('Pemeriksaan izin pengajuan gagal. Hubungi admin SIMANTAB untuk memeriksa koneksi akun.');
+      const preflightMessages={
+        NO_SESSION:'Sesi login telah berakhir. Silakan masuk ulang.',
+        PROFILE_MISMATCH:'Identitas akun tidak cocok dengan sesi login. Silakan masuk ulang.',
+        PROFILE_NOT_FOUND:'Profil akun belum tersedia. Hubungi admin SIMANTAB.',
+        INACTIVE:'Akun belum aktif. Hubungi admin SIMANTAB.',
+        NOT_APPROVED:'Akun masih menunggu persetujuan admin sehingga usulan belum dapat dikirim.',
+        OPERATOR_RESTRICTED:'Akun operator institusi tidak dapat mengajukan Jabfung secara langsung. Gunakan akun GTK pengusul.'
+      };
+      if(preflight!=='OK') throw new Error(preflightMessages[preflight]||'Izin mengirim usulan belum terpenuhi. Hubungi admin SIMANTAB.');
+
       const notes=document.getElementById('jabfungNotes')?.value.trim()||'';
       const {data:sub,error:subErr}=await sb.from('submissions').insert({
-        user_id:profile.id,
+        user_id:authUserId,
         service_type:'E_JABFUNG',
         title:'Usul SK Kenaikan Jenjang Jabatan (Jabfung)',
         description:notes
       }).select('*').single();
-      if(subErr) throw subErr;
+      if(subErr){
+        console.error('JABFUNG_SUBMISSIONS_INSERT_REJECTED',{code:subErr.code,details:subErr.details,hint:subErr.hint});
+        if(subErr.code==='42501') throw new Error('Database menolak pengajuan (RLS 42501) meskipun sesi diperiksa. Berkas belum diunggah; hubungi admin SIMANTAB untuk pemeriksaan identitas request.');
+        throw subErr;
+      }
       createdSub=sub;
 
       for(const input of inputs){
         const f=input.files?.[0];
         if(!f) continue;
         const safe=f.name.normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-100);
-        const path=`${profile.id}/${sub.id}/jabfung/${crypto.randomUUID()}_${safe}`;
+        const path=`${authUserId}/${sub.id}/jabfung/${crypto.randomUUID()}_${safe}`;
         const {error:upErr}=await sb.storage.from('simantab-documents').upload(path,f,{contentType:f.type,upsert:false});
         if(upErr) throw upErr;
         const {error:metaErr}=await sb.from('submission_files').insert({
           submission_id:sub.id,
-          user_id:profile.id,
+          user_id:authUserId,
           storage_path:path,
           file_name:f.name,
           file_size:f.size,
