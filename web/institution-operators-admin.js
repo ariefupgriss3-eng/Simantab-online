@@ -1,4 +1,4 @@
-/* SIMANTAB_INSTITUTION_OPERATORS_ADMIN_V1_PREVIEW */
+/* SIMANTAB_INSTITUTION_OPERATORS_ADMIN_V2_BULK_PROVISION_LOCKED */
 (async()=>{
  const ready=()=>window.__simantabSb&&window.showTab&&window.__simantabProfile?.id;
  if(!ready())await new Promise(resolve=>{
@@ -9,7 +9,7 @@
  const isAdmin=()=>p().role==='SUPER_ADMIN'&&p().is_active===true&&p().approval_status==='APPROVED';
  if(!isAdmin())return;
  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
- let records=[],waiting=false;
+ let records=[],waiting=false,provisioning=false;
  function ensure(){
   if(!isAdmin())return;
   const nav=$('nav');
@@ -43,18 +43,20 @@
    '<td><code>'+esc(s.username)+'</code></td>'+
    '<td>'+esc(s.district)+'<div class="small">'+esc(s.school_npsn||'Kecamatan')+'</div></td>'+
    '<td><b>'+esc(s.activation_state)+'</b><div class="small">'+esc(s.invited_email||'Belum diundang')+'</div></td>'+
-   '<td>'+(s.activation_state==='RESERVED'?'<button type="button" class="btn soft" data-operator-invite="'+esc(s.username)+'">Kirim Undangan</button>':'<span class="small">Tidak ada aktivasi langsung</span>')+'</td></tr>').join(''):'<tr><td colspan="5">Tidak ada institusi sesuai filter.</td></tr>';
-  target.querySelectorAll('[data-operator-invite]').forEach(b=>b.addEventListener('click',()=>invite(b.dataset.operatorInvite)));
+   '<td><span class="small">'+(s.activation_state==='RESERVED'?'Menunggu pembuatan akun':'Kredensial belum diterbitkan')+'</span></td></tr>').join(''):'<tr><td colspan="5">Tidak ada institusi sesuai filter.</td></tr>';
+  // No individual recipient email is required for these institutional accounts.
  }
  function show(){
   const root=$('institutionOperatorsBody');if(!root)return;
   const kor=records.filter(x=>x.operator_type==='KORWIL').length;
   const smp=records.filter(x=>x.operator_type==='SMP').length;
   const reserved=records.filter(x=>x.activation_state==='RESERVED').length;
+  const provisioned=records.filter(x=>x.activation_state==='PROVISIONED').length;
   root.innerHTML='<div class="card" style="margin-bottom:13px">'+
    '<div class="info"><b>Aktivasi bertahap dan aman.</b> Username sudah dicadangkan, tidak ada password bersama. Undangan dikirim ke email petugas yang telah ditetapkan. Akun tetap nonaktif sampai email terverifikasi dan hak akses dinyatakan lulus QA.</div>'+
-   '<div class="servicegrid" style="margin:12px 0"><div class="service"><div class="small">KORWIL</div><h3>'+kor+'</h3></div><div class="service"><div class="small">SMP NEGERI</div><h3>'+smp+'</h3></div><div class="service"><div class="small">BELUM DIAKTIFKAN</div><h3>'+reserved+'</h3></div></div>'+
+   '<div class="servicegrid" style="margin:12px 0"><div class="service"><div class="small">KORWIL</div><h3>'+kor+'</h3></div><div class="service"><div class="small">SMP NEGERI</div><h3>'+smp+'</h3></div><div class="service"><div class="small">LOGIN BELUM AKTIF</div><h3>'+(reserved+provisioned)+'</h3></div></div>'+
    '<div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:10px 0">'+
+   '<button id="operatorProvisionAll" type="button" class="btn primary">Siapkan 66 Akun Login (Nonaktif)</button><span id="operatorProvisionProgress" class="small">'+provisioned+' akun sistem disiapkan • '+reserved+' menunggu</span>'+
    '<input id="operatorSlotSearch" placeholder="Cari kecamatan, SMP, NPSN" aria-label="Cari institusi" style="padding:9px;min-width:190px">'+
    '<select id="operatorSlotKind"><option value="ALL">Semua Institusi</option><option value="KORWIL">Operator Korwil</option><option value="SMP">Operator SMP</option></select>'+
    '<button type="button" class="btn soft" id="operatorSlotsRefresh">↻ Refresh</button></div>'+
@@ -63,6 +65,8 @@
   $('operatorSlotSearch').addEventListener('input',lines);
   $('operatorSlotKind').addEventListener('change',lines);
   $('operatorSlotsRefresh').addEventListener('click',load);
+  $('operatorProvisionAll').disabled=!reserved||provisioning;
+  $('operatorProvisionAll').addEventListener('click',provisionAll);
   lines();
  }
  async function load(){
@@ -76,6 +80,30 @@
   }catch(e){
    if(root)root.innerHTML='<div class="card err">Daftar Operator Institusi tidak dapat dimuat: '+esc(e?.message||e)+'</div>';
   }finally{waiting=false}
+ }
+ async function provisionAll(){
+  if(provisioning)return;
+  if(!confirm('Siapkan 66 akun sistem Korwil/SMP berdasarkan nama institusi dan NPSN?\n\nSemua tetap NONAKTIF. Password dibuat acak oleh server, tidak dibagikan, dan tidak ada perubahan RLS/layanan produksi.'))return;
+  provisioning=true;
+  const button=$('operatorProvisionAll'),info=$('operatorProvisionProgress');
+  if(button)button.disabled=true;
+  let total=0;
+  try{
+   for(let i=0;i<10;i++){
+    if(info)info.textContent='Menyiapkan akun institusi... ('+total+' akun baru)';
+    const {data,error}=await sb.functions.invoke('simantab-institution-operator-provision',{body:{action:'provision_batch'}});
+    if(error)throw error;
+    if(!data||typeof data.remaining!=='number')throw new Error('Server tidak mengembalikan status yang sah');
+    total+=Number(data.created||0);
+    if(info)info.textContent='Berhasil dibuat '+total+' akun; tersisa '+data.remaining+'. Semua login terkunci.';
+    if(data.failures?.length)throw new Error('Terdapat '+data.failures.length+' kegagalan. Hentikan dan audit, jangan membuat username ganda.');
+    if(data.remaining===0)break;
+    if(Number(data.created||0)===0)throw new Error('Belum ada progres; periksa status Supabase');
+   }
+   alert('Penyiapan selesai. '+total+' identitas Auth baru dibuat melalui Supabase Admin API. Tidak ada kredensial yang diterbitkan; login tetap terkunci.');
+  }catch(e){
+   alert('Proses berhenti dengan aman. '+(e?.message||String(e))+'\nSlot yang berhasil dibuat tetap tersimpan; tombol dapat digunakan kembali setelah diperiksa.');
+  }finally{provisioning=false;await load();}
  }
  async function invite(username){
   const slot=records.find(s=>s.username===username);
@@ -102,5 +130,5 @@
  ensure();
  for(const delay of [250,1000,2500])setTimeout(ensure,delay);
  window.addEventListener('simantab:profile-ready',ensure);
- window.__simantabOperatorAdmin={version:1,adminOnly:true,safeInvitations:true,activationDisabled:true};
+ window.__simantabOperatorAdmin={version:2,adminOnly:true,bulkProvision:true,safeInvitations:true,activationDisabled:true};
 })();
