@@ -96,7 +96,7 @@
     if(!data||typeof data.remaining!=='number')throw new Error('Server tidak mengembalikan status yang sah');
     total+=Number(data.created||0);
     if(info)info.textContent='Berhasil dibuat '+total+' akun; tersisa '+data.remaining+'. Semua login terkunci.';
-    if(data.failures?.length)throw new Error('Terdapat '+data.failures.length+' kegagalan. Hentikan dan audit, jangan membuat username ganda.');
+    if(data.failures?.length){const sample=data.failures.slice(0,3).map(x=>x.username+': '+x.error).join('\n');throw new Error('Terdapat '+data.failures.length+' kegagalan.\n'+sample+'\nProses dihentikan, slot berhasil tidak akan digandakan.');}
     if(data.remaining===0)break;
     if(Number(data.created||0)===0)throw new Error('Belum ada progres; periksa status Supabase');
    }
