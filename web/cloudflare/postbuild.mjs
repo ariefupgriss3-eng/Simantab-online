@@ -64,11 +64,13 @@ assert(html.includes('./korwil-submission-monitoring.js?v=1') &&
        korwilMonitoringModule.includes("x.kind==='KORWIL'") &&
        korwilMonitoringModule.includes('readOnly:true'),
  'Monitoring usulan GTK Korwil belum aman atau belum terpasang.');
-assert(html.includes('./institution-operators-admin.js?v=1') &&
-       operatorAdminModule.includes('SIMANTAB_INSTITUTION_OPERATORS_ADMIN_V1_PREVIEW') &&
+assert(html.includes('./institution-operators-admin.js?v=2') &&
+       operatorAdminModule.includes('SIMANTAB_INSTITUTION_OPERATORS_ADMIN_V2_BULK_PROVISION_LOCKED') &&
        operatorAdminModule.includes("p().role==='SUPER_ADMIN'") &&
        operatorAdminModule.includes("action:'invite'") &&
-       operatorAdminModule.includes('activationDisabled:true'),
+       operatorAdminModule.includes('activationDisabled:true') &&
+       operatorAdminModule.includes('simantab-institution-operator-provision') &&
+       operatorAdminModule.includes('operatorProvisionAll'),
  'Modul operator institusi hanya boleh berada di preview dengan aktivasi tertutup.');
 assert(module.includes('SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG'),
   'Kode katalog layanan Pengawas tidak cocok.');
@@ -155,6 +157,7 @@ console.log(JSON.stringify({
   korwilMonitoringServerRpcPending: false,
   institutionOperatorSlots: 66,
   institutionOperatorInvitationAdmin: true,
+  institutionOperatorProvisionBatchReady: true,
   institutionOperatorLoginBlocked: true,
   dabinDashboardVersion: 3,
   supervisorNavigationGuards: ['redistribusi','diklat','workflow','rgtk','legacy'],
