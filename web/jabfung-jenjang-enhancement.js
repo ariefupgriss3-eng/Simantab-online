@@ -12,6 +12,20 @@
   const getProfile=()=>window.__simantabProfile||{};
   const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
 
+  // Never trust a cached UI profile as the requester identity for RLS writes.
+  async function verifiedRequesterId(profile){
+    const {data:authData,error:authError}=await sb.auth.getUser();
+    const authId=authData?.user?.id;
+    if(authError || !authId) throw new Error('Sesi login tidak dapat diverifikasi. Silakan masuk ulang sebagai pemohon sebelum mengirim usul.');
+    if(!profile?.id || profile.id!==authId) throw new Error('Sesi login tidak sesuai dengan profil GTK yang tampil. Jangan kirim usul dari akun berbeda; keluar lalu masuk ulang sebagai pemohon.');
+    const {data:verifiedProfile,error:profileError}=await sb.from('profiles')
+      .select('id,is_active,approval_status').eq('id',authId).single();
+    if(profileError) throw new Error('Status persetujuan akun tidak dapat diperiksa. Periksa koneksi dan coba lagi.');
+    if(!verifiedProfile?.is_active || verifiedProfile.approval_status!=='APPROVED')
+      throw new Error('Akun belum disetujui atau tidak aktif. Hubungi administrator SIMANTAB.');
+    return authId;
+  }
+
   async function getRequirements(){
     const {data,error}=await sb.from('service_requirements')
       .select('id,code,label,requirement_type,is_required,sort_order,description')
@@ -71,11 +85,13 @@
 
       btn.disabled=true;
       msg.className='small';
+      msg.textContent='Memeriksa kesesuaian sesi dan akun GTK...';
+      const requesterId=await verifiedRequesterId(profile);
       msg.textContent='Mengirim usulan dan dokumen Jabfung...';
 
       const notes=document.getElementById('jabfungNotes')?.value.trim()||'';
       const {data:sub,error:subErr}=await sb.from('submissions').insert({
-        user_id:profile.id,
+        user_id:requesterId,
         service_type:'E_JABFUNG',
         title:'Usul SK Kenaikan Jenjang Jabatan (Jabfung)',
         description:notes
@@ -87,12 +103,12 @@
         const f=input.files?.[0];
         if(!f) continue;
         const safe=f.name.normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-100);
-        const path=`${profile.id}/${sub.id}/jabfung/${crypto.randomUUID()}_${safe}`;
+        const path=`${requesterId}/${sub.id}/jabfung/${crypto.randomUUID()}_${safe}`;
         const {error:upErr}=await sb.storage.from('simantab-documents').upload(path,f,{contentType:f.type,upsert:false});
         if(upErr) throw upErr;
         const {error:metaErr}=await sb.from('submission_files').insert({
           submission_id:sub.id,
-          user_id:profile.id,
+          user_id:requesterId,
           storage_path:path,
           file_name:f.name,
           file_size:f.size,
@@ -120,7 +136,10 @@
     }catch(e){
       if(msg){
         msg.className='err';
-        msg.textContent=(createdSub?'Usulan sudah terbentuk, tetapi terjadi kendala saat unggah: ':'')+(e.message||String(e));
+        const securityDenied=!createdSub && (e?.code==='42501' || /row.level.security|permission denied/i.test(e?.message||''));
+        msg.textContent=securityDenied
+          ?'Usulan belum tersimpan karena ditolak aturan keamanan database. Sesi dan akun sudah diperiksa; hubungi admin SIMANTAB untuk pemeriksaan lebih lanjut. Jangan kirim berulang kali.'
+          :(createdSub?'Usulan sudah terbentuk, tetapi terjadi kendala saat unggah: ':'')+(e.message||String(e));
       }
     }finally{
       if(btn) btn.disabled=false;
