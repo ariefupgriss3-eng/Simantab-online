@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs><linearGradient id="bg" x2="1" y2="1"><stop stop-color="#104477"/><stop offset="1" stop-color="#287ebf"/></linearGradient></defs>
+<rect width="1200" height="630" fill="url(#bg)"/>
+<circle cx="95" cy="47" r="322" stroke="#5498d2" stroke-width="2" fill="none" opacity=".36"/><circle cx="483" cy="593" r="334" stroke="#5498d2" stroke-width="2" fill="none" opacity=".4"/>
+<rect x="28" y="28" width="1144" height="574" rx="25" fill="none" stroke="#8bbbe4" stroke-width="2"/>
+<path d="M65 90h482M65 97h482M65 104h482" stroke="#4799d0" stroke-width="2"/>
+<rect x="83" y="171" width="75" height="82" rx="13" fill="#ecf2fd" stroke="#a8d0f2" stroke-width="3"/>
+<path d="M98 184h46l-2 43-21 16-21-16Z" fill="#a5262c" stroke="#ead181" stroke-width="3"/>
+<path d="M105 201h31l-2 24-14 11-12-11Z" fill="#1579b2"/><circle cx="121" cy="204" r="10" fill="#f7d175"/>
+<g font-family="Arial,DejaVu Sans,sans-serif">
+<text x="176" y="197" fill="#fff" font-size="18" font-weight="700">PEMERINTAH KABUPATEN BATANG</text>
+<text x="176" y="227" fill="#dfedfa" font-size="16">DINAS PENDIDIKAN DAN KEBUDAYAAN</text>
+<text x="80" y="351" fill="#fff" font-size="56" font-weight="700">SIMANTAB-</text>
+<text x="80" y="424" fill="#ffb362" font-size="64" font-weight="700">ONLINE</text>
+<text x="83" y="473" fill="#e4f0fc" font-size="20">Sistem Informasi Manajemen</text>
+<text x="83" y="503" fill="#e4f0fc" font-size="20">Ketenagaan Kabupaten Batang</text>
+<path d="M83 547h427" stroke="#69b3e4" stroke-width="2"/>
+<text x="83" y="578" fill="#c9e3f9" font-size="13" font-weight="700">LAYANAN GTK  •  DINAS  •  SEKOLAH  •  PENGAWAS</text>
+<rect x="629" y="54" width="493" height="499" rx="30" fill="#fff"/>
+<text x="668" y="113" fill="#234b79" font-size="24" font-weight="700">Masuk SIMANTAB Online</text>
+<text x="668" y="141" fill="#697f96" font-size="13">Silakan login untuk mengakses layanan</text>
+<rect x="668" y="166" width="183" height="52" rx="10" fill="#f18a51"/>
+<text x="759" y="199" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">Login Dinas</text>
+<text x="971" y="184" text-anchor="middle" fill="#627183" font-size="14" font-weight="700">Login Sekolah /</text>
+<text x="971" y="206" text-anchor="middle" fill="#627183" font-size="14" font-weight="700">GTK / Pengawas</text>
+<text x="668" y="257" fill="#536378" font-size="15" font-weight="700">Username / Email</text>
+<rect x="668" y="273" width="415" height="44" rx="8" fill="#fcfdfe" stroke="#ced7e1" stroke-width="2"/>
+<text x="683" y="299" fill="#99a9b9" font-size="13">Masukkan username atau email</text>
+<text x="668" y="349" fill="#536378" font-size="15" font-weight="700">Password</text>
+<rect x="668" y="365" width="415" height="44" rx="8" fill="#fcfdfe" stroke="#ced7e1" stroke-width="2"/>
+<text x="684" y="394" fill="#bbc5d1" font-size="20">••••••••••</text>
+<rect x="668" y="427" width="415" height="43" rx="8" fill="#f18a51"/>
+<text x="875" y="455" text-anchor="middle" fill="#fff" font-size="17" font-weight="700">Masuk</text>
+<text x="1083" y="495" text-anchor="end" fill="#276ba9" font-size="13">Lupa Password?</text>
+<text x="875" y="526" text-anchor="middle" fill="#246da7" font-size="13" font-weight="700">PASANG APLIKASI SIMANTAB ↓</text>
+</g></svg>
