@@ -1,11 +1,12 @@
 /* SIMANTAB_JABFUNG_JENJANG_UI_V1 */
-/* SIMANTAB_JABFUNG_AI_VERIFIER_V2 */
+/* SIMANTAB_JABFUNG_SEND_AUTH_RLS_GUARD_V3_AI_PAUSED */
 (async()=>{
   const sleep=ms=>new Promise(r=>setTimeout(r,ms));
   for(let i=0;i<120 && (!window.openSubmission || !window.showTab || !window.__simantabSb);i++) await sleep(50);
   if(!window.openSubmission || !window.__simantabSb) return;
 
   const sb=window.__simantabSb;
+  const AI_VERIFIER_ENABLED=false; // Verifikasi manual sementara.
   const MAX_FILE=1572864; // 1.5 MiB
   const ALLOWED=['application/pdf','image/jpeg','image/png'];
   const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -28,13 +29,13 @@
       const reqs=await getRequirements();
       const docs=reqs.filter(r=>r.requirement_type==='DOCUMENT');
       section.innerHTML=`<div class="head"><div><h2>Usul SK Kenaikan Jenjang Jabatan (Jabfung)</h2><p>Unggah setiap berkas pada item yang sesuai. Maksimal 1,5 MB per file.</p></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
-      <div class="card" style="margin-bottom:13px"><div class="info"><b>AI Verifikator aktif.</b> Setelah berkas dikirim, AI meneliti kesesuaian isi, keterbacaan/blur, serta indikator visual stempel, tanda tangan, TTE atau QR. <b>AI tidak menetapkan dokumen asli/palsu</b>; keabsahan final tetap ditetapkan petugas melalui dokumen sumber atau verifikasi resmi.</div></div>
+      <div class="card" style="margin-bottom:13px"><div class="info"><b>AI Verifikator sementara nonaktif.</b> Usulan tetap dapat dikirim dan berkas diperiksa secara manual oleh petugas Dinas.</div></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>Ketentuan unggah:</b> PDF/JPG/PNG, maksimal 1,5 MB per file. Berkas bertanda * wajib diunggah sebelum usulan dikirim.</div></div>
       <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">Berkas Usul Kenaikan Jenjang Jabfung</h3>
         ${docs.map(r=>`<div class="field"><label>${r.sort_order}. ${esc(r.label)} ${r.is_required?'<b style="color:#b42318">*</b>':'<span class="small">(bila ada/opsional)</span>'}</label><input class="jabfungReqFile" data-code="${esc(r.code)}" data-required="${r.is_required?'1':'0'}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><div class="small">${esc(r.description||'')}</div></div>`).join('')}
       </div>
       <div class="card" style="margin-bottom:13px"><div class="field"><label>Catatan/Keterangan Usul</label><textarea id="jabfungNotes" placeholder="Keterangan tambahan bila diperlukan"></textarea></div></div>
-      <div class="card"><button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul & Jalankan AI Verifikator</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
+      <div class="card"><button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul Jabfung</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
     }catch(e){
       section.innerHTML=`<div class="card err">Gagal memuat form Jabfung: ${esc(e.message||e)}</div>`;
     }
@@ -48,6 +49,7 @@
   };
 
   async function runAi(submissionId){
+    if(!AI_VERIFIER_ENABLED) throw new Error('AI Verifikator sedang dinonaktifkan.');
     const {data,error}=await sb.functions.invoke('simantab-jabfung-ai-workflow',{body:{submission_id:submissionId}});
     if(error) throw error;
     if(data?.error) throw new Error(data.error);
@@ -60,7 +62,16 @@
     let createdSub=null;
     try{
       const profile=getProfile();
-      if(!profile.id) throw new Error('Profil login belum tersedia. Silakan masuk ulang.');
+      const {data:authData,error:authError}=await sb.auth.getUser();
+      const user=authData?.user;
+      if(authError||!user?.id) throw new Error('Sesi login tidak valid. Silakan masuk ulang.');
+      if(!profile.id||profile.id!==user.id) throw new Error('Profil tidak sesuai dengan identitas login. Segarkan halaman dan login kembali dengan akun yang benar.');
+      const {data:activeProfile,error:profileError}=await sb.from('profiles')
+        .select('id,is_active,approval_status').eq('id',user.id).maybeSingle();
+      if(profileError) throw profileError;
+      if(!activeProfile||!activeProfile.is_active||activeProfile.approval_status!=='APPROVED')
+        throw new Error('Akun pengusul belum aktif atau belum disetujui. Hubungi Admin SIMANTAB.');
+      const submittingUserId=user.id;
       const inputs=[...document.querySelectorAll('.jabfungReqFile')];
       if(!inputs.length) throw new Error('Daftar persyaratan Jabfung belum tersedia.');
       for(const input of inputs){
@@ -75,7 +86,7 @@
 
       const notes=document.getElementById('jabfungNotes')?.value.trim()||'';
       const {data:sub,error:subErr}=await sb.from('submissions').insert({
-        user_id:profile.id,
+        user_id:submittingUserId,
         service_type:'E_JABFUNG',
         title:'Usul SK Kenaikan Jenjang Jabatan (Jabfung)',
         description:notes
@@ -87,12 +98,12 @@
         const f=input.files?.[0];
         if(!f) continue;
         const safe=f.name.normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-100);
-        const path=`${profile.id}/${sub.id}/jabfung/${crypto.randomUUID()}_${safe}`;
+        const path=`${submittingUserId}/${sub.id}/jabfung/${crypto.randomUUID()}_${safe}`;
         const {error:upErr}=await sb.storage.from('simantab-documents').upload(path,f,{contentType:f.type,upsert:false});
         if(upErr) throw upErr;
         const {error:metaErr}=await sb.from('submission_files').insert({
           submission_id:sub.id,
-          user_id:profile.id,
+          user_id:submittingUserId,
           storage_path:path,
           file_name:f.name,
           file_size:f.size,
@@ -102,28 +113,22 @@
         if(metaErr) throw metaErr;
       }
 
-      msg.className='small';
-      msg.textContent='Berkas berhasil dikirim. AI Verifikator sedang meneliti kesesuaian, keterbacaan, serta indikator stempel/tanda tangan...';
-      try{
-        const ai=await runAi(sub.id);
-        const c=ai?.counts||{};
-        msg.className=ai?.overall_status==='SESUAI'?'okmsg':'small';
-        msg.textContent=ai?.overall_status==='SESUAI'
-          ?`Usul terkirim. AI: ${c.sesuai||0} berkas sesuai. Keabsahan final tetap diverifikasi petugas.`
-          :`Usul terkirim. AI menemukan item yang perlu ditelaah: perbaikan ${c.perbaikan||0}, tidak sesuai ${c.tidak||0}, telaah manual ${c.telaah||0}. Status resmi belum diputuskan AI.`;
-      }catch(aiErr){
-        msg.className='small';
-        msg.textContent='Usul berhasil dikirim. AI Verifikator mengalami kendala teknis; usulan tetap tersimpan dan AI dapat dijalankan ulang oleh petugas.';
-        console.error('JABFUNG_AI_CLIENT_ERROR',aiErr);
-      }
+      msg.className='okmsg';
+      msg.textContent='Usulan dan berkas Jabfung berhasil dikirim. Berkas diperiksa manual oleh petugas Dinas; AI sementara nonaktif.';
       setTimeout(()=>window.showTab('status'),1800);
     }catch(e){
       if(msg){
         msg.className='err';
-        msg.textContent=(createdSub?'Usulan sudah terbentuk, tetapi terjadi kendala saat unggah: ':'')+(e.message||String(e));
+        const detail=e?.message||String(e);
+        const isRls=e?.code==='42501'||e?.status===403||/row.level.security|permission denied/i.test(detail);
+        msg.textContent=createdSub
+          ? 'Usulan '+createdSub.id+' sudah tersimpan, tetapi sebagian unggah gagal. Jangan kirim ulang; hubungi admin dengan ID usulan ini. '+detail
+          : isRls
+            ? 'RLS-POST-403: Database menolak usulan. Hubungi admin dengan kode ini; jangan mengirim berulang kali.'
+            : detail;
       }
     }finally{
-      if(btn) btn.disabled=false;
+      if(btn) btn.disabled=Boolean(createdSub && msg?.className==='err');
     }
   };
 
@@ -242,10 +247,9 @@
   window.showTab=async id=>{
     const r=await oldShow(id);
     setTimeout(()=>{
-      if(id==='status')appendMyJabfungPanel();
-      if(id==='monitoring'||id==='services')addDinasButtons();
+      // Tombol/panel AI disembunyikan selama nonaktif.
     },150);
     return r;
   };
-  new MutationObserver(()=>addDinasButtons()).observe(document.body,{subtree:true,childList:true});
+  // Tidak memasang observer tombol AI sementara.
 })();
