@@ -202,7 +202,7 @@ await fs.writeFile(path.join(staticDir,approvalFile),approvalCode);
 
 const registrationUiFile='registration-ui-final.js';
 const registrationUiCode=await fs.readFile(new URL(`./${registrationUiFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_REGISTRATION_UI_FINAL_V5/.test(registrationUiCode))throw new Error('Registration UI final v5 tidak valid.');
+if(!/SIMANTAB_REGISTRATION_UI_FINAL_V6/.test(registrationUiCode))throw new Error('Registration UI final v5 tidak valid.');
 await fs.writeFile(path.join(staticDir,registrationUiFile),registrationUiCode);
 
 const leadershipFile='leadership-directions.js';
@@ -390,7 +390,7 @@ const modules=[
  ['activity-attendance-recap.js',2],
  ['login-channel-hardening.js',3],
  ['login-click-rescue.js',3],
- ['registration-ui-final.js',5],
+ ['registration-ui-final.js',6],
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',7],
  ['session-boundary-hardening.js',1],
