@@ -25,7 +25,7 @@ test('both shared login and older install links include social image metadata',(
    assert.ok(code.includes("'"+key+"'"),'Missing '+key);
  }
  assert.match(code,/summary_large_image/);
- assert.match(code,/og:image must be declared exactly once/);
+ assert.match(code,/OG image must be declared exactly once/);
 });
 test('public absolute image URL uses Cloudflare domain, not Vercel',()=>{
  assert.match(code,/https:\/\/simantab-cf-preview\.m-arief-rohman\.workers\.dev/);
