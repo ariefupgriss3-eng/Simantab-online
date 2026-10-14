@@ -19,7 +19,7 @@
  function ensureShell(){
   if(!isOperator())return;
   const nav=$('nav');
-  if(nav && (nav.querySelectorAll('.navbtn').length!==6 || nav.querySelector('[data-tab="operatorNeeds"]')||
+  if(nav && (nav.querySelectorAll('.navbtn').length!==6 ||
       !nav.querySelector('[data-tab="operatorCuti"]')))nav.innerHTML=navHTML();
   const content=document.querySelector('main.content');
   if(content){
