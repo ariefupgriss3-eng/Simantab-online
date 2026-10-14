@@ -12,20 +12,61 @@ function headers(){return {'apikey':SUPABASE_KEY,'Authorization':`Bearer ${SUPAB
 async function parseResponse(response){const text=await response.text();let data={};try{data=text?JSON.parse(text):{}}catch{data={message:text}}if(!response.ok)throw new Error(data.error_description||data.msg||data.message||data.error||`HTTP ${response.status}`);return data}
 async function validateSchool(npsn){const response=await fetch(`${SUPABASE_URL}/rest/v1/rpc/registration_school_lookup`,{method:'POST',headers:headers(),body:JSON.stringify({p_npsn:npsn})});const rows=await parseResponse(response);return rows?.[0]||null}
 async function registerAccount(payload){const response=await fetch(`${SUPABASE_URL}/functions/v1/simantab-register-pending`,{method:'POST',headers:headers(),body:JSON.stringify(payload)});return parseResponse(response)}
+function ensureIdentityFields(){
+ const extra=$('signupExtra'),nipInput=$('signupNip');
+ if(!extra||!nipInput)return;
+ const nipField=nipInput.closest('.field');
+ if(!nipField)return;
+ if(!$('signupUnit')){
+  const field=document.createElement('div');field.className='field';
+  field.innerHTML='<label for="signupUnit">Unit Kerja *</label><input id="signupUnit" type="text" maxlength="160" autocomplete="organization" placeholder="Nama sekolah, Korwil, atau instansi" required>';
+  nipField.insertAdjacentElement('beforebegin',field);
+ }
+ if(!$('signupEmploymentStatus')){
+  const field=document.createElement('div');field.className='field';
+  field.innerHTML='<label for="signupEmploymentStatus">Status Kepegawaian *</label><select id="signupEmploymentStatus" required><option value="">Pilih status kepegawaian</option><option value="PNS">PNS (ASN)</option><option value="PPPK">PPPK (ASN)</option><option value="PPPK_PARUH_WAKTU">PPPK Paruh Waktu (ASN)</option><option value="NON_ASN">Non-ASN</option></select>';
+  nipField.insertAdjacentElement('beforebegin',field);
+  $('signupEmploymentStatus').addEventListener('change',refreshNipRule);
+ }
+ if(!$('signupNip').dataset.asnRuleBound){
+  nipInput.dataset.asnRuleBound='1';
+  $('signupRole')?.addEventListener('change',refreshNipRule);
+ }
+ refreshNipRule();
+}
+function refreshNipRule(){
+ const employee=String($('signupEmploymentStatus')?.value||'');
+ const role=String($('signupRole')?.value||'');
+ const required=['PNS','PPPK','PPPK_PARUH_WAKTU'].includes(employee)||role==='PENGAWAS';
+ const input=$('signupNip'),label=input?.closest('.field')?.querySelector('label');
+ if(input){
+  input.required=required;
+  input.setAttribute('inputmode','numeric');
+  input.setAttribute('pattern','[0-9]{18}');
+  input.setAttribute('maxlength','18');
+  input.placeholder=required?'Wajib 18 digit untuk ASN':'Opsional bagi non-ASN (18 digit jika diisi)';
+ }
+ if(label)label.textContent=required?'NIP * (18 digit)':'NIP (opsional untuk non-ASN)';
+}
 async function submitRegistration(){
  if(submitting||!isSignup())return;
  const fullName=String($('fullName')?.value||'').trim();
  const email=String($('email')?.value||'').trim().toLowerCase();
  const password=String($('password')?.value||'');
  const role=String($('signupRole')?.value||'');
- const nip=String($('signupNip')?.value||'').replace(/\D/g,'');
+ const unit=String($('signupUnit')?.value||'').trim();
+ const employmentStatus=String($('signupEmploymentStatus')?.value||'');
+ const rawNip=String($('signupNip')?.value||'').trim();
+ const nip=rawNip.replace(/\D/g,'');
  let npsn=String($('signupNpsn')?.value||'').trim();
  if(!fullName)return show('Nama lengkap wajib diisi.','err');
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return show('Gunakan alamat email yang valid.','err');
  if(password.length<8)return show('Password minimal 8 karakter.','err');
  if(!['KEPALA_SEKOLAH','GTK','PENGAWAS'].includes(role))return show('Pilih jenis akun.','err');
- if(nip&&nip.length!==18)return show('Jika NIP diisi, gunakan 18 digit.','err');
- if(role==='PENGAWAS'&&nip.length!==18)return show('NIP Pengawas wajib 18 digit.','err');
+ if(unit.length<3||unit.length>160)return show('Unit Kerja wajib diisi (3–160 karakter).','err');
+ if(!['PNS','PPPK','PPPK_PARUH_WAKTU','NON_ASN'].includes(employmentStatus))return show('Pilih status kepegawaian.','err');
+ if(rawNip&&(!/^\d{18}$/.test(rawNip)))return show('NIP hanya boleh berisi tepat 18 angka.','err');
+ if((employmentStatus!=='NON_ASN'||role==='PENGAWAS')&&!/^\d{18}$/.test(nip))return show('NIP 18 digit wajib untuk seluruh ASN dan Pengawas.','err');
  if(role==='KEPALA_SEKOLAH'){
   if(!/^\d{8}$/.test(npsn))return show('NPSN Kepala Sekolah wajib 8 digit.','err');
   try{const school=await validateSchool(npsn);if(!school)return show('NPSN tidak ditemukan pada Master Sekolah aktif.','err')}catch(error){return show(error?.message||'NPSN belum dapat diverifikasi.','err')}
@@ -34,7 +75,7 @@ async function submitRegistration(){
  const btn=$('authBtn');if(btn)btn.disabled=true;
  show('Mendaftarkan akun…','ok');
  try{
-  const payload={email,password,full_name:fullName,role,nip:nip||'',school_npsn:npsn||''};
+  const payload={email,password,full_name:fullName,role,unit,employment_status:employmentStatus,nip:nip||'',school_npsn:npsn||''};
   await registerAccount(payload);
   if(role==='KEPALA_SEKOLAH'||role==='PENGAWAS'){
    show(`Pendaftaran berhasil. Akun ${role==='KEPALA_SEKOLAH'?'Kepala Sekolah':'Pengawas'} sudah tercatat dan menunggu persetujuan Super Admin. Tidak perlu menunggu email konfirmasi.`,'ok');
@@ -45,6 +86,7 @@ async function submitRegistration(){
  finally{submitting=false;if(btn)btn.disabled=false}
 }
 function apply(){
+ ensureIdentityFields();
  const signup=isSignup();
  const d=$('tabDinas'),g=$('tabGtk'),box=document.querySelector('.loginbox'),sub=box?.querySelector(':scope > .small');
  if(signup){
@@ -66,5 +108,5 @@ document.addEventListener('click',intercept,true);
 document.addEventListener('submit',intercept,true);
 document.addEventListener('keydown',intercept,true);
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>{bind();setTimeout(apply,1000);setTimeout(apply,3000)}):(()=>{bind();setTimeout(apply,1000);setTimeout(apply,3000)})();
-window.__simantabRegistrationUiFinal={version:5,dinasSignupDisabled:true,dedicatedSignupGuard:true,allGtkServerRegistration:true};
+window.__simantabRegistrationUiFinal={version:6,dinasSignupDisabled:true,dedicatedSignupGuard:true,allGtkServerRegistration:true};
 })();
