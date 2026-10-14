@@ -14,6 +14,7 @@ const disciplineModule = await fs.readFile(path.join(output, 'discipline-evidenc
 const offlineMonitoringModule = await fs.readFile(path.join(output, 'offline-consultation-monitoring.js'), 'utf8');
 const korwilMonitoringModule = await fs.readFile(path.join(output, 'korwil-submission-monitoring.js'), 'utf8');
 const operatorAdminModule = await fs.readFile(path.join(output,'institution-operators-admin.js'),'utf8');
+const operatorPortalModule = await fs.readFile(path.join(output,'institution-operator-portal.js'),'utf8');
 const legacyMenu = await fs.readFile(path.join(output, 'legacy-shell-restore.js'), 'utf8');
 const rgtkMenu = await fs.readFile(path.join(output, 'rgtk-monitoring.js'), 'utf8');
 const workflowMenu = await fs.readFile(path.join(output, 'team-workflow-authority.js'), 'utf8');
@@ -72,6 +73,17 @@ assert(html.includes('./institution-operators-admin.js?v=2') &&
        operatorAdminModule.includes('simantab-institution-operator-provision') &&
        operatorAdminModule.includes('operatorProvisionAll'),
  'Modul operator institusi hanya boleh berada di preview dengan aktivasi tertutup.');
+assert(html.includes('./institution-operator-portal.js?v=1') &&
+       operatorPortalModule.includes('SIMANTAB_INSTITUTION_OPERATOR_PORTAL_V1_SCOPED_READONLY') &&
+       operatorPortalModule.includes("rpc('operator_institution_overview')") &&
+       operatorPortalModule.includes("['dashboard','operatorNeeds','profile']") &&
+       operatorPortalModule.includes("readOnly:true") &&
+       operatorPortalModule.includes("restrictedMenus:true"),
+ 'Portal Operator Institusi belum dibatasi pada dashboard, kebutuhan GTK, dan profil.');
+assert(html.includes("if(profile && ['OPERATOR_KORWIL','OPERATOR_SMP'].includes(profile.role))") &&
+       html.includes("await showTab('dashboard');") &&
+       html.includes("window.__simantabOperatorPortal?.render?.();"),
+ 'Login operator masih menjalankan dashboard Dinas yang tidak sesuai kewenangan.');
 assert(module.includes('SIMANTAB_PENGAWAS_MENU_SCOPE_V4_SERVICE_CATALOG'),
   'Kode katalog layanan Pengawas tidak cocok.');
 assert(module.includes('simantab:profile-ready'), 'Menu Pengawas masih menggunakan timeout login.');
@@ -159,6 +171,8 @@ console.log(JSON.stringify({
   institutionOperatorInvitationAdmin: true,
   institutionOperatorProvisionBatchReady: true,
   institutionOperatorLoginBlocked: true,
+  institutionOperatorScopedPortal: true,
+  institutionOperatorRlsReadOnly: true,
   dabinDashboardVersion: 3,
   supervisorNavigationGuards: ['redistribusi','diklat','workflow','rgtk','legacy'],
   securityHeaders: true,
