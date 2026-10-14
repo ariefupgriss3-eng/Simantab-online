@@ -1,0 +1,20 @@
+name: Jabfung authentication regression tests
+on:
+  pull_request:
+    paths:
+      - 'web/jabfung-jenjang-enhancement.js'
+      - 'web/tests/jabfung-auth-preflight.test.mjs'
+      - '.github/workflows/jabfung-auth-preflight.yml'
+  workflow_dispatch:
+jobs:
+  jabfung-auth:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Check JavaScript syntax
+        run: node --check web/jabfung-jenjang-enhancement.js
+      - name: Run mocked authorization regression tests
+        run: node --test web/tests/jabfung-auth-preflight.test.mjs
