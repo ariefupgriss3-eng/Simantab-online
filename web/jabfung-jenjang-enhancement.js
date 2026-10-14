@@ -42,7 +42,7 @@
     try{
       const reqs=await getRequirements();
       const docs=reqs.filter(r=>r.requirement_type==='DOCUMENT');
-      section.innerHTML=`<div class="head"><div><h2>Usul SK Kenaikan Jenjang Jabatan (Jabfung)</h2><p>Unggah setiap berkas pada item yang sesuai. Maksimal 1,5 MB per file.</p><div id="simJabfungVersion" class="small" style="margin-top:6px;color:#1767b3;font-weight:700">Keamanan pengajuan aktif • Versi CF-JF4</div></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
+      section.innerHTML=`<div class="head"><div><h2>Usul SK Kenaikan Jenjang Jabatan (Jabfung)</h2><p>Unggah setiap berkas pada item yang sesuai. Maksimal 1,5 MB per file.</p><div id="simJabfungVersion" class="small" style="margin-top:6px;color:#1767b3;font-weight:700">Keamanan pengajuan aktif • Versi CF-JF5</div></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>AI Verifikator aktif.</b> Setelah berkas dikirim, AI meneliti kesesuaian isi, keterbacaan/blur, serta indikator visual stempel, tanda tangan, TTE atau QR. <b>AI tidak menetapkan dokumen asli/palsu</b>; keabsahan final tetap ditetapkan petugas melalui dokumen sumber atau verifikasi resmi.</div></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>Ketentuan unggah:</b> PDF/JPG/PNG, maksimal 1,5 MB per file. Berkas bertanda * wajib diunggah sebelum usulan dikirim.</div></div>
       <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">Berkas Usul Kenaikan Jenjang Jabfung</h3>

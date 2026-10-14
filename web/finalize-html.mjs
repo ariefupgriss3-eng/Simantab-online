@@ -335,8 +335,8 @@ if(!/SIMANTAB_BCKS_INDIVIDUAL_READINESS_V1/.test(bcksIndividualReadinessCode))th
 await fs.writeFile(path.join(staticDir,bcksIndividualReadinessFile),bcksIndividualReadinessCode);
 
 const modules=[
- ['kp-enhancement.js',4],
- ['jabfung-jenjang-enhancement.js',4],
+ ['kp-enhancement.js',5],
+ ['jabfung-jenjang-enhancement.js',5],
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',9],
  ['registration-approval.js',2],
