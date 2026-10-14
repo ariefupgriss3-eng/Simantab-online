@@ -20,4 +20,6 @@ jobs:
         with:
           node-version: '22'
       - name: Validate source syntax and registration rules
-        run: node web/tests/registration-contract.test.mjs
+        run: |
+          node web/tests/registration-contract.test.mjs
+          node web/tests/registration-backend.test.mjs
