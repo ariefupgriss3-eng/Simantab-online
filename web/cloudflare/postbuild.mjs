@@ -78,9 +78,9 @@ assert(html.includes('./institution-operator-portal.js?v=3') &&
        operatorPortalModule.includes("rpc('operator_institution_overview')") &&
        operatorPortalModule.includes("['dashboard','profile','operatorCuti','operatorKGB','operatorNotifications','operatorStatus']") &&
        operatorPortalModule.includes("rpc('operator_service_status')") &&
-       operatorPortalModule.includes("rpc('operator_cuti_kgb_queue')") &&
-       operatorPortalModule.includes("rpc('operator_cuti_kgb_decide')") &&
-       operatorPortalModule.includes("rpc('operator_cuti_kgb_documents')") &&
+       operatorPortalModule.includes("rpc('operator_cuti_kgb_queue'") &&
+       operatorPortalModule.includes("rpc('operator_cuti_kgb_decide'") &&
+       operatorPortalModule.includes("rpc('operator_cuti_kgb_documents'") &&
        operatorPortalModule.includes('simantab-operator-document-view') &&
        operatorPortalModule.includes('readOnly:true') &&
        operatorPortalModule.includes("restrictedMenus:true"),
