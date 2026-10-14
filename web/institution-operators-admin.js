@@ -42,7 +42,7 @@
    '<td><b>'+esc(s.institution_name)+'</b><div class="small">'+esc(s.operator_type==='KORWIL'?'Korwil Kecamatan':'SMP Negeri')+'</div></td>'+
    '<td><code>'+esc(s.username)+'</code></td>'+
    '<td>'+esc(s.district)+'<div class="small">'+esc(s.school_npsn||'Kecamatan')+'</div></td>'+
-   '<td><b>'+esc(s.activation_state)+'</b><div class="small">'+esc(s.invited_email||'Belum diundang')+'</div></td>'+
+   '<td><b>'+esc(s.activation_state)+'</b><div class="small">'+esc(s.invited_email||'Tanpa email petugas')+'</div></td>'+
    '<td><span class="small">'+(s.activation_state==='RESERVED'?'Menunggu pembuatan akun':'Kredensial belum diterbitkan')+'</span></td></tr>').join(''):'<tr><td colspan="5">Tidak ada institusi sesuai filter.</td></tr>';
   // No individual recipient email is required for these institutional accounts.
  }
@@ -53,7 +53,7 @@
   const reserved=records.filter(x=>x.activation_state==='RESERVED').length;
   const provisioned=records.filter(x=>x.activation_state==='PROVISIONED').length;
   root.innerHTML='<div class="card" style="margin-bottom:13px">'+
-   '<div class="info"><b>Aktivasi bertahap dan aman.</b> Username sudah dicadangkan, tidak ada password bersama. Undangan dikirim ke email petugas yang telah ditetapkan. Akun tetap nonaktif sampai email terverifikasi dan hak akses dinyatakan lulus QA.</div>'+
+   '<div class="info"><b>Aktivasi bertahap dan aman.</b> Username sudah dicadangkan, tidak ada password bersama. Akun sistem disiapkan berdasarkan kecamatan atau NPSN tanpa email petugas perorangan. Password acak tidak ditampilkan. Login tetap nonaktif sampai hak akses dinyatakan lulus QA dan Super Admin menerbitkan kredensial awal secara terpisah.</div>'+
    '<div class="servicegrid" style="margin:12px 0"><div class="service"><div class="small">KORWIL</div><h3>'+kor+'</h3></div><div class="service"><div class="small">SMP NEGERI</div><h3>'+smp+'</h3></div><div class="service"><div class="small">LOGIN BELUM AKTIF</div><h3>'+(reserved+provisioned)+'</h3></div></div>'+
    '<div style="display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin:10px 0">'+
    '<button id="operatorProvisionAll" type="button" class="btn primary">Siapkan 66 Akun Login (Nonaktif)</button><span id="operatorProvisionProgress" class="small">'+provisioned+' akun sistem disiapkan • '+reserved+' menunggu</span>'+
@@ -61,7 +61,7 @@
    '<select id="operatorSlotKind"><option value="ALL">Semua Institusi</option><option value="KORWIL">Operator Korwil</option><option value="SMP">Operator SMP</option></select>'+
    '<button type="button" class="btn soft" id="operatorSlotsRefresh">↻ Refresh</button></div>'+
    '<div class="tablewrap"><table><thead><tr><th>Institusi</th><th>Username</th><th>Cakupan</th><th>Status</th><th>Pengelolaan</th></tr></thead><tbody id="operatorSlotRows"></tbody></table></div>'+
-   '<p class="small">Pembuatan undangan bukan aktivasi akun. Akses produksi operator tetap terkunci hingga dashboard, RLS, dan prosedur pergantian petugas diuji.</p></div>';
+   '<p class="small">Pembuatan akun Auth bukan aktivasi login. Kredensial awal baru dapat diterbitkan oleh Super Admin setelah dashboard, RLS, dan pergantian petugas diuji.</p></div>';
   $('operatorSlotSearch').addEventListener('input',lines);
   $('operatorSlotKind').addEventListener('change',lines);
   $('operatorSlotsRefresh').addEventListener('click',load);
