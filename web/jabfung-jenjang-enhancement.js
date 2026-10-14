@@ -42,14 +42,14 @@
     try{
       const reqs=await getRequirements();
       const docs=reqs.filter(r=>r.requirement_type==='DOCUMENT');
-      section.innerHTML=`<div class="head"><div><h2>Usul SK Kenaikan Jenjang Jabatan (Jabfung)</h2><p>Unggah setiap berkas pada item yang sesuai. Maksimal 1,5 MB per file.</p><div id="simJabfungVersion" class="small" style="margin-top:6px;color:#1767b3;font-weight:700">Keamanan pengajuan aktif • Versi CF-JF4</div></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
+      section.innerHTML=`<div class="head"><div><h2>Usul SK Kenaikan Jenjang Jabatan (Jabfung)</h2><p>Unggah setiap berkas pada item yang sesuai. Maksimal 1,5 MB per file.</p><div id="simJabfungVersion" class="small" style="margin-top:6px;color:#1767b3;font-weight:700">Keamanan pengajuan aktif • Versi CF-JF5</div></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>AI Verifikator aktif.</b> Setelah berkas dikirim, AI meneliti kesesuaian isi, keterbacaan/blur, serta indikator visual stempel, tanda tangan, TTE atau QR. <b>AI tidak menetapkan dokumen asli/palsu</b>; keabsahan final tetap ditetapkan petugas melalui dokumen sumber atau verifikasi resmi.</div></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>Ketentuan unggah:</b> PDF/JPG/PNG, maksimal 1,5 MB per file. Berkas bertanda * wajib diunggah sebelum usulan dikirim.</div></div>
       <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">Berkas Usul Kenaikan Jenjang Jabfung</h3>
         ${docs.map(r=>`<div class="field"><label>${r.sort_order}. ${esc(r.label)} ${r.is_required?'<b style="color:#b42318">*</b>':'<span class="small">(bila ada/opsional)</span>'}</label><input class="jabfungReqFile" data-code="${esc(r.code)}" data-required="${r.is_required?'1':'0'}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><div class="small">${esc(r.description||'')}</div></div>`).join('')}
       </div>
       <div class="card" style="margin-bottom:13px"><div class="field"><label>Catatan/Keterangan Usul</label><textarea id="jabfungNotes" placeholder="Keterangan tambahan bila diperlukan"></textarea></div></div>
-      <div class="card"><button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul & Jalankan AI Verifikator</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
+      <div class="card"><button type="button" class="btn soft" onclick="simCheckJabfungUploadRights()">🔍 Periksa Hak Kirim (tanpa unggah)</button><div id="jabfungPreflightMsg" class="small" style="margin:8px 0 12px"></div><button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul & Jalankan AI Verifikator</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
     }catch(e){
       section.innerHTML=`<div class="card err">Gagal memuat form Jabfung: ${esc(e.message||e)}</div>`;
     }
@@ -68,6 +68,30 @@
     if(data?.error) throw new Error(data.error);
     return data;
   }
+
+  const PREFLIGHT_LABEL={
+    OK:'Akun dan sesi sesuai persyaratan. Jika pengiriman masih ditolak, beri tahu admin dengan kode RLS-POST-403; jangan unggah ulang.',
+    NO_SESSION:'Tidak ada sesi autentikasi yang dikenali server. Silakan keluar lalu masuk kembali.',
+    PROFILE_MISMATCH:'Sesi login berbeda dari profil yang tampil. Keluar lalu masuk kembali sebagai pengusul.',
+    PROFILE_NOT_FOUND:'Profil akun tidak ditemukan server. Hubungi Super Admin.',
+    INACTIVE:'Akun belum aktif. Hubungi Super Admin.',
+    NOT_APPROVED:'Akun belum disetujui. Hubungi Super Admin.',
+    OPERATOR_RESTRICTED:'Akun operator tidak diperbolehkan mengirim usulan GTK secara langsung.'
+  };
+  window.simCheckJabfungUploadRights=async()=>{
+    const output=document.getElementById('jabfungPreflightMsg'),profile=getProfile();
+    if(!output)return;
+    output.className='small';output.textContent='Memeriksa hak kirim tanpa mengunggah berkas...';
+    try{
+      const {data,error}=await sb.rpc('simantab_submission_preflight',{p_client_profile_id:profile.id||null});
+      if(error)throw error;
+      const code=String(data||'UNKNOWN');
+      output.className=code==='OK'?'okmsg':'err';
+      output.textContent='Kode '+code+' — '+(PREFLIGHT_LABEL[code]||'Hasil belum dikenal. Hubungi admin SIMANTAB.');
+    }catch(e){
+      output.className='err';output.textContent='Diagnostik belum tersedia: '+(e?.message||String(e));
+    }
+  };
 
   let jabfungSending=false;
   let rlsBlockedUntil=0;

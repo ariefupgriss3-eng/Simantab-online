@@ -11,6 +11,18 @@
   const statusBadge=s=>s==='MS'?'<span class="status st-COMPLETED">MS</span>':s==='TMS'?'<span class="status st-REVISION">TMS</span>':'<span class="status st-VERIFYING">PENDING</span>';
   const fmt=v=>v?new Date(v).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'}):'-';
   const getProfile=()=>window.__simantabProfile||{};
+  const MAX_FILE=1572864;
+  let kpSending=false;
+  async function verifiedRequesterId(profile){
+    const {data:authData,error:authError}=await sb.auth.getUser();
+    const requesterId=authData?.user?.id;
+    if(authError||!requesterId)throw new Error('Sesi tidak valid. Silakan masuk kembali sebelum mengirim usulan KP.');
+    if(!profile?.id||requesterId!==profile.id)throw new Error('Sesi tidak cocok dengan profil pengusul. Keluar dan masuk kembali sebagai pemohon yang benar.');
+    const {data:approved,error}=await sb.from('profiles').select('is_active,approval_status,role').eq('id',requesterId).single();
+    if(error||!approved||!approved.is_active||approved.approval_status!=='APPROVED')throw new Error('Akun belum aktif dan disetujui. Hubungi admin SIMANTAB.');
+    if(['OPERATOR_KORWIL','OPERATOR_SMP'].includes(approved.role))throw new Error('Akun operator tidak dapat mengajukan layanan GTK secara langsung.');
+    return requesterId;
+  }
 
   async function getRequirements(){
     const {data,error}=await sb.from('service_requirements').select('id,code,label,requirement_type,is_required,sort_order,description').eq('service_type','KP').eq('is_active',true).order('sort_order');
@@ -31,7 +43,7 @@
       const reqs=await getRequirements();
       const docs=reqs.filter(r=>r.requirement_type==='DOCUMENT');
       const profile=getProfile();
-      section.innerHTML=`<div class="head"><div><h2>Usul Kenaikan Pangkat</h2><p>Form khusus sesuai SOP KP. Setiap dokumen maksimal 500 KB.</p></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
+      section.innerHTML=`<div class="head"><div><h2>Usul Kenaikan Pangkat</h2><p>Form khusus sesuai SOP KP. Setiap dokumen maksimal 1,5 MB.</p></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>Alur:</b> Pengajuan → Verifikasi Administrasi → Verifikasi Kelayakan → Simpeg OPD → BKPSDM/BKN → Pertek → SK → Penyampaian → Arsip.</div>${kpSteps('PENGAJUAN')}</div>
       <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">A. Data Usulan</h3><div class="grid">
         <div class="field s4"><label>NIP</label><input id="kpNip" value="${esc(profile.nip||'')}" placeholder="NIP"></div>
@@ -51,7 +63,7 @@
         <label style="display:block;padding:8px 0"><input id="kpAkSync" type="checkbox"> Angka Kredit telah disinkronkan ke SIASN melalui E-Kinerja BKN.</label>
         <label style="display:block;padding:8px 0"><input id="kpSkpSync" type="checkbox"> SKP telah dikirim ke SIASN.</label>
       </div>
-      <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">C. Unggah Dokumen KP</h3><div class="small" style="margin-bottom:8px">PDF/JPG/PNG maksimal 500 KB per dokumen. Dokumen bertanda * wajib.</div>
+      <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">C. Unggah Dokumen KP</h3><div class="small" style="margin-bottom:8px">PDF/JPG/PNG maksimal 1,5 MB per dokumen. Dokumen bertanda * wajib.</div>
         ${docs.map(r=>`<div class="field"><label>${r.sort_order}. ${esc(r.label)} ${r.is_required?'<b style="color:#b42318">*</b>':'(opsional)'}</label><input class="kpReqFile" data-code="${esc(r.code)}" data-required="${r.is_required?'1':'0'}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><div class="small">${esc(r.description||'')}</div></div>`).join('')}
       </div>
       <div class="card"><button id="kpSendBtn" class="btn primary" onclick="submitKpSop()">📤 Kirim Usulan KP</button><div id="kpMsg"></div></div>`;
@@ -67,6 +79,9 @@
 
   window.submitKpSop=async()=>{
     const msg=document.getElementById('kpMsg'),btn=document.getElementById('kpSendBtn'),profile=getProfile();
+    if(kpSending)return;
+    kpSending=true;
+    let createdSub=null;
     try{
       if(!profile.id) throw new Error('Profil login belum tersedia. Silakan masuk ulang.');
       const proposingUnit=document.getElementById('kpProposingUnit').value.trim();
@@ -78,27 +93,37 @@
       for(const input of inputs){
         const f=input.files?.[0];
         if(input.dataset.required==='1'&&!f) throw new Error('Dokumen wajib belum lengkap. Periksa semua item bertanda *.');
-        if(f && (f.size>512000||!['application/pdf','image/jpeg','image/png'].includes(f.type))) throw new Error(`${f.name}: ukuran harus ≤ 500 KB dan format PDF/JPG/PNG.`);
+        if(f && (f.size>MAX_FILE||!['application/pdf','image/jpeg','image/png'].includes(f.type))) throw new Error(`${f.name}: ukuran harus ≤ 1,5 MB dan format PDF/JPG/PNG.`);
       }
       const proposalType=document.getElementById('kpProposalType').value;
       const compReq=document.getElementById('kpCompetencyRequired').checked;
       if(proposalType==='BERSAMAAN_KENAIKAN_JENJANG' && compReq && !document.getElementById('kpCompetencyPassed').checked) throw new Error('Usul memerlukan uji kompetensi tetapi status lulus belum dikonfirmasi.');
-      btn.disabled=true; msg.className='small'; msg.textContent='Mengirim usulan dan dokumen KP...';
-      const {data:sub,error:subErr}=await sb.from('submissions').insert({user_id:profile.id,service_type:'KP',title:'Usul Kenaikan Pangkat',description:document.getElementById('kpNotes').value.trim()}).select('*').single();
+      btn.disabled=true; msg.className='small';msg.textContent='Memverifikasi sesi dan hak akun pemohon...';
+      const requesterId=await verifiedRequesterId(profile);
+      msg.textContent='Mengirim usulan dan dokumen KP...';
+      const {data:sub,error:subErr}=await sb.from('submissions').insert({user_id:requesterId,service_type:'KP',title:'Usul Kenaikan Pangkat',description:document.getElementById('kpNotes').value.trim()}).select('*').single();
       if(subErr) throw subErr;
-      const detail={proposal_type:proposalType,employee_nip:document.getElementById('kpNip').value.trim(),proposing_unit:proposingUnit,last_rank:document.getElementById('kpLastRank').value.trim(),last_position:document.getElementById('kpLastPosition').value.trim(),last_promotion_date:document.getElementById('kpLastPromotionDate').value||null,proposed_rank:document.getElementById('kpProposedRank').value.trim(),proposed_position:document.getElementById('kpProposedPosition').value.trim(),competency_test_required:compReq,competency_test_passed:compReq?document.getElementById('kpCompetencyPassed').checked:null,eligibility_declared:true,ak_siasn_declared:true,skp_siasn_declared:true,notes:document.getElementById('kpNotes').value.trim(),updated_by:profile.id,updated_at:new Date().toISOString()};
+      createdSub=sub;
+      const detail={proposal_type:proposalType,employee_nip:document.getElementById('kpNip').value.trim(),proposing_unit:proposingUnit,last_rank:document.getElementById('kpLastRank').value.trim(),last_position:document.getElementById('kpLastPosition').value.trim(),last_promotion_date:document.getElementById('kpLastPromotionDate').value||null,proposed_rank:document.getElementById('kpProposedRank').value.trim(),proposed_position:document.getElementById('kpProposedPosition').value.trim(),competency_test_required:compReq,competency_test_passed:compReq?document.getElementById('kpCompetencyPassed').checked:null,eligibility_declared:true,ak_siasn_declared:true,skp_siasn_declared:true,notes:document.getElementById('kpNotes').value.trim(),updated_by:requesterId,updated_at:new Date().toISOString()};
       const {error:detailErr}=await sb.from('kp_submission_details').update(detail).eq('submission_id',sub.id);
       if(detailErr) throw detailErr;
       for(const input of inputs){
         const f=input.files?.[0]; if(!f) continue;
         const safe=f.name.normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-100);
-        const path=`${profile.id}/${sub.id}/${crypto.randomUUID()}_${safe}`;
+        const path=`${requesterId}/${sub.id}/${crypto.randomUUID()}_${safe}`;
         const {error:upErr}=await sb.storage.from('simantab-documents').upload(path,f,{contentType:f.type,upsert:false}); if(upErr) throw upErr;
-        const {error:metaErr}=await sb.from('submission_files').insert({submission_id:sub.id,user_id:profile.id,storage_path:path,file_name:f.name,file_size:f.size,mime_type:f.type,requirement_code:input.dataset.code}); if(metaErr) throw metaErr;
+        const {error:metaErr}=await sb.from('submission_files').insert({submission_id:sub.id,user_id:requesterId,storage_path:path,file_name:f.name,file_size:f.size,mime_type:f.type,requirement_code:input.dataset.code}); if(metaErr) throw metaErr;
       }
       msg.className='okmsg'; msg.textContent='Usulan KP berhasil dikirim dan checklist dokumen telah terbentuk.';
       setTimeout(()=>window.showTab('status'),700);
-    }catch(e){msg.className='err';msg.textContent=e.message||String(e)}finally{btn.disabled=false}
+    }catch(e){
+      msg.className='err';
+      if(createdSub){
+        msg.textContent='Usulan telah tercatat, namun ada tahap lanjutan yang gagal (ID usulan: '+createdSub.id+'). Jangan mengirim usulan baru. Hubungi admin untuk melanjutkan berkas yang sama.';
+      }else if(e?.code==='42501'||/row.level.security|permission denied/i.test(e?.message||'')){
+        msg.textContent='Pengajuan KP belum tersimpan: ditolak kebijakan keamanan database (RLS). Jangan mengulang pengiriman berkali-kali. Hubungi admin SIMANTAB.';
+      }else msg.textContent=e.message||String(e);
+    }finally{kpSending=false;if(btn)btn.disabled=false}
   };
 
   async function openSigned(path){const {data,error}=await sb.storage.from('simantab-documents').createSignedUrl(path,120);if(error)alert(error.message);else window.open(data.signedUrl,'_blank','noopener')}
