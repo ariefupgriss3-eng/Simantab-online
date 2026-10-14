@@ -4,8 +4,8 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 
 const source = fs.readFileSync(new URL('../jabfung-jenjang-enhancement.js', import.meta.url), 'utf8');
-const UUID_A = '857c4a4e-7417-47b8-9c9f-ff87e1891a13';
-const UUID_B = '44fbc30b-cadf-49ee-a08f-10bb5d930344';
+const UUID_A = '11111111-1111-4111-8111-111111111111';
+const UUID_B = '22222222-2222-4222-8222-222222222222';
 
 function harness({ profileId=UUID_A, userId=UUID_A, preflight='OK', authError=null, fileSize=100, fileType='application/pdf', insertError=null, aiError=null } = {}) {
   const calls = { insert:[], fileInsert:[], upload:[], rpc:[], ai:[], auth:0, tab:[] };
