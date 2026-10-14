@@ -23,3 +23,8 @@ jobs:
         run: |
           node web/tests/registration-contract.test.mjs
           node web/tests/registration-backend.test.mjs
+      - name: Cloudflare static build smoke test
+        working-directory: web
+        run: |
+          npm install --no-audit --no-fund
+          npm run build:cloudflare
