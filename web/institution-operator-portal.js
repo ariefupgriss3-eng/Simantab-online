@@ -1,4 +1,4 @@
-/* SIMANTAB_INSTITUTION_OPERATOR_PORTAL_V2_SIX_SERVICES_SCOPED */
+/* SIMANTAB_INSTITUTION_OPERATOR_PORTAL_V3_CUTI_KGB_VERIFICATION */
 (()=>{
  const $=id=>document.getElementById(id),p=()=>window.__simantabProfile||{},sb=()=>window.__simantabSb;
  const isOperator=()=>['OPERATOR_KORWIL','OPERATOR_SMP'].includes(p().role);
@@ -110,19 +110,93 @@
    '<h3>'+esc(p().username)+'</h3><p class="small">'+esc(titleFor('profile'))+' • '+esc(p().role)+'</p></div>'+
    '<div class="card s12"><div class="info">Identitas institusi dan username ditetapkan oleh Super Admin. Perubahan akun dilakukan melalui pengelolaan institusi; bukan dari halaman profil operator.</div></div></div>';
  }
- async function service(kind){
-  const id=kind==='CUTI'?'operatorCuti':'operatorKGB',root=$(id+'Body');if(!root)return;
-  root.innerHTML='<div class="card">Memeriksa cakupan layanan '+esc(kind)+'...</div>';
+ async function openDocument(submissionId,fileId){
+  const blank=window.open('about:blank','_blank');
+  if(blank){blank.document.title='Memeriksa dokumen';blank.document.body.textContent='Memuat dokumen terverifikasi...';}
   try{
-   const x=await overview(),schools=await schoolRows(),history=(await statuses()).filter(v=>v.service_type===kind);
-   root.innerHTML='<div class="card" style="margin-bottom:12px"><b>Pelayanan '+(kind==='CUTI'?'Cuti':'Kenaikan Gaji Berkala (KGB)')+'</b>'+
-    '<p class="small">Institusi: '+esc(x.institution_name)+'. Sekolah dalam kewenangan akun: '+fmt(schools.length)+'.</p>'+
-    '<div class="field"><label>Daftar sekolah terverifikasi (baca saja)</label><select id="'+id+'School">'+
-    schools.map(x=>'<option value="'+esc(x.npsn)+'">'+esc(x.school_name)+' — '+esc(x.npsn)+'</option>').join('')+
-    '</select></div><div class="notice">Pembuatan usulan baru oleh Operator Institusi belum dibuka. Pengajuan atas nama GTK harus melalui proses delegasi, validasi dokumen, dan verifikasi server terlebih dahulu. Tidak ada usulan yang dikirim dari halaman ini.</div></div>'+
-    '<div class="card"><h3 style="margin-top:0">Status '+esc(kind)+' di Wilayah Institusi</h3>'+statusTable(history)+'</div>';
-  }catch(e){root.innerHTML='<div class="card err">Layanan '+esc(kind)+' belum dapat dibuka: '+esc(e?.message||e)+'</div>'}
+   const {data,error}=await sb().functions.invoke('simantab-operator-document-view',{
+    body:{submission_id:submissionId,file_id:fileId}
+   });
+   if(error||!data?.ok||!data?.url)throw new Error(data?.error||error?.message||'Dokumen tidak tersedia');
+   if(blank)blank.location.replace(data.url);
+   else alert('Popup diblokir browser. Izinkan popup untuk melihat dokumen usulan.');
+  }catch(e){if(blank)blank.close();alert('Tidak dapat membuka dokumen: '+(e?.message||String(e)));}
  }
+ async function decide(submissionId,kind,action){
+  const note=String($('opNote'+submissionId)?.value||'').trim();
+  if(note.length<10){alert('Tulis catatan verifikasi minimal 10 karakter.');return;}
+  if(action==='FORWARD'&&!$('opChecked'+submissionId)?.checked){
+   alert('Periksa berkas dan centang konfirmasi kelengkapan sebelum meneruskan.');return;
+  }
+  const question=action==='RETURN'?
+   'Kembalikan usulan kepada GTK dengan catatan perbaikan berikut?\n\n'+note:
+   'Pastikan dokumen sudah diperiksa dan sesuai.\n\nTeruskan usulan '+kind+' ke Dinas?';
+  if(!confirm(question))return;
+  const button=$('opReturn'+submissionId),forward=$('opForward'+submissionId);
+  if(button)button.disabled=true;if(forward)forward.disabled=true;
+  try{
+   const {data,error}=await sb().rpc('operator_cuti_kgb_decide',{
+    p_submission:submissionId,p_decision:action,p_note:note
+   });
+   if(error)throw error;
+   if(!['PERBAIKAN','DITERUSKAN_KE_DINAS'].includes(data))throw new Error('Status keputusan server tidak dikenal');
+   historyCache=null;
+   alert(action==='RETURN'?'Usulan dikembalikan kepada GTK untuk perbaikan.':'Usulan berhasil diteruskan ke Dinas.');
+   await service(kind);
+  }catch(e){alert('Usulan belum diproses: '+(e?.message||String(e)));if(button)button.disabled=false;if(forward)forward.disabled=false}
+ }
+ async function service(kind){
+  const id=kind==='CUTI'?'operatorCuti':'operatorKGB',root=$(id+'Body');
+  if(!root)return;
+  root.innerHTML='<div class="card">Memuat antrean verifikasi '+esc(kind)+'...</div>';
+  try{
+   const x=await overview(),schools=await schoolRows();
+   const [{data:queue,error:qErr},history]=await Promise.all([
+    sb().rpc('operator_cuti_kgb_queue',{p_service:kind}),
+    statuses()
+   ]);
+   if(qErr)throw qErr;
+   const entries=(queue||[]).filter(q=>q.service_type===kind);
+   root.innerHTML='<div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">Verifikasi '+(kind==='CUTI'?'Cuti':'Kenaikan Gaji Berkala (KGB)')+'</h3>'+
+    '<p>Institusi: <b>'+esc(x.institution_name)+'</b> • '+fmt(schools.length)+' sekolah dalam cakupan.</p>'+
+    '<p class="small">Periksa identitas GTK, sekolah, isi permohonan, dan seluruh berkas. Operator hanya melakukan verifikasi awal; persetujuan akhir tetap di Dinas.</p></div>'+
+    '<div id="'+id+'Queue"></div>'+
+    '<div class="card"><h3 style="margin-top:0">Riwayat '+kind+'</h3>'+
+    statusTable(history.filter(q=>q.service_type===kind))+'</div>';
+   const container=$(id+'Queue');
+   const active=entries.filter(q=>q.intake_state==='PENDING'&&q.workflow_state==='MENUNGGU_VERIFIKASI_OPERATOR');
+   container.innerHTML=active.length?active.map(q=>
+    '<div class="card" style="margin-bottom:13px" data-operator-submission="'+esc(q.submission_id)+'">'+
+    '<h3 style="margin:0 0 7px">'+esc(q.title||'Usulan '+kind)+'</h3>'+
+    '<div class="small">'+esc(dt(q.submitted_at))+' • '+esc(q.requester_name)+' • '+esc(q.school_name)+' (NPSN '+esc(q.school_npsn)+')</div>'+
+    (q.leave_type?'<p class="small">Jenis cuti: '+esc(q.leave_type)+'</p>':'')+
+    '<p style="white-space:pre-wrap">'+esc(q.description||'')+'</p>'+
+    '<b>Berkas terlampir: '+fmt(q.file_count)+'</b><div id="opFiles'+esc(q.submission_id)+'" class="small">Mengambil daftar berkas...</div>'+
+    '<div class="field" style="margin-top:12px"><label>Catatan Verifikasi Operator</label>'+
+    '<textarea id="opNote'+esc(q.submission_id)+'" rows="2" maxlength="1500" placeholder="Tuliskan hasil pemeriksaan kelengkapan dan kesesuaian berkas"></textarea></div>'+
+    '<label style="display:flex;gap:7px;margin:9px 0"><input type="checkbox" id="opChecked'+esc(q.submission_id)+'"> Saya telah memeriksa berkas dan kelengkapannya.</label>'+
+    '<div style="display:flex;gap:9px;flex-wrap:wrap">'+
+    '<button type="button" class="btn soft" id="opReturn'+esc(q.submission_id)+'">Kembalikan untuk Perbaikan</button>'+
+    '<button type="button" class="btn primary" id="opForward'+esc(q.submission_id)+'" '+(Number(q.file_count)>0?'':'disabled')+'>Verifikasi & Teruskan ke Dinas</button></div></div>'
+    ).join(''):'<div class="card empty" style="margin-bottom:13px">Tidak ada usulan '+kind+' yang menunggu verifikasi operator.</div>';
+   for(const q of active){
+    const key=q.submission_id;
+    $('opReturn'+key)?.addEventListener('click',()=>decide(key,kind,'RETURN'));
+    $('opForward'+key)?.addEventListener('click',()=>decide(key,kind,'FORWARD'));
+    const docsBox=$('opFiles'+key);
+    const {data:docs,error:docError}=await sb().rpc('operator_cuti_kgb_documents',{p_submission:key});
+    if(!docsBox)continue;
+    if(docError){docsBox.textContent='Daftar berkas gagal dibaca. Penerusan tidak diizinkan.';const button=$('opForward'+key);if(button)button.disabled=true;continue;}
+    docsBox.innerHTML=docs?.length?docs.map(d=>
+     '<div style="margin:7px 0"><button type="button" class="btn soft" data-view-id="'+esc(d.file_id)+'" data-submission-id="'+esc(key)+'">Lihat Berkas</button> '+
+     esc(d.file_name)+' ('+fmt((Number(d.file_size)||0)/1024)+' KB)</div>').join(''):
+     'Belum ada dokumen. Usulan tidak dapat diteruskan.';
+    docsBox.querySelectorAll('[data-view-id]').forEach(b=>b.addEventListener('click',()=>openDocument(b.dataset.submissionId,b.dataset.viewId)));
+    if(!docs?.length){const button=$('opForward'+key);if(button)button.disabled=true;}
+   }
+  }catch(e){root.innerHTML='<div class="card err">Verifikasi '+esc(kind)+' tidak dapat dimuat: '+esc(e?.message||e)+'</div>'}
+ }
+
  async function status(){
   const root=$('operatorStatusBody');if(!root)return;
   root.innerHTML='<div class="card">Memuat Status Usulan...</div>';
