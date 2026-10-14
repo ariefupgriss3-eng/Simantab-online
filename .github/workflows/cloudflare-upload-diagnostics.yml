@@ -1,0 +1,31 @@
+name: Cloudflare upload and RLS diagnostics
+on:
+  push:
+    branches: [fix/cloudflare-kp-auth-upload-20261014]
+  pull_request:
+    paths:
+      - web/kp-enhancement.js
+      - web/jabfung-jenjang-enhancement.js
+      - web/tests/gtk-submission-preflight.test.cjs
+      - web/tests/kp-upload-authorization.test.cjs
+      - supabase/migrations/20261014_submission_preflight_readonly.sql
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax and isolated guards
+        run: |
+          node --check web/kp-enhancement.js
+          node --check web/jabfung-jenjang-enhancement.js
+          node --test web/tests/jabfung-auth.test.cjs web/tests/cloudflare-gtk-submission-owner.test.cjs web/tests/kp-upload-authorization.test.cjs web/tests/gtk-submission-preflight.test.cjs
+      - name: Cloudflare build check
+        working-directory: web
+        run: |
+          npm install --no-audit --no-fund
+          npm run build:cloudflare
