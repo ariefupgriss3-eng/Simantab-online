@@ -13,14 +13,14 @@ html = html.replace(marker, '');
 if (!html.includes('</body>')) throw new Error('SIMANTAB body not found.');
 if (html.includes("navigator.serviceWorker.register('./sw.js')")) throw new Error('Unsafe legacy SW registration still present.');
 html = html.replace(/<script\s+src=["']\.\/pwa-install\.js\?v=\d+["']\s*><\/script>\s*/gi, '');
-html = html.replace('</body>', '<script src="./pwa-install.js?v=8"></script>\n</body>');
-if (html.split('./pwa-install.js?v=8').length !== 2) throw new Error('PWA install link must occur once.');
+html = html.replace('</body>', '<script src="./pwa-install.js?v=9"></script>\n</body>');
+if (html.split('./pwa-install.js?v=9').length !== 2) throw new Error('PWA install link must occur once.');
 const sourceDir = new URL('./', import.meta.url);
 const safeWorker = await fs.readFile(new URL('sw-safe.js', sourceDir), 'utf8');
 const installer = await fs.readFile(new URL('pwa-install-safe.js', sourceDir), 'utf8');
 const offline = await fs.readFile(new URL('offline.html', sourceDir), 'utf8');
 if (!safeWorker.includes('SIMANTAB_CLOUDFLARE_SAFE_SW_V8')) throw new Error('Privacy-safe worker marker missing.');
-if (!installer.includes('SIMANTAB_CLOUDFLARE_PWA_INSTALL_V8')) throw new Error('Installer marker missing.');
+if (!installer.includes('SIMANTAB_CLOUDFLARE_PWA_INSTALL_V9_LOGIN')) throw new Error('Installer marker missing.');
 if (safeWorker.includes('cache.put(event.request') || safeWorker.includes('caches.match(event.request')) throw new Error('Do not cache GTK requests.');
 await fs.writeFile(path.join(root, 'sw.js'), safeWorker, 'utf8');
 await fs.writeFile(path.join(root, 'pwa-install.js'), installer, 'utf8');
@@ -29,11 +29,25 @@ const installPath = path.join(root, 'install.html');
 let installHtml = await fs.readFile(installPath, 'utf8');
 installHtml = installHtml.replaceAll('SIMANTAB Online v6', 'SIMANTAB Online');
 installHtml = installHtml.replaceAll('SIMANTAB v6', 'SIMANTAB');
-installHtml = installHtml.replaceAll('pwa-install.js?v=6', 'pwa-install.js?v=8');
+installHtml = installHtml.replaceAll('pwa-install.js?v=6', 'pwa-install.js?v=9');
 installHtml = installHtml.replace('Menyiapkan instalasi…', 'Lihat Petunjuk Instalasi');
 installHtml = installHtml.replace('type="button" disabled>', 'type="button">');
-if (!installHtml.includes('pwa-install.js?v=8')) throw new Error('Install page missing secure installer.');
-await fs.writeFile(installPath, installHtml, 'utf8');
+if (!installHtml.includes('pwa-install.js?v=9')) throw new Error('Install page missing secure installer.');
+// Preserve the full installation guide at a separate address. QR codes and
+// existing install.html links now land on the REAL login UI with install action.
+await fs.writeFile(path.join(root, 'panduan-instal.html'), installHtml, 'utf8');
+const loginLanding = `<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><meta http-equiv="refresh" content="0;url=./?source=pwa">
+<title>SIMANTAB-ONLINE — Login & Pasang Aplikasi</title>
+<script>window.location.replace('./?source=pwa');</script>
+</head><body><main style="font-family:system-ui,sans-serif;margin:8vh auto;max-width:430px;padding:20px">
+<h1>SIMANTAB-ONLINE</h1>
+<p>Menyiapkan halaman login dan pemasangan aplikasi…</p>
+<p><a href="./?source=pwa">Buka halaman Login SIMANTAB</a></p>
+<p><a href="./panduan-instal.html">Panduan instalasi aplikasi</a></p>
+</main></body></html>`;
+await fs.writeFile(installPath, loginLanding, 'utf8');
 const manifestPath = path.join(root, 'manifest.json');
 const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
 manifest.id = '/';
@@ -41,6 +55,7 @@ manifest.scope = '/';
 manifest.start_url = '/';
 manifest.display = 'standalone';
 manifest.description = 'Sistem Informasi Manajemen Ketenagaan Disdikbud Kabupaten Batang. Akses data GTK memerlukan internet.';
+if(Array.isArray(manifest.shortcuts)) for(const shortcut of manifest.shortcuts) if(shortcut.url==='./install.html') shortcut.url='./panduan-instal.html';
 await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2), 'utf8');
 await fs.writeFile(indexPath, html, 'utf8');
 const headers = `/*
@@ -59,6 +74,9 @@ const headers = `/*
 /install.html
   Cache-Control: no-store
 
+/panduan-instal.html
+  Cache-Control: no-store
+
 /pwa-install.js
   Cache-Control: no-store
 
@@ -69,4 +87,4 @@ const headers = `/*
   Cache-Control: no-store
 `;
 await fs.writeFile(path.join(root, '_headers'), headers, 'utf8');
-console.log(JSON.stringify({cloudflareSecurePwa: true, version: 8, startUrl:'/', installPage:'/install.html', noSensitiveCache:true, removedPreviewNoSw:true}));
+console.log(JSON.stringify({cloudflareSecurePwa: true, version: 8, startUrl:'/', installPage:'/install.html', guidePage:'/panduan-instal.html', loginScreenFromQr:true, noSensitiveCache:true, removedPreviewNoSw:true}));
