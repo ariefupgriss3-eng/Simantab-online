@@ -30,7 +30,7 @@
     card.style.marginBottom = '12px';
 
     const { data, error } = await sb.from('profiles')
-      .select('id,full_name,nip,username,requested_role,unit,position,school_npsn,approval_status,is_active,created_at')
+      .select('id,full_name,nip,username,role,requested_role,unit,position,school_npsn,approval_status,is_active,created_at')
       .eq('approval_status', 'PENDING')
       .order('created_at', { ascending: true })
       .limit(1000);
