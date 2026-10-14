@@ -1,4 +1,4 @@
-/* SIMANTAB_LOGIN_CHANNEL_HARDENING_V4 */
+/* SIMANTAB_LOGIN_CHANNEL_HARDENING_V5_PENDING_STATUS_GUIDE */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.submitAuth);i++)await wait(50);
@@ -16,7 +16,8 @@ const selectedChannel=()=>{
 const show=(text,type='err')=>{const m=$('authMsg');if(!m)return;m.className=type==='err'?'err':'okmsg';m.textContent=text};
 function updateUi(){
  const input=$('email'),label=input?.closest('.field')?.querySelector('label'),hint=document.querySelector('.loginbox .hint');
- if(!input||isSignup())return;
+ if(!input)return;
+ if(isSignup()){if(hint)hint.innerHTML='<b>Pendaftaran baru:</b> setelah klik Daftar, akun menunggu verifikasi dan persetujuan Super Admin. Jangan mendaftar ulang. Jika email sudah terdaftar, kembali ke Masuk atau Lupa Password.';return;}
  const ch=selectedChannel();input.type='text';input.name='username';input.setAttribute('form','simLoginCredentialForm');input.autocomplete='username';input.autocapitalize='none';input.spellcheck=false;const pw=$('password');if(pw){pw.name='password';pw.setAttribute('form','simLoginCredentialForm');pw.autocomplete='current-password';}
  if(label)label.textContent='Username / Email';
  input.placeholder=ch==='GTK'?'username KS/GTK/Pengawas atau email':'username Dinas atau email';
@@ -50,13 +51,25 @@ async function hardenedLogin(){
   const uid=await authenticate(login,password);if(!uid)throw new Error('Sesi login tidak ditemukan.');
   const {data:prof,error}=await sb.from('profiles').select('role,is_active,approval_status,account_channel,full_name,position,school_npsn').eq('id',uid).maybeSingle();if(error)throw error;
   if(!prof){await sb.auth.signOut();throw new Error('Profil akun SIMANTAB tidak ditemukan. Hubungi Super Admin.');}
-  if(!prof.is_active){await sb.auth.signOut();throw new Error('Akun dinonaktifkan. Hubungi Super Admin.');}
-  if(prof.approval_status==='PENDING'){await sb.auth.signOut();throw new Error('Akun masih menunggu persetujuan Super Admin.');}
-  if(prof.approval_status==='REJECTED'){await sb.auth.signOut();throw new Error('Pendaftaran akun ditolak. Hubungi Super Admin.');}
+  if(prof.approval_status==='PENDING'){await sb.auth.signOut();throw new Error('Pendaftaran berhasil, tetapi akun masih MENUNGGU PERSETUJUAN Super Admin. Tidak perlu daftar ulang. Hubungi admin untuk verifikasi.');}
+  if(prof.approval_status==='REJECTED'){await sb.auth.signOut();throw new Error('Pendaftaran akun ditolak. Hubungi Super Admin, jangan membuat akun baru.');}
+  if(!prof.is_active){await sb.auth.signOut();throw new Error('Akun telah disetujui tetapi dinonaktifkan. Hubungi Super Admin untuk pemeriksaan.');}
+  if(prof.approval_status!=='APPROVED'){await sb.auth.signOut();throw new Error('Status persetujuan akun belum valid. Hubungi Super Admin.');}
   const actual=effectiveChannel(prof);
   if(actual!==wanted){await sb.auth.signOut();throw new Error(actual==='GTK'?'Akun ini adalah akun Sekolah/GTK/Pengawas. Gunakan Login GTK.':'Akun ini adalah akun Dinas. Gunakan Login Dinas.');}
   location.reload();
- }catch(e){let detail='';try{detail=(await e?.context?.clone?.().json())?.error||''}catch(_){}show(detail||e?.message||'Username/email atau password tidak sesuai.');btn.disabled=false}
+ }catch(e){
+  let detail='';try{detail=(await e?.context?.clone?.json?.())?.error||''}catch(_){}
+  const raw=String(detail||e?.message||'Username/email atau password tidak sesuai.');
+  const help=/invalid login credentials|username atau password tidak sesuai|invalid password/i.test(raw)
+    ? 'Username/email atau password tidak cocok. Gunakan akun yang sudah didaftarkan, jangan daftar lagi. Jika lupa password, pilih Lupa Password.'
+    : /refresh token|session not found|jwt expired|expired token/i.test(raw)
+    ? 'Sesi login kedaluwarsa. Tutup tab lama, muat ulang halaman, lalu masuk kembali.'
+    : /already registered|email sudah terdaftar/i.test(raw)
+    ? 'Email sudah terdaftar. Jangan daftar ulang. Pilih Masuk atau Lupa Password.'
+    : raw;
+  show(help);btn.disabled=false
+ }
 }
 window.submitAuth=async()=>isSignup()?oldSubmit():hardenedLogin();
 if(oldChannel)window.setChannel=c=>{window.__simantabSelectedLoginChannel=String(c||'').toUpperCase()==='GTK'?'GTK':'DINAS';oldChannel(c);setTimeout(updateUi,0)};
