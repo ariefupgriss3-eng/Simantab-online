@@ -49,7 +49,7 @@
         ${docs.map(r=>`<div class="field"><label>${r.sort_order}. ${esc(r.label)} ${r.is_required?'<b style="color:#b42318">*</b>':'<span class="small">(bila ada/opsional)</span>'}</label><input class="jabfungReqFile" data-code="${esc(r.code)}" data-required="${r.is_required?'1':'0'}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><div class="small">${esc(r.description||'')}</div></div>`).join('')}
       </div>
       <div class="card" style="margin-bottom:13px"><div class="field"><label>Catatan/Keterangan Usul</label><textarea id="jabfungNotes" placeholder="Keterangan tambahan bila diperlukan"></textarea></div></div>
-      <div class="card"><button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul & Jalankan AI Verifikator</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
+      <div class="card"><button type="button" class="btn soft" onclick="simCheckJabfungUploadRights()">🔍 Periksa Hak Kirim (tanpa unggah)</button><div id="jabfungPreflightMsg" class="small" style="margin:8px 0 12px"></div><button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul & Jalankan AI Verifikator</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
     }catch(e){
       section.innerHTML=`<div class="card err">Gagal memuat form Jabfung: ${esc(e.message||e)}</div>`;
     }
@@ -68,6 +68,30 @@
     if(data?.error) throw new Error(data.error);
     return data;
   }
+
+  const PREFLIGHT_LABEL={
+    OK:'Akun dan sesi sesuai persyaratan. Jika pengiriman masih ditolak, beri tahu admin dengan kode RLS-POST-403; jangan unggah ulang.',
+    NO_SESSION:'Tidak ada sesi autentikasi yang dikenali server. Silakan keluar lalu masuk kembali.',
+    PROFILE_MISMATCH:'Sesi login berbeda dari profil yang tampil. Keluar lalu masuk kembali sebagai pengusul.',
+    PROFILE_NOT_FOUND:'Profil akun tidak ditemukan server. Hubungi Super Admin.',
+    INACTIVE:'Akun belum aktif. Hubungi Super Admin.',
+    NOT_APPROVED:'Akun belum disetujui. Hubungi Super Admin.',
+    OPERATOR_RESTRICTED:'Akun operator tidak diperbolehkan mengirim usulan GTK secara langsung.'
+  };
+  window.simCheckJabfungUploadRights=async()=>{
+    const output=document.getElementById('jabfungPreflightMsg'),profile=getProfile();
+    if(!output)return;
+    output.className='small';output.textContent='Memeriksa hak kirim tanpa mengunggah berkas...';
+    try{
+      const {data,error}=await sb.rpc('simantab_submission_preflight',{p_client_profile_id:profile.id||null});
+      if(error)throw error;
+      const code=String(data||'UNKNOWN');
+      output.className=code==='OK'?'okmsg':'err';
+      output.textContent='Kode '+code+' — '+(PREFLIGHT_LABEL[code]||'Hasil belum dikenal. Hubungi admin SIMANTAB.');
+    }catch(e){
+      output.className='err';output.textContent='Diagnostik belum tersedia: '+(e?.message||String(e));
+    }
+  };
 
   let jabfungSending=false;
   let rlsBlockedUntil=0;
