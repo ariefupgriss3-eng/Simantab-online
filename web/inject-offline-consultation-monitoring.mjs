@@ -31,7 +31,7 @@ if(cloudflare){
     !portalSource.includes("restrictedMenus:true") ||
     !portalSource.includes("allowedMenus:tabIds") ||
     !portalSource.includes("rpc('operator_service_status')") ||
-    !portalSource.includes("rpc('operator_cuti_kgb_decide')") ||
+    !portalSource.includes("rpc('operator_cuti_kgb_decide'") ||
     !portalSource.includes("simantab-operator-document-view"))throw new Error('Portal Operator Institusi tidak valid.');
  await fs.writeFile(path.join(staticDir,portalFile),portalSource);
  html=html.replace('</body>','<script type="module" src="./institution-operator-portal.js?v=3"></script>\n</body>');
