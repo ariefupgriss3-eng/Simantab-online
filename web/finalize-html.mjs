@@ -176,7 +176,7 @@ if(process.env.SIMANTAB_BUILD_TARGET==='cloudflare'){
   "if(profile && ['OPERATOR_KORWIL','OPERATOR_SMP'].includes(profile.role)){",
   " if(profile.is_active!==true||profile.approval_status!=='APPROVED'){throw new Error('Akun Operator Institusi belum diaktifkan oleh Super Admin.');}",
   " const nav=document.getElementById('nav');",
-  " if(nav)nav.innerHTML=navGroup('Operator Institusi',[['dashboard','▦','Dashboard Institusi'],['operatorNeeds','◎','Kebutuhan GTK (Baca)'],['profile','♙','Profil Institusi']]);",
+  " if(nav)nav.innerHTML=navGroup('Operator Institusi',[['dashboard','▦','Dashboard'],['profile','♙','Profil'],['operatorCuti','🗓','Cuti'],['operatorKGB','💳','KGB'],['operatorNotifications','🔔','Notifikasi'],['operatorStatus','⌛','Status Usulan']]);",
   " if($('dashboardBody'))$('dashboardBody').innerHTML='<div class=\"card\">Memuat dashboard operator...</div>';",
   " await showTab('dashboard');",
   " window.dispatchEvent(new Event('simantab:profile-ready'));",
