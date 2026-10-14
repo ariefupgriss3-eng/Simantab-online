@@ -165,6 +165,28 @@ if(!leaderCoreAlreadyPatched){
   else console.warn('Core dashboard leader patch dilewati: anchor lama tidak ditemukan dan patch belum terdeteksi.');
 }
 
+
+// Cloudflare preview only: isolate institutional operators BEFORE the legacy
+// "Dinas" dashboard issues broad fetches or renders privileged controls.
+if(process.env.SIMANTAB_BUILD_TARGET==='cloudflare'){
+ const operatorAuthAnchor=/await refreshAll\(\);\s*showTab\('dashboard'\);/g;
+ const occurrences=html.match(operatorAuthAnchor)||[];
+ if(occurrences.length!==1)throw new Error('Operator login isolation: canonical auth anchor is missing/ambiguous.');
+ html=html.replace(operatorAuthAnchor,[
+  "if(profile && ['OPERATOR_KORWIL','OPERATOR_SMP'].includes(profile.role)){",
+  " if(profile.is_active!==true||profile.approval_status!=='APPROVED'){throw new Error('Akun Operator Institusi belum diaktifkan oleh Super Admin.');}",
+  " const nav=document.getElementById('nav');",
+  " if(nav)nav.innerHTML=navGroup('Operator Institusi',[['dashboard','▦','Dashboard Institusi'],['operatorNeeds','◎','Kebutuhan GTK (Baca)'],['profile','♙','Profil Institusi']]);",
+  " if($('dashboardBody'))$('dashboardBody').innerHTML='<div class=\"card\">Memuat dashboard operator...</div>';",
+  " await showTab('dashboard');",
+  " window.dispatchEvent(new Event('simantab:profile-ready'));",
+  " window.__simantabOperatorPortal?.render?.();",
+  " return;",
+  "}",
+  "await refreshAll(); showTab('dashboard');"
+ ].join('\n'));
+}
+
 const bodyClose=html.indexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
 let headAndBody=html.slice(0,bodyClose);
@@ -395,27 +417,6 @@ const modules=[
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
 
-
-// Cloudflare preview only: isolate institutional operators BEFORE the legacy
-// "Dinas" dashboard issues broad fetches or renders privileged controls.
-if(process.env.SIMANTAB_BUILD_TARGET==='cloudflare'){
- const operatorAuthAnchor=/await refreshAll\(\);\s*showTab\('dashboard'\);/g;
- const occurrences=html.match(operatorAuthAnchor)||[];
- if(occurrences.length!==1)throw new Error('Operator login isolation: canonical auth anchor is missing/ambiguous.');
- html=html.replace(operatorAuthAnchor,[
-  "if(profile && ['OPERATOR_KORWIL','OPERATOR_SMP'].includes(profile.role)){",
-  " if(profile.is_active!==true||profile.approval_status!=='APPROVED'){throw new Error('Akun Operator Institusi belum diaktifkan oleh Super Admin.');}",
-  " const nav=document.getElementById('nav');",
-  " if(nav)nav.innerHTML=navGroup('Operator Institusi',[['dashboard','▦','Dashboard Institusi'],['operatorNeeds','◎','Kebutuhan GTK (Baca)'],['profile','♙','Profil Institusi']]);",
-  " if($('dashboardBody'))$('dashboardBody').innerHTML='<div class=\"card\">Memuat dashboard operator...</div>';",
-  " await showTab('dashboard');",
-  " window.dispatchEvent(new Event('simantab:profile-ready'));",
-  " window.__simantabOperatorPortal?.render?.();",
-  " return;",
-  "}",
-  "await refreshAll(); showTab('dashboard');"
- ].join('\n'));
-}
 
 const classicFile='login-classic-rescue.js';
 const classicCode=await fs.readFile(new URL(`./${classicFile}`,import.meta.url),'utf8');
