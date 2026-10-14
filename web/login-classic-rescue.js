@@ -2,7 +2,7 @@
 /* SIMANTAB_LOGIN_CLASSIC_RESCUE_V7_HANDOFF */
 (function(){
 'use strict';
-var SUPABASE_URL='https://tizxfzvgglkokzvsiwkg.supabase.co',SUPABASE_KEY='sb_publishable_EfCKPSelNMo1X3whBFszJw_Ui6SuRIB',STORAGE_KEY='sb-tizxfzvgglkokzvsiwkg-auth-token',INITIAL_HASH=location.hash,busy=false;
+var SUPABASE_URL='https://tizxfzvgglkokzvsiwkg.supabase.co',SUPABASE_KEY='sb_publishable_EfCKPSelNMo1X3whBFszJw_Ui6SuRIB',STORAGE_KEY='sb-tizxfzvgglkokzvsiwkg-auth-token',INITIAL_HASH=location.hash,INITIAL_SEARCH=location.search,busy=false;
 function $(id){return document.getElementById(id)}
 function show(t,type){var m=$('authMsg');if(!m)return;m.className=type==='err'?'err':'okmsg';m.textContent=t}
 function isSignup(){var n=$('nameWrap');return n&&!n.classList.contains('hidden')}
@@ -56,13 +56,22 @@ async function installRecoveryFlow(){
     var result=await sb.auth.updateUser({password:p1});if(result.error)throw result.error;
     var user=result.data?.user;if(user?.id){try{await sb.from('profiles').update({must_change_password:false}).eq('id',user.id)}catch(_){}}
     m.className='okmsg';m.textContent='Password berhasil diperbarui. Membuka SIMANTAB…';
-    try{history.replaceState(null,'',location.pathname+location.search)}catch(_){}
+    try{history.replaceState(null,'',location.pathname)}catch(_){}
     setTimeout(function(){location.reload()},500);
    }catch(e){m.className='err';m.textContent=friendlyAuthError(e);b.disabled=false}
   };
  }
  sb.auth.onAuthStateChange(function(event){if(event==='PASSWORD_RECOVERY')setTimeout(openRecovery,0)});
- if(/(?:^|[#&])type=recovery(?:&|$)/.test(String(INITIAL_HASH||''))){var gs=await sb.auth.getSession();if(gs.data?.session)await openRecovery()}
+ var query=new URLSearchParams(INITIAL_SEARCH||'');
+ var isRecoveryHash=/(?:^|[#&])type=recovery(?:&|$)/.test(String(INITIAL_HASH||''));
+ var isRecoveryCode=query.get('simantab_recovery')==='1' && query.has('code');
+ if(isRecoveryHash||isRecoveryCode){
+  for(var t=0;t<8;t++){
+   var gs=await sb.auth.getSession();
+   if(gs.data?.session){await openRecovery();break}
+   await wait(250);
+  }
+ }
 }
 
 function run(){if(busy)return;isSignup()?void runSignup():runLogin()}
