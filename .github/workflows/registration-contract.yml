@@ -1,0 +1,23 @@
+name: SIMANTAB registration contract
+on:
+  push:
+    branches:
+      - feature/cf-registration-unit-asn-nip-from-active-20261014
+  pull_request:
+    paths:
+      - web/registration-ui-final.js
+      - web/finalize-html.mjs
+      - web/tests/registration-contract.test.mjs
+      - supabase/functions/simantab-register-pending/index.ts
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate source syntax and registration rules
+        run: node web/tests/registration-contract.test.mjs
