@@ -26,16 +26,18 @@ if(cloudflare){
  html=html.replace('</body>','<script type="module" src="./institution-operators-admin.js?v=2"></script>\n</body>');
  const portalFile='institution-operator-portal.js';
  const portalSource=await fs.readFile(new URL('./'+portalFile,import.meta.url),'utf8');
- if(!portalSource.includes('SIMANTAB_INSTITUTION_OPERATOR_PORTAL_V1_SCOPED_READONLY') ||
+ if(!portalSource.includes('SIMANTAB_INSTITUTION_OPERATOR_PORTAL_V2_SIX_SERVICES_SCOPED') ||
     !portalSource.includes("rpc('operator_institution_overview')") ||
-    !portalSource.includes("restrictedMenus:true"))throw new Error('Portal Operator Institusi tidak valid.');
+    !portalSource.includes("restrictedMenus:true") ||
+    !portalSource.includes("allowedMenus:tabIds") ||
+    !portalSource.includes("rpc('operator_service_status')"))throw new Error('Portal Operator Institusi tidak valid.');
  await fs.writeFile(path.join(staticDir,portalFile),portalSource);
- html=html.replace('</body>','<script type="module" src="./institution-operator-portal.js?v=1"></script>\n</body>');
+ html=html.replace('</body>','<script type="module" src="./institution-operator-portal.js?v=2"></script>\n</body>');
 
 }
 if((html.match(new RegExp('\\./offline-consultation-monitoring\\.js\\?v='+version,'g'))||[]).length!==1)throw new Error('Offline consultation monitoring harus tepat satu kali.');
 if(cloudflare&&(html.match(/\.\/korwil-submission-monitoring\.js\?v=1/g)||[]).length!==1)throw new Error('Monitoring Korwil harus tepat satu kali.');
 if(cloudflare&&(html.match(/\.\/institution-operators-admin\.js\?v=2/g)||[]).length!==1)throw new Error('Operator Admin harus tepat satu kali.');
-if(cloudflare&&(html.match(/\.\/institution-operator-portal\.js\?v=1/g)||[]).length!==1)throw new Error('Portal Operator harus tepat satu kali.');
+if(cloudflare&&(html.match(/\.\/institution-operator-portal\.js\?v=2/g)||[]).length!==1)throw new Error('Portal Operator harus tepat satu kali.');
 await fs.writeFile(outputPath,html);
 console.log(JSON.stringify({offlineConsultationMonitoring:true,version,cloudflareExcludeKorwil:cloudflare,korwilSubmissionsReadOnly:cloudflare}));
