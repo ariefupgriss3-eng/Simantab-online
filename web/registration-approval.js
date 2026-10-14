@@ -1,4 +1,4 @@
-/* SIMANTAB_REGISTRATION_APPROVAL_V3 */
+/* SIMANTAB_REGISTRATION_APPROVAL_V4 */
 (async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   for (let i = 0; i < 100 && (!window.__simantabSb || !window.showTab); i++) await wait(50);
@@ -32,9 +32,8 @@
     const { data, error } = await sb.from('profiles')
       .select('id,full_name,nip,username,requested_role,unit,position,school_npsn,approval_status,is_active,created_at')
       .eq('approval_status', 'PENDING')
-      .in('requested_role', allowedRoles)
       .order('created_at', { ascending: true })
-      .limit(500);
+      .limit(1000);
 
     if (error) {
       card.innerHTML = '<h3>Persetujuan Akun KS / Pengawas / GTK</h3><div class="err">' +
@@ -43,7 +42,13 @@
       return;
     }
 
-    const rows = data || [];
+    const all = data || [];
+    const rows = all.filter(row => allowedRoles.includes(String(row.requested_role || '')));
+    const institutionals = all.filter(row => ['OPERATOR_SMP', 'OPERATOR_KORWIL'].includes(String(row.requested_role || '')));
+    const needsReview = all.filter(row => !allowedRoles.includes(String(row.requested_role || '')) &&
+      !['OPERATOR_SMP', 'OPERATOR_KORWIL'].includes(String(row.requested_role || '')));
+    const normalizedName = name => String(name || '').toLowerCase()
+      .replace(/[^a-z0-9 ]/g, ' ').trim().split(/ +/).filter(Boolean).sort().join(' ');
     pendingById = new Map(rows.map(row => [row.id, row]));
     const nipCount = new Map();
     for (const row of rows) {
@@ -51,24 +56,57 @@
       if (nip) nipCount.set(nip, (nipCount.get(nip) || 0) + 1);
     }
     card.innerHTML = `<h3 style="margin-top:0">Persetujuan Akun KS / Pengawas / GTK</h3>
+      <div class="small"><b>Total PENDING: ${all.length}</b> • GTK/KS/Pengawas: ${rows.length} • Operator institusi: ${institutionals.length} • Perlu koreksi peran: ${needsReview.length}</div>
       <div class="small">Status <b>AKTIF</b> berbeda dari <b>DISETUJUI</b>.
       Persetujuan hanya dianggap berhasil setelah database menunjukkan <b>APPROVED</b>.
       Periksa NIP dan unit kerja sebelum menyetujui akun ganda.</div>
       ${rows.length ? `<div class="tablewrap"><table>
       <thead><tr><th>Nama / Username</th><th>Peran</th><th>NIP</th><th>Unit kerja</th><th>Status akun</th><th>Aksi</th></tr></thead>
       <tbody>${rows.map(row => {
-        const dup = (nipCount.get(String(row.nip || '').trim()) || 0) > 1;
+        const nip = String(row.nip || '').trim();
+        const sameNip = nip ? rows.filter(other => String(other.nip || '').trim() === nip) : [];
+        const dup = sameNip.length > 1;
+        const nameConflict = dup && (new Set(sameNip.map(other => normalizedName(other.full_name)))).size > 1;
+        const secondary = dup && !row.is_active && sameNip.some(other =>
+          other.id !== row.id && other.is_active && String(other.unit || '').trim());
         return `<tr>
           <td><b>${esc(row.full_name || '-')}</b><div class="small">${esc(row.username || '-')}</div></td>
           <td>${esc(labelRole(row.requested_role))}</td>
-          <td>${esc(row.nip || '-')} ${dup ? '<div class="small" style="color:#b45309">NIP memiliki lebih dari satu akun PENDING</div>' : ''}</td>
+          <td>${esc(row.nip || '-')} ${dup ? '<div class="small" style="color:#b45309">NIP memiliki lebih dari satu akun PENDING</div>' : ''} ${nameConflict ? '<div class="small" style="color:#b91c1c">Nama berbeda untuk NIP yang sama: PERIKSA IDENTITAS</div>' : ''}</td>
           <td>${esc(row.unit || '-')}</td>
           <td><b>PENDING</b><div class="small">${row.is_active ? 'Aktif' : 'Nonaktif'}</div></td>
-          <td><button class="btn success" onclick="__reviewRegistration('${esc(row.id)}','APPROVE')">✓ Setujui</button>
+          <td><button class="btn success" ${nameConflict || secondary ? 'disabled title="Periksa identitas atau gunakan akun utama"' : ''} onclick=__reviewRegistration('${esc(row.id)}','APPROVE')">✓ Setujui</button>
           <button class="btn danger" onclick="__reviewRegistration('${esc(row.id)}','REJECT')">Tolak</button></td>
         </tr>`;
       }).join('')}</tbody></table></div>`
       : '<div class="info">Tidak ada pendaftaran GTK, Kepala Sekolah, atau Pengawas yang menunggu persetujuan.</div>'}`;
+    const operatorBlock = document.createElement('details');
+    operatorBlock.style.marginTop = '12px';
+    const operatorHeading = document.createElement('summary');
+    operatorHeading.textContent = 'Operator institusi PENDING (' + institutionals.length + ') — aktivasi terpisah, bukan persetujuan GTK';
+    const operatorRows = document.createElement('div');
+    operatorRows.className = 'small';
+    operatorRows.style.maxHeight = '220px';
+    operatorRows.style.overflow = 'auto';
+    operatorRows.style.padding = '8px 12px';
+    operatorRows.innerHTML = institutionals.map(row => '<div style="padding:4px 0">' +
+      esc(row.full_name || '-') + ' — ' + esc(labelRole(row.requested_role)) + '</div>').join('') ||
+      '<div>Tidak ada akun operator yang menunggu.</div>';
+    operatorBlock.append(operatorHeading, operatorRows);
+    card.append(operatorBlock);
+
+    if (needsReview.length) {
+      const reviewBox = document.createElement('div');
+      reviewBox.className = 'info';
+      reviewBox.style.marginTop = '12px';
+      reviewBox.innerHTML = '<b>Perlu pemeriksaan peran (' + needsReview.length + '):</b><div class="small">' +
+        needsReview.map(row => '<div style="margin-top:5px">' + esc(row.full_name || '-') +
+          ' — role: ' + esc(row.role || '-') +
+          '; requested_role: ' + esc(row.requested_role || '-') +
+          '; unit: ' + esc(row.unit || '-') +
+          '. Tidak dapat disetujui dari antrean GTK.</div>').join('') + '</div>';
+      card.append(reviewBox);
+    }
     box.prepend(card);
   }
 
@@ -102,6 +140,12 @@
         if ((sameNip || []).some(account => account.id !== id &&
           account.approval_status === 'APPROVED' && account.is_active)) {
           throw new Error('NIP ini sudah memiliki akun aktif yang disetujui. Jangan setujui akun ganda.');
+        }
+        const norm = value => String(value || '').toLowerCase()
+          .replace(/[^a-z0-9 ]/g, ' ').trim().split(/ +/).filter(Boolean).sort().join(' ');
+        if ((sameNip || []).some(account => account.id !== id &&
+          norm(account.full_name) !== norm(target.full_name))) {
+          throw new Error('Ada nama berbeda dengan NIP yang sama. Verifikasi identitas dan perbaiki NIP terlebih dahulu.');
         }
       }
 
@@ -155,5 +199,5 @@
   for (let i = 0; i < 60 && !window.__simantabProfile; i++) await wait(100);
   if (isSA() && document.querySelector('.section.active')?.id === 'users')
     await render();
-  window.__simantabRegistrationApproval = { version: 3, emailConfirmOnApproval: true };
+  window.__simantabRegistrationApproval = { version: 4, emailConfirmOnApproval: true };
 })();
