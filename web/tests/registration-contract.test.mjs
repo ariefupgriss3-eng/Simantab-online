@@ -54,7 +54,7 @@ async function runCase({status, nip = '', unit = 'SDN Sambong 02', role = 'GTK',
     requests.push({url,body:JSON.parse(opts.body)});
     return {ok:true,text:async()=>JSON.stringify({ok:true})};
   };
-  vm.runInNewContext(ui, {document,fetch,setTimeout:()=>0,console}, {timeout:1500});
+  vm.runInNewContext(ui, {document,fetch,setTimeout:()=>0,console,window:{}}, {timeout:1500});
   if(!login){
     const event = {
       type:'click', target:{closest:n=>n==='#authBtn'?{}:null},
