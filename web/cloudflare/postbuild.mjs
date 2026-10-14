@@ -73,11 +73,15 @@ assert(html.includes('./institution-operators-admin.js?v=2') &&
        operatorAdminModule.includes('simantab-institution-operator-provision') &&
        operatorAdminModule.includes('operatorProvisionAll'),
  'Modul operator institusi hanya boleh berada di preview dengan aktivasi tertutup.');
-assert(html.includes('./institution-operator-portal.js?v=2') &&
-       operatorPortalModule.includes('SIMANTAB_INSTITUTION_OPERATOR_PORTAL_V2_SIX_SERVICES_SCOPED') &&
+assert(html.includes('./institution-operator-portal.js?v=3') &&
+       operatorPortalModule.includes('SIMANTAB_INSTITUTION_OPERATOR_PORTAL_V3_CUTI_KGB_VERIFICATION') &&
        operatorPortalModule.includes("rpc('operator_institution_overview')") &&
        operatorPortalModule.includes("['dashboard','profile','operatorCuti','operatorKGB','operatorNotifications','operatorStatus']") &&
        operatorPortalModule.includes("rpc('operator_service_status')") &&
+       operatorPortalModule.includes("rpc('operator_cuti_kgb_queue')") &&
+       operatorPortalModule.includes("rpc('operator_cuti_kgb_decide')") &&
+       operatorPortalModule.includes("rpc('operator_cuti_kgb_documents')") &&
+       operatorPortalModule.includes('simantab-operator-document-view') &&
        operatorPortalModule.includes('readOnly:true') &&
        operatorPortalModule.includes("restrictedMenus:true"),
  'Portal Operator Institusi belum dibatasi pada dashboard, kebutuhan GTK, dan profil.');
@@ -174,6 +178,8 @@ console.log(JSON.stringify({
   institutionOperatorLoginBlocked: true,
   institutionOperatorScopedPortal: true,
   institutionOperatorMenus: ['Dashboard','Profil','Cuti','KGB','Notifikasi','Status Usulan'],
+  operatorCutiKgbVerifyAndForward:true,
+  operatorCutiKgbRequiredServerDocs:true,
   institutionOperatorRlsReadOnly: true,
   dabinDashboardVersion: 3,
   supervisorNavigationGuards: ['redistribusi','diklat','workflow','rgtk','legacy'],
