@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "node secure-build.mjs && node vendor-supabase-local.mjs && node vendor-pdf-libs.mjs && node inject-diklat.mjs && node inject-branding-icons.mjs && node inject-password-toggle.mjs && node inject-gtk-needs-progress.mjs && node inject-school-status-access.mjs && node inject-activity-participant-import.mjs && node inject-activity-digital-invite.mjs && node inject-activity-attendance-success-ux.mjs && node inject-activity-attendance-recap.mjs && node inject-login-channel-hardening.mjs && node inject-login-click-rescue.mjs && node finalize-html.mjs && node inject-gtk-needs-gap-data.mjs && node inject-service-access-policy.mjs && node inject-offline-consultation.mjs && node inject-offline-consultation-monitoring.mjs && node inject-pwa.mjs && node inject-personnel-services.mjs && node inject-ks-needs-onboarding.mjs && node inject-rgtk-monitoring.mjs",
-    "build:cloudflare": "SIMANTAB_BUILD_TARGET=cloudflare npm run build && node cloudflare/postbuild.mjs && node cloudflare/enable-pwa.mjs && node cloudflare/build-social-login-preview.mjs"
+    "build:cloudflare": "SIMANTAB_BUILD_TARGET=cloudflare npm run build && node cloudflare/postbuild.mjs && node cloudflare/harden-gtk-submission.mjs && node cloudflare/enable-pwa.mjs && node cloudflare/build-social-login-preview.mjs"
   },
   "dependencies": {
     "jspdf": "2.5.2",
