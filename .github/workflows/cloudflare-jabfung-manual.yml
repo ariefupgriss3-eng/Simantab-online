@@ -1,0 +1,21 @@
+name: Cloudflare Jabfung manual-mode tests
+on:
+  pull_request:
+    branches:
+      - migration/cloudflare-pages-simantab-20261013
+    paths:
+      - 'web/jabfung-jenjang-enhancement.js'
+      - 'web/tests/cloudflare-jabfung-manual.test.mjs'
+      - '.github/workflows/cloudflare-jabfung-manual.yml'
+  workflow_dispatch:
+jobs:
+  manual-jabfung:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Jabfung JavaScript syntax
+        run: node --check web/jabfung-jenjang-enhancement.js
+      - name: Verify manual mode and security regressions
+        run: node --test web/tests/cloudflare-jabfung-manual.test.mjs

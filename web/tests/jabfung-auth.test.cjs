@@ -78,15 +78,15 @@ async function runCase(opts = {}) {
   return { writes, message };
 }
 
-test('approved logged-in requester creates own submission and invokes AI', async () => {
+test('approved logged-in requester creates own submission without invoking AI', async () => {
   const { writes, message } = await runCase();
   assert.equal(writes.profileChecks, 1);
   assert.equal(writes.submissions.length, 1);
   assert.equal(writes.submissions[0].user_id, 'account-A');
   assert.equal(writes.files[0].user_id, 'account-A');
   assert.match(writes.uploads[0], /^account-A\/submission-1\/jabfung\//);
-  assert.equal(writes.ai.length, 1);
-  assert.match(message.textContent, /Usul terkirim/);
+  assert.equal(writes.ai.length, 0);
+  assert.match(message.textContent, /diperiksa manual/);
 });
 
 for (const [name, options, expected] of [
