@@ -11,6 +11,7 @@ function harness({ profileId=UUID_A, userId=UUID_A, preflight='OK', authError=nu
   const calls = { insert:[], fileInsert:[], upload:[], rpc:[], ai:[], auth:0, tab:[] };
   const msg = { textContent:'', className:'small' };
   const btn = { disabled:false };
+  const modalContent={textContent:'',innerHTML:''};
   const file = { name:'dokumen.pdf', size:fileSize, type:fileType };
   const fileInput = { files:[file], dataset:{ required:'1', code:'SK_CPNS' } };
   const sb = {
@@ -37,7 +38,7 @@ function harness({ profileId=UUID_A, userId=UUID_A, preflight='OK', authError=nu
     document: {
       body:{},
       getElementById(id){
-        return ({jabfungMsg:msg,jabfungSendBtn:btn,jabfungNotes:{value:'Pengajuan Jabfung'}})[id]||null;
+        return ({jabfungMsg:msg,jabfungSendBtn:btn,jabfungNotes:{value:'Pengajuan Jabfung'},jabfungAiContent:modalContent})[id]||null;
       },
       querySelectorAll(selector) { return selector==='.jabfungReqFile' ? [fileInput] : []; }
     },
@@ -48,7 +49,7 @@ function harness({ profileId=UUID_A, userId=UUID_A, preflight='OK', authError=nu
   };
   vm.runInNewContext(source,context,{filename:'jabfung-jenjang-enhancement.js'});
   assert.equal(typeof context.window.submitJabfungJenjang,'function');
-  return {calls,msg,btn,submit:()=>context.window.submitJabfungJenjang()};
+  return {calls,msg,btn,modalContent,runModal:(id)=>context.window.__runJabfungAiFromModal(id),submit:()=>context.window.submitJabfungJenjang()};
 }
 
 test('GTK APPROVED uses authenticated uid for submission, file metadata and upload path', async()=>{
@@ -61,8 +62,8 @@ test('GTK APPROVED uses authenticated uid for submission, file metadata and uplo
   assert.equal(h.calls.insert[0].user_id,UUID_A);
   assert.equal(h.calls.fileInsert[0].user_id,UUID_A);
   assert.ok(h.calls.upload[0].startsWith(UUID_A+'/submission-test-1/jabfung/'));
-  assert.equal(h.calls.ai.length,1);
-  assert.match(h.msg.textContent,/Usul terkirim/);
+  assert.equal(h.calls.ai.length,0);
+  assert.match(h.msg.textContent,/Verifikator dinonaktifkan sementara/);
   assert.equal(h.btn.disabled,false);
 });
 test('pending account blocked without insert or upload',async()=>{
@@ -90,8 +91,14 @@ test('RLS 42501 blocked before any document upload',async()=>{
   assert.equal(h.calls.insert.length,1);assert.equal(h.calls.upload.length,0);
   assert.match(h.msg.textContent,/RLS 42501/);
 });
-test('AI failure after submission preserves submitted result',async()=>{
-  const h=harness({aiError:new Error('AI temporarily unavailable')});await h.submit();
+test('AI suspended: new Jabfung submission succeeds without invoking AI',async()=>{
+  const h=harness({aiError:new Error('AI must never be called')});await h.submit();
   assert.equal(h.calls.insert.length,1);assert.equal(h.calls.upload.length,1);
-  assert.match(h.msg.textContent,/Usul berhasil dikirim/);
+  assert.equal(h.calls.ai.length,0);
+  assert.match(h.msg.textContent,/diperiksa secara manual/);
+});
+test('AI suspended: previously exposed modal action does not invoke verifier',async()=>{
+  const h=harness();await h.runModal('submission-test-1');
+  assert.equal(h.calls.ai.length,0);
+  assert.match(h.modalContent.textContent,/dinonaktifkan sementara/);
 });
