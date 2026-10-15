@@ -10,6 +10,9 @@ on:
       - web/mandatory-personnel-profile.js
       - web/ks-needs-onboarding.js
       - web/tests/cloudflare-mandatory-personnel-profile.test.cjs
+      - web/jabfung-document-revisions.js
+      - web/tests/cloudflare-jabfung-document-revisions.test.cjs
+      - supabase/migrations/20261015162000_jabfung_document_revision_workflow.sql
       - web/tests/registration-contract.test.mjs
       - supabase/functions/simantab-register-pending/index.ts
 jobs:
@@ -27,6 +30,7 @@ jobs:
           node web/tests/registration-contract.test.mjs
           node web/tests/registration-backend.test.mjs
           node --test web/tests/cloudflare-mandatory-personnel-profile.test.cjs
+          node --test web/tests/cloudflare-jabfung-document-revisions.test.cjs
       - name: Cloudflare static build smoke test
         working-directory: web
         run: |
