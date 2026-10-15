@@ -15,7 +15,7 @@ const post=fs.readFileSync(path.join(root,'cloudflare/postbuild.mjs'),'utf8');
 test('database serializes NIP registration and blocks new NIP duplicate',()=>{
  assert.match(sql,/BEFORE INSERT OR UPDATE OF nip ON public\.profiles/);
  assert.match(sql,/pg_advisory_xact_lock\(20261015,hashtext\(v_nip\)\)/);
- assert.match(sql,/regexp_replace\(coalesce\(p\.nip,''\),'\\[\^0-9\]'/);
+ assert.ok(sql.includes("regexp_replace(coalesce(p.nip,''),'[^0-9]','','g')"));
  assert.match(sql,/ERRCODE='23505'/);
  assert.match(sql,/simantab_one_nip_one_account/);
  assert.match(sql,/p\.id IS DISTINCT FROM NEW\.id/);
