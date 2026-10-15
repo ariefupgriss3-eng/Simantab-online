@@ -139,6 +139,10 @@
  const oldShowTab=window.showTab;
  if(typeof oldShowTab==='function')window.showTab=async function(id,...args){
    const target=(eligible()&&(state.blocked||state.loading))?'profile':id;
+   if(target==='profile' && $('profile')?.classList.contains('active') && $('simantabRequiredProfilePanel')){
+     if(id!=='profile')showMessage('Lengkapi dan simpan Profil Kepegawaian sebelum membuka layanan lainnya.',true);
+     return;
+   }
    const result=await oldShowTab.call(this,target,...args);
    if(target==='profile'){renderPanel();releaseProfileNav();}
    return result;
