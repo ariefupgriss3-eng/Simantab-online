@@ -1,4 +1,4 @@
-/* SIMANTAB_REGISTRATION_APPROVAL_V4 */
+/* SIMANTAB_REGISTRATION_APPROVAL_V5 */
 (async () => {
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
   for (let i = 0; i < 100 && (!window.__simantabSb || !window.showTab); i++) await wait(50);
@@ -75,11 +75,45 @@
           <td>${esc(row.nip || '-')} ${dup ? '<div class="small" style="color:#b45309">NIP memiliki lebih dari satu akun PENDING</div>' : ''} ${nameConflict ? '<div class="small" style="color:#b91c1c">Nama berbeda untuk NIP yang sama: PERIKSA IDENTITAS</div>' : ''}</td>
           <td>${esc(row.unit || '-')}</td>
           <td><b>PENDING</b><div class="small">${row.is_active ? 'Aktif' : 'Nonaktif'}</div></td>
-          <td><button class="btn success" ${nameConflict || secondary ? 'disabled title="Periksa identitas atau gunakan akun utama"' : ''} onclick=__reviewRegistration('${esc(row.id)}','APPROVE')">✓ Setujui</button>
-          <button class="btn danger" onclick="__reviewRegistration('${esc(row.id)}','REJECT')">Tolak</button></td>
+          <td><button type="button" class="btn success" ${nameConflict || secondary ? 'disabled title="Periksa identitas atau gunakan akun utama"' : ''} data-regapproval-action="APPROVE" data-regapproval-id="${esc(row.id)}">✓ Setujui</button>
+          <button type="button" class="btn danger" data-regapproval-action="REJECT" data-regapproval-id="${esc(row.id)}">Tolak</button></td>
         </tr>`;
       }).join('')}</tbody></table></div>`
       : '<div class="info">Tidak ada pendaftaran GTK, Kepala Sekolah, atau Pengawas yang menunggu persetujuan.</div>'}`;
+
+    // Use a real DOM listener. Inline onclick strings are malformed in v4 and may be blocked by CSP.
+    card.addEventListener('click', async event => {
+      const button = event.target?.closest?.('button[data-regapproval-action]');
+      if (!button || !card.contains(button) || button.disabled) return;
+      event.preventDefault();
+      const id = button.dataset.regapprovalId;
+      const decision = button.dataset.regapprovalAction;
+      if (!pendingById.has(id) || !['APPROVE', 'REJECT'].includes(decision)) {
+        alert('Data akun tidak sesuai. Segarkan daftar persetujuan.');
+        return;
+      }
+      if (busy) {
+        alert('Persetujuan akun lain sedang diproses. Mohon tunggu.');
+        return;
+      }
+      const originalLabel = button.textContent;
+      button.disabled = true;
+      button.textContent = '⏳ Memeriksa...';
+      try {
+        if (typeof window.__reviewRegistration !== 'function') {
+          throw new Error('Fungsi persetujuan belum siap. Muat ulang halaman.');
+        }
+        await window.__reviewRegistration(id, decision);
+      } catch (error) {
+        alert(error?.message || 'Gagal menjalankan fungsi persetujuan.');
+      } finally {
+        if (button.isConnected) {
+          button.disabled = false;
+          button.textContent = originalLabel;
+        }
+      }
+    });
+
     const operatorBlock = document.createElement('details');
     operatorBlock.style.marginTop = '12px';
     const operatorHeading = document.createElement('summary');
@@ -199,5 +233,5 @@
   for (let i = 0; i < 60 && !window.__simantabProfile; i++) await wait(100);
   if (isSA() && document.querySelector('.section.active')?.id === 'users')
     await render();
-  window.__simantabRegistrationApproval = { version: 4, emailConfirmOnApproval: true };
+  window.__simantabRegistrationApproval = { version: 5, emailConfirmOnApproval: true };
 })();
