@@ -64,7 +64,7 @@ test('backend keeps old files and uses restricted revision writes',()=>{
  assert.match(schema,/v_actual_type IS DISTINCT FROM v_mime/);
 });
 test('build appends only Cloudflare UI module and checks it is present',()=>{
- assert.match(finalizer,/\['jabfung-document-revisions\.js',1\]/);
+ assert.match(finalizer,/\['jabfung-document-revisions\.js',2\]/);
  assert.match(finalizer,/SIMANTAB_BUILD_TARGET === 'cloudflare'/);
  assert.match(cloudflare,/SIMANTAB_JABFUNG_DOCUMENT_REVISIONS_V1_CLOUDFLARE/);
 });
