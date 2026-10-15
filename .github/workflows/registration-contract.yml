@@ -5,6 +5,9 @@ on:
       - feature/cf-registration-unit-asn-nip-from-active-20261014
   pull_request:
     paths:
+      - web/duplicate-nip-audit.js
+      - web/tests/cloudflare-unique-nip-registration.test.cjs
+      - supabase/migrations/20261015203500_unique_nip_registration_guard.sql
       - web/registration-ui-final.js
       - web/finalize-html.mjs
       - web/mandatory-personnel-profile.js
@@ -39,6 +42,7 @@ jobs:
           node --test web/tests/cloudflare-mandatory-personnel-profile.test.cjs
           node --test web/tests/cloudflare-jabfung-document-revisions.test.cjs
           node --test web/tests/cloudflare-smart-upload-recovery.test.cjs
+          node --test web/tests/cloudflare-unique-nip-registration.test.cjs
       - name: Cloudflare static build smoke test
         working-directory: web
         run: |
