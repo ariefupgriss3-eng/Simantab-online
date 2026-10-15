@@ -96,6 +96,7 @@
   let jabfungSending=false;
   let rlsBlockedUntil=0;
   window.submitJabfungJenjang=async()=>{
+    if(window.simantabSmartUpload?.startJabfung) return window.simantabSmartUpload.startJabfung();
     const msg=document.getElementById('jabfungMsg');
     const btn=document.getElementById('jabfungSendBtn');
     if(jabfungSending) return;

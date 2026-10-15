@@ -122,8 +122,26 @@ for (const file of required) {
 
 // Cloudflare preview only: signal authentication completion to role modules.
 // Original HTML sets window.__simantabProfile before applyProfile/buildNav.
+const smartUpload=await fs.readFile(path.join(output,'smart-upload-recovery.js'),'utf8');
+assert(html.includes('./smart-upload-recovery.js?v=1') &&
+  html.includes('./jabfung-jenjang-enhancement.js?v=6') &&
+  html.includes('./kp-enhancement.js?v=6') &&
+  html.includes('./cuti-requirements.js?v=2') &&
+  smartUpload.includes('SIMANTAB_SMART_UPLOAD_RECOVERY_V1_FREE_CLOUDFLARE') &&
+  smartUpload.includes("DB_NAME='simantab-smart-upload-free-v1'") &&
+  smartUpload.includes('crypto.randomUUID()') &&
+  smartUpload.includes("'submission_files'"),
+  'Smart Upload Recovery versi gratis belum terhubung pada build Cloudflare.');
+const jabfungEnhanced=await fs.readFile(path.join(output,'jabfung-jenjang-enhancement.js'),'utf8');
+const kpEnhanced=await fs.readFile(path.join(output,'kp-enhancement.js'),'utf8');
+const cutiEnhanced=await fs.readFile(path.join(output,'cuti-requirements.js'),'utf8');
+assert(jabfungEnhanced.includes('simantabSmartUpload?.startJabfung') &&
+  kpEnhanced.includes('simantabSmartUpload?.startKp') &&
+  cutiEnhanced.includes('simantabSmartUpload?.startCuti'),
+  'Pengunggahan Jabfung, KP, atau Cuti belum memakai antrean pemulihan.');
+
 const jabfungRevision=await fs.readFile(path.join(output,'jabfung-document-revisions.js'),'utf8');
-assert(html.includes('./jabfung-document-revisions.js?v=1') &&
+assert(html.includes('./jabfung-document-revisions.js?v=2') &&
   jabfungRevision.includes('SIMANTAB_JABFUNG_DOCUMENT_REVISIONS_V1_CLOUDFLARE') &&
   jabfungRevision.includes("'jabfung_revision_open'") &&
   jabfungRevision.includes("'jabfung_revision_submit'") &&

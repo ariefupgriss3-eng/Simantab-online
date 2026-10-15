@@ -343,6 +343,14 @@ if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
 }
 
 if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
+  const smartUploadFile='smart-upload-recovery.js';
+  const code=await fs.readFile(new URL('./'+smartUploadFile,import.meta.url),'utf8');
+  if(!code.includes('SIMANTAB_SMART_UPLOAD_RECOVERY_V1_FREE_CLOUDFLARE'))
+    throw new Error('Smart Upload Recovery gratis tidak tersedia.');
+  await fs.writeFile(path.join(staticDir,smartUploadFile),code,'utf8');
+}
+
+if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
   const profileModuleFile='mandatory-personnel-profile.js';
   const profileModule=await fs.readFile(new URL('./'+profileModuleFile,import.meta.url),'utf8');
   if(!profileModule.includes('SIMANTAB_PROFILE_WAJIB_LENGKAP_V1_CLOUDFLARE'))
@@ -351,8 +359,8 @@ if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
 }
 
 const modules=[
- ['kp-enhancement.js',5],
- ['jabfung-jenjang-enhancement.js',5],
+ ['kp-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 6 : 5],
+ ['jabfung-jenjang-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 6 : 5],
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',9],
  ['registration-approval.js',5],
@@ -387,7 +395,7 @@ const modules=[
  ['pengawas-dashboard-kadin.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 4 : 2],
  ['korwil-scope-dashboard.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 5 : 3],
  ['korwil-dashboard-title.js',1],
- ['cuti-requirements.js',1],
+ ['cuti-requirements.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 2 : 1],
  ['super-admin-merge-pengawas.js',1],
  ['diklat-ks-bcks-v32.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 20 : 19],
  ['ui-branding-icons.js',3],
@@ -431,7 +439,7 @@ const modules=[
  ['bcks-substansi-simulator-v5.js',55],
  ['bcks-individual-readiness.js',5],
  ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['mandatory-personnel-profile.js',2]] : []),
- ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['jabfung-document-revisions.js',1]] : [])
+ ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['jabfung-document-revisions.js',2],['smart-upload-recovery.js',1]] : [])
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
