@@ -38,6 +38,9 @@ once('submission_id:sub.id,user_id:profile.id,storage_path:path',
 once("}catch(e){$('subMsg').className='err';$('subMsg').textContent=e.message||String(e)}finally{",
      "}catch(e){$('subMsg').className='err';$('subMsg').textContent=(e?.code==='42501'||/row.level.security/i.test(e?.message||''))?'Usulan belum tersimpan karena permintaan ditolak keamanan database. Jangan klik Kirim berulang kali; hubungi admin SIMANTAB.':(e.message||String(e))}finally{");
 if(fn.includes('user_id:profile.id'))throw new Error('Unverified profile ID still inserted.');
+const recoveryAnchor="window.sendSubmission=async()=>{";
+if(!fn.includes(recoveryAnchor))throw new Error('No generic upload recovery anchor.');
+fn=fn.replace(recoveryAnchor,recoveryAnchor+"\n if(window.simantabSmartUpload?.startGeneric) return window.simantabSmartUpload.startGeneric(pendingService?.type,pendingService?.title,selectedFiles);");
 html = html.slice(0,start)+fn+html.slice(finish);
 await fs.writeFile(filename,html,'utf8');
 console.log(JSON.stringify({genericSubmissionAuthOwner:true,operatorProtected:true,rlsUnchanged:true}));
