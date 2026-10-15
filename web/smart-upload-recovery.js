@@ -112,7 +112,7 @@ function makeJob({kind,serviceType,title,description='',leaveType=null,details=n
  });
  return {version:1,id,ownerId:uid,submissionId:subId,revisionId,kind,serviceType,title,description,
   leaveType,details,files,maxBytes,createdAt:Date.now(),expiresAt:Date.now()+TTL_MS,
-  updatedAt:Date.now(),stage:'TERSIMpan_LOKAL',lastError:'',serverSubmissionCreated:false};
+  updatedAt:Date.now(),stage:'TERSIMPAN_LOKAL',lastError:'',serverSubmissionCreated:false};
 }
 async function existingJob(uid,kind,serviceType,revisionId=null){
  const jobs=await ownerJobs(uid);
@@ -209,6 +209,7 @@ async function ensureSubmission(job){
  if(known){
   if(known.user_id!==job.ownerId||known.service_type!==job.serviceType)
    throw new Error('Nomor pengajuan ditemukan tetapi tidak sesuai akun/jenis layanan.');
+  job.serverSubmissionCreated=true;await put(job);
   return;
  }
  const values={id:job.submissionId,user_id:job.ownerId,service_type:job.serviceType,
@@ -391,23 +392,35 @@ async function showPanel(){
 async function autoResume(){
  if(busy||!online()||liveProfileGate()||!P()?.id)return;
  const jobs=await ownerJobs(P().id);
- if(jobs.length)await resume(jobs[0].id);
+ for(const job of jobs){
+  if(!online()||liveProfileGate())break;
+  const outcome=await resume(job.id);
+  if(!outcome?.success)break;
+ }
 }
 function feedback(id,text,isOk=false){
  const el=getMsg(id);
  if(el){el.className=isOk?'okmsg':'small';el.textContent=text;}
 }
 async function invokeStart(opts,uiId){
- try{return await start(opts,uiId)}
+ try{return await start(typeof opts==='function'?opts():opts,uiId)}
  catch(e){feedback(uiId,'Smart Upload: '+(e.message||String(e)));return {error:String(e?.message||e)}}
 }
 const api={
  version:1,
- startJabfung:()=>invokeStart(collectJabfung(),'jabfungMsg'),
- startKp:()=>invokeStart(collectKp(),'kpMsg'),
- startGeneric:(type,title,selected)=>invokeStart(collectGeneric(type,title,selected),'subMsg'),
- startCuti:()=>invokeStart(collectCuti(),'subMsg'),
- startRevision:form=>invokeStart(collectRevision(form),null),
+ startJabfung:()=>invokeStart(collectJabfung,'jabfungMsg'),
+ startKp:()=>invokeStart(collectKp,'kpMsg'),
+ startGeneric:(type,title,selected)=>invokeStart(()=>collectGeneric(type,title,selected),'subMsg'),
+ startCuti:()=>invokeStart(collectCuti,'subMsg'),
+ startRevision:async form=>{
+  const result=await invokeStart(()=>collectRevision(form),null);
+  const box=form?.querySelector?.('.jfRevisionFeedback');
+  if(box)box.textContent=result?.success?'✅ Berkas perbaikan terkirim ke server.':
+    result?.error?'Gagal memproses: '+result.error:
+    result?.queued?'Antrean tersimpan. Buka Status Usulan untuk melihat atau melanjutkan berkas.':
+    'Pengiriman belum dilanjutkan.';
+  return result;
+ },
  resume,showPanel,clearOwner,
  // The safe functions below are public only for internal integration tests.
  __test:{sanitizeName,assertFile,makeJob,existingJob,readOne,put,remove,listAll,ownerJobs}
