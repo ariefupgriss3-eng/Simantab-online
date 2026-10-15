@@ -68,7 +68,7 @@
         const dup = sameNip.length > 1;
         const nameConflict = dup && (new Set(sameNip.map(other => normalizedName(other.full_name)))).size > 1;
         const secondary = dup && !row.is_active && sameNip.some(other =>
-          other.id !== row.id && other.is_active && String(other.unit || '').trim());
+          other.id !== row.id && other.is_active);
         return `<tr>
           <td><b>${esc(row.full_name || '-')}</b><div class="small">${esc(row.username || '-')}</div></td>
           <td>${esc(labelRole(row.requested_role))}</td>
