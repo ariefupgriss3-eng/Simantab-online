@@ -42,5 +42,7 @@ const recoveryAnchor="window.sendSubmission=async()=>{";
 if(!fn.includes(recoveryAnchor))throw new Error('No generic upload recovery anchor.');
 fn=fn.replace(recoveryAnchor,recoveryAnchor+"\n if(window.simantabSmartUpload?.startGeneric) return window.simantabSmartUpload.startGeneric(pendingService?.type,pendingService?.title,selectedFiles);");
 html = html.slice(0,start)+fn+html.slice(finish);
+if(!html.includes('simantabSmartUpload?.startGeneric'))
+ throw new Error('Pemulihan berkas layanan GTK umum tidak terpasang.');
 await fs.writeFile(filename,html,'utf8');
 console.log(JSON.stringify({genericSubmissionAuthOwner:true,operatorProtected:true,rlsUnchanged:true}));
