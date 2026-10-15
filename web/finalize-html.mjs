@@ -335,6 +335,14 @@ if(!/SIMANTAB_BCKS_INDIVIDUAL_READINESS_V1/.test(bcksIndividualReadinessCode))th
 await fs.writeFile(path.join(staticDir,bcksIndividualReadinessFile),bcksIndividualReadinessCode);
 
 if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
+  const jabfungRevisionFile='jabfung-document-revisions.js';
+  const code=await fs.readFile(new URL('./'+jabfungRevisionFile,import.meta.url),'utf8');
+  if(!code.includes('SIMANTAB_JABFUNG_DOCUMENT_REVISIONS_V1_CLOUDFLARE'))
+    throw new Error('Modul perbaikan dokumen Jabfung Cloudflare tidak valid.');
+  await fs.writeFile(path.join(staticDir,jabfungRevisionFile),code,'utf8');
+}
+
+if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
   const profileModuleFile='mandatory-personnel-profile.js';
   const profileModule=await fs.readFile(new URL('./'+profileModuleFile,import.meta.url),'utf8');
   if(!profileModule.includes('SIMANTAB_PROFILE_WAJIB_LENGKAP_V1_CLOUDFLARE'))
@@ -422,7 +430,8 @@ const modules=[
  ['bcks-pro-thinking-v1.js',2],
  ['bcks-substansi-simulator-v5.js',55],
  ['bcks-individual-readiness.js',5],
- ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['mandatory-personnel-profile.js',2]] : [])
+ ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['mandatory-personnel-profile.js',2]] : []),
+ ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['jabfung-document-revisions.js',1]] : [])
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
