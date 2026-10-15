@@ -27,6 +27,7 @@ function renderForm(){
 const prevOpen=window.openSubmission;
 window.openSubmission=(type,title)=>{const r=prevOpen(type,title);cutiActive=type==='CUTI';if(cutiActive)setTimeout(renderForm,30);return r};
 window.sendCutiSubmission=async()=>{
+ if(window.simantabSmartUpload?.startCuti) return window.simantabSmartUpload.startCuti();
  const type=$('cutiType')?.value||'',cfg=TYPES[type],msg=$('subMsg'),btn=$('sendCutiBtn');if(!cfg){msg.className='err';msg.textContent='Pilih jenis cuti terlebih dahulu.';return}
  const files=[];for(const [code,label] of cfg.docs){const f=$(`cutiFile_${code}`)?.files?.[0],bad=fileBad(f);if(bad){msg.className='err';msg.textContent=`${label}: ${bad}`;return}files.push({code,label,file:f})}
  btn.disabled=true;msg.className='small';msg.textContent='Mengirim usulan dan berkas cuti...';let sub=null;const uploaded=[];
