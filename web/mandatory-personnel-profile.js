@@ -1,8 +1,9 @@
+/* SIMANTAB_PROFILE_WAJIB_LENGKAP_V2_CLOUDFLARE */
 /* SIMANTAB_PROFILE_WAJIB_LENGKAP_V1_CLOUDFLARE */
 (()=>{
  'use strict';
  const PERSONAL_ROLES=new Set(['GTK','KEPALA_SEKOLAH','PENGAWAS','KORWIL']);
- const READ_FIELDS='id,full_name,nip,pangkat,golongan_ruang,unit,address,phone,role,approval_status,is_active';
+ const READ_FIELDS='id,full_name,nip,pangkat,golongan_ruang,unit,unit_gtk,address,phone,role,approval_status,is_active';
  const state={userId:null,profile:null,loading:false,blocked:false,saving:false,error:''};
  const $=id=>document.getElementById(id);
  const getProfile=()=>window.__simantabProfile||null;
@@ -11,13 +12,14 @@
  const trim=x=>String(x??'').trim();
  const escapeHtml=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const normalizePhone=x=>trim(x).replace(/[\s().-]/g,'');
+ const effectiveUnit=p=>trim(p?.unit_gtk)||trim(p?.unit);
  function missingFields(v){
    const missing=[];
    if(trim(v?.full_name).length<3)missing.push('Nama lengkap beserta gelar');
    if(!/^\d{18}$/.test(trim(v?.nip)))missing.push('NIP 18 digit');
    if(trim(v?.pangkat).length<2)missing.push('Pangkat');
    if(trim(v?.golongan_ruang).length<2)missing.push('Golongan/ruang');
-   if(trim(v?.unit).length<3)missing.push('Unit kerja');
+   if(effectiveUnit(v).length<3)missing.push('Unit kerja');
    if(trim(v?.address).length<8)missing.push('Alamat lengkap');
    if(!/^(?:\+62|62|0)8\d{7,12}$/.test(normalizePhone(v?.phone)))missing.push('Nomor WhatsApp aktif');
    return missing;
@@ -50,7 +52,7 @@
       field('simPersonnelNip','NIP',v.nip,'inputmode="numeric" pattern="[0-9]{18}" minlength="18" maxlength="18" autocomplete="off"')+
       field('simPersonnelPangkat','Pangkat',v.pangkat,'placeholder="Contoh: Pembina" maxlength="100"')+
       field('simPersonnelGolongan','Golongan/ruang',v.golongan_ruang,'placeholder="Contoh: IV/a" maxlength="35"')+
-      field('simPersonnelUnit','Unit kerja',v.unit,'placeholder="Nama sekolah/satuan kerja" maxlength="200"')+
+      field('simPersonnelUnit','Unit kerja',effectiveUnit(v),'placeholder="Nama sekolah/satuan kerja" maxlength="200"')+
       '<div class="field"><label for="simPersonnelAddress">Alamat lengkap <strong style="color:#b42318">*</strong></label><textarea id="simPersonnelAddress" rows="3" maxlength="700" required>'+escapeHtml(v.address)+'</textarea></div>'+
       field('simPersonnelWa','Nomor WhatsApp',v.phone,'type="tel" inputmode="tel" autocomplete="tel" placeholder="Contoh: 081234567890" maxlength="20"')+
     '</div><p class="small">Gunakan NIP 18 angka dan nomor WA Indonesia yang aktif (08... atau +628...). Semua kolom bertanda * wajib diisi.</p>'+
@@ -61,7 +63,7 @@
  function collectForm(){
    const value=id=>trim($(id)?.value);
    return {full_name:value('simPersonnelFullName'),nip:value('simPersonnelNip'),pangkat:value('simPersonnelPangkat'),
-     golongan_ruang:value('simPersonnelGolongan'),unit:value('simPersonnelUnit'),address:value('simPersonnelAddress'),
+     golongan_ruang:value('simPersonnelGolongan'),unit_gtk:value('simPersonnelUnit'),address:value('simPersonnelAddress'),
      phone:normalizePhone(value('simPersonnelWa'))};
  }
  function showMessage(message,isError=false){
@@ -95,6 +97,7 @@
      if(!saved||saved.id!==userId||missingFields(saved).length)
        throw new Error('Profil belum tersimpan lengkap di database. Periksa isian dan coba kembali.');
      state.profile=saved;state.blocked=false;state.error='';
+     const unitLabel=$('userUnit');if(unitLabel)unitLabel.textContent=effectiveUnit(saved);
      showMessage('✅ Profil tersimpan dan terverifikasi. Menyegarkan aplikasi untuk membuka layanan...');
      window.setTimeout(()=>window.location.reload(),700);
    }catch(e){
@@ -124,6 +127,7 @@
      if(!data||data.id!==getProfile()?.id)throw new Error('Identitas profil tidak sesuai akun yang login.');
      state.profile=data;
      state.blocked=missingFields(data).length>0;
+     const unitLabel=$('userUnit');if(unitLabel)unitLabel.textContent=effectiveUnit(data);
      if(!data.is_active||data.approval_status!=='APPROVED')state.blocked=true;
    }catch(e){
      state.profile={...p,pangkat:'',golongan_ruang:'',address:p.address||'',phone:p.phone||''};
@@ -167,5 +171,5 @@
  window.addEventListener('simantab:profile-ready',()=>{loadProfile().catch(e=>{state.loading=false;state.blocked=true;state.error=trim(e?.message||e);renderPanel(true);});});
  if(getProfile()?.id)setTimeout(()=>loadProfile(),0);
  window.simantabSavePersonnelProfile=saveProfile;
- window.__simantabMandatoryPersonnelProfile={version:1,roles:[...PERSONAL_ROLES],missingFields,isBlocked:()=>eligible()&&(state.blocked||state.loading)};
+ window.__simantabMandatoryPersonnelProfile={version:2,roles:[...PERSONAL_ROLES],missingFields,effectiveUnit,isBlocked:()=>eligible()&&(state.blocked||state.loading)};
 })();

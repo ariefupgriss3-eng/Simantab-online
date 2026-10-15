@@ -422,7 +422,7 @@ const modules=[
  ['bcks-pro-thinking-v1.js',2],
  ['bcks-substansi-simulator-v5.js',55],
  ['bcks-individual-readiness.js',5],
- ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['mandatory-personnel-profile.js',1]] : [])
+ ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['mandatory-personnel-profile.js',2]] : [])
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
