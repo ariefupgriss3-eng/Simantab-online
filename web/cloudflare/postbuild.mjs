@@ -122,6 +122,14 @@ for (const file of required) {
 
 // Cloudflare preview only: signal authentication completion to role modules.
 // Original HTML sets window.__simantabProfile before applyProfile/buildNav.
+const jabfungRevision=await fs.readFile(path.join(output,'jabfung-document-revisions.js'),'utf8');
+assert(html.includes('./jabfung-document-revisions.js?v=1') &&
+  jabfungRevision.includes('SIMANTAB_JABFUNG_DOCUMENT_REVISIONS_V1_CLOUDFLARE') &&
+  jabfungRevision.includes("'jabfung_revision_open'") &&
+  jabfungRevision.includes("'jabfung_revision_submit'") &&
+  jabfungRevision.includes("'jabfung_revision_close'"),
+  'Alur perbaikan dokumen Jabfung tidak tercantum pada build Cloudflare.');
+
 const mandatoryProfile=await fs.readFile(path.join(output,'mandatory-personnel-profile.js'),'utf8');
 assert(html.includes('./mandatory-personnel-profile.js?v=2') &&
   mandatoryProfile.includes('SIMANTAB_PROFILE_WAJIB_LENGKAP_V1_CLOUDFLARE') &&
