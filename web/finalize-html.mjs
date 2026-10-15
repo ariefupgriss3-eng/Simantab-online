@@ -343,6 +343,14 @@ if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
 }
 
 if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
+  const auditFile='duplicate-nip-audit.js';
+  const code=await fs.readFile(new URL('./'+auditFile,import.meta.url),'utf8');
+  if(!code.includes('SIMANTAB_SUPER_ADMIN_DUPLICATE_NIP_AUDIT_V1_CLOUDFLARE'))
+    throw new Error('Modul audit NIP ganda khusus Super Admin tidak valid.');
+  await fs.writeFile(path.join(staticDir,auditFile),code,'utf8');
+}
+
+if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
   const smartUploadFile='smart-upload-recovery.js';
   const code=await fs.readFile(new URL('./'+smartUploadFile,import.meta.url),'utf8');
   if(!code.includes('SIMANTAB_SMART_UPLOAD_RECOVERY_V1_FREE_CLOUDFLARE'))
@@ -414,7 +422,7 @@ const modules=[
  ['activity-attendance-recap.js',2],
  ['login-channel-hardening.js',3],
  ['login-click-rescue.js',3],
- ['registration-ui-final.js',6],
+ ['registration-ui-final.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 7 : 6],
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',7],
  ['session-boundary-hardening.js',1],
@@ -439,7 +447,8 @@ const modules=[
  ['bcks-substansi-simulator-v5.js',55],
  ['bcks-individual-readiness.js',5],
  ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['mandatory-personnel-profile.js',2]] : []),
- ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['jabfung-document-revisions.js',2],['smart-upload-recovery.js',1]] : [])
+ ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['jabfung-document-revisions.js',2],['smart-upload-recovery.js',1]] : []),
+ ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['duplicate-nip-audit.js',1]] : [])
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
