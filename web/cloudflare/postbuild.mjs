@@ -123,7 +123,7 @@ for (const file of required) {
 // Cloudflare preview only: signal authentication completion to role modules.
 // Original HTML sets window.__simantabProfile before applyProfile/buildNav.
 const mandatoryProfile=await fs.readFile(path.join(output,'mandatory-personnel-profile.js'),'utf8');
-assert(html.includes('./mandatory-personnel-profile.js?v=1') &&
+assert(html.includes('./mandatory-personnel-profile.js?v=2') &&
   mandatoryProfile.includes('SIMANTAB_PROFILE_WAJIB_LENGKAP_V1_CLOUDFLARE') &&
   mandatoryProfile.includes("sb.from('profiles').update(payload)") &&
   mandatoryProfile.includes("state.blocked||state.loading"),
