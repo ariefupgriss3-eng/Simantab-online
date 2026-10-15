@@ -78,6 +78,7 @@
   };
 
   window.submitKpSop=async()=>{
+    if(window.simantabSmartUpload?.startKp) return window.simantabSmartUpload.startKp();
     const msg=document.getElementById('kpMsg'),btn=document.getElementById('kpSendBtn'),profile=getProfile();
     if(kpSending)return;
     kpSending=true;
