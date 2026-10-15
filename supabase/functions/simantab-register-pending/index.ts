@@ -31,10 +31,30 @@ Deno.serve(async(req)=>{
    const {data:school,error:se}=await admin.from("school_master").select("npsn,school_name,is_active").eq("npsn",npsn).eq("is_active",true).maybeSingle();
    if(se)throw se;if(!school)return reply({error:"NPSN tidak ditemukan pada Master Sekolah aktif."},400);
   }
+  // A server-side preflight gives a helpful response before Auth attempts to create
+  // an account; the atomic DB trigger is authoritative against concurrent requests.
+  if(nip){
+   const {data:matches,error:existingNipError}=await admin.from("profiles")
+     .select("id").eq("nip",nip).limit(1);
+   if(existingNipError)throw existingNipError;
+   if(matches?.length)return reply({
+     code:"NIP_ALREADY_REGISTERED",
+     error:"NIP sudah terdaftar di SIMANTAB. Jangan mendaftar ulang. Gunakan Masuk, Lupa Password, atau hubungi Super Admin untuk memulihkan akun."
+   },409);
+  }
   const meta={full_name:fullName,account_channel:"GTK",requested_role:role,nip:nip||"",school_npsn:role==="KEPALA_SEKOLAH"?npsn:"",unit:requireIdentity?unit:"",employment_status:requireIdentity?employment:"",registration_note:`Pendaftaran mandiri ${role} melalui SIMANTAB (server)`};
   const {data,error}=await admin.auth.admin.createUser({email,password,email_confirm:true,user_metadata:meta});
   if(error){
-   const m=String(error.message||error);if(/already|registered|exists/i.test(m))return reply({error:"Email sudah terdaftar. Jika sebelumnya sudah mendaftar, gunakan Masuk atau tunggu persetujuan Super Admin sesuai jenis akun."},409);throw error;
+   const m=String(error.message||error);
+   if(nip&&/database error creating new user|NIP sudah terdaftar|simantab_one_nip_one_account|unique constraint/i.test(m)){
+     const {data:matches}=await admin.from("profiles").select("id").eq("nip",nip).limit(1);
+     if(matches?.length)return reply({
+       code:"NIP_ALREADY_REGISTERED",
+       error:"NIP sudah terdaftar di SIMANTAB. Gunakan Masuk, Lupa Password, atau hubungi Super Admin. Jangan membuat akun baru."
+     },409);
+   }
+   if(/already|registered|exists/i.test(m))return reply({code:"EMAIL_ALREADY_REGISTERED",error:"Email sudah terdaftar. Jika sebelumnya sudah mendaftar, gunakan Masuk atau tunggu persetujuan Super Admin sesuai jenis akun."},409);
+   throw error;
   }
   if(!data.user)return reply({error:"Akun gagal dibuat."},400);
   const {data:profile,error:pe}=await admin.from("profiles").select("id,full_name,requested_role,approval_status,is_active,school_npsn").eq("id",data.user.id).single();
