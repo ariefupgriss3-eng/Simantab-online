@@ -334,6 +334,14 @@ const bcksIndividualReadinessCode=await fs.readFile(new URL(`./${bcksIndividualR
 if(!/SIMANTAB_BCKS_INDIVIDUAL_READINESS_V1/.test(bcksIndividualReadinessCode))throw new Error('BCKS individual readiness v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksIndividualReadinessFile),bcksIndividualReadinessCode);
 
+if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
+  const profileModuleFile='mandatory-personnel-profile.js';
+  const profileModule=await fs.readFile(new URL('./'+profileModuleFile,import.meta.url),'utf8');
+  if(!profileModule.includes('SIMANTAB_PROFILE_WAJIB_LENGKAP_V1_CLOUDFLARE'))
+    throw new Error('Modul profil wajib Cloudflare belum valid.');
+  await fs.writeFile(path.join(staticDir,profileModuleFile),profileModule,'utf8');
+}
+
 const modules=[
  ['kp-enhancement.js',5],
  ['jabfung-jenjang-enhancement.js',5],
@@ -413,7 +421,8 @@ const modules=[
  ['bcks-pro-v2-stems.js',1],
  ['bcks-pro-thinking-v1.js',2],
  ['bcks-substansi-simulator-v5.js',55],
- ['bcks-individual-readiness.js',5]
+ ['bcks-individual-readiness.js',5],
+ ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['mandatory-personnel-profile.js',1]] : [])
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
 for(const file of ['jspdf.umd.min.js','jspdf.plugin.autotable.min.js']){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`Library PDF lokal tidak ditemukan: ${file}`)}}
