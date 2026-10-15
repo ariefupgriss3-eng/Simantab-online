@@ -69,7 +69,7 @@ test('save writes only seven personnel fields for the authenticated owner',()=>{
   assert.doesNotMatch(source,/service_role|delete\(\)|DROP TABLE/);
 });
 test('build keeps mandatory module Cloudflare-only and KS profile remains reachable',()=>{
-  assert.match(finalizer,/SIMANTAB_BUILD_TARGET === 'cloudflare'\) \? \[\['mandatory-personnel-profile\.js',1\]\]/);
+  assert.match(finalizer,/SIMANTAB_BUILD_TARGET === 'cloudflare' \? \[\['mandatory-personnel-profile\.js',1\]\]/);
   assert.match(postbuild,/SIMANTAB_PROFILE_WAJIB_LENGKAP_V1_CLOUDFLARE/);
   assert.match(ks,/!\['needs','profile'\]\.includes\(id\)/);
   assert.match(ks,/!\['needs','profile'\]\.includes\(button\.dataset\.tab\)/);
