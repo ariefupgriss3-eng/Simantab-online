@@ -122,6 +122,16 @@ for (const file of required) {
 
 // Cloudflare preview only: signal authentication completion to role modules.
 // Original HTML sets window.__simantabProfile before applyProfile/buildNav.
+const mandatoryProfile=await fs.readFile(path.join(output,'mandatory-personnel-profile.js'),'utf8');
+assert(html.includes('./mandatory-personnel-profile.js?v=1') &&
+  mandatoryProfile.includes('SIMANTAB_PROFILE_WAJIB_LENGKAP_V1_CLOUDFLARE') &&
+  mandatoryProfile.includes("sb.from('profiles').update(payload)") &&
+  mandatoryProfile.includes("state.blocked||state.loading"),
+  'Profil wajib lengkap atau penjagaan akses layanan belum terpasang.');
+const ksProfileGate=await fs.readFile(path.join(output,'ks-needs-onboarding.js'),'utf8');
+assert(ksProfileGate.includes("!['needs','profile'].includes(id)"),
+  'Profil Kepala Sekolah masih terhalang kewajiban Kebutuhan GTK Riil.');
+
 const loginAnchor=/\bapplyProfile\(\);\s*buildNav\(\);/g;
 const loginMatches=[...html.matchAll(loginAnchor)];
 assert(loginMatches.length===1, 'Titik autentikasi setelah buildNav tidak unik.');
