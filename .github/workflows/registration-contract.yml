@@ -10,6 +10,13 @@ on:
       - web/mandatory-personnel-profile.js
       - web/ks-needs-onboarding.js
       - web/tests/cloudflare-mandatory-personnel-profile.test.cjs
+      - web/smart-upload-recovery.js
+      - web/jabfung-jenjang-enhancement.js
+      - web/kp-enhancement.js
+      - web/cuti-requirements.js
+      - web/cloudflare/harden-gtk-submission.mjs
+      - web/cloudflare/postbuild.mjs
+      - web/tests/cloudflare-smart-upload-recovery.test.cjs
       - web/jabfung-document-revisions.js
       - web/tests/cloudflare-jabfung-document-revisions.test.cjs
       - supabase/migrations/20261015162000_jabfung_document_revision_workflow.sql
@@ -31,6 +38,7 @@ jobs:
           node web/tests/registration-backend.test.mjs
           node --test web/tests/cloudflare-mandatory-personnel-profile.test.cjs
           node --test web/tests/cloudflare-jabfung-document-revisions.test.cjs
+          node --test web/tests/cloudflare-smart-upload-recovery.test.cjs
       - name: Cloudflare static build smoke test
         working-directory: web
         run: |
