@@ -307,10 +307,11 @@ async function processNormal(job){
   if(await existingFileMetadata(job,file)){
    file.done=true;await put(job);continue;
   }
-  if(!file.done){
-   await uploadBlob(job,file);
-   file.done=true;job.updatedAt=Date.now();await put(job);
-  }
+  // Retry the deterministic Storage path even when a prior attempt uploaded bytes
+  // but failed before inserting metadata. A 409 is accepted only after checking
+  // the exact object name, MIME type and size on the server.
+  await uploadBlob(job,file);
+  file.done=true;job.updatedAt=Date.now();await put(job);
   await submitMetadata(job,file);
  }
  const {data:verified,error}=await sb.from('submission_files')
