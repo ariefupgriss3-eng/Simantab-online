@@ -25,7 +25,7 @@
 
   function setNavigation() {
     document.querySelectorAll('#nav .navbtn[data-tab]').forEach(button => {
-      const shouldBlock = required && button.dataset.tab !== 'needs';
+      const shouldBlock = required && !['needs','profile'].includes(button.dataset.tab);
       if (shouldBlock) {
         if (!button.dataset.ksNeedsBlocked) {
           button.dataset.ksNeedsBlocked = '1';
@@ -79,7 +79,7 @@
 
   const originalShowTab = window.showTab;
   window.showTab = async function (id) {
-    if (required && id !== 'needs') id = 'needs';
+    if (required && !['needs','profile'].includes(id)) id = 'needs';
     const result = await originalShowTab.call(this, id);
     if (required) showBanner();
     return result;
