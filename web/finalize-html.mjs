@@ -197,7 +197,7 @@ headAndBody=headAndBody.replace(/<script\s+src="\.\/(?:jspdf\.umd\.min\.js|jspdf
 
 const approvalFile='registration-approval.js';
 const approvalCode=await fs.readFile(new URL(`./${approvalFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_REGISTRATION_APPROVAL_V4/.test(approvalCode))throw new Error('Registration approval v4 tidak valid.');
+if(!/SIMANTAB_REGISTRATION_APPROVAL_V5/.test(approvalCode))throw new Error('Registration approval v5 tidak valid.');
 await fs.writeFile(path.join(staticDir,approvalFile),approvalCode);
 
 const registrationUiFile='registration-ui-final.js';
@@ -339,7 +339,7 @@ const modules=[
  ['jabfung-jenjang-enhancement.js',5],
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',9],
- ['registration-approval.js',4],
+ ['registration-approval.js',5],
  ['kadin-dashboard-v2.js',14],
  ['gtk-infographic-details.js',2],
  ['dinas-login-enhancement.js',2],
