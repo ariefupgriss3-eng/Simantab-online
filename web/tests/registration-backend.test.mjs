@@ -18,7 +18,7 @@ const VC='https://simantab-online.vercel.app';
 const base={role:'GTK',email:'qa@example.invalid',password:'TestingOnly12!',full_name:'SIMANTAB QA'};
 let passed=0;
 function sandbox(config={}){
-  const calls={created:0,deleted:0,unitUpdates:[],lookups:0};
+  const calls={created:0,deleted:0,unitUpdates:[],lookups:0,nipChecks:0};
   let handler;
   const db={
     auth:{admin:{
@@ -34,8 +34,15 @@ function sandbox(config={}){
       }
       if(table!=='profiles')throw Error('Unexpected table '+table);
       return {
-        select(){return this;},
+        select(fields){this.queryFields=fields;return this;},
         eq(){return this;},
+        async limit(){
+          if(this.queryFields!=='id')throw Error('Only short NIP existence lookup may use limit.');
+          calls.nipChecks++;
+          return config.nipAlreadyRegistered
+            ? {data:[{id:'other-account-id'}],error:null}
+            : {data:[],error:null};
+        },
         update(fields){calls.unitUpdates.push(fields);return this;},
         async single(){
           if(calls.unitUpdates.length){
@@ -74,6 +81,19 @@ await check('Reject invalid Unit Kerja',{...base,unit:'',employment_status:'NON_
 await check('Reject unrecognized status',{...base,unit:'SDN Pengujian',employment_status:'UNKNOWN'});
 await check('Allow non-ASN, save Unit Kerja',{...base,unit:'SDN Pengujian',employment_status:'NON_ASN'},{status:200,created:1,unitUpdates:1});
 await check('Allow ASN with 18-digit NIP',{...base,unit:'SDN Pengujian',employment_status:'PPPK_PARUH_WAKTU',nip:'123456789012345678'},{status:200,created:1,unitUpdates:1});
+const blocked=await check('Reject existing ASN NIP before creating Auth account',
+ {...base,unit:'SDN Pengujian',employment_status:'PNS',nip:'123456789012345678'},
+ {status:409,created:0,nipAlreadyRegistered:true});
+assert.equal(blocked.data.code,'NIP_ALREADY_REGISTERED');
+assert.match(blocked.data.error,/Gunakan Masuk|Lupa Password/);
+assert.equal(blocked.calls.nipChecks,1);
+await check('Reject existing KS NIP before creating account',
+ {...base,role:'KEPALA_SEKOLAH',unit:'SDN Pengujian',school_npsn:'12345678',employment_status:'PNS',nip:'123456789012345678'},
+ {status:409,created:0,nipAlreadyRegistered:true});
+await check('Reject existing optional NIP used by non-ASN',
+ {...base,unit:'SDN Pengujian',employment_status:'NON_ASN',nip:'123456789012345678'},
+ {status:409,created:0,nipAlreadyRegistered:true});
+
 await check('Pengawas always requires NIP',{...base,role:'PENGAWAS',unit:'Korwil Pengujian',employment_status:'NON_ASN'});
 await check('Reject unapproved website origin',{...base,unit:'SDN Pengujian',employment_status:'NON_ASN'},{status:403,origin:'https://malicious.example'});
 await check('Preserve legacy Vercel sign-up',{...base},{status:200,created:1,unitUpdates:0,origin:VC});
