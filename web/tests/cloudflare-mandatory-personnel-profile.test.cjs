@@ -74,3 +74,50 @@ test('build keeps mandatory module Cloudflare-only and KS profile remains reacha
   assert.match(ks,/!\['needs','profile'\]\.includes\(id\)/);
   assert.match(ks,/!\['needs','profile'\]\.includes\(button\.dataset\.tab\)/);
 });
+
+async function runNavigation(role,complete){
+  const events={};
+  const tabs=[];
+  let opened=0;
+  const data={
+    ...valid,id:'profile-owner',role,approval_status:'APPROVED',is_active:true,
+    ...(complete?{}:{pangkat:'',golongan_ruang:'',address:'',phone:''})
+  };
+  const win={
+    __simantabProfile:{id:'profile-owner',role},
+    __simantabSb:{from:()=>({
+      select(){return this;},
+      eq(){return this;},
+      async single(){return {data,error:null};}
+    })},
+    showTab:async id=>{tabs.push(id);return id;},
+    openSubmission:()=>{opened++;return true;},
+    addEventListener:(name,handler)=>{(events[name] ||= []).push(handler);}
+  };
+  const doc={getElementById:()=>null,querySelectorAll:()=>[],addEventListener:()=>{}};
+  vm.runInNewContext(source,{window:win,document:doc,setTimeout:()=>{},console},{timeout:2000});
+  for(const fn of events['simantab:profile-ready']||[])fn();
+  for(let i=0;i<20;i++)await Promise.resolve();
+  tabs.length=0;
+  const navigation=await win.showTab('services');
+  win.openSubmission('E_JABFUNG','Kenaikan Jenjang Jabfung');
+  for(let i=0;i<10;i++)await Promise.resolve();
+  return {navigation,tabs,opened,blocked:win.__simantabMandatoryPersonnelProfile.isBlocked()};
+}
+test('incomplete GTK, Kepala Sekolah and Pengawas cannot open other services',async()=>{
+  for(const role of ['GTK','KEPALA_SEKOLAH','PENGAWAS']){
+    const x=await runNavigation(role,false);
+    assert.equal(x.blocked,true,role);
+    assert.equal(x.navigation,'profile',role);
+    assert.equal(x.opened,0,role);
+    assert.ok(x.tabs.every(tab=>tab==='profile'),role);
+  }
+});
+test('complete GTK and exempt Super Admin can navigate normally',async()=>{
+  for(const [role,complete] of [['GTK',true],['SUPER_ADMIN',false]]){
+    const x=await runNavigation(role,complete);
+    assert.equal(x.blocked,false,role);
+    assert.equal(x.navigation,'services',role);
+    assert.equal(x.opened,1,role);
+  }
+});
