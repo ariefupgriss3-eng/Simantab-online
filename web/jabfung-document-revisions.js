@@ -76,6 +76,7 @@ async function renderOwner(){
  finally{renderingOwner=false;}
 }
 async function uploadCorrection(form){
+ if(window.simantabSmartUpload?.startRevision) return window.simantabSmartUpload.startRevision(form);
  if(busy)return;
  const inputs=[...form.querySelectorAll('input[type="file"][data-code]')];
  const files=[];
