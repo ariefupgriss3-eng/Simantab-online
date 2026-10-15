@@ -82,7 +82,7 @@ async function submitRegistration(){
   }else{
    show('Pendaftaran GTK berhasil. Akun siap digunakan tanpa menunggu email konfirmasi. Silakan pilih Masuk.','ok');
   }
- }catch(error){let message=error?.message||'Pendaftaran gagal.';if(/already|registered|exists/i.test(message))message='Email sudah terdaftar. Silakan pilih Masuk atau tunggu persetujuan Super Admin sesuai jenis akun.';show(message,'err')}
+ }catch(error){let message=error?.message||'Pendaftaran gagal.';if(/NIP sudah terdaftar|NIP_ALREADY_REGISTERED|simantab_one_nip_one_account/i.test(message))message='NIP sudah terdaftar. Jangan daftar ulang. Pilih Masuk, gunakan Lupa Password, atau hubungi Super Admin untuk pemulihan akun.';else if(/already|registered|exists/i.test(message))message='Email sudah terdaftar. Silakan pilih Masuk atau tunggu persetujuan Super Admin sesuai jenis akun.';show(message,'err')}
  finally{submitting=false;if(btn)btn.disabled=false}
 }
 function apply(){
@@ -95,7 +95,7 @@ function apply(){
  if(signup){
   setText(d,'🏢 Akun Dinas oleh Admin');
   setText(g,'🏫 Daftar Sekolah / GTK / Pengawas');
-  setText(sub,'Silakan isi data pendaftaran akun SIMANTAB-ONLINE.');
+  setText(sub,'Satu NIP hanya untuk satu akun SIMANTAB. Jika sudah mendaftar, pilih Masuk atau Lupa Password.');
   if(d){d.disabled=true;d.setAttribute('aria-disabled','true');d.title='Akun Dinas dibuat oleh Admin SIMANTAB dan tidak didaftarkan mandiri.';d.style.cursor='not-allowed';d.style.opacity='.62';d.classList.remove('active')}
   if(g)g.classList.add('active');
  }else{

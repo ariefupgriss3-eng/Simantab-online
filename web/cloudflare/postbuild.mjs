@@ -122,6 +122,15 @@ for (const file of required) {
 
 // Cloudflare preview only: signal authentication completion to role modules.
 // Original HTML sets window.__simantabProfile before applyProfile/buildNav.
+const duplicateNipAudit=await fs.readFile(path.join(output,'duplicate-nip-audit.js'),'utf8');
+const registrationAntiDuplicate=await fs.readFile(path.join(output,'registration-ui-final.js'),'utf8');
+assert(html.includes('./duplicate-nip-audit.js?v=1') &&
+ html.includes('./registration-ui-final.js?v=7') &&
+ duplicateNipAudit.includes('SIMANTAB_SUPER_ADMIN_DUPLICATE_NIP_AUDIT_V1_CLOUDFLARE') &&
+ duplicateNipAudit.includes("sb.rpc('simantab_duplicate_nip_audit')") &&
+ registrationAntiDuplicate.includes('NIP sudah terdaftar. Jangan daftar ulang.'),
+ 'Pengaman pendaftaran NIP dan panel audit Super Admin tidak lengkap.');
+
 const smartUpload=await fs.readFile(path.join(output,'smart-upload-recovery.js'),'utf8');
 assert(html.includes('./smart-upload-recovery.js?v=1') &&
   html.includes('./jabfung-jenjang-enhancement.js?v=6') &&
