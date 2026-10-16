@@ -398,7 +398,7 @@ const modules=[
  ['pengawas-nip-tcs-link.js',1],
  ['simanteb-branding.js',1],
  ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['supervisor-scope-policy.js',1]] : []),
- ['pengawas-menu-scope.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 8 : 4],
+ ['pengawas-menu-scope.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 9 : 4],
  ['pengawas-login-channel.js',1],
  ['pengawas-dashboard-kadin.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 4 : 2],
  ['korwil-scope-dashboard.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 5 : 3],

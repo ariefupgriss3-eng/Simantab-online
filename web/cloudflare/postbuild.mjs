@@ -25,10 +25,19 @@ function assert(ok, message) {
   if (!ok) throw new Error('[Cloudflare migration build] ' + message);
 }
 assert(html.includes('SIMANTAB Online'), 'index.html bukan hasil build SIMANTAB.');
+assert(html.includes('<h2>Lemari Dokumenku</h2>') &&
+ html.includes("['docs','▣','Lemari Dokumenku']") &&
+ html.includes('<b>Lemari Dokumenku</b>') &&
+ !html.includes('Dokumen Saya'),
+ 'Menu, halaman, dan akses cepat masih menampilkan label dokumen lama.');
+assert(module.includes("['docs','▣','Lemari Dokumenku']") &&
+ !module.includes("['docs','▣','Dokumen Saya']"),
+ 'Navigasi Pengawas belum menggunakan Lemari Dokumenku.');
+
 assert(html.includes('./supervisor-scope-policy.js?v=1'), 'Modul pusat penugasan Korwil/Pengawas tidak dimuat.');
 assert(html.includes('./pengawas-dashboard-kadin.js?v=4'), 'Dashboard Pengawas Dabin belum memakai versi baru.');
 assert(html.includes('./korwil-scope-dashboard.js?v=5'), 'Dashboard Korwil belum memakai versi pemulihan login.');
-assert(html.includes('./pengawas-menu-scope.js?v=8'), 'Menu dan label Korwil belum diperbarui.');
+assert(html.includes('./pengawas-menu-scope.js?v=9'), 'Menu dan label Korwil belum diperbarui.');
 assert(policyModule.includes('SIMANTAB_SUPERVISOR_SCOPE_POLICY_V1') &&
        policyModule.includes("submitter_kind==='KORWIL'") &&
        policyModule.includes("schoolNpsns") &&
