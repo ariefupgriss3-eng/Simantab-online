@@ -1,4 +1,4 @@
-/* SIMANTAB_PUBLIC_PTK_BKN_RECON_V4
+/* SIMANTAB_PUBLIC_PTK_BKN_RECON_V3
    PTK–ASN public snapshot only, NOT Guru/Tendik ASN breakdown.
    Requires Supabase Edge Function simantab-public-ptk-bkn and RLS staging tables. */
 (async()=>{
