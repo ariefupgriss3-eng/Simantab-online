@@ -1,4 +1,4 @@
-// SIMANTAB_PUBLIC_PTK_BKN_SNAPSHOT_V3
+// SIMANTAB_PUBLIC_PTK_BKN_SNAPSHOT_V4
 // Source is a PUBLIC HTML REPORT, not a documented machine-readable API.
 // Aggregate by NPSN only; never ingest NIK, NIP, names of persons or individual PTK.
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
@@ -71,9 +71,9 @@ function parseSchools(html,district,strict=true){
  const rows=[];
  for(const tr of trs(html)){
   const c=tr.cells;
-  const i=c.findIndex((t,k)=>k<4&&/^\d{8}$/.test(t));
+  const i=c.findIndex((t,k)=>k<4&&/^(?:\d{8}|[A-Z]\d{7})$/i.test(trim(t)));
   if(i<0)continue;
-  const npsn=c[i],name=c[i+1],status=c[i+2],total=int(c[i+3]),asn=int(c[i+4]);
+  const npsn=trim(c[i]).toUpperCase(),name=c[i+1],status=c[i+2],total=int(c[i+3]),asn=int(c[i+4]);
   if(!name||!['NEGERI','SWASTA'].includes(trim(status).toUpperCase())
    ||!Number.isSafeInteger(total)||!Number.isSafeInteger(asn)||total<0||asn<0||asn>total){
     throw Error("Nilai sekolah tidak valid pada NPSN "+npsn);
@@ -116,7 +116,9 @@ async function preview(){
  return {ok:true,source_type:SOURCE_TYPE,source_url:BASE+COUNTY,districts:ds.length,
   example_district:first.name,example_code:first.id,example_schools:schools.length,
   example_ptk:schools.reduce((s,r)=>s+r.total_ptk,0),
+  example_ptk_district_total:first.expectedPtk,
   example_asn:schools.reduce((s,r)=>s+r.total_asn,0),
+  example_asn_district_total:first.expectedAsn,
   warning:"Uji baca berhasil. Belum ada data database yang diubah."};
 }
 
@@ -134,7 +136,7 @@ async function diagnose(){
  for(const entry of trs(html)){
    const row=entry.cells;
    if(!row.length || !/^\d{1,4}$/.test(row[0]) || row.length<6)continue;
-   if(row.some((v,i)=>i<4 && /^\d{8}$/.test(v)))continue;
+   if(row.some((v,i)=>i<4 && /^(?:\d{8}|[A-Z]\d{7})$/i.test(trim(v))))continue;
    const st=trim(row[3]).toUpperCase();
    if(!["NEGERI","SWASTA"].includes(st))continue;
    const asn=int(row[5]),ptk=int(row[4]);
@@ -152,6 +154,7 @@ async function diagnose(){
    district_ptk:subah.expectedPtk,parsed_ptk:original,
    parsed_npsn:parsed.length,missing_npsn_rows:ignored.length,
    missing_npsn_asn:dropped,missing_npsn_examples:ignored.slice(0,8),
+   recognized_letter_npsn:parsed.filter(row=>/^[A-Z]\d{7}$/.test(row.npsn)).map(row=>({npsn:row.npsn,school_name:row.school_name_source,asn:row.total_asn})).slice(0,10),
    outcome:actual===subah.expectedAsn?"MATCH":
        dropped>0&&actual+dropped===subah.expectedAsn?"NON_NPSN_ROWS_EXPLAIN_GAP":"INCOMPLETE_SOURCE_COVERAGE",
    write_performed:false,
