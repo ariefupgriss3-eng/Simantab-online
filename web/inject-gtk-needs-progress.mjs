@@ -169,11 +169,22 @@ const scopedFn=`async function renderScoped(box,mode){
    scopeLabel=role==='SUBKOOR_TK'?'Jenjang TK/PAUD':('Jenjang '+roleLevel);
   }
  }
- const [{data:needs,error:ne},{data:wfs,error:we}]=await Promise.all([
-  client.from('school_gtk_needs').select('school_npsn,school_name,school_level,job_code,position_name,abk,pns,pppk,pppk_pw,non_asn_before_2024,non_asn_after_2024,asn_total,non_asn_total,gap_riil,gap_data,updated_at').order('school_name'),
-  client.from('school_gtk_needs_workflow').select('school_npsn,status,note,submitted_at,verified_at,updated_at')
- ]);
- if(ne)throw ne;if(we)throw we;
+ // Halaman bertahap: PostgREST/Supabase membatasi 1.000 baris per query.
+ // Tanpa pagination 21 entri TK/PAUD tersisih dari 1.028 baris berdasarkan nama sekolah.
+ const needs=[],pageSize=500,hardLimit=10000;
+ for(let from=0;from<hardLimit;from+=pageSize){
+  const {data:page,error:ne}=await client.from('school_gtk_needs')
+   .select('id,school_npsn,school_name,school_level,job_code,position_name,abk,pns,pppk,pppk_pw,non_asn_before_2024,non_asn_after_2024,asn_total,non_asn_total,gap_riil,gap_data,updated_at')
+   .order('school_name',{ascending:true}).order('id',{ascending:true})
+   .range(from,from+pageSize-1);
+  if(ne)throw ne;
+  needs.push(...(page||[]));
+  if((page||[]).length<pageSize)break;
+  if(from+pageSize>=hardLimit)throw new Error('Data Kebutuhan GTK Riil melebihi batas aman pembacaan; hubungi admin.');
+ }
+ const {data:wfs,error:we}=await client.from('school_gtk_needs_workflow')
+  .select('school_npsn,status,note,submitted_at,verified_at,updated_at');
+ if(we)throw we;
  const allowed=new Set(schools.map(x=>x.npsn));
  const scopedNeeds=(needs||[]).filter(x=>allowed.has(x.school_npsn));
  const schoolLevelByNpsn=new Map(schools.map(s=>[s.npsn,s.jenjang||s.bentuk_pendidikan||'-']));
