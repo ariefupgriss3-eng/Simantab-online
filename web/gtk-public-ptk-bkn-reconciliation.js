@@ -1,4 +1,4 @@
-/* SIMANTAB_PUBLIC_PTK_BKN_RECON_V3
+/* SIMANTAB_PUBLIC_PTK_BKN_RECON_V4
    PTK–ASN public snapshot only, NOT Guru/Tendik ASN breakdown.
    Requires Supabase Edge Function simantab-public-ptk-bkn and RLS staging tables. */
 (async()=>{
@@ -61,13 +61,15 @@
        const area=document.getElementById('gtkBknAuditResult');
        if(area){
          const rows=(data.missing_npsn_examples||[]).map(x=>'<li>'+esc(x.school_name)+' • NPSN: '+esc(x.npsn_display)+' • ASN: '+(x.asn===null?'—':fmt(x.asn))+'</li>').join('');
+         const recognized=(data.recognized_letter_npsn||[]).map(x=>'<li>'+esc(x.school_name)+' • NPSN: '+esc(x.npsn)+' • ASN: '+fmt(x.asn)+'</li>').join('');
          area.innerHTML='<div style="padding:10px;background:#fff9ea;border:1px solid #e7c986;border-radius:8px;margin:9px 0">'+
            '<b>Audit '+esc(data.district)+'</b><div style="margin-top:5px">ASN rekap kecamatan: <b>'+fmt(data.district_asn)+'</b> • Jumlah ASN NPSN terbaca: <b>'+fmt(data.parsed_asn)+'</b> • Belum terpetakan: <b>'+fmt(data.unreconciled_asn)+'</b>.</div>'+
            '<div style="margin-top:5px">Sekolah/NPSN terbaca: '+fmt(data.parsed_npsn)+'; baris sekolah tanpa NPSN valid: '+fmt(data.missing_npsn_rows)+'; ASN pada baris tersebut: '+fmt(data.missing_npsn_asn)+'.</div>'+
            (rows?'<details style="margin-top:7px"><summary>Rincian baris NPSN bermasalah</summary><ul>'+rows+'</ul></details>':'')+
+           (recognized?'<details open style="margin-top:7px"><summary>NPSN berawalan huruf yang sudah dikenali</summary><ul>'+recognized+'</ul></details>':'')+
            '<div style="margin-top:7px;font-size:11px">Status: <b>'+esc(data.outcome)+'</b>. Hasil ini hanya diagnostik, bukan sinkronisasi. Data master GTK tidak diubah.</div></div>';
        }
-       feedback('Audit Subah selesai: '+fmt(data.unreconciled_asn)+' ASN belum cocok; sumber baris yang terlewat diperiksa tanpa menyimpan snapshot.');
+       feedback(data.outcome==='MATCH'?'Audit Subah cocok: '+fmt(data.district_asn)+' ASN. NPSN alfanumerik dikenali; SKB tidak otomatis ditambahkan ke master GTK.':'Audit Subah belum cocok: '+fmt(data.unreconciled_asn)+' ASN belum terpetakan; data master tetap aman.');
      } else {
        feedback(data.reused?'Snapshot masih baru; menggunakan hasil sinkron sebelumnya.':
         'Snapshot tersimpan: '+fmt(data.matched_schools)+' sekolah cocok • '+fmt(data.total_asn_matched)+' ASN gabungan.');await summary();
@@ -152,5 +154,5 @@
  });
  observer.observe(document.body,{childList:true,subtree:false});
  attach();
- window.__simantabPublicPtkBknRecon={version:3,source:'PUBLIC_WEBPAGE_NOT_API',scope:'school_aggregate',writeMaster:false};
+ window.__simantabPublicPtkBknRecon={version:4,source:'PUBLIC_WEBPAGE_NOT_API',scope:'school_aggregate',writeMaster:false};
 })();
