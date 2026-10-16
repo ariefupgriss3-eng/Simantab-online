@@ -14,12 +14,25 @@ const TTL_MS=72*60*60*1000,MAX_FILE=1572864;
 const TYPES=['application/pdf','image/jpeg','image/png'];
 const JOB_TYPES=new Set(['E_JABFUNG','KP','GENERIC','CUTI','JABFUNG_REVISION']);
 let busy=false,rendering=false,dbPromise=null,loginOwner=null;
+const startingJobs=new Set();
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const sanitizeName=s=>String(s||'berkas.pdf').normalize('NFKD').replace(/[^a-zA-Z0-9._-]/g,'_').slice(-95);
 const getMsg=(name)=>$(name)||$('subMsg');
 function message(text,ok=false,id){
  const el=id?$(id):$('smartUploadNotice');
- if(el){el.className=ok?'okmsg':'small';el.textContent=text;}
+ if(el){
+  el.className=ok?'okmsg':/gagal|ditolak|belum tuntas|tidak sesuai|perlu diperbaiki|belum lengkap/i.test(text)?'err':'small';
+  el.textContent=text;
+ }
+}
+function notifyJob(job,text,ok=false,messageId=null){
+ const id=messageId||(job?.kind==='E_JABFUNG'?'jabfungMsg':null);
+ message(text,ok,id);
+ const notice=$('simSmartUploadProgress');
+ if(notice)notice.textContent=text;
+}
+function confirmFileCount(job){
+ return job.files.filter(f=>f.confirmed===true).length;
 }
 function db(){
  if(dbPromise)return dbPromise;
@@ -95,7 +108,7 @@ async function checkSession(uid){
 function online(){return typeof navigator==='undefined'||navigator.onLine!==false;}
 function consent(){
  if(typeof window.confirm!=='function')return false;
- return window.confirm('SIMANTAB Smart Upload Recovery (GRATIS)\n\nBerkas dan data formulir akan disimpan sementara di penyimpanan browser PERANGKAT INI selama maksimal 72 jam untuk pemulihan koneksi.\n\nGunakan perangkat pribadi. Berkas lokal tidak dienkripsi khusus oleh SIMANTAB; hapus antrean jika perangkat dipakai bersama. Berkas dihapus setelah berhasil atau saat Logout.\n\nLanjutkan menyimpan dan mengirim?');
+ return window.confirm('Kirim berkas SIMANTAB sekarang?\n\nAgar aman jika internet terputus, berkas disimpan sementara di browser perangkat ini maksimal 72 jam, lalu dihapus setelah berhasil atau logout.\n\nGunakan perangkat pribadi. Klik OK untuk mulai mengirim.');
 }
 function makeJob({kind,serviceType,title,description='',leaveType=null,details=null,entries,revisionId=null,submissionId=null,maxBytes=MAX_FILE}){
  const uid=P().id,id=crypto.randomUUID(),subId=submissionId||id;
@@ -108,7 +121,7 @@ function makeJob({kind,serviceType,title,description='',leaveType=null,details=n
    :kind==='CUTI'?uid+'/'+subId+'/'+String(code||'BERKAS')+'_'
    :uid+'/'+subId+'/';
   return {code,name:item.file.name,mime:item.file.type,size:item.file.size,blob:item.file,
-   path:prefix+fid+'_'+sanitizeName(item.file.name),done:false,index:i};
+   path:prefix+fid+'_'+sanitizeName(item.file.name),done:false,confirmed:false,index:i};
  });
  return {version:1,id,ownerId:uid,submissionId:subId,revisionId,kind,serviceType,title,description,
   leaveType,details,files,maxBytes,createdAt:Date.now(),expiresAt:Date.now()+TTL_MS,
