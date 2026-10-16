@@ -169,11 +169,22 @@ const scopedFn=`async function renderScoped(box,mode){
    scopeLabel=role==='SUBKOOR_TK'?'Jenjang TK/PAUD':('Jenjang '+roleLevel);
   }
  }
- const [{data:needs,error:ne},{data:wfs,error:we}]=await Promise.all([
-  client.from('school_gtk_needs').select('school_npsn,school_name,school_level,job_code,position_name,abk,pns,pppk,pppk_pw,non_asn_before_2024,non_asn_after_2024,asn_total,non_asn_total,gap_riil,gap_data,updated_at').order('school_name'),
-  client.from('school_gtk_needs_workflow').select('school_npsn,status,note,submitted_at,verified_at,updated_at')
- ]);
- if(ne)throw ne;if(we)throw we;
+ // Halaman bertahap: PostgREST/Supabase membatasi 1.000 baris per query.
+ // Tanpa pagination 21 entri TK/PAUD tersisih dari 1.028 baris berdasarkan nama sekolah.
+ const needs=[],pageSize=500,hardLimit=10000;
+ for(let from=0;from<hardLimit;from+=pageSize){
+  const {data:page,error:ne}=await client.from('school_gtk_needs')
+   .select('id,school_npsn,school_name,school_level,job_code,position_name,abk,pns,pppk,pppk_pw,non_asn_before_2024,non_asn_after_2024,asn_total,non_asn_total,gap_riil,gap_data,updated_at')
+   .order('school_name',{ascending:true}).order('id',{ascending:true})
+   .range(from,from+pageSize-1);
+  if(ne)throw ne;
+  needs.push(...(page||[]));
+  if((page||[]).length<pageSize)break;
+  if(from+pageSize>=hardLimit)throw new Error('Data Kebutuhan GTK Riil melebihi batas aman pembacaan; hubungi admin.');
+ }
+ const {data:wfs,error:we}=await client.from('school_gtk_needs_workflow')
+  .select('school_npsn,status,note,submitted_at,verified_at,updated_at');
+ if(we)throw we;
  const allowed=new Set(schools.map(x=>x.npsn));
  const scopedNeeds=(needs||[]).filter(x=>allowed.has(x.school_npsn));
  const schoolLevelByNpsn=new Map(schools.map(s=>[s.npsn,s.jenjang||s.bentuk_pendidikan||'-']));
@@ -214,8 +225,8 @@ if(!code.includes('<th>Jumlah Siswa</th>')||!code.includes('students,rombel,is_a
 html=html.replace(/<script type="module" src="\.\/gtk-needs-progress\.js\?v=\d+"><\/script>\s*/g,'');
 const bodyClose=html.lastIndexOf('</body>');
 if(bodyClose<0)throw new Error('Tag </body> tidak ditemukan.');
-const tag=`<script type="module" src="./${moduleName}?v=38"></script>\n`;
+const tag=`<script type="module" src="./${moduleName}?v=39"></script>\n`;
 html=html.slice(0,bodyClose)+tag+html.slice(bodyClose);
 await fs.writeFile(outputPath,html);
 await fs.writeFile(`.vercel/output/static/${moduleName}`,code);
-console.log(JSON.stringify({gtkNeedsProgress:true,version:38,aiVerifierPilot:false,aiVerifierDisabled:true,sdPenjagaStandard:true,sdPenjagaAliasNormalized:true,canonicalAssetVersion:true,roleLevelScope:true,surplusApprovedOnly:true,surplusAsnOnly:true,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,skbNegeriIncluded:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,ksRiilExactlyOne:true,gapFormulaPerPosition:true,studentColumn:true,rombelColumn:true,abkTendikOtomatis:true,smpPenjagaStandard:true,unifiedPenjagaLabel:true,tasTkSdFixedOne:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',kabid:'district-wide-negeri',kasiSd:'sd-negeri-only',kasiSmp:'smp-negeri-only',subkoorTk:'tk-paud-negeri-only',pimpinan:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
+console.log(JSON.stringify({gtkNeedsProgress:true,version:39,aiVerifierPilot:false,aiVerifierDisabled:true,sdPenjagaStandard:true,sdPenjagaAliasNormalized:true,canonicalAssetVersion:true,roleLevelScope:true,surplusApprovedOnly:true,surplusAsnOnly:true,surplusPriority:true,surplusCategories:['Guru','TAS','Penjaga'],authoritativeRenderer:true,negeriOnly:true,skbNegeriIncluded:true,coreGapData:true,coreVerification:true,clickableGapBreakdowns:true,sdHiddenRows:['GURU_BING','GURU_KODING_KA','GURU_MULOK'],tkVisibleRows:['KEPALA_SEKOLAH','GURU_TK','GURU_KELAS','TAS','PENJAGA','PENJAGA_SEKOLAH','PENJAGA_SEKOLAJ'],smpHiddenRows:['GURU_KODING_KA'],normalizedPositionLabels:true,tkMonitoringAlwaysFourRows:true,abkKsValidation:true,ksRiilExactlyOne:true,gapFormulaPerPosition:true,studentColumn:true,rombelColumn:true,abkTendikOtomatis:true,smpPenjagaStandard:true,unifiedPenjagaLabel:true,tasTkSdFixedOne:true,breakdownScopes:['kabupaten-or-pengawas','per-school'],positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,scope:{kepalaSekolah:'own-school-edit',gtk:'own-school-read',pengawas:'assigned-district-negeri-read',kabid:'district-wide-negeri',kasiSd:'sd-negeri-only',kasiSmp:'smp-negeri-only',subkoorTk:'tk-paud-negeri-only',pimpinan:'district-wide-negeri'},workflow:['DRAFT','SUBMITTED','VERIFIED','REVISION'],roleScoped:true,existingNeedsDataUntouched:true}));
