@@ -1,4 +1,4 @@
-/* SIMANTAB_PUBLIC_PTK_BKN_RECON_V2
+/* SIMANTAB_PUBLIC_PTK_BKN_RECON_V3
    PTK–ASN public snapshot only, NOT Guru/Tendik ASN breakdown.
    Requires Supabase Edge Function simantab-public-ptk-bkn and RLS staging tables. */
 (async()=>{
@@ -47,7 +47,7 @@
    if(busy||!authorized())return;
    if(action==='sync'&&!confirm('Ambil ulang rekap PTK–ASN publik dari 15 kecamatan Kabupaten Batang? Data asli SIMANTAB tidak akan diubah.'))return;
    busy=true;setButtons(true);
-   feedback(action==='preview'?'Menghubungi sumber publik resmi dan memeriksa contoh data…':'Membaca 15 kecamatan secara bertahap. Mohon tunggu…');
+   feedback(action==='preview'?'Menghubungi sumber publik resmi dan memeriksa contoh data…':action==='diagnose'?'Memeriksa selisih ASN Kecamatan Subah tanpa menyimpan data…':'Membaca 15 kecamatan secara bertahap. Mohon tunggu…');
    try{
      const {data,error}=await sb.functions.invoke('simantab-public-ptk-bkn',{body:{action}});
      if(error||data?.ok===false){
@@ -57,6 +57,17 @@
      }
      if(action==='preview'){
        feedback('Sumber dapat dibaca: '+data.example_district+' • '+fmt(data.example_schools)+' sekolah • '+fmt(data.example_ptk)+' PTK pada halaman sekolah dari '+fmt(data.example_ptk_district_total)+' PTK total kecamatan • '+fmt(data.example_asn)+' ASN dari '+fmt(data.example_asn_district_total)+' ASN kecamatan. Data SIMANTAB belum berubah.');
+     } else if(action==='diagnose'){
+       const area=document.getElementById('gtkBknAuditResult');
+       if(area){
+         const rows=(data.missing_npsn_examples||[]).map(x=>'<li>'+esc(x.school_name)+' • NPSN: '+esc(x.npsn_display)+' • ASN: '+(x.asn===null?'—':fmt(x.asn))+'</li>').join('');
+         area.innerHTML='<div style="padding:10px;background:#fff9ea;border:1px solid #e7c986;border-radius:8px;margin:9px 0">'+
+           '<b>Audit '+esc(data.district)+'</b><div style="margin-top:5px">ASN rekap kecamatan: <b>'+fmt(data.district_asn)+'</b> • Jumlah ASN NPSN terbaca: <b>'+fmt(data.parsed_asn)+'</b> • Belum terpetakan: <b>'+fmt(data.unreconciled_asn)+'</b>.</div>'+
+           '<div style="margin-top:5px">Sekolah/NPSN terbaca: '+fmt(data.parsed_npsn)+'; baris sekolah tanpa NPSN valid: '+fmt(data.missing_npsn_rows)+'; ASN pada baris tersebut: '+fmt(data.missing_npsn_asn)+'.</div>'+
+           (rows?'<details style="margin-top:7px"><summary>Rincian baris NPSN bermasalah</summary><ul>'+rows+'</ul></details>':'')+
+           '<div style="margin-top:7px;font-size:11px">Status: <b>'+esc(data.outcome)+'</b>. Hasil ini hanya diagnostik, bukan sinkronisasi. Data master GTK tidak diubah.</div></div>';
+       }
+       feedback('Audit Subah selesai: '+fmt(data.unreconciled_asn)+' ASN belum cocok; sumber baris yang terlewat diperiksa tanpa menyimpan snapshot.');
      } else {
        feedback(data.reused?'Snapshot masih baru; menggunakan hasil sinkron sebelumnya.':
         'Snapshot tersimpan: '+fmt(data.matched_schools)+' sekolah cocok • '+fmt(data.total_asn_matched)+' ASN gabungan.');await summary();
@@ -65,7 +76,7 @@
    finally{busy=false;setButtons(false)}
  }
  function setButtons(disabled){
-   for(const id of ['gtkBknProbe','gtkBknSync','gtkBknDetail']){
+   for(const id of ['gtkBknProbe','gtkBknAudit','gtkBknSync','gtkBknDetail']){
      const b=document.getElementById(id);if(b)b.disabled=disabled;
    }
  }
@@ -118,12 +129,14 @@
      '<div id="gtkBknState" style="padding:9px;background:#f4f8ff;border:1px solid #ddeafa;border-radius:8px">Memeriksa snapshot…</div>'+
      '<div class="gtk-actions" style="margin:12px 0">'+
       '<button id="gtkBknProbe" type="button" class="gtk-action">Periksa Sumber</button>'+
+      '<button id="gtkBknAudit" type="button" class="gtk-action">Audit Selisih Subah</button>'+
       '<button id="gtkBknSync" type="button" class="gtk-action">Sinkronkan Snapshot</button>'+
       '<button id="gtkBknDetail" type="button" class="gtk-action">Lihat Perbandingan NPSN</button></div>'+
-     '<div id="gtkBknFeedback" aria-live="polite" style="font-size:11px"></div>'+
+     '<div id="gtkBknFeedback" aria-live="polite" style="font-size:11px"></div><div id="gtkBknAuditResult"></div>'+ 
      '<div id="gtkBknDetailTable"></div>';
    box.appendChild(d);
    document.getElementById('gtkBknProbe').onclick=()=>call('preview');
+   document.getElementById('gtkBknAudit').onclick=()=>call('diagnose');
    document.getElementById('gtkBknSync').onclick=()=>call('sync');
    document.getElementById('gtkBknDetail').onclick=detail;
    summary().catch(e=>feedback('Belum dapat membaca snapshot: '+String(e.message||e),true));
@@ -139,5 +152,5 @@
  });
  observer.observe(document.body,{childList:true,subtree:false});
  attach();
- window.__simantabPublicPtkBknRecon={version:2,source:'PUBLIC_WEBPAGE_NOT_API',scope:'school_aggregate',writeMaster:false};
+ window.__simantabPublicPtkBknRecon={version:3,source:'PUBLIC_WEBPAGE_NOT_API',scope:'school_aggregate',writeMaster:false};
 })();
