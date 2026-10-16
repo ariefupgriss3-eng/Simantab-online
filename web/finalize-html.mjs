@@ -368,7 +368,7 @@ if (process.env.SIMANTAB_BUILD_TARGET === 'cloudflare') {
 
 const modules=[
  ['kp-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 6 : 5],
- ['jabfung-jenjang-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 6 : 5],
+ ['jabfung-jenjang-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 7 : 5],
  ['ptk-swasta-enhancement.js',1],
  ['super-admin-enhancement.js',9],
  ['registration-approval.js',5],
@@ -447,7 +447,7 @@ const modules=[
  ['bcks-substansi-simulator-v5.js',55],
  ['bcks-individual-readiness.js',5],
  ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['mandatory-personnel-profile.js',2]] : []),
- ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['jabfung-document-revisions.js',2],['smart-upload-recovery.js',1]] : []),
+ ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['jabfung-document-revisions.js',2],['smart-upload-recovery.js',2]] : []),
  ...(process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? [['duplicate-nip-audit.js',1]] : [])
 ];
 for(const [file] of modules){try{await fs.access(path.join(staticDir,file));}catch{throw new Error(`File modul wajib tidak ditemukan pada output build: ${file}`)}}
