@@ -1,4 +1,4 @@
-/* SIMANTAB_PUBLIC_PTK_BKN_RECON_V1
+/* SIMANTAB_PUBLIC_PTK_BKN_RECON_V2
    PTK–ASN public snapshot only, NOT Guru/Tendik ASN breakdown.
    Requires Supabase Edge Function simantab-public-ptk-bkn and RLS staging tables. */
 (async()=>{
@@ -36,8 +36,8 @@
      return;
    }
    const date=new Date(latest.completed_at).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'});
-   area.innerHTML='<b>Snapshot '+esc(date)+'</b> • '+fmt(latest.matched_schools)+' NPSN cocok dari '+fmt(latest.source_schools)+' sekolah sumber • '+fmt(latest.matched_total_ptk)+' PTK publik • '+fmt(latest.matched_total_asn)+' ASN gabungan Guru/Tendik.'+
-     '<div style="font-size:11px;margin-top:5px">Khusus perbandingan. Tidak mengganti master GTK 7.008.</div>';
+   area.innerHTML='<b>Snapshot '+esc(date)+'</b> • '+fmt(latest.matched_schools)+' NPSN cocok dari '+fmt(latest.source_schools)+' sekolah sumber • '+fmt(latest.matched_total_ptk)+' PTK kohort di laman sekolah • '+fmt(latest.matched_total_asn)+' ASN gabungan Guru/Tendik.'+
+     '<div style="font-size:11px;margin-top:5px">PTK pada laman sekolah adalah kohort pemadanan ASN, bukan keseluruhan GTK. Master 7.008 tidak diubah.</div>';
  }
  function feedback(text,isError=false){
    const el=document.getElementById('gtkBknFeedback');if(!el)return;
@@ -56,7 +56,7 @@
        throw Error(detail);
      }
      if(action==='preview'){
-       feedback('Sumber dapat dibaca: '+data.example_district+' • '+fmt(data.example_schools)+' sekolah • '+fmt(data.example_ptk)+' PTK • '+fmt(data.example_asn)+' ASN. Data SIMANTAB belum berubah.');
+       feedback('Sumber dapat dibaca: '+data.example_district+' • '+fmt(data.example_schools)+' sekolah • '+fmt(data.example_ptk)+' PTK pada halaman sekolah dari '+fmt(data.example_ptk_district_total)+' PTK total kecamatan • '+fmt(data.example_asn)+' ASN dari '+fmt(data.example_asn_district_total)+' ASN kecamatan. Data SIMANTAB belum berubah.');
      } else {
        feedback(data.reused?'Snapshot masih baru; menggunakan hasil sinkron sebelumnya.':
         'Snapshot tersimpan: '+fmt(data.matched_schools)+' sekolah cocok • '+fmt(data.total_asn_matched)+' ASN gabungan.');await summary();
@@ -80,12 +80,12 @@
      const master=new Map(school.map(x=>[x.npsn,x]));
      const by=snap.map(s=>{
        const m=master.get(s.npsn)||{},level=m.bentuk_pendidikan||'?',gtk=(Number(m.teachers)||0)+(Number(m.staff)||0);
-       return {...s,school_name:m.school_name||s.school_name_source,level,gtk,diff:s.total_ptk-gtk}
+       return {...s,school_name:m.school_name||s.school_name_source,level,gtk}
      }).sort((a,b)=>a.level.localeCompare(b.level,'id')||a.school_name.localeCompare(b.school_name,'id'));
      const root=document.getElementById('gtkBknDetailTable');if(!root)return;
      stats=by;
      root.innerHTML='<h3 style="margin:12px 0 6px">Rekonsiliasi per NPSN</h3>'+
-      '<div style="font-size:11px;color:#607588;margin-bottom:6px">PTK/ASN publik adalah gabungan Guru dan Tendik; tidak digunakan untuk mengisi matriks ASN Guru/Tendik tanpa data terpisah.</div>'+
+      '<div style="font-size:11px;color:#607588;margin-bottom:6px">PTK pada laman sekolah merupakan kohort pemadanan ASN, bukan semua GTK. Jangan menjumlahkan selisih terhadap GTK master sebagai Non-ASN. Angka ASN masih gabungan Guru dan Tendik.</div>'+
       '<input id="gtkBknSearch" placeholder="Cari nama sekolah atau NPSN…" style="padding:9px;width:100%;max-width:400px;box-sizing:border-box;border-radius:9px;border:1px solid #d1e1ed;margin-bottom:9px">'+
       '<div id="gtkBknResults"></div>';
      const input=document.getElementById('gtkBknSearch');
@@ -95,14 +95,14 @@
        document.getElementById('gtkBknResults').innerHTML=
          '<div style="font-size:11px;color:#677a89;margin:7px 0">Menampilkan '+shown.length+' dari '+hits.length+' sekolah yang sesuai; ketik untuk mempersempit hasil.</div>'+
          '<div style="max-width:100%;overflow:auto"><table style="width:100%;font-size:12px;border-collapse:collapse"><thead><tr>'+
-         '<th style="text-align:left">NPSN / Sekolah</th><th>Jenjang</th><th>GTK master</th><th>PTK publik</th><th>ASN publik*</th><th>Selisih PTK</th></tr></thead><tbody>'+
+         '<th style="text-align:left">NPSN / Sekolah</th><th>Jenjang</th><th>GTK master</th><th>PTK kohort ASN</th><th>ASN publik</th></tr></thead><tbody>'+
          shown.map(x=>'<tr><td style="text-align:left">'+esc(x.npsn)+'<div>'+esc(x.school_name)+'</div></td><td>'+esc(x.level)+'</td>'+
-          '<td>'+fmt(x.gtk)+'</td><td>'+fmt(x.total_ptk)+'</td><td>'+fmt(x.total_asn)+'</td>'+
-          '<td style="color:'+(x.diff===0?'#15803d':'#92400e')+'">'+(x.diff>0?'+':'')+fmt(x.diff)+'</td></tr>').join('')+
+          '<td>'+fmt(x.gtk)+'</td><td>'+fmt(x.total_ptk)+'</td><td>'+fmt(x.total_asn)+'</td></tr>').join('')+
+          ''+
          '</tbody></table></div>';
      };
      input.addEventListener('input',display);display();
-     feedback('Rekonsiliasi '+fmt(by.length)+' NPSN dimuat. Selisih berbeda tanggal/cakupan bukan kesalahan yang otomatis dikoreksi.');
+     feedback('Rekonsiliasi ASN '+fmt(by.length)+' NPSN dimuat. Jangan menafsirkan selisih PTK kohort dan GTK master sebagai jumlah Non-ASN.');
    }catch(e){feedback('Gagal memuat rincian: '+String(e?.message||e),true)}
    finally{busy=false;setButtons(false)}
  }
@@ -139,5 +139,5 @@
  });
  observer.observe(document.body,{childList:true,subtree:false});
  attach();
- window.__simantabPublicPtkBknRecon={version:1,source:'PUBLIC_WEBPAGE_NOT_API',scope:'school_aggregate',writeMaster:false};
+ window.__simantabPublicPtkBknRecon={version:2,source:'PUBLIC_WEBPAGE_NOT_API',scope:'school_aggregate',writeMaster:false};
 })();
