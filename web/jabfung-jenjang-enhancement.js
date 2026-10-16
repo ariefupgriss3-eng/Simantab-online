@@ -45,7 +45,7 @@
       const must=field.dataset.required==='1';
       const name=field.dataset.label||field.dataset.code||'Berkas';
       const file=field.files?.[0];
-      const feedback=field.closest('.field')?.querySelector('.jabfungFileFeedback');
+      const feedback=field.closest?.('.field')?.querySelector?.('.jabfungFileFeedback');
       if(must)summary.required++;
       let indicator='';
       if(!file){
@@ -157,13 +157,15 @@
   let jabfungSending=false;
   let rlsBlockedUntil=0;
   window.submitJabfungJenjang=async()=>{
-    const checklist=window.simJabfungUpdateChecklist?.();
-    if(checklist&&!checklist.ready){
-      const msg=document.getElementById('jabfungMsg');
-      if(msg){msg.className='err';msg.textContent='Berkas wajib belum lengkap atau ada berkas yang salah format/terlalu besar. Periksa daftar di atas.';}
-      return;
+    if(window.simantabSmartUpload?.startJabfung){
+      const checklist=window.simJabfungUpdateChecklist?.();
+      if(checklist&&!checklist.ready){
+        const msg=document.getElementById('jabfungMsg');
+        if(msg){msg.className='err';msg.textContent='Berkas wajib belum lengkap atau ada berkas yang salah format/terlalu besar. Periksa daftar di atas.';}
+        return;
+      }
+      return window.simantabSmartUpload.startJabfung();
     }
-    if(window.simantabSmartUpload?.startJabfung) return window.simantabSmartUpload.startJabfung();
     const msg=document.getElementById('jabfungMsg');
     const btn=document.getElementById('jabfungSendBtn');
     if(jabfungSending) return;
