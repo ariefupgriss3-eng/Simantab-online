@@ -128,7 +128,7 @@ test('Cloudflare-only module integrates Jabfung, KP, cuti, generic and correctio
  assert.match(CUTI,/simantabSmartUpload\?\.startCuti/);
  assert.match(REV,/simantabSmartUpload\?\.startRevision/);
  assert.match(harden,/simantabSmartUpload\?\.startGeneric/);
- assert.match(finalizer,/\['smart-upload-recovery\.js',1\]/);
+ assert.match(finalizer,/\['smart-upload-recovery\.js',2\]/);
  assert.match(post,/SIMANTAB_SMART_UPLOAD_RECOVERY_V1_FREE_CLOUDFLARE/);
 });
 test('no new paid external services and no byte-level resume claims',()=>{
