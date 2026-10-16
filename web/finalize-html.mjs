@@ -311,6 +311,11 @@ const bcksIndividualReadinessCode=await fs.readFile(new URL(`./${bcksIndividualR
 if(!/SIMANTAB_BCKS_INDIVIDUAL_READINESS_V1/.test(bcksIndividualReadinessCode))throw new Error('BCKS individual readiness v1 tidak valid.');
 await fs.writeFile(path.join(staticDir,bcksIndividualReadinessFile),bcksIndividualReadinessCode);
 
+const gtkDapodikDetailFile='gtk-dapodik-breakdown.js';
+const gtkDapodikDetailCode=await fs.readFile(new URL('./gtk-dapodik-breakdown.js',import.meta.url),'utf8');
+if(!gtkDapodikDetailCode.includes('SIMANTAB_GTK_DAPODIK_BREAKDOWN_V1'))throw new Error('Modul GTK Dapodik breakdown tidak valid.');
+await fs.writeFile(path.join(staticDir,gtkDapodikDetailFile),gtkDapodikDetailCode);
+
 const modules=[
  ['kp-enhancement.js',4],
  ['jabfung-jenjang-enhancement.js',2],
@@ -369,6 +374,7 @@ const modules=[
  ['registration-ui-final.js',5],
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',7],
+ ['gtk-dapodik-breakdown.js',1],
  ['session-boundary-hardening.js',1],
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],
