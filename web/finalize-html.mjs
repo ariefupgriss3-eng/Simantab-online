@@ -318,7 +318,7 @@ await fs.writeFile(path.join(staticDir,gtkDapodikDetailFile),gtkDapodikDetailCod
 
 const gtkPublicBknModule='gtk-public-ptk-bkn-reconciliation.js';
 const gtkPublicBknCode=await fs.readFile(new URL('./gtk-public-ptk-bkn-reconciliation.js',import.meta.url),'utf8');
-if(!gtkPublicBknCode.includes('SIMANTAB_PUBLIC_PTK_BKN_RECON_V1'))
+if(!gtkPublicBknCode.includes('SIMANTAB_PUBLIC_PTK_BKN_RECON_V2'))
   throw new Error('Modul rekonsiliasi PTK–BKN tidak valid.');
 await fs.writeFile(path.join(staticDir,gtkPublicBknModule),gtkPublicBknCode);
 
@@ -381,7 +381,7 @@ const modules=[
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',7],
  ['gtk-dapodik-breakdown.js',1],
- ['gtk-public-ptk-bkn-reconciliation.js',1],
+ ['gtk-public-ptk-bkn-reconciliation.js',2],
  ['session-boundary-hardening.js',1],
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],

@@ -1,4 +1,4 @@
-// SIMANTAB_PUBLIC_PTK_BKN_SNAPSHOT_V1
+// SIMANTAB_PUBLIC_PTK_BKN_SNAPSHOT_V2
 // Source is a PUBLIC HTML REPORT, not a documented machine-readable API.
 // Aggregate by NPSN only; never ingest NIK, NIP, names of persons or individual PTK.
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
@@ -83,9 +83,13 @@ function parseSchools(html,district){
  }
  if(rows.length<5)throw Error("Rincian kecamatan "+district.name+" tidak lengkap");
  if(new Set(rows.map(r=>r.npsn)).size!==rows.length)throw Error("NPSN ganda di kecamatan "+district.id);
+ // Rekap kecamatan menghitung semua PTK, sedangkan rincian NPSN
+ // berasal dari kohort pemadanan ASN. Samakan hanya denominator ASN.
  const n=rows.reduce((a,r)=>a+r.total_ptk,0),a=rows.reduce((x,r)=>x+r.total_asn,0);
- if(n!==district.expectedPtk||a!==district.expectedAsn)
-  throw Error("Jumlah PTK/ASN "+district.name+" tidak cocok dengan rekap kecamatan");
+ if(a!==district.expectedAsn)
+  throw Error("Jumlah ASN "+district.name+" tidak cocok: rekap "+district.expectedAsn+", rincian NPSN "+a+"; hentikan sinkronisasi");
+ if(n>district.expectedPtk)
+  throw Error("PTK rincian "+district.name+" melebihi total kecamatan: "+n+" > "+district.expectedPtk);
  return rows;
 }
 async function loggedIn(req){
