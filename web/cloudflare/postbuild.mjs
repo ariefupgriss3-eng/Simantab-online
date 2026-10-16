@@ -141,8 +141,8 @@ assert(html.includes('./duplicate-nip-audit.js?v=1') &&
  'Pengaman pendaftaran NIP dan panel audit Super Admin tidak lengkap.');
 
 const smartUpload=await fs.readFile(path.join(output,'smart-upload-recovery.js'),'utf8');
-assert(html.includes('./smart-upload-recovery.js?v=1') &&
-  html.includes('./jabfung-jenjang-enhancement.js?v=6') &&
+assert(html.includes('./smart-upload-recovery.js?v=2') &&
+  html.includes('./jabfung-jenjang-enhancement.js?v=7') &&
   html.includes('./kp-enhancement.js?v=6') &&
   html.includes('./cuti-requirements.js?v=2') &&
   smartUpload.includes('SIMANTAB_SMART_UPLOAD_RECOVERY_V1_FREE_CLOUDFLARE') &&
@@ -151,6 +151,16 @@ assert(html.includes('./smart-upload-recovery.js?v=1') &&
   smartUpload.includes("'submission_files'"),
   'Smart Upload Recovery versi gratis belum terhubung pada build Cloudflare.');
 const jabfungEnhanced=await fs.readFile(path.join(output,'jabfung-jenjang-enhancement.js'),'utf8');
+assert(jabfungEnhanced.includes('SIMANTAB_JABFUNG_EASY_UPLOAD_V1') &&
+  jabfungEnhanced.includes('jabfungChecklistSummary') &&
+  jabfungEnhanced.includes('jabfungChecklistProgress') &&
+  jabfungEnhanced.includes('Periksa hak kirim (hanya jika ada kendala)') &&
+  jabfungEnhanced.includes('📤 Kirim Usulan Jabfung') &&
+  smartUpload.includes("await preflightJabfung(job);") &&
+  smartUpload.includes('startingJobs.add(lock)') &&
+  smartUpload.includes('confirmFileCount(job)'),
+  'Formulir Jabfung belum memakai panduan unggah mudah serta pemulihan satu-ID.');
+
 const kpEnhanced=await fs.readFile(path.join(output,'kp-enhancement.js'),'utf8');
 const cutiEnhanced=await fs.readFile(path.join(output,'cuti-requirements.js'),'utf8');
 assert(jabfungEnhanced.includes('simantabSmartUpload?.startJabfung') &&
