@@ -71,6 +71,52 @@ const isKabid=()=>profile().role==='KABID';
 const isCoordinator=()=>COORD_ROLES.has(profile().role);
 const isApplicant=()=>['GTK','KEPALA_SEKOLAH'].includes(profile().role);
 const isDinasAccount=()=>String(profile().account_channel||'').toUpperCase()==='DINAS';
+
+/* KSB_MODULE_CONTROL_20261016: akses server-side, tombol khusus SUPER_ADMIN/KABID */
+let ksbModuleState=null;
+const canControlKsbModule=()=>isSuperAdmin()||isKabid();
+const participantCanUseKsb=()=>!isApplicant()||ksbModuleState?.is_allowed===true;
+async function fetchKsbModuleStatus(){
+ const {data,error}=await sb.rpc('ks_bcks_access_status');
+ if(error){
+  ksbModuleState=null;
+  if(isApplicant())console.warn('Status Diklat KS/BCKS belum dapat diverifikasi:',error.message);
+  throw error;
+ }
+ ksbModuleState=data;
+ return data;
+}
+async function mountKsbModuleControl(){
+ if(!canControlKsbModule())return;
+ const body=$('diklatKsBcksBody');if(!body)return;
+ const old=$('ksbModuleControlCard');if(old)old.remove();
+ const card=document.createElement('div');card.id='ksbModuleControlCard';card.className='card';
+ card.style.marginBottom='12px';
+ card.innerHTML='<div class="label">PENGENDALIAN DIKLAT KS/BCKS</div><h3 style="margin:5px 0 8px">Aktivasi Modul Diklat KS/BCKS</h3><div id="ksbModuleControlStatus" class="small" style="margin-bottom:10px">Memeriksa status…</div><button type="button" class="btn primary" id="ksbModuleControlToggle" disabled>Memuat status</button><div class="small" style="margin-top:8px">Hanya Super Admin dan Kabid. Tidak memengaruhi simulasi seleksi BCKS. Data peserta tetap tersimpan.</div>';
+ body.prepend(card);
+ const label=card.querySelector('#ksbModuleControlStatus'),button=card.querySelector('#ksbModuleControlToggle');
+ try{
+  const state=await fetchKsbModuleStatus();
+  if(!state?.can_manage){label.textContent='Akun ini tidak berwenang mengatur aktivasi.';return;}
+  const open=state.is_open===true;
+  label.textContent='Status layanan peserta: '+(open?'AKTIF':'NONAKTIF')+'.';
+  button.textContent=open?'Nonaktifkan Diklat KS/BCKS':'Aktifkan Diklat KS/BCKS';
+  button.disabled=false;
+  button.onclick=async()=>{
+   const next=!(ksbModuleState?.is_open===true);
+   if(!confirm(next?'Aktifkan kembali pendaftaran dan akses peserta Diklat KS/BCKS?':'Nonaktifkan akses peserta ke modul Diklat KS/BCKS? Monitoring Dinas tetap tersedia.'))return;
+   button.disabled=true;button.textContent='Menyimpan…';
+   try{
+    const {data,error}=await sb.rpc('ks_bcks_set_module_open',{p_open:next});
+    if(error)throw error;
+    ksbModuleState=data;
+    toast(next?'Diklat KS/BCKS telah diaktifkan.':'Diklat KS/BCKS telah dinonaktifkan.');
+    await render();
+   }catch(e){toast(e.message||String(e),true);button.disabled=false;button.textContent=next?'Aktifkan Diklat KS/BCKS':'Nonaktifkan Diklat KS/BCKS';}
+  };
+ }catch(e){label.textContent='Status gagal dimuat: '+(e.message||String(e));button.textContent='Status belum tersedia';}
+}
+
 let applicantSchoolStatus='';
 async function resolveApplicantSchoolStatus(){
  if(!isApplicant()){applicantSchoolStatus='';return applicantSchoolStatus}
@@ -136,7 +182,7 @@ const toast=(msg,bad=false)=>{let t=$('ksBcksToast');if(!t){t=document.createEle
 function mainEl(){return document.querySelector('main.content')}
 function ensureSection(){if($('diklatKsBcks'))return;const main=mainEl();if(!main)return;const sec=document.createElement('section');sec.id='diklatKsBcks';sec.className='section';sec.innerHTML='<div class="head"><div><h2>Diklat KS/BCKS</h2><p>Workflow seleksi administrasi, seleksi substansi, Diklat, dan pencatatan sertifikat dari pihak berwenang.</p></div></div><div id="diklatKsBcksBody"></div>';const footer=main.querySelector('.footer');if(footer)main.insertBefore(sec,footer);else main.appendChild(sec)}
 function navButton(){const b=document.createElement('button');b.className='navbtn';b.dataset.tab='diklatKsBcks';b.setAttribute('onclick',"showTab('diklatKsBcks')");b.innerHTML='<span class="ico">🎓</span>Diklat KS/BCKS';return b}
-function ensureNav(){const nav=$('nav');if(!nav)return;if(isPrivateApplicant()){nav.querySelector('[data-tab="diklatKsBcks"]')?.remove();return}if(nav.querySelector('[data-tab="diklatKsBcks"]'))return;if(!(isApplicant()||isReviewer()||isDinasAccount()))return;const b=navButton();if(isReviewer()||isDinasAccount()){const p=nav.querySelector('[data-tab="promotion"]');p?p.after(b):nav.appendChild(b)}else{const s=nav.querySelector('[data-tab="services"]')||nav.querySelector('[data-tab="status"]');s?s.after(b):nav.appendChild(b)}}
+function ensureNav(){if(isApplicant()&&!participantCanUseKsb()){document.getElementById('nav')?.querySelector('[data-tab="diklatKsBcks"]')?.remove();return;}const nav=$('nav');if(!nav)return;if(isPrivateApplicant()){nav.querySelector('[data-tab="diklatKsBcks"]')?.remove();return}if(nav.querySelector('[data-tab="diklatKsBcks"]'))return;if(!(isApplicant()||isReviewer()||isDinasAccount()))return;const b=navButton();if(isReviewer()||isDinasAccount()){const p=nav.querySelector('[data-tab="promotion"]');p?p.after(b):nav.appendChild(b)}else{const s=nav.querySelector('[data-tab="services"]')||nav.querySelector('[data-tab="status"]');s?s.after(b):nav.appendChild(b)}}
 const stageIndex=s=>({ADMINISTRASI:0,SUBSTANSI:1,DIKLAT:2,SERTIFIKAT:3}[s]??0);
 const stateLabel=(d,i)=>i===0?(d?.admin_status||'BELUM'):i===1?(d?.substansi_status||'TERKUNCI'):i===2?(d?.diklat_status||'TERKUNCI'):(d?.sertifikat_status||'TERKUNCI');
 function progressHtml(d){const cur=stageIndex(d?.workflow_stage||'ADMINISTRASI');const labels=['1. Seleksi Administrasi','2. Seleksi Substansi','3. Diklat','4. Pencatatan Sertifikat Diklat'];return `<div class="servicegrid" style="margin-bottom:14px">${labels.map((x,i)=>{const unlocked=i<=cur,active=i===cur;const launch=(i===1&&unlocked)?'<button class="btn primary" id="ksbOpenSubstansiPractice" type="button" style="margin-top:10px;width:100%">Buka Modul Latihan</button>':'';return `<div class="service" style="border:${active?'2px solid #2563eb':'1px solid #dbe3ec'};opacity:${unlocked?1:.6}"><div class="small">LEVEL ${i+1}${active?' • AKTIF':''}</div><h3>${esc(x)}</h3><p>${esc(unlocked?stateLabel(d,i):'TERKUNCI')}</p>${launch}</div>`}).join('')}</div>`}
@@ -635,9 +681,38 @@ async function renderDinasAiResults(){
 }
 
 function bindSubstansiLauncher(){const b=$('ksbOpenSubstansiPractice');if(!b)return;b.onclick=async()=>{if(typeof window.__simantabOpenBcksSubstansi==='function'){await window.__simantabOpenBcksSubstansi();return}toast('Modul latihan sedang disiapkan. Silakan coba lagi beberapa detik.',true)}}
-async function render(){ensureSection();ensureNav();if(isPrivateApplicant()){await window.showTab?.('profile');return}if(isLeader()||isKabid())return renderLeadershipDiklat();if(isCoordinator())return renderCoordinatorDiklat();if(isReviewer())return renderReviewer();if(isApplicant()){const r=await renderApplicant();bindSubstansiLauncher();return r}if(isDinasAccount())return renderDinasAiResults();$('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>'}
+async function render(){
+ ensureSection();
+ if(isApplicant()&&!ksbModuleState){try{await fetchKsbModuleStatus()}catch(_e){/* fail closed */}}
+ ensureNav();
+ if(isPrivateApplicant()){await window.showTab?.('profile');return;}
+ if(isApplicant()&&!participantCanUseKsb()){
+  $('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akses Diklat KS/BCKS untuk akun ini sedang tidak tersedia. Hubungi admin dinas.</div></div>';return;
+ }
+ if(isLeader()||isKabid())await renderLeadershipDiklat();
+ else if(isCoordinator())await renderCoordinatorDiklat();
+ else if(isReviewer())await renderReviewer();
+ else if(isApplicant()){await renderApplicant();bindSubstansiLauncher();}
+ else if(isDinasAccount())await renderDinasAiResults();
+ else $('diklatKsBcksBody').innerHTML='<div class="card"><div class="notice">Akun ini tidak memiliki akses ke modul Diklat KS/BCKS.</div></div>';
+ if(canControlKsbModule())await mountKsbModuleControl();
+}
 await resolveApplicantSchoolStatus();
+if(isApplicant()){try{await fetchKsbModuleStatus()}catch(_e){/* tutup menu bila gagal */}}
 ensureSection();ensureNav();const nav=$('nav');if(nav&&!isPrivateApplicant()){let busy=false;new MutationObserver(()=>{if(busy)return;busy=true;queueMicrotask(()=>{ensureNav();busy=false})}).observe(nav,{childList:true})}
-const priorShow=window.showTab;window.showTab=async id=>{await resolveApplicantSchoolStatus();if(id==='diklatKsBcks'&&isPrivateApplicant())return priorShow('profile');ensureSection();ensureNav();await priorShow(id);if(id==='diklatKsBcks')await render()};
+const priorShow=window.showTab;
+window.showTab=async id=>{
+ await resolveApplicantSchoolStatus();
+ if(id==='diklatKsBcks'){
+  try{await fetchKsbModuleStatus()}catch(e){toast('Status akses Diklat KS/BCKS belum dapat dibaca.',true);if(isApplicant())return priorShow('services')}
+  if(isPrivateApplicant())return priorShow('profile');
+  if(isApplicant()&&!participantCanUseKsb()){
+   toast(ksbModuleState?.is_blocked?'Akses Diklat KS/BCKS akun ini dinonaktifkan.':'Modul Diklat KS/BCKS sedang ditutup.',true);
+   ensureNav();return priorShow('services');
+  }
+ }
+ ensureSection();ensureNav();await priorShow(id);
+ if(id==='diklatKsBcks')await render();
+};
 window.__simantabDiklatKsBcks={version:54,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_AUTO_AI_AUTO_ASSIGN_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:true,autoAssignAfterAi:true,autoDraftOnAiFail:true,aiWorkflowFunction:'simantab-diklat-ai-workflow',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
