@@ -196,24 +196,46 @@ async function start(opts,messageId){
  if(!P()?.id)throw new Error('Silakan login sebagai GTK.');
  if(liveProfileGate())throw new Error('Lengkapi Profil Kepegawaian wajib sebelum mengirim berkas.');
  if(!JOB_TYPES.has(opts.kind))throw new Error('Layanan pemulihan tidak dikenali.');
- const uid=P().id,prior=await existingJob(uid,opts.kind,opts.serviceType,opts.revisionId);
- if(prior){
-  message('Sudah ada antrean pemulihan untuk layanan ini. Buka Status Usulan → Lanjutkan Unggahan. Jangan membuat usulan baru.',false,messageId);
+ const uid=P().id,lock=uid+':'+opts.kind+':'+opts.serviceType+':'+(opts.revisionId||'');
+ if(startingJobs.has(lock)||busy){
+  message('Pengiriman sedang berjalan. Mohon tunggu; jangan tekan tombol Kirim lagi.',false,messageId);
+  return {busy:true};
+ }
+ startingJobs.add(lock);
+ try{
+  const prior=await existingJob(uid,opts.kind,opts.serviceType,opts.revisionId);
+  if(prior){
+   message('Antrean lama ditemukan. Melanjutkan unggahan yang sama, tanpa membuat pengajuan baru…',false,messageId);
+   await showPanel();
+   if(online()){
+    const result=await resume(prior.id,messageId);
+    return {...result,queued:!result?.success,id:prior.id,duplicatePrevented:true};
+   }
+   return {queued:true,id:prior.id,duplicatePrevented:true};
+  }
+  if(!consent()){
+   message('Pengiriman dibatalkan. Berkas belum tersimpan lokal maupun server.',false,messageId);
+   return {cancelled:true};
+  }
+  const job=makeJob(opts);
+  try{await put(job)}catch(e){
+   throw new Error('Browser tidak berhasil menyimpan antrean. Gunakan Chrome/Edge biasa (bukan mode samaran), pastikan ruang penyimpanan tersedia. '+String(e?.message||e));
+  }
+  notifyJob(job,'✅ Antrean '+job.files.length+' berkas tersimpan lokal. '+(online()?'Mengirim ke server…':'Menunggu internet tersambung.'),true,messageId);
   await showPanel();
-  return {queued:true,id:prior.id,duplicatePrevented:true};
- }
- if(!consent()){
-  message('Pengiriman dibatalkan. Berkas belum tersimpan lokal maupun server.',false,messageId);
-  return {cancelled:true};
- }
- const job=makeJob(opts);
- try{await put(job)}catch(e){
-  throw new Error('Gagal menyimpan berkas offline. Memori browser mungkin penuh atau mode privat aktif. Tidak ada pengajuan baru. '+String(e?.message||e));
- }
- message('✅ Antrean '+job.files.length+' berkas tersimpan lokal. '+(online()?'Menghubungi server...':'Internet terputus, akan dicoba saat kembali online.'),true,messageId);
- await showPanel();
- if(online())await resume(job.id,messageId);
- return {queued:true,id:job.id};
+  if(online()){
+   const result=await resume(job.id,messageId);
+   return {...result,queued:!result?.success,id:job.id};
+  }
+  return {queued:true,id:job.id,offline:true};
+ }finally{startingJobs.delete(lock);}
+}
+async function preflightJabfung(job){
+ if(job.kind!=='E_JABFUNG')return;
+ const {data,error}=await sb.rpc('simantab_submission_preflight',{p_client_profile_id:job.ownerId});
+ if(error)throw new Error('Pemeriksaan izin unggah belum berhasil: '+(error.message||String(error)));
+ const code=String(data||'UNKNOWN');
+ if(code!=='OK')throw new Error('Akun belum dapat mengirim Jabfung (kode '+code+'). Silakan login ulang atau hubungi Super Admin.');
 }
 async function ensureSubmission(job){
  const {data:known,error:readError}=await sb.from('submissions')
