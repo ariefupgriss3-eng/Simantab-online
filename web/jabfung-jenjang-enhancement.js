@@ -35,6 +35,66 @@
     return data||[];
   }
 
+
+  /* SIMANTAB_JABFUNG_EASY_UPLOAD_V1: panduan nyata, tanpa membuat usulan baru */
+  let sendingGuided=false;
+  function readJabfungFileChecklist(){
+    const fields=[...document.querySelectorAll('.jabfungReqFile')];
+    const summary={total:fields.length,required:0,validRequired:0,optional:0,missing:[],invalid:[],ready:false};
+    for(const field of fields){
+      const must=field.dataset.required==='1';
+      const name=field.dataset.label||field.dataset.code||'Berkas';
+      const file=field.files?.[0];
+      const feedback=field.closest?.('.field')?.querySelector?.('.jabfungFileFeedback');
+      if(must)summary.required++;
+      let indicator='';
+      if(!file){
+        if(must){summary.missing.push(name);indicator='Belum dipilih • WAJIB';}
+        else indicator='Opsional • boleh dikosongkan';
+      }else if(!ALLOWED.includes(file.type)||file.size<1||file.size>MAX_FILE){
+        summary.invalid.push(name);
+        indicator='Berkas tidak sesuai: gunakan PDF/JPG/PNG maksimal 1,5 MB.';
+      }else{
+        if(must)summary.validRequired++;
+        else summary.optional++;
+        indicator='✓ Siap: '+file.name+' ('+(file.size/1048576).toFixed(2)+' MB)';
+      }
+      if(feedback){
+        feedback.textContent=indicator;
+        feedback.style.color=!file&&!must?'#64748b':indicator.startsWith('✓')?'#14754a':'#a61b1b';
+      }
+    }
+    summary.ready=summary.total>0&&summary.missing.length===0&&summary.invalid.length===0;
+    return summary;
+  }
+  window.simJabfungUpdateChecklist=()=>{
+    const s=readJabfungFileChecklist();
+    const text=document.getElementById('jabfungChecklistSummary');
+    const progress=document.getElementById('jabfungChecklistProgress');
+    const missing=document.getElementById('jabfungMissingList');
+    if(text){
+      text.textContent=s.ready
+        ?'✅ Semua '+s.required+' berkas wajib sudah dipilih. Siap dikirim.'
+        :'Berkas wajib dipilih: '+s.validRequired+' dari '+s.required+'. '+(s.missing.length+s.invalid.length)+' item perlu dilengkapi/perbaiki.';
+      text.style.color=s.ready?'#116b47':'#9b4712';
+    }
+    if(progress){progress.max=Math.max(1,s.required);progress.value=s.validRequired;}
+    if(missing){
+      if(s.ready)missing.textContent='Silakan tekan tombol Kirim Usulan Jabfung di bawah. Periksa status berhasil di server.';
+      else missing.innerHTML='<b>Perlu dilengkapi:</b> '+[...s.missing,...s.invalid].slice(0,6).map(esc).join('; ')+
+        (s.missing.length+s.invalid.length>6?' dan lainnya':'')+'.';
+    }
+    const send=document.getElementById('jabfungSendBtn');
+    if(send){send.disabled=!s.ready||sendingGuided;send.title=s.ready?'Siap kirim usulan':'Lengkapi semua berkas wajib dahulu';}
+    return s;
+  };
+  window.simJabfungSetSending=(state)=>{
+    sendingGuided=!!state;
+    const button=document.getElementById('jabfungSendBtn');
+    if(button)button.textContent=sendingGuided?'⏳ Mengirim berkas, tunggu sebentar…':'📤 Kirim Usulan Jabfung';
+    window.simJabfungUpdateChecklist();
+  };
+
   async function renderForm(){
     const section=document.getElementById('newSubmission');
     if(!section) return;
@@ -42,14 +102,15 @@
     try{
       const reqs=await getRequirements();
       const docs=reqs.filter(r=>r.requirement_type==='DOCUMENT');
-      section.innerHTML=`<div class="head"><div><h2>Usul SK Kenaikan Jenjang Jabatan (Jabfung)</h2><p>Unggah setiap berkas pada item yang sesuai. Maksimal 1,5 MB per file.</p><div id="simJabfungVersion" class="small" style="margin-top:6px;color:#1767b3;font-weight:700">Keamanan pengajuan aktif • Versi CF-JF5</div></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
-      <div class="card" style="margin-bottom:13px"><div class="info"><b>AI Verifikator aktif.</b> Setelah berkas dikirim, AI meneliti kesesuaian isi, keterbacaan/blur, serta indikator visual stempel, tanda tangan, TTE atau QR. <b>AI tidak menetapkan dokumen asli/palsu</b>; keabsahan final tetap ditetapkan petugas melalui dokumen sumber atau verifikasi resmi.</div></div>
+      section.innerHTML=`<div class="head"><div><h2>Unggah Berkas Jabfung</h2><p>1. Pilih berkas sesuai nama dokumen → 2. Lengkapi semua yang wajib → 3. Klik Kirim Usulan.</p><div id="simJabfungVersion" class="small" style="margin-top:6px;color:#1767b3;font-weight:700">SIMANTAB Unggah Mudah • Gratis • Maksimal 1,5 MB/berkas</div></div><button class="btn soft" onclick="showTab('services')">← Kembali</button></div>
+      <div class="card" style="margin-bottom:13px"><div class="info">💡 <b>Tidak perlu mengirim satu-satu.</b> Pilih semua berkas wajib terlebih dahulu. Sistem akan mengunggahnya bergantian ketika Bapak/Ibu menekan <b>Kirim Usulan Jabfung</b>. Jika internet terputus, gunakan <b>Status Usulan → Lanjutkan Unggahan</b>. Pemeriksaan resmi tetap oleh petugas dinas.</div></div>
       <div class="card" style="margin-bottom:13px"><div class="info"><b>Ketentuan unggah:</b> PDF/JPG/PNG, maksimal 1,5 MB per file. Berkas bertanda * wajib diunggah sebelum usulan dikirim.</div></div>
-      <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">Berkas Usul Kenaikan Jenjang Jabfung</h3>
-        ${docs.map(r=>`<div class="field"><label>${r.sort_order}. ${esc(r.label)} ${r.is_required?'<b style="color:#b42318">*</b>':'<span class="small">(bila ada/opsional)</span>'}</label><input class="jabfungReqFile" data-code="${esc(r.code)}" data-required="${r.is_required?'1':'0'}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><div class="small">${esc(r.description||'')}</div></div>`).join('')}
+      <div class="card" style="margin-bottom:13px"><h3 style="margin-top:0">📎 Pilih Berkas Sesuai Persyaratan</h3>
+        ${docs.map(r=>`<div class="field"><label>${r.sort_order}. ${esc(r.label)} ${r.is_required?'<b style="color:#b42318">*</b>':'<span class="small">(bila ada/opsional)</span>'}</label><input class="jabfungReqFile" data-code="${esc(r.code)}" data-label="${esc(r.label)}" data-required="${r.is_required?'1':'0'}" type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" onchange="simJabfungUpdateChecklist()"><div class="small">${esc(r.description||'')}</div><div class="jabfungFileFeedback small" role="status" style="margin-top:4px"></div></div>`).join('')}
       </div>
       <div class="card" style="margin-bottom:13px"><div class="field"><label>Catatan/Keterangan Usul</label><textarea id="jabfungNotes" placeholder="Keterangan tambahan bila diperlukan"></textarea></div></div>
-      <div class="card"><button type="button" class="btn soft" onclick="simCheckJabfungUploadRights()">🔍 Periksa Hak Kirim (tanpa unggah)</button><div id="jabfungPreflightMsg" class="small" style="margin:8px 0 12px"></div><button id="jabfungSendBtn" class="btn primary" onclick="submitJabfungJenjang()">📤 Kirim Usul & Jalankan AI Verifikator</button><div id="jabfungMsg" class="small" style="margin-top:8px"></div></div>`;
+      <div class="card" style="border:2px solid #b9d7f4"><h3 style="margin:0 0 9px">✅ Periksa Kelengkapan Berkas</h3><div id="jabfungChecklistSummary" role="status" aria-live="polite" style="font-weight:700">Menghitung berkas wajib...</div><progress id="jabfungChecklistProgress" value="0" max="1" style="display:block;width:100%;height:16px;margin:9px 0"></progress><div id="jabfungMissingList" class="small" style="margin:8px 0 14px"></div><button id="jabfungSendBtn" class="btn primary" style="padding:14px 22px;font-size:16px" onclick="submitJabfungJenjang()" disabled>📤 Kirim Usulan Jabfung</button><div id="jabfungMsg" class="small" role="status" aria-live="polite" style="margin-top:12px;font-weight:600"></div><div class="small" style="margin-top:9px">Setelah terkirim, pastikan usulan muncul pada <b>Status Usulan</b>. Jangan tekan Kirim berulang kali.</div><details style="margin-top:16px"><summary class="small" style="cursor:pointer">Periksa hak kirim (hanya jika ada kendala)</summary><button type="button" class="btn soft" style="margin-top:10px" onclick="simCheckJabfungUploadRights()">🔍 Periksa Hak Kirim (tanpa unggah)</button><div id="jabfungPreflightMsg" class="small" style="margin:8px 0"></div></details></div>`;
+      window.simJabfungUpdateChecklist();
     }catch(e){
       section.innerHTML=`<div class="card err">Gagal memuat form Jabfung: ${esc(e.message||e)}</div>`;
     }
@@ -96,7 +157,15 @@
   let jabfungSending=false;
   let rlsBlockedUntil=0;
   window.submitJabfungJenjang=async()=>{
-    if(window.simantabSmartUpload?.startJabfung) return window.simantabSmartUpload.startJabfung();
+    if(window.simantabSmartUpload?.startJabfung){
+      const checklist=window.simJabfungUpdateChecklist?.();
+      if(checklist&&!checklist.ready){
+        const msg=document.getElementById('jabfungMsg');
+        if(msg){msg.className='err';msg.textContent='Berkas wajib belum lengkap atau ada berkas yang salah format/terlalu besar. Periksa daftar di atas.';}
+        return;
+      }
+      return window.simantabSmartUpload.startJabfung();
+    }
     const msg=document.getElementById('jabfungMsg');
     const btn=document.getElementById('jabfungSendBtn');
     if(jabfungSending) return;

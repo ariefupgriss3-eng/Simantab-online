@@ -20,6 +20,7 @@ on:
       - web/cloudflare/harden-gtk-submission.mjs
       - web/cloudflare/postbuild.mjs
       - web/tests/cloudflare-smart-upload-recovery.test.cjs
+      - web/tests/cloudflare-jabfung-easy-upload.test.cjs
       - web/jabfung-document-revisions.js
       - web/tests/cloudflare-jabfung-document-revisions.test.cjs
       - supabase/migrations/20261015162000_jabfung_document_revision_workflow.sql
@@ -42,6 +43,7 @@ jobs:
           node --test web/tests/cloudflare-mandatory-personnel-profile.test.cjs
           node --test web/tests/cloudflare-jabfung-document-revisions.test.cjs
           node --test web/tests/cloudflare-smart-upload-recovery.test.cjs
+          node --test web/tests/cloudflare-jabfung-easy-upload.test.cjs
           node --test web/tests/cloudflare-unique-nip-registration.test.cjs
       - name: Cloudflare static build smoke test
         working-directory: web
