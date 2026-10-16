@@ -1,4 +1,4 @@
-// SIMANTAB_PUBLIC_PTK_BKN_SNAPSHOT_V2
+// SIMANTAB_PUBLIC_PTK_BKN_SNAPSHOT_V3
 // Source is a PUBLIC HTML REPORT, not a documented machine-readable API.
 // Aggregate by NPSN only; never ingest NIK, NIP, names of persons or individual PTK.
 import { createClient } from "npm:@supabase/supabase-js@2.95.0";
@@ -65,7 +65,7 @@ function parseDistrictIndex(html){
  if(list.length!==15)throw Error("Daftar kecamatan tidak lengkap: ditemukan "+list.length+", diharapkan 15");
  return list;
 }
-function parseSchools(html,district){
+function parseSchools(html,district,strict=true){
  if(!/Kab(?:upaten|\.)\s*Batang/i.test(clean(html)))throw Error("Data sekolah bukan wilayah Kabupaten Batang");
  if(!/NPSN/i.test(html)||!/Total ASN/i.test(html))throw Error("Kolom PTK/ASN sekolah tidak sesuai");
  const rows=[];
@@ -86,9 +86,9 @@ function parseSchools(html,district){
  // Rekap kecamatan menghitung semua PTK, sedangkan rincian NPSN
  // berasal dari kohort pemadanan ASN. Samakan hanya denominator ASN.
  const n=rows.reduce((a,r)=>a+r.total_ptk,0),a=rows.reduce((x,r)=>x+r.total_asn,0);
- if(a!==district.expectedAsn)
+ if(strict&&a!==district.expectedAsn)
   throw Error("Jumlah ASN "+district.name+" tidak cocok: rekap "+district.expectedAsn+", rincian NPSN "+a+"; hentikan sinkronisasi");
- if(n>district.expectedPtk)
+ if(strict&&n>district.expectedPtk)
   throw Error("PTK rincian "+district.name+" melebihi total kecamatan: "+n+" > "+district.expectedPtk);
  return rows;
 }
@@ -119,6 +119,46 @@ async function preview(){
   example_asn:schools.reduce((s,r)=>s+r.total_asn,0),
   warning:"Uji baca berhasil. Belum ada data database yang diubah."};
 }
+
+/* Non-mutating source reconciliation. Never infer individual ASN, do not
+   save incomplete data and do not expose personal data in the response. */
+async function diagnose(){
+ const list=parseDistrictIndex(await officialFetch(COUNTY));
+ const subah=list.find(d=>/Kec\.?\s*Subah\b/i.test(d.name));
+ if(!subah)throw Error("Kecamatan Subah tidak terdaftar di sumber kabupaten");
+ const html=await officialFetch("/ptk-bkn/data_ptk?level=3&wilayah="+subah.id);
+ const parsed=parseSchools(html,subah,false);
+ const actual=parsed.reduce((sum,row)=>sum+row.total_asn,0);
+ const original=parsed.reduce((sum,row)=>sum+row.total_ptk,0);
+ const ignored=[];
+ for(const entry of trs(html)){
+   const row=entry.cells;
+   if(!row.length || !/^\d{1,4}$/.test(row[0]) || row.length<6)continue;
+   if(row.some((v,i)=>i<4 && /^\d{8}$/.test(v)))continue;
+   const st=trim(row[3]).toUpperCase();
+   if(!["NEGERI","SWASTA"].includes(st))continue;
+   const asn=int(row[5]),ptk=int(row[4]);
+   ignored.push({npsn_display:row[1]||"-",
+     school_name:trim(row[2]).slice(0,100),
+     ptk:Number.isSafeInteger(ptk)?ptk:null,
+     asn:Number.isSafeInteger(asn)?asn:null});
+ }
+ const dropped=ignored.reduce((acc,row)=>acc+(row.asn??0),0);
+ return {
+   ok:true,mode:"DIAGNOSTIC_READONLY",district:subah.name,code:subah.id,
+   source_url:BASE+"/ptk-bkn/data_ptk?level=3&wilayah="+subah.id,
+   checked_at:new Date().toISOString(),
+   district_asn:subah.expectedAsn,parsed_asn:actual,unreconciled_asn:subah.expectedAsn-actual,
+   district_ptk:subah.expectedPtk,parsed_ptk:original,
+   parsed_npsn:parsed.length,missing_npsn_rows:ignored.length,
+   missing_npsn_asn:dropped,missing_npsn_examples:ignored.slice(0,8),
+   outcome:actual===subah.expectedAsn?"MATCH":
+       dropped>0&&actual+dropped===subah.expectedAsn?"NON_NPSN_ROWS_EXPLAIN_GAP":"INCOMPLETE_SOURCE_COVERAGE",
+   write_performed:false,
+   note:"Hasil diagnostik saja. Perbedaan tidak boleh digunakan untuk mengisi ASN/non-ASN tanpa pemadanan NPSN yang sah."
+ };
+}
+
 async function sync(admin,user){
  const {data:recent,error:re}=await admin.from("gtk_public_bkn_runs").select("id,completed_at,matched_schools,matched_total_asn")
   .eq("status","COMPLETE").order("completed_at",{ascending:false}).limit(1);
@@ -177,6 +217,7 @@ Deno.serve(async(req)=>{
    const {user,admin}=await loggedIn(req);
    const body=await req.json().catch(()=>({}));
    if(body.action==="preview")return send(await preview());
+   if(body.action==="diagnose")return send(await diagnose());
    if(body.action==="sync")return send(await sync(admin,user));
    return send({error:"Aksi tidak tersedia"},400);
  }catch(e){
