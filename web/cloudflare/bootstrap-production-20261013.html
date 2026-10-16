@@ -1157,7 +1157,7 @@ button{cursor:pointer}.btn{border:0;border-radius:11px;padding:10px 13px;font-we
 
    <section id="tpg" class="section"><div class="head"><div><h2>TPG / Tamsil</h2><p>Layanan dan pemantauan TPG/Tamsil.</p></div></div><div id="tpgBody"></div></section>
    <section id="status" class="section"><div class="head"><div><h2>Status Usulan</h2><p>Riwayat pengajuan dan progres verifikasi.</p></div></div><div id="statusBody"></div></section>
-   <section id="docs" class="section"><div class="head"><div><h2>Dokumen Saya</h2><p>Dokumen tersimpan pada bucket privat SIMANTAB.</p></div></div><div id="docsBody"></div></section>
+   <section id="docs" class="section"><div class="head"><div><h2>Lemari Dokumenku</h2><p>Dokumen tersimpan pada bucket privat SIMANTAB.</p></div></div><div id="docsBody"></div></section>
    <section id="notifications" class="section"><div class="head"><div><h2>Notifikasi</h2><p>Pemberitahuan perubahan status layanan.</p></div><button class="btn soft" onclick="markAllRead()">Tandai dibaca</button></div><div id="notificationsBody"></div></section>
 
    <section id="monitoring" class="section"><div class="head"><div><h2>Monitoring Usulan</h2><p>Verifikasi dan pembaruan status usulan.</p></div></div><div id="monitoringBody"></div></section>
@@ -1267,7 +1267,7 @@ function navGroup(title,items){return `<div class="navhead">${title}</div>`+item
 function buildNav(){
  let h='';
  if(isGtkSide()){
-  h+=navGroup('Utama',[['dashboard','▦','Dashboard GTK'],['profile','♙','Profil GTK'],['services','☑','Layanan Kepegawaian'],['tpg','◉','TPG / Tamsil'],['status','⌛','Status Usulan'],['docs','▣','Dokumen Saya'],['notifications','🔔','Notifikasi']]);
+  h+=navGroup('Utama',[['dashboard','▦','Dashboard GTK'],['profile','♙','Profil GTK'],['services','☑','Layanan Kepegawaian'],['tpg','◉','TPG / Tamsil'],['status','⌛','Status Usulan'],['docs','▣','Lemari Dokumenku'],['notifications','🔔','Notifikasi']]);
  }else{
   h+=navGroup('Utama',[['dashboard','▦','Dashboard Dinas'],['profile','♙','Profil'],['services','☑','Layanan Kepegawaian'],['tpg','◉','TPG / Tamsil'],['monitoring','◫','Monitoring'],['notifications','🔔','Notifikasi']]);
   h+=navGroup('Data & Pengusulan',[['distribution','⇄','Distribusi GTK'],['needs','◎','Kebutuhan GTK Riil'],['archives','▣','Arsip'],['sk','✦','Usul Penerbitan SK']]);
@@ -1346,7 +1346,7 @@ async function refreshDashboard(){
     <button onclick="showTab('services')">☑<b>Ajukan Layanan</b><span>KP, cuti, pensiun, mutasi, KGB</span></button>
     <button onclick="showTab('status')">⌛<b>Status Usulan</b><span>Pantau progres</span></button>
     <button onclick="showTab('tpg')">◉<b>TPG/Tamsil</b><span>Layanan TPG/Tamsil</span></button>
-    <button onclick="showTab('docs')">▣<b>Dokumen Saya</b><span>Berkas privat</span></button>
+    <button onclick="showTab('docs')">▣<b>Lemari Dokumenku</b><span>Berkas privat</span></button>
    </div></div>
    <div class="card s12"><div class="info"><b>Pembatasan server aktif:</b> akun GTK tidak mempunyai akses ke Distribusi GTK, Kebutuhan GTK Riil, Arsip Bidang, Usul Penerbitan SK, Usul Promosi Karir, Pembinaan Disiplin, dan Kelola Pengguna.</div></div>
   </div>`;
