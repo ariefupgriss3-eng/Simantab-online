@@ -375,19 +375,28 @@ async function resume(id,messageId=null){
   job=await readOne(id);
   if(!job)return {missing:true};
   if(job.ownerId!==P()?.id)throw new Error('Antrean ini milik akun GTK lain.');
-  if(!online()){message('Jaringan terputus. Antrean tetap disimpan di perangkat ini.',false,messageId);return {offline:true};}
+  if(!online()){
+   notifyJob(job,'📶 Internet terputus. Berkas tetap tersimpan di perangkat ini; buka Status Usulan untuk melanjutkan.',false,messageId);
+   return {offline:true};
+  }
   if(liveProfileGate())throw new Error('Lengkapi profil wajib sebelum melanjutkan antrean.');
+  window.simJabfungSetSending?.(job.kind==='E_JABFUNG');
+  notifyJob(job,'🔍 Memeriksa akun dan izin pengiriman…',false,messageId);
   await checkSession(job.ownerId);
+  await preflightJabfung(job);
   job.stage='MENGUNGGAH';job.updatedAt=Date.now();job.lastError='';
   await put(job);await showPanel();
   if(job.kind==='JABFUNG_REVISION')await processRevision(job);
   else await processNormal(job);
   await remove(job.id);
-  message('✅ '+job.files.length+' berkas telah terverifikasi di server, pada pengajuan yang sama. Antrean lokal dibersihkan.',true,messageId);
+  notifyJob(job,'✅ BERHASIL! '+job.files.length+' berkas sudah diterima dan tercatat di server. Nomor pengajuan tidak berubah.',true,messageId);
   if(typeof window.loadStatus==='function'){
    try{await window.loadStatus();}catch(_){}
   }
   await showPanel();
+  if(job.kind==='E_JABFUNG'&&$('newSubmission')?.classList.contains('active')){
+   setTimeout(()=>window.showTab?.('status'),1700);
+  }
   return {success:true,submissionId:job.submissionId};
  }catch(e){
   if(job){
@@ -395,10 +404,14 @@ async function resume(id,messageId=null){
    job.lastError=String(e?.message||e).slice(0,600);
    job.updatedAt=Date.now();try{await put(job)}catch(_){}
   }
-  message('⏳ Unggahan belum tuntas. Data antrean aman di perangkat ini. '+String(e?.message||e)+'. Buka Status Usulan → Lanjutkan Unggahan.',false,messageId);
+  const result='⚠️ Unggahan belum selesai: '+String(e?.message||e)+'. Berkas yang tersimpan dalam antrean dapat dilanjutkan melalui Status Usulan → Lanjutkan Unggahan. Jangan membuat pengajuan baru.';
+  notifyJob(job,result,false,messageId);
   await showPanel();
   return {error:String(e?.message||e),submissionId:job?.submissionId||null};
- }finally{busy=false;}
+ }finally{
+  busy=false;
+  if(job?.kind==='E_JABFUNG')window.simJabfungSetSending?.(false);
+ }
 }
 async function showPanel(){
  if(rendering||!P()?.id)return;
@@ -412,9 +425,10 @@ async function showPanel(){
   box.style.cssText='margin-bottom:14px;border:1px solid #d3b06f';
   box.innerHTML='<div class="label">PEMULIHAN UNGGAH • GRATIS</div>'+
     '<h3 style="margin:5px 0">📶 Antrean Berkas di Perangkat Ini</h3>'+
-    '<p class="small">Berkas ini belum seluruhnya terkonfirmasi di server. Jangan mengirim usulan baru. Gunakan tombol Lanjutkan; satu nomor usulan dipertahankan. Penyimpanan lokal berlangsung maksimal 72 jam atau hingga logout.</p>'+
+    '<p class="small">Pengiriman belum tuntas. Klik Lanjutkan Unggahan untuk menyelesaikan pada pengajuan yang sama. Berkas lokal tersimpan maksimal 72 jam atau sampai logout.</p>'+
+    '<div id="simSmartUploadProgress" class="small" role="status" aria-live="polite" style="margin-bottom:8px"></div>'+
     jobs.map(j=>'<div style="border-top:1px solid var(--line);padding:12px 0">'+
-      '<b>'+esc(j.title)+'</b><div class="small">'+j.files.length+' berkas • '+esc(j.stage)+
+      '<b>'+esc(j.title)+'</b><div class="small">'+confirmFileCount(j)+' dari '+j.files.length+' berkas terkonfirmasi server • '+esc(j.stage)+
       ' • '+new Date(j.createdAt).toLocaleString('id-ID',{dateStyle:'medium',timeStyle:'short'})+'</div>'+
       (j.lastError?'<div class="err" style="margin-top:5px">'+esc(j.lastError)+'</div>':'')+
       '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">'+
@@ -443,7 +457,7 @@ async function autoResume(){
 }
 function feedback(id,text,isOk=false){
  const el=getMsg(id);
- if(el){el.className=isOk?'okmsg':'small';el.textContent=text;}
+ if(el){el.className=isOk?'okmsg':'err';el.textContent=text;}
 }
 async function invokeStart(opts,uiId){
  try{return await start(typeof opts==='function'?opts():opts,uiId)}
