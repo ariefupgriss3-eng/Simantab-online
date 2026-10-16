@@ -361,7 +361,7 @@ const modules=[
  ['premium-dashboard-theme.js',10],
  ['dashboard-order-fix.js',2],
  ['login-password-toggle.js',2],
- ['gtk-needs-progress.js',38],
+ ['gtk-needs-progress.js',39],
  ['gtk-redistribution-analysis.js',8],
  ['school-status-access-v1.js',11],
  ['activity-participant-import.js',1],
