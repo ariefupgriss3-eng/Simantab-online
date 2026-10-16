@@ -371,6 +371,12 @@ const gtkDapodikDetailCode=await fs.readFile(new URL('./gtk-dapodik-breakdown.js
 if(!gtkDapodikDetailCode.includes('SIMANTAB_GTK_DAPODIK_BREAKDOWN_V1'))throw new Error('Modul GTK Dapodik breakdown tidak valid.');
 await fs.writeFile(path.join(staticDir,gtkDapodikDetailFile),gtkDapodikDetailCode);
 
+const gtkPublicBknModule='gtk-public-ptk-bkn-reconciliation.js';
+const gtkPublicBknCode=await fs.readFile(new URL('./gtk-public-ptk-bkn-reconciliation.js',import.meta.url),'utf8');
+if(!gtkPublicBknCode.includes('SIMANTAB_PUBLIC_PTK_BKN_RECON_V1'))
+  throw new Error('Modul rekonsiliasi PTK–BKN tidak valid.');
+await fs.writeFile(path.join(staticDir,gtkPublicBknModule),gtkPublicBknCode);
+
 const modules=[
  ['kp-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 6 : 5],
  ['jabfung-jenjang-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 7 : 5],
@@ -431,6 +437,7 @@ const modules=[
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',7],
  ['gtk-dapodik-breakdown.js',1],
+ ['gtk-public-ptk-bkn-reconciliation.js',1],
  ['session-boundary-hardening.js',1],
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],
