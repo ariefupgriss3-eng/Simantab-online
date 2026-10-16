@@ -30,7 +30,7 @@ const BASE=[
  ['gtkRedistributionAnalysis','⇄','Analisis Redistribusi'],
  ['tpg','◉','TPG / Tamsil'],
  ['status','⌛','Status Usulan'],
- ['docs','▣','Dokumen Saya']
+ ['docs','▣','Lemari Dokumenku']
 ];
 const SENSITIVE=['discipline','⚖','Disiplin & Perceraian'];
 
