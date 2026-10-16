@@ -322,33 +322,40 @@ async function processRevision(job){
  if(request.state!=='OPEN'||request.requested_codes?.length!==job.files.length||
    job.files.some(x=>!request.requested_codes.includes(x.code)))
   throw new Error('Permintaan perbaikan sudah berubah. Periksa Status Usulan.');
- for(const file of job.files){
-  if(!file.done){
-   message('Mengunggah berkas perbaikan: '+file.code);
-   await uploadBlob(job,file);
-   file.done=true;job.updatedAt=Date.now();await put(job);
-  }
+ for(let i=0;i<job.files.length;i++){
+  const file=job.files[i];
+  notifyJob(job,'📤 Memperbaiki berkas '+(i+1)+' dari '+job.files.length+': '+file.code,false);
+  // A resumed revision uses the same object path and verifies any existing object.
+  await uploadBlob(job,file);
+  file.done=true;job.updatedAt=Date.now();await put(job);
+  await showPanel();
  }
  const data=job.files.map(f=>({code:f.code,file_name:f.name,storage_path:f.path,file_size:f.size,mime_type:f.mime}));
  const {data:count,error:err}=await sb.rpc('jabfung_revision_submit',{p_revision_id:job.revisionId,p_files:data});
  if(err)throw err;
  if(Number(count)!==job.files.length)throw new Error('Jumlah berkas yang diterima tidak sesuai.');
+ job.files.forEach(file=>{file.confirmed=true;});await put(job);
 }
 async function processNormal(job){
  await ensureSubmission(job);
  await saveKpDetail(job);
- for(const file of job.files){
-  message('Memeriksa dan mengunggah: '+file.name);
+ for(let i=0;i<job.files.length;i++){
+  const file=job.files[i];
+  notifyJob(job,'📤 Mengunggah berkas '+(i+1)+' dari '+job.files.length+': '+file.name,false);
   if(await existingFileMetadata(job,file)){
-   file.done=true;await put(job);continue;
+   file.done=true;file.confirmed=true;job.updatedAt=Date.now();await put(job);
+   await showPanel();
+   continue;
   }
-  // Retry the deterministic Storage path even when a prior attempt uploaded bytes
-  // but failed before inserting metadata. A 409 is accepted only after checking
-  // the exact object name, MIME type and size on the server.
+  // Retry the same Storage path. An already-existing object is accepted only
+  // after comparing exact name, size and MIME; no duplicate submission created.
   await uploadBlob(job,file);
   file.done=true;job.updatedAt=Date.now();await put(job);
   await submitMetadata(job,file);
+  file.confirmed=true;job.updatedAt=Date.now();await put(job);
+  await showPanel();
  }
+ notifyJob(job,'⏳ Seluruh berkas terunggah. Memastikan catatan server sudah lengkap…',false);
  const {data:verified,error}=await sb.from('submission_files')
   .select('storage_path,user_id,submission_id,file_size,mime_type,requirement_code')
   .eq('submission_id',job.submissionId);
