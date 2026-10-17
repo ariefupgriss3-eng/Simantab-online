@@ -61,11 +61,12 @@ const COORD_SCOPE={KASI_SD:'SD',KASI_SMP:'SMP',SUBKOOR_TK:'TK_PAUD_PNF'};
 const KSB_FLOW_LABEL={
  MENUNGGU_DISPOSISI_KOORDINATOR:'Bagi Tugas',
  VERIFIKASI_STAF:'Verifikasi Admin',
+  MENUNGGU_APPROVAL_KOORDINATOR:'Persetujuan Kasi/Subkoor',
  MENUNGGU_PERSETUJUAN_KABID:'Persetujuan Kabid',
  PERBAIKAN:'Perbaikan',
  SELESAI:'Selesai / Naik Level'
 };
-const isReviewer=()=>REVIEW_ROLES.has(profile().role)||String(profile().username||'').toLowerCase()==='kasim';
+const isReviewer=()=>REVIEW_ROLES.has(profile().role)||/^(STAFF_|ADMIN_)/.test(String(profile().role||''))||String(profile().username||'').toLowerCase()==='kasim';
 const isSuperAdmin=()=>profile().role==='SUPER_ADMIN';
 const isLeader=()=>LEADER_ROLES.has(profile().role);
 const isKabid=()=>profile().role==='KABID';
@@ -304,6 +305,7 @@ function coordKsbSummary(rows){
  const defs=[
   ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
   ['VERIFIKASI_STAF','Verifikasi Admin/Staf'],
+   ['MENUNGGU_APPROVAL_KOORDINATOR','Persetujuan Kasi/Subkoor'],
   ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
   ['SELESAI','Selesai / Naik Level']
  ];
@@ -312,8 +314,18 @@ function coordKsbSummary(rows){
 function coordKsbAction(s){
  const reset=resetDraftButton(s.id,s.workflow_state);
  if(s.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR')return `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" onclick="ksbCoordOpenAssign('${s.id}')">👤 Bagi Tugas</button>${reset}</div>`;
+ if(s.workflow_state==='MENUNGGU_APPROVAL_KOORDINATOR')return `<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn" onclick="ksbCoordManualApprove('${s.id}',true)">✓ Setujui Verifikasi</button><button class="btn secondary" onclick="ksbCoordManualApprove('${s.id}',false)">↩ Kembalikan ke Staf</button>${reset}</div>`;
  return reset;
 }
+window.ksbCoordManualApprove=async(id,approve)=>{
+ const note=(prompt(approve?'Catatan persetujuan verifikasi staf (opsional):':'Alasan pengembalian kepada staf (wajib):')||'').trim();
+ if(!approve&&!note){toast('Alasan pengembalian wajib diisi.',true);return;}
+ if(approve&&!confirm('Setujui hasil pemeriksaan staf lalu teruskan ke Kabid?'))return;
+ const {error}=await sb.rpc('submission_coordinator_approve',{p_submission_id:id,p_approve:approve,p_note:note||null});
+ if(error)return toast(error.message,true);
+ toast(approve?'Berkas diteruskan ke persetujuan Kabid.':'Berkas dikembalikan ke staf pemeriksa.');
+ await renderCoordinatorDiklat();
+};
 async function renderCoordinatorDiklat(){
  const body=$('diklatKsBcksBody');if(!body)return;
  body.innerHTML='<div class="card"><div class="small">Memuat agregat Diklat KS/BCKS sesuai jenjang…</div></div>';
@@ -352,6 +364,7 @@ function leaderKsbSummary(rows){
  const defs=[
   ['MENUNGGU_DISPOSISI_KOORDINATOR','Bagi Tugas'],
   ['VERIFIKASI_STAF','Verifikasi Admin/Staf'],
+   ['MENUNGGU_APPROVAL_KOORDINATOR','Persetujuan Kasi/Subkoor'],
   ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
   ['PERBAIKAN','Perbaikan'],
   ['SELESAI','Selesai / Naik Level']
@@ -461,6 +474,14 @@ async function reviewerData(){
  const err=det.error||pf.error||sub.error;if(err)throw err;
  const activeIds=new Set((pf.data||[]).filter(x=>x.is_active!==false).map(x=>x.id));
  const byId=new Map((sub.data||[]).map(x=>[x.id,x]));
+ const role=String(profile().role||'');
+ if(/^(STAFF_|ADMIN_)/.test(role)){
+  const {data:assigned,error:ae}=await sb.from('submission_assignees').select('submission_id').eq('user_id',profile().id);
+  if(ae)throw ae;
+  const ids=new Set((assigned||[]).map(x=>x.submission_id));
+  return (det.data||[]).filter(x=>!x.is_archived&&ids.has(x.submission_id))
+   .map(x=>({...x,manual_workflow_state:byId.get(x.submission_id)?.workflow_state||'',assigned_user_id:byId.get(x.submission_id)?.assigned_user_id||null})).sort(draftLast);
+ }
  return (det.data||[]).filter(x=>activeIds.has(x.user_id)&&!x.is_archived)
   .map(x=>({...x,manual_workflow_state:byId.get(x.submission_id)?.workflow_state||'',assigned_user_id:byId.get(x.submission_id)?.assigned_user_id||null})).sort(draftLast);
 }
@@ -707,5 +728,5 @@ window.showTab=async id=>{
  ensureSection();ensureNav();await priorShow(id);
  if(id==='diklatKsBcks')await render();
 };
-window.__simantabDiklatKsBcks={version:55,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:56,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
