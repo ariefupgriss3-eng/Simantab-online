@@ -1,3 +1,4 @@
+/* SIMANTAB_DIKLAT_LOCAL_HUMAN_REVIEW_V1 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V2 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V3 */
 /* SIMANTAB_DIKLAT_KS_BCKS_V4 */
@@ -250,7 +251,18 @@ function bindApplicant(d,files){
  $('ksbSave')?.addEventListener('click',async()=>{try{const {error}=await sb.rpc('ks_bcks_save_administrasi',formVals());if(error)throw error;toast('Data administrasi tersimpan.');await renderApplicant()}catch(e){toast(e.message||String(e),true)}});
  document.querySelectorAll('[data-ksb-upload]').forEach(inp=>inp.addEventListener('change',async ev=>{const file=ev.target.files?.[0],code=ev.target.dataset.ksbUpload;if(!file)return;if(file.size>FILE_LIMIT)return toast('Berkas melebihi 500 KB.',true);if(!['application/pdf','image/jpeg','image/png'].includes(file.type))return toast('Format hanya PDF/JPG/PNG.',true);if(!d?.submission_id)return toast('Simpan data administrasi terlebih dahulu.',true);try{const old=(files||[]).find(x=>x.requirement_code===code);if(old){await sb.storage.from(BUCKET).remove([old.storage_path]);await sb.from('submission_files').delete().eq('id',old.id)}const clean=file.name.replace(/[^A-Za-z0-9._-]/g,'_'),path=`${profile().id}/${d.submission_id}/diklat-ks-bcks/${code}-${Date.now()}-${clean}`;const up=await sb.storage.from(BUCKET).upload(path,file,{upsert:false,contentType:file.type});if(up.error)throw up.error;const ins=await sb.from('submission_files').insert({submission_id:d.submission_id,user_id:profile().id,storage_path:path,file_name:file.name,file_size:file.size,mime_type:file.type,requirement_code:code});if(ins.error)throw ins.error;toast('Berkas berhasil diunggah.');await renderApplicant()}catch(e){toast(e.message||String(e),true)}}));
  document.querySelectorAll('[data-ksb-view]').forEach(b=>b.addEventListener('click',async()=>{const {data,error}=await sb.storage.from(BUCKET).createSignedUrl(b.dataset.ksbView,600);if(error)return toast(error.message,true);window.open(data.signedUrl,'_blank')}));
- $('ksbSubmit')?.addEventListener('click',async()=>{if(!confirm('Ajukan Seleksi Administrasi ke Dinas? AI Verifikator akan berjalan otomatis. Jika 7/7 sesuai, sistem otomatis membagi tugas verifikator lalu meneruskan ke Persetujuan Kabid. Jika tidak lolos, status kembali ke Draft.'))return;const btn=$('ksbSubmit');try{if(btn){btn.disabled=true;btn.textContent='🤖 AI Verifikator otomatis berjalan...'}const r=await invokeDiklatAi(d.submission_id,'submit');if(r.overall_status==='GAGAL_TEKNIS'){toast('AI mengalami kendala teknis sementara. Sistem otomatis mencoba ulang di background; berkas tidak dinilai gagal dan tidak perlu diajukan ulang.',true);await renderApplicant();return}if(r.overall_status!=='SESUAI'){toast('AI: berkas belum lolos dan status otomatis dikembalikan ke Draft.',true);await renderApplicant();return}const state=r.final_state?.workflow_state||'';toast(state==='MENUNGGU_PERSETUJUAN_KABID'?'AI: 7/7 sesuai. Bagi tugas otomatis selesai; AI Agregat juga diantrikan otomatis. Menunggu Persetujuan Kabid.':'AI: 7/7 sesuai. Sistem menyelesaikan bagi tugas dan sinkronisasi AI Agregat otomatis.');await renderApplicant()}catch(e){toast(e.message||String(e),true)}finally{if(btn&&document.body.contains(btn)){btn.disabled=false;btn.textContent='Ajukan Seleksi Administrasi ke Dinas'}}});
+ $('ksbSubmit')?.addEventListener('click',async()=>{
+ if(!confirm('Ajukan 7 berkas Diklat KS ke Dinas untuk verifikasi manual? Pemeriksaan awal hanya format, ukuran, kelengkapan dan metadata. Isi dan keabsahan dokumen diperiksa petugas. Tidak ada AI eksternal.'))return;
+ const btn=$('ksbSubmit');
+ try{
+  if(btn){btn.disabled=true;btn.textContent='Memeriksa dan mengajukan...'}
+  const {error}=await sb.rpc('ks_bcks_submit_local',{p_submission_id:d.submission_id});
+  if(error)throw error;
+  toast('Pengajuan berhasil. Menunggu Kasi/Subkoor membagi tugas, kemudian petugas Dinas memverifikasi berkas.');
+  await renderApplicant();
+ }catch(e){toast(e.message||String(e),true)}
+ finally{if(btn&&document.body.contains(btn)){btn.disabled=false;btn.textContent='Ajukan Seleksi Administrasi ke Dinas'}}
+ });
  $('ksbCertSubmit')?.addEventListener('click',async()=>{if(!confirm('Ajukan data sertifikat ke Admin KSPS untuk diverifikasi?'))return;try{const {error}=await sb.rpc('ks_bcks_submit_certificate_data',{p_submission_id:d.submission_id,p_penerbit:$('ksbCertIssuer')?.value?.trim(),p_nomor:$('ksbCertNo')?.value?.trim(),p_tanggal:$('ksbCertDate')?.value||null,p_note:$('ksbCertNote')?.value?.trim()||null});if(error)throw error;toast('Data sertifikat berhasil diajukan ke Admin KSPS.');await renderApplicant()}catch(e){toast(e.message||String(e),true)}});
 }
 
@@ -662,7 +674,7 @@ function bindReviewer(){document.querySelectorAll('[data-ksb-action]').forEach(b
   await renderReviewer();
   return;
  }
- let res;if(a==='admin-ok'||a==='admin-no')res=await sb.rpc('ks_bcks_review_administrasi',{p_submission_id:id,p_approve:a==='admin-ok',p_note:noteFor(id)});else if(a==='sub-ok'||a==='sub-no')res=await sb.rpc('ks_bcks_set_substansi_result',{p_submission_id:id,p_lulus:a==='sub-ok',p_note:noteFor(id)});else if(a==='dik-ok'||a==='dik-no')res=await sb.rpc('ks_bcks_set_diklat_result',{p_submission_id:id,p_lulus:a==='dik-ok',p_note:noteFor(id)});else if(a==='cert-ok'||a==='cert-no')res=await sb.rpc('ks_bcks_review_certificate',{p_submission_id:id,p_approve:a==='cert-ok',p_note:noteFor(id)});if(res?.error)throw res.error;toast('Status berhasil diperbarui.');await renderReviewer()}catch(e){toast(e.message||String(e),true)}}))}
+ let res;if(a==='admin-ok'||a==='admin-no')res=await sb.rpc('ks_bcks_review_administrasi_local',{p_submission_id:id,p_approve:a==='admin-ok',p_note:noteFor(id)});else if(a==='sub-ok'||a==='sub-no')res=await sb.rpc('ks_bcks_set_substansi_result',{p_submission_id:id,p_lulus:a==='sub-ok',p_note:noteFor(id)});else if(a==='dik-ok'||a==='dik-no')res=await sb.rpc('ks_bcks_set_diklat_result',{p_submission_id:id,p_lulus:a==='dik-ok',p_note:noteFor(id)});else if(a==='cert-ok'||a==='cert-no')res=await sb.rpc('ks_bcks_review_certificate',{p_submission_id:id,p_approve:a==='cert-ok',p_note:noteFor(id)});if(res?.error)throw res.error;toast('Status berhasil diperbarui.');await renderReviewer()}catch(e){toast(e.message||String(e),true)}}))}
 
 async function renderDinasAiResults(){
  const body=$('diklatKsBcksBody');if(!body)return;
