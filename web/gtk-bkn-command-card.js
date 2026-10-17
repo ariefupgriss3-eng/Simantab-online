@@ -18,7 +18,7 @@
  function styles(){
   if(document.getElementById('bknCommandCardStyles'))return;
   const el=document.createElement('style');el.id='bknCommandCardStyles';
-  el.textContent='#dashboardBody .bkn-command-card{cursor:pointer;outline-offset:3px;border-color:#bcdacf;background:linear-gradient(130deg,#fff,#f2faf6)}#dashboardBody .bkn-command-card:hover{box-shadow:0 8px 28px #0c6d5430}#dashboardBody .bkn-command-card .lad-value{color:#0c7156}#dashboardBody .bkn-command-card .bkn-meta{font-size:11px;color:#426674;line-height:1.45;margin-top:7px}#dashboardBody .bkn-command-card .bkn-status{font-size:10px;color:#376e57;font-weight:700;margin-top:6px}#bknCommandDialog{position:fixed;inset:0;z-index:100007;display:flex;justify-content:center;align-items:center;background:#081e3da8;padding:14px}#bknCommandDialog[hidden]{display:none!important}#bknCommandDialog .bkn-panel{background:white;border-radius:16px;padding:20px;color:#173e5e;max-height:92vh;overflow:auto;width:min(720px,100%);box-shadow:0 18px 60px #021b3f60;box-sizing:border-box}#bknCommandDialog h2{font-size:19px;color:#155947;margin:0 0 8px}#bknCommandDialog .bkn-sub{font-size:12px;color:#54707c;line-height:1.6}#bknCommandDialog table{border-collapse:collapse;width:100%;min-width:460px}#bknCommandDialog th,#bknCommandDialog td{text-align:right;border-bottom:1px solid #e1eaf0;padding:11px;font-size:12px}#bknCommandDialog th:first-child,#bknCommandDialog td:first-child{text-align:left}#bknCommandDialog th{background:#eef6f7}#bknCommandDialog .bkn-overflow{max-width:100%;overflow:auto;border:1px solid #d7e5eb;border-radius:10px;margin:13px 0}#bknCommandDialog button{background:#edf7f5;color:#175646;border:1px solid #b2d9c9;border-radius:9px;padding:9px 13px;cursor:pointer;font-weight:700}#bknCommandDialog .bkn-note{font-size:12px;background:#fff8e8;color:#795b22;border:1px solid #eddcb6;border-radius:10px;padding:11px;margin-top:14px;line-height:1.65}#bknCommandDialog .bkn-head{display:flex;justify-content:space-between;gap:12px;align-items:start}#bknCommandDialog .bkn-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}@media(max-width:600px){#bknCommandDialog .bkn-panel{padding:12px}#bknCommandDialog h2{font-size:16px}}';
+  el.textContent='#dashboardBody .bkn-command-card{cursor:pointer;outline-offset:3px;border-color:#bcdacf;background:linear-gradient(130deg,#fff,#f2faf6)}#dashboardBody .bkn-command-card:hover{box-shadow:0 8px 28px #0c6d5430}#dashboardBody .bkn-command-card .lad-value,#dashboardBody .bkn-command-card .kv{color:#0c7156}#dashboardBody .bkn-command-card .bkn-meta{font-size:11px;color:#426674;line-height:1.45;margin-top:7px}#dashboardBody .bkn-command-card .bkn-status{font-size:10px;color:#376e57;font-weight:700;margin-top:6px}#bknCommandDialog{position:fixed;inset:0;z-index:100007;display:flex;justify-content:center;align-items:center;background:#081e3da8;padding:14px}#bknCommandDialog[hidden]{display:none!important}#bknCommandDialog .bkn-panel{background:white;border-radius:16px;padding:20px;color:#173e5e;max-height:92vh;overflow:auto;width:min(720px,100%);box-shadow:0 18px 60px #021b3f60;box-sizing:border-box}#bknCommandDialog h2{font-size:19px;color:#155947;margin:0 0 8px}#bknCommandDialog .bkn-sub{font-size:12px;color:#54707c;line-height:1.6}#bknCommandDialog table{border-collapse:collapse;width:100%;min-width:460px}#bknCommandDialog th,#bknCommandDialog td{text-align:right;border-bottom:1px solid #e1eaf0;padding:11px;font-size:12px}#bknCommandDialog th:first-child,#bknCommandDialog td:first-child{text-align:left}#bknCommandDialog th{background:#eef6f7}#bknCommandDialog .bkn-overflow{max-width:100%;overflow:auto;border:1px solid #d7e5eb;border-radius:10px;margin:13px 0}#bknCommandDialog button{background:#edf7f5;color:#175646;border:1px solid #b2d9c9;border-radius:9px;padding:9px 13px;cursor:pointer;font-weight:700}#bknCommandDialog .bkn-note{font-size:12px;background:#fff8e8;color:#795b22;border:1px solid #eddcb6;border-radius:10px;padding:11px;margin-top:14px;line-height:1.65}#bknCommandDialog .bkn-head{display:flex;justify-content:space-between;gap:12px;align-items:start}#bknCommandDialog .bkn-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}@media(max-width:600px){#bknCommandDialog .bkn-panel{padding:12px}#bknCommandDialog h2{font-size:16px}}';
   document.head.appendChild(el);
  }
  async function paged(table,select,config){
@@ -70,23 +70,25 @@
   catch(e){failed=String(e.message||e);throw e}
   finally{inflight=null}
  }
- function cardMarkup(data){
+ function cardMarkup(data,isKd){
   const tk=data.cells.TK_NEGERI.asn+data.cells.TK_SWASTA.asn,
     sd=data.cells.SD_NEGERI.asn+data.cells.SD_SWASTA.asn,
     smp=data.cells.SMP_NEGERI.asn+data.cells.SMP_SWASTA.asn;
-  return '<div class="lad-label">ASN PTK Terpadankan BKN</div>'+
-    '<div class="lad-value">'+fmt(data.total)+'</div>'+
-    '<div class="lad-sub">TK '+fmt(tk)+' • SD '+fmt(sd)+' • SMP '+fmt(smp)+'</div>'+
+  const title=isKd?'<span class="ki">🛡️</span><div class="label">ASN PTK Terpadankan BKN</div>':'<div class="lad-label">ASN PTK Terpadankan BKN</div>';
+  return title+
+    '<div class="'+(isKd?'kv':'lad-value')+'">'+fmt(data.total)+'</div>'+ 
+    '<div class="'+(isKd?'ks':'lad-sub')+'">TK '+fmt(tk)+' • SD '+fmt(sd)+' • SMP '+fmt(smp)+'</div>'+ 
     '<div class="bkn-meta">'+fmt(data.matched)+' NPSN cocok dari '+fmt(data.source)+' sekolah sumber<br>'+
     escapeText(dateLabel(data.completed))+' • Sumber PTK–BKN publik</div>'+
     '<div class="bkn-status">Lihat rincian negeri/swasta ↗</div>';
  }
  function findGrid(){
   const area=document.getElementById('dashboardBody');
-  const grid=area?.querySelector('.lad-grid');
+  const grid=area?.querySelector('.lad-grid,.kdg');
   if(!grid||!auth())return null;
-  const gtk=[...grid.querySelectorAll('.lad-card')].find(card=>clean(card.querySelector('.lad-label')?.textContent)==='GTK DAPODIK');
-  return gtk?{grid,gtk}:null;
+  const isKd=grid.classList.contains('kdg');
+  const gtk=[...grid.querySelectorAll(isKd?'.kk':'.lad-card')].find(card=>clean(card.querySelector(isKd?'.label':'.lad-label')?.textContent)==='GTK DAPODIK');
+  return gtk?{grid,gtk,isKd}:null;
  }
  function mount(data){
   if(!auth()||!data)return;
@@ -95,14 +97,14 @@
   let card=position.grid.querySelector('#bknAsnCommandCard');
   if(!card){
     card=document.createElement('div');card.id='bknAsnCommandCard';
-    card.className='lad-card bkn-command-card';
+    card.className=(position.isKd?'kk k3':'lad-card')+' bkn-command-card';
     card.setAttribute('role','button');card.setAttribute('tabindex','0');
     card.setAttribute('aria-label','Lihat rincian ASN PTK terpadankan BKN');
     card.addEventListener('click',()=>openDetail());
     card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openDetail()}});
     position.gtk.insertAdjacentElement('afterend',card);
   }
-  card.innerHTML=cardMarkup(data);
+  card.innerHTML=cardMarkup(data,position.isKd);
  }
  function tableMarkup(data){
   const levelName={TK:'TK/PAUD',SD:'SD',SMP:'SMP'};
@@ -132,7 +134,7 @@
    '<div class="bkn-sub">Snapshot '+escapeText(dateLabel(data.completed))+' • '+fmt(data.matched)+' NPSN cocok dari '+fmt(data.source)+' sekolah sumber.</div>'+
    '</div><button type="button" id="bknCardClose">✕ Tutup</button></div>'+
    tableMarkup(data)+
-   '<div class="bkn-note"><b>Pembanding, bukan angka kepegawaian yang otomatis menggantikan Dapodik.</b> 4.794 adalah ASN PTK gabungan Guru dan Tendik pada NPSN terpadankan, bukan jumlah seluruh GTK dan tidak dibagi menjadi ASN Guru atau ASN Tendik. Simbol — pada matriks status Guru/Tendik tetap berarti data belum tersedia. SKB dengan NPSN berawalan P diikutkan untuk memeriksa rekap kecamatan, tetapi tidak otomatis menjadi sekolah TK/SD/SMP dalam master SIMANTAB.</div>'+
+   '<div class="bkn-note"><b>Pembanding, bukan angka kepegawaian yang otomatis menggantikan Dapodik.</b> '+fmt(data.total)+' adalah ASN PTK gabungan Guru dan Tendik pada NPSN terpadankan, bukan jumlah seluruh GTK dan tidak dibagi menjadi ASN Guru atau ASN Tendik. Simbol — pada matriks status Guru/Tendik tetap berarti data belum tersedia. SKB dengan NPSN berawalan P diikutkan untuk memeriksa rekap kecamatan, tetapi tidak otomatis menjadi sekolah TK/SD/SMP dalam master SIMANTAB.</div>'+
    '<div class="bkn-actions"><button type="button" id="bknCardRefresh">↻ Segarkan snapshot</button><a target="_blank" rel="noopener noreferrer" href="'+sourceLink+'">Lihat laporan publik PTK–BKN ↗</a></div></div>';
   dialog.querySelector('#bknCardClose').onclick=closeDetail;
   dialog.onclick=e=>{if(e.target===dialog)closeDetail();};
@@ -145,7 +147,8 @@
  }
  let lastTry=0;
  function ensure(){
-   if(!auth()||!document.getElementById('dashboardBody'))return;
+   if(!auth()){document.getElementById('bknAsnCommandCard')?.remove();closeDetail();snapshot=null;loadedAt=0;return;}
+   if(!document.getElementById('dashboardBody'))return;
    if(snapshot){mount(snapshot);if(Date.now()-loadedAt<120000)return;}
    if(inflight||Date.now()-lastTry<2500)return;
    lastTry=Date.now();
