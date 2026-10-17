@@ -36,6 +36,13 @@ ok(headers.includes('Cache-Control: no-store')&&headers.includes('/sw.js'),'Head
 const og=await fs.readFile(path.join(root,'og-simantab-login.png'));
 ok(og.length>1000&&og.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])),'OG login PNG tidak tersedia');
 ok(html.includes('og-simantab-login.png'),'Pratinjau tautan login belum dipasang');
+const PREVIEW_ORIGIN = 'https://simantab-cf-preview.m-arief-rohman.workers.dev';
+const OFFICIAL_ORIGIN = 'https://simantab.disdikbud.batangkab.go.id';
+const requestedOrigin = (process.env.SIMANTAB_PUBLIC_ORIGIN || PREVIEW_ORIGIN).replace(/[/]$/, '');
+ok([PREVIEW_ORIGIN, OFFICIAL_ORIGIN].includes(requestedOrigin),'Alamat publik harus preview atau domain resmi yang disetujui');
+ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonical site origin tidak cocok dengan konfigurasi domain');
+ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
+ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
 const module=await read('diklat-ks-bcks-v32.js');
 ok(html.includes('./diklat-ks-bcks-v32.js?v=22'),'Cache versi Diklat KS manual bukan v22');
 ok(module.includes('ks_bcks_submit_local')&&module.includes('ksbCoordManualApprove'),'Alur Diklat KS lokal/manual belum lengkap');
