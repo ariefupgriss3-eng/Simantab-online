@@ -9,7 +9,14 @@ import { Resvg } from '@resvg/resvg-js';
  * login form. Never embed credentials or person data in social metadata.
  */
 const root = '.vercel/output/static';
-const BASE = 'https://simantab-cf-preview.m-arief-rohman.workers.dev';
+// SIMANTAB_OFFICIAL_GOV_ID_ORIGIN_PREPARED_V1
+// Keep the proven preview origin until DNS, TLS, and Supabase redirects pass QA.
+const PREVIEW_BASE = 'https://simantab-cf-preview.m-arief-rohman.workers.dev';
+const OFFICIAL_BASE = 'https://simantab.disdikbud.batangkab.go.id';
+const BASE = (process.env.SIMANTAB_PUBLIC_ORIGIN || PREVIEW_BASE).replace(/\\/$/, '');
+if (![PREVIEW_BASE, OFFICIAL_BASE].includes(BASE))
+  throw new Error('SIMANTAB_PUBLIC_ORIGIN must be the approved HTTPS preview or official government hostname.');
+
 const IMAGE = BASE + '/og-simantab-login.png?v=20261014';
 const TITLE = 'SIMANTAB-ONLINE | Login Layanan GTK Kabupaten Batang';
 const DESCRIPTION = 'Layanan Dinas Pendidikan dan Kebudayaan Kabupaten Batang. Login Dinas, Operator Korwil/SMP, Sekolah, GTK dan Pengawas.';
