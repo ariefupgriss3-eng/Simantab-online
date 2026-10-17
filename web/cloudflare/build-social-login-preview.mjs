@@ -13,7 +13,7 @@ const root = '.vercel/output/static';
 // Keep the proven preview origin until DNS, TLS, and Supabase redirects pass QA.
 const PREVIEW_BASE = 'https://simantab-cf-preview.m-arief-rohman.workers.dev';
 const OFFICIAL_BASE = 'https://simantab.disdikbud.batangkab.go.id';
-const BASE = (process.env.SIMANTAB_PUBLIC_ORIGIN || PREVIEW_BASE).replace(/\\/$/, '');
+const BASE = (process.env.SIMANTAB_PUBLIC_ORIGIN || PREVIEW_BASE).replace(/[/]$/, '');
 if (![PREVIEW_BASE, OFFICIAL_BASE].includes(BASE))
   throw new Error('SIMANTAB_PUBLIC_ORIGIN must be the approved HTTPS preview or official government hostname.');
 
