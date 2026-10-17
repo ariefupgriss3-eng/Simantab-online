@@ -322,6 +322,12 @@ if(!gtkPublicBknCode.includes('SIMANTAB_PUBLIC_PTK_BKN_RECON_V3'))
   throw new Error('Modul rekonsiliasi PTK–BKN tidak valid.');
 await fs.writeFile(path.join(staticDir,gtkPublicBknModule),gtkPublicBknCode);
 
+const bknCommandCardFile='gtk-bkn-command-card.js';
+const bknCommandCardCode=await fs.readFile(new URL('./gtk-bkn-command-card.js',import.meta.url),'utf8');
+if(!bknCommandCardCode.includes('SIMANTAB_BKN_ASN_COMMAND_CARD_V1'))
+  throw new Error('Modul kartu ASN PTK BKN Command Center tidak valid.');
+await fs.writeFile(path.join(staticDir,bknCommandCardFile),bknCommandCardCode);
+
 const modules=[
  ['kp-enhancement.js',4],
  ['jabfung-jenjang-enhancement.js',2],
@@ -382,6 +388,7 @@ const modules=[
  ['leader-dashboard-authoritative.js',7],
  ['gtk-dapodik-breakdown.js',1],
  ['gtk-public-ptk-bkn-reconciliation.js',3],
+ ['gtk-bkn-command-card.js',1],
  ['session-boundary-hardening.js',1],
  ['tpg-service-placement.js',1],
  ['staff-minimal-navigation.js',3],
