@@ -1,5 +1,9 @@
 # SIMANTAB-ONLINE Cloudflare PWA v8
 
+**Domain resmi tujuan (belum aktif):** `https://simantab.disdikbud.batangkab.go.id/`.
+Domain Worker `workers.dev` di bawah ini tetap digunakan selama validasi DNS, HTTPS, dan redirect Supabase.
+Untuk prosedur cutover, lihat [Persiapan Domain Resmi](../../docs/DOMAIN_SIMANTAB_DISDIKBUD_BATANGKAB_GO_ID.md).
+
 Target aplikasi: `https://simantab-cf-preview.m-arief-rohman.workers.dev/`
 
 Tautan pemasangan dan tujuan QR resmi:
