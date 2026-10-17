@@ -290,7 +290,7 @@ function coordKsbPill(state){
  return `<span style="display:inline-block;padding:4px 8px;border-radius:999px;background:${cls};font-size:9px;font-weight:900">${esc(label)}</span>`;
 }
 function coordKsbFlow(){
- return '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><b>1. Pengajuan Peserta</b><p>Peserta mengunggah 7 berkas dan mengajukan administrasi.</p></div><div class="service"><b>2. AI Verifikator Otomatis</b><p>AI langsung membaca jenis, tahun, identitas, keterbacaan, dan duplikasi tanpa tombol verifikasi manual.</p></div><div class="service"><b>3. AI Bagi Tugas</b><p>Jika 7/7 sesuai, sistem otomatis menetapkan verifikator penanggung jawab.</p></div><div class="service"><b>4. Persetujuan Kabid</b><p>Setelah bagi tugas, hasil AI otomatis masuk ke Persetujuan Kabid.</p></div><div class="service"><b>5. Naik Level</b><p>Jika Kabid menyetujui, peserta masuk Seleksi Substansi.</p></div></div>';
+ return '<div class="servicegrid" style="margin-bottom:12px"><div class="service"><b>1. Pengajuan Peserta</b><p>Unggah 7 berkas; precheck memeriksa format, ukuran, kelengkapan dan metadata.</p></div><div class="service"><b>2. Pembagian Tugas</b><p>Kasi/Subkoor menunjuk verifikator Dinas.</p></div><div class="service"><b>3. Verifikasi Manual</b><p>Petugas memeriksa isi dan keabsahan berkas.</p></div><div class="service"><b>4. Persetujuan</b><p>Kasi/Subkoor menyetujui dan meneruskan ke Kabid.</p></div><div class="service"><b>5. Naik Level</b><p>Peserta lanjut ke Seleksi Substansi setelah persetujuan Kabid.</p></div></div>';
 }
 function coordKsbSummary(rows){
  const defs=[
@@ -318,7 +318,7 @@ async function renderCoordinatorDiklat(){
   const [vis,aggSummary]=await Promise.all([loadAiVisibilityMap(rows.map(x=>x.id)),aiAggregateSummaryHtml(false)]);
   const pendingCount=rows.filter(x=>x.workflow_state==='MENUNGGU_DISPOSISI_KOORDINATOR').length;
   const bulk=pendingCount>=2?`<div class="ksb-bulkbox"><div><div class="label">PEMBAGIAN TUGAS AGREGAT</div><div class="small">${pendingCount} peserta menunggu pembagian tugas. Sistem membagi satu peserta ke satu petugas secara merata.</div></div><button class="btn" onclick="ksbOpenBulkAssign()">⚖️ Bagi Tugas Agregat (${pendingCount})</button></div>`:'';
-  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Hasil AI Otomatis dan AI Agregat Kabid ditampilkan pada setiap peserta. Staf/Admin hanya memonitor hasil dan penugasan.</div></div>${aggSummary}${coordKsbSummary(rows)}${bulk}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>KS Pengusul</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Kasi/Subkoor</th><th>Admin/Staf</th><th>Status / Proses</th><th>Hasil AI</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{},coordinator=names.get(s.assigned_by)||{},verifier=names.get(s.assigned_user_id)||{},ai=String(s.assignment_note||'').startsWith('AI Bagi Tugas');return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${esc(coordinator.full_name||profile().full_name||'-')}</td><td>${esc(verifier.full_name||'-')}${ai?'<div class="small">🤖 AI Bagi Tugas</div>':''}</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td><td>${aiCompactHtml(s.id,vis)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px">${coordKsbFlow()}<div class="info"><b>Cakupan ${esc(scopeLabel)} saja.</b> Riwayat AI terdahulu tetap dapat dilihat. Verifikasi berkas baru dilaksanakan petugas Dinas, bukan AI eksternal.</div></div>${aggSummary}${coordKsbSummary(rows)}${bulk}<div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>KS Pengusul</th><th>Unit Kerja</th><th>Jenis / Program</th><th>Kasi/Subkoor</th><th>Admin/Staf</th><th>Status / Proses</th><th>Hasil AI</th></tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{},coordinator=names.get(s.assigned_by)||{},verifier=names.get(s.assigned_user_id)||{},ai=String(s.assignment_note||'').startsWith('AI Bagi Tugas');return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>Diklat KS/BCKS</td><td>${esc(coordinator.full_name||profile().full_name||'-')}</td><td>${esc(verifier.full_name||'-')}${ai?'<div class="small">🤖 AI Bagi Tugas</div>':''}</td><td>${coordKsbPill(s.workflow_state)}${coordKsbAction(s)}</td><td>${aiCompactHtml(s.id,vis)}</td></tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS pada jenjang ini.</div>'}</div>`;
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 async function leadershipDiklatData(){
@@ -434,7 +434,7 @@ async function renderLeadershipDiklat(){
   const leaderLabel=profile().role==='KEPALA_DINAS'?'Kepala Disdikbud':profile().role==='SEKRETARIS_DINAS'?'Sekretaris Disdikbud':'Kabid Ketenagaan';
   const isKabidView=isKabid();
   body.innerHTML=`<div class="card" style="margin-bottom:12px">
-   <div class="info"><b>Monitoring ${esc(leaderLabel)}.</b> Hasil AI Verifikator Otomatis dan AI Verifikator Agregat ditampilkan pada setiap peserta. AI Otomatis memeriksa isi 7 berkas; AI Agregat mencocokkan hasil AI tersebut dengan berkas aktif yang sedang tersimpan.${isKabidView?' Kabid dapat menjalankan AI Verifikator Agregat dari tombol di bawah.':''}</div>
+   <div class="info"><b>Monitoring ${esc(leaderLabel)}.</b> Mode lokal gratis aktif: precheck format/kelengkapan, verifikasi isi oleh petugas, persetujuan Kasi/Subkoor dan Kabid. Riwayat AI terdahulu dipertahankan.${isKabidView?' Kabid dapat menjalankan AI Verifikator Agregat dari tombol di bawah.':''}</div>
    ${isKabidView?'':'<div style="margin-top:10px"><button class="btn soft" onclick="showTab(\'leadershipDirections\')">📝 Buka Arahan Pimpinan</button></div>'}
   </div>
   ${isKabidView?'<div class="card" id="ksbKabidSimulatorCard" style="margin-bottom:12px"><div class="label">SIMULASI SELEKSI SUBSTANSI</div><h3 style="margin:5px 0">🧠 Dashboard Simulasi dan Thinking Culture</h3><div class="small">Monitoring Basic, Premium One, Pro, Thinking Culture, AI Coach, serta kesiapan peserta. Akses uji Feronika bersifat khusus akun uji dan tidak membuka akses umum.</div><div id="ksbSimAccessState" class="small" style="margin-top:8px"><b>Status akses umum:</b> memeriksa…</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn primary" id="ksbOpenSimulatorDashboard" type="button">Buka Dashboard Simulasi</button><button class="btn soft" id="ksbToggleSimulatorAccess" type="button">Kontrol Akses Simulasi</button></div></div>':''}
@@ -445,13 +445,16 @@ async function renderLeadershipDiklat(){
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
 async function reviewerData(){
- const [det,pf]=await Promise.all([
+ const [det,pf,sub]=await Promise.all([
   sb.from('ks_bcks_submission_details').select('*').order('updated_at',{ascending:false}),
-  sb.from('profiles').select('id,is_active')
+  sb.from('profiles').select('id,is_active'),
+  sb.from('submissions').select('id,workflow_state,assigned_user_id').eq('service_type','DIKLAT_KS_BCKS')
  ]);
- const err=det.error||pf.error;if(err)throw err;
+ const err=det.error||pf.error||sub.error;if(err)throw err;
  const activeIds=new Set((pf.data||[]).filter(x=>x.is_active!==false).map(x=>x.id));
- return (det.data||[]).filter(x=>activeIds.has(x.user_id)&&!x.is_archived).sort(draftLast);
+ const byId=new Map((sub.data||[]).map(x=>[x.id,x]));
+ return (det.data||[]).filter(x=>activeIds.has(x.user_id)&&!x.is_archived)
+  .map(x=>({...x,manual_workflow_state:byId.get(x.submission_id)?.workflow_state||'',assigned_user_id:byId.get(x.submission_id)?.assigned_user_id||null})).sort(draftLast);
 }
 function certSummary(d){return `<div class="info" style="margin-top:10px"><b>Data Sertifikat dari Peserta</b><br>Lembaga/Pihak Penerbit: ${esc(d.sertifikat_penerbit||'-')}<br>Nomor: ${esc(d.sertifikat_nomor||'-')}<br>Tanggal: ${fmtDate(d.sertifikat_tanggal)}${d.sertifikat_submitted_at?`<br>Diajukan: ${fmtDateTime(d.sertifikat_submitted_at)}`:''}</div>`}
 function superAdminDraftAction(d){
@@ -460,11 +463,13 @@ function superAdminDraftAction(d){
 }
 function reviewerActions(d){
  const reset=superAdminDraftAction(d);
- if(['DIAJUKAN','TERVERIFIKASI','DISETUJUI_KOORDINATOR'].includes(d.admin_status)){
-  const msg=d.admin_status==='DIAJUKAN'
-   ?'Menunggu proses verifikasi AI dokumen.'
-   :'Berkas telah diverifikasi AI secara menyeluruh dan menunggu persetujuan Kabid Ketenagaan.';
-  return `<div class="info"><b>Persetujuan Administrasi</b><br>${esc(msg)}</div><button class="btn soft" style="margin-top:8px" onclick="showTab('monitoring')">Buka Workflow Monitoring</button>${reset}`;
+ if(d.admin_status==='DIAJUKAN'){
+  if(d.manual_workflow_state==='VERIFIKASI_STAF')
+   return `<div class="info"><b>Verifikasi dokumen oleh petugas</b><br>Buka seluruh berkas, cocokkan tahun SKP 2024/2025, identitas, keterbacaan dan keabsahan dokumen. Hanya petugas yang ditugaskan boleh mengambil keputusan.</div><textarea id="note-${d.submission_id}" placeholder="Catatan verifikasi; wajib bila meminta perbaikan"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="admin-ok" data-id="${d.submission_id}">Berkas Sesuai</button><button class="btn secondary" data-ksb-action="admin-no" data-id="${d.submission_id}">Minta Perbaikan</button></div>${reset}`;
+  return `<div class="info"><b>Menunggu pembagian tugas</b><br>Kasi/Subkoor menunjuk petugas sebelum verifikasi manual dimulai.</div>${reset}`;
+ }
+ if(['TERVERIFIKASI','DISETUJUI_KOORDINATOR'].includes(d.admin_status)){
+  return `<div class="info"><b>Administrasi ditelaah</b><br>Berkas telah diverifikasi, kemudian menunggu keputusan Kasi/Subkoor dan Kabid.</div>${reset}`;
  }
  if(d.workflow_stage==='SUBSTANSI')return reset+`<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Seleksi Substansi"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="sub-ok" data-id="${d.submission_id}">Lulus Substansi</button><button class="btn secondary" data-ksb-action="sub-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
  if(d.workflow_stage==='DIKLAT')return reset+`<textarea id="note-${d.submission_id}" placeholder="Catatan hasil Diklat"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="btn" data-ksb-action="dik-ok" data-id="${d.submission_id}">Lulus Diklat</button><button class="btn secondary" data-ksb-action="dik-no" data-id="${d.submission_id}">Tidak Lulus</button></div>`;
@@ -482,7 +487,7 @@ async function renderReviewer(){
   const rows=await reviewerData();
   window.__ksbAiVisCache=await loadAiVisibilityMap(rows.map(x=>x.submission_id));
   const aggSummary=await aiAggregateSummaryHtml(false);
-  body.innerHTML=`<div class="card" style="margin-bottom:12px"><div class="info"><b>Workflow:</b> Administrasi: GTK → AI Verifikator otomatis → jika 7/7 SESUAI → AI Bagi Tugas verifikator otomatis → Persetujuan Kabid. Hasil AI Otomatis dan AI Agregat Kabid tampil pada seluruh akun Dinas.</div></div>${aggSummary}${rows.length?`<div class="card" style="margin-bottom:12px"><label for="ksbParticipantSearch" style="display:block;font-weight:800;margin-bottom:7px">🔎 Cari Nama Peserta</label><input id="ksbParticipantSearch" type="search" placeholder="Ketik nama peserta..." autocomplete="off" style="width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:12px;font-size:14px"><div id="ksbParticipantSearchInfo" class="small" style="margin-top:7px">${rows.length} peserta</div></div>`+rows.map(d=>`<div class="card ksb-participant-card" data-search="${esc([d.full_name,d.nip,d.unit_kerja].filter(Boolean).join(' ').toLowerCase())}" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><div class="small">${esc(d.nip)}</div><h3 style="margin:4px 0">${esc(d.full_name)}</h3><div>${esc(d.pangkat_golruang)} • ${esc(d.unit_kerja)}</div><div class="small">TMT KS: ${fmtDate(d.tmt_penugasan_ks)} • Update: ${fmtDateTime(d.updated_at)}</div></div><div><b>${esc(d.workflow_stage)}</b><div class="small">Adm ${esc(d.admin_status)} • Sub ${esc(d.substansi_status)} • Diklat ${esc(d.diklat_status)} • Sertifikat ${esc(d.sertifikat_status)}</div></div></div><div id="docs-${d.submission_id}" style="margin:12px 0"></div>${reviewerActions(d)}</div>`).join(''):'<div class="card"><div class="empty">Belum ada peserta.</div></div>'}`;
+  body.innerHTML=`<div class="card" style="margin-bottom:12px"><div class="info"><b>Workflow:</b> Peserta unggah 7 berkas → precheck lokal → Kasi/Subkoor bagi tugas → petugas verifikasi manual → persetujuan Kasi/Subkoor → Kabid. Tidak menggunakan AI eksternal.</div></div>${aggSummary}${rows.length?`<div class="card" style="margin-bottom:12px"><label for="ksbParticipantSearch" style="display:block;font-weight:800;margin-bottom:7px">🔎 Cari Nama Peserta</label><input id="ksbParticipantSearch" type="search" placeholder="Ketik nama peserta..." autocomplete="off" style="width:100%;padding:12px 14px;border:1px solid #cbd5e1;border-radius:12px;font-size:14px"><div id="ksbParticipantSearchInfo" class="small" style="margin-top:7px">${rows.length} peserta</div></div>`+rows.map(d=>`<div class="card ksb-participant-card" data-search="${esc([d.full_name,d.nip,d.unit_kerja].filter(Boolean).join(' ').toLowerCase())}" style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap"><div><div class="small">${esc(d.nip)}</div><h3 style="margin:4px 0">${esc(d.full_name)}</h3><div>${esc(d.pangkat_golruang)} • ${esc(d.unit_kerja)}</div><div class="small">TMT KS: ${fmtDate(d.tmt_penugasan_ks)} • Update: ${fmtDateTime(d.updated_at)}</div></div><div><b>${esc(d.workflow_stage)}</b><div class="small">Adm ${esc(d.admin_status)} • Sub ${esc(d.substansi_status)} • Diklat ${esc(d.diklat_status)} • Sertifikat ${esc(d.sertifikat_status)}</div></div></div><div id="docs-${d.submission_id}" style="margin:12px 0"></div>${reviewerActions(d)}</div>`).join(''):'<div class="card"><div class="empty">Belum ada peserta.</div></div>'}`;
   for(const d of rows)await loadReviewerDocs(d.submission_id);
   bindReviewer();
   const search=$('ksbParticipantSearch'),info=$('ksbParticipantSearchInfo');
