@@ -383,6 +383,11 @@ if(!bknCommandCardCode.includes('SIMANTAB_BKN_ASN_COMMAND_CARD_V1'))
   throw new Error('Modul kartu ASN PTK BKN Command Center tidak valid.');
 await fs.writeFile(path.join(staticDir,bknCommandCardFile),bknCommandCardCode);
 
+const asnBknCardFile='asn-bkn-command-card.js';
+const asnBknCardCode=await fs.readFile(new URL('./asn-bkn-command-card.js',import.meta.url),'utf8');
+if(!asnBknCardCode.includes('SIMANTAB_ASN_BKN_COMMAND_CARD_V1'))throw new Error('Kartu ASN BKN belum valid.');
+await fs.writeFile(path.join(staticDir,asnBknCardFile),asnBknCardCode);
+
 const modules=[
  ['kp-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 6 : 5],
  ['jabfung-jenjang-enhancement.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 7 : 5],
@@ -444,6 +449,7 @@ const modules=[
  ['leader-dashboard-authoritative.js',7],
  ['gtk-dapodik-breakdown.js',1],
  ['gtk-public-ptk-bkn-reconciliation.js',3],
+ ['asn-bkn-command-card.js',1],
  ['gtk-bkn-command-card.js',1],
  ['session-boundary-hardening.js',1],
  ['tpg-service-placement.js',1],
