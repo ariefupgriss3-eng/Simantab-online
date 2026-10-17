@@ -20,6 +20,7 @@ const rgtkMenu = await fs.readFile(path.join(output, 'rgtk-monitoring.js'), 'utf
 const workflowMenu = await fs.readFile(path.join(output, 'team-workflow-authority.js'), 'utf8');
 const redistribMenu = await fs.readFile(path.join(output, 'gtk-redistribution-analysis.js'), 'utf8');
 const diklatMenu = await fs.readFile(path.join(output, 'diklat-ks-bcks-v32.js'), 'utf8');
+if(!diklatMenu.includes('SIMANTAB_DIKLAT_LOCAL_HUMAN_REVIEW_V1')||!diklatMenu.includes("ks_bcks_submit_local"))throw new Error('Mode manual Diklat KS belum dipasang.');
 
 function assert(ok, message) {
   if (!ok) throw new Error('[Cloudflare migration build] ' + message);
@@ -121,7 +122,7 @@ assert(html.includes('./rgtk-monitoring.js?v=2'), 'Cache version modul RGTK belu
 assert(redistribMenu.includes("if(['PENGAWAS','KORWIL'].includes(role()))return;"), 'Redistribusi masih menambahkan tombol ke sidebar Pengawas.');
 assert(diklatMenu.includes("if(profile().role==='PENGAWAS')return;"), 'Diklat KS/BCKS masih menambahkan tombol ke sidebar Pengawas.');
 assert(html.includes('./gtk-redistribution-analysis.js?v=9'), 'Cache Redistribusi GTK Cloudflare belum diganti.');
-assert(html.includes('./diklat-ks-bcks-v32.js?v=20'), 'Cache Diklat KS/BCKS Cloudflare belum diganti.');
+assert(html.includes('./diklat-ks-bcks-v32.js?v=21'), 'Cache Diklat KS/BCKS Cloudflare belum diganti.');
 
 const required = ['manifest.json', 'sw.js', 'pwa-install.js', 'gtk-redistribution-analysis.js'];
 for (const file of required) {
