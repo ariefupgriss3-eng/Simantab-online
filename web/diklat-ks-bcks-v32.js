@@ -488,7 +488,7 @@ async function reviewerData(){
     const {data:assigned,error:ae}=await sb.from('submission_assignees').select('submission_id').eq('user_id',profile().id);
     if(ae)throw ae;
     const ids=new Set((assigned||[]).map(x=>x.submission_id));
-    return visible.filter(x=>ids.has(x.submission_id));
+    return (det.data||[]).filter(x=>!x.is_archived&&ids.has(x.submission_id)).sort(draftLast);
   }
   return visible;
 }
