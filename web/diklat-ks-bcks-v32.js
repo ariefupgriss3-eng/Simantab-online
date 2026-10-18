@@ -183,9 +183,34 @@ function ksbStaffChoices(candidates,klass){
 const toast=(msg,bad=false)=>{let t=$('ksBcksToast');if(!t){t=document.createElement('div');t.id='ksBcksToast';Object.assign(t.style,{position:'fixed',right:'18px',bottom:'22px',zIndex:99999,maxWidth:'380px',padding:'12px 16px',borderRadius:'12px',boxShadow:'0 8px 28px #0003',fontWeight:'700'});document.body.appendChild(t)}t.style.background=bad?'#fee2e2':'#dcfce7';t.style.color=bad?'#991b1b':'#166534';t.textContent=msg;clearTimeout(t._x);t._x=setTimeout(()=>t.remove(),4000)};
 function mainEl(){return document.querySelector('main.content')}
 function ensureSection(){if($('diklatKsBcks'))return;const main=mainEl();if(!main)return;const sec=document.createElement('section');sec.id='diklatKsBcks';sec.className='section';sec.innerHTML='<div class="head"><div><h2>Diklat KS/BCKS</h2><p>Workflow seleksi administrasi, seleksi substansi, Diklat, dan pencatatan sertifikat dari pihak berwenang.</p></div></div><div id="diklatKsBcksBody"></div>';const footer=main.querySelector('.footer');if(footer)main.insertBefore(sec,footer);else main.appendChild(sec)}
+/* SIMANTAB_KS_INACTIVE_DIKLAT_NAV_VISIBLE_LOCKED_V1: Kepala Sekolah negeri sees the menu while enrollment is closed. */
 function navButton(){const b=document.createElement('button');b.className='navbtn';b.dataset.tab='diklatKsBcks';b.setAttribute('onclick',"showTab('diklatKsBcks')");b.innerHTML='<span class="ico">🎓</span>Diklat KS/BCKS';return b}
-function ensureNav(){if(isApplicant()&&!participantCanUseKsb()){document.getElementById('nav')?.querySelector('[data-tab="diklatKsBcks"]')?.remove();return;}if(profile().role==='PENGAWAS')return; // Menu Pengawas dikelola eksklusif; Diklat tetap tersedia untuk role lain.
- const nav=$('nav');if(!nav)return;if(isPrivateApplicant()){nav.querySelector('[data-tab="diklatKsBcks"]')?.remove();return}if(nav.querySelector('[data-tab="diklatKsBcks"]'))return;if(!(isApplicant()||isReviewer()||isDinasAccount()))return;const b=navButton();if(isReviewer()||isDinasAccount()){const p=nav.querySelector('[data-tab="promotion"]');p?p.after(b):nav.appendChild(b)}else{const s=nav.querySelector('[data-tab="services"]')||nav.querySelector('[data-tab="status"]');s?s.after(b):nav.appendChild(b)}}
+function syncKsDiklatNavState(b){
+ if(profile().role!=='KEPALA_SEKOLAH')return;
+ const locked=!participantCanUseKsb(),flag=locked?'1':'0';
+ if(b.dataset.ksbLocked===flag)return; // No redundant DOM writes; prevents nav observer loops.
+ b.dataset.ksbLocked=flag;
+ b.disabled=locked;
+ b.setAttribute('aria-disabled',String(locked));
+ b.title=locked?'Diklat KS/BCKS sementara belum dibuka oleh Dinas.':'Buka Diklat KS/BCKS';
+ b.style.opacity=locked?'0.57':'';
+ b.style.cursor=locked?'not-allowed':'';
+ b.innerHTML=locked?'<span class="ico">🔒</span>Diklat KS/BCKS (Nonaktif)':'<span class="ico">🎓</span>Diklat KS/BCKS';
+}
+function ensureNav(){
+ if(profile().role==='PENGAWAS')return; // Pengawas has its own exclusive menu.
+ const nav=$('nav');if(!nav)return;
+ if(isPrivateApplicant()){nav.querySelector('[data-tab="diklatKsBcks"]')?.remove();return;} // Restrict swasta as before.
+ if(isApplicant()&&!participantCanUseKsb()&&profile().role!=='KEPALA_SEKOLAH'){
+  nav.querySelector('[data-tab="diklatKsBcks"]')?.remove();return; // Generic GTK restrictions unchanged.
+ }
+ const existing=nav.querySelector('[data-tab="diklatKsBcks"]');
+ if(existing){syncKsDiklatNavState(existing);return;}
+ if(!(isApplicant()||isReviewer()||isDinasAccount()))return;
+ const b=navButton();syncKsDiklatNavState(b);
+ if(isReviewer()||isDinasAccount()){const p=nav.querySelector('[data-tab="promotion"]');p?p.after(b):nav.appendChild(b)}
+ else{const s=nav.querySelector('[data-tab="services"]')||nav.querySelector('[data-tab="status"]');s?s.after(b):nav.appendChild(b)}
+}
 const stageIndex=s=>({ADMINISTRASI:0,SUBSTANSI:1,DIKLAT:2,SERTIFIKAT:3}[s]??0);
 const stateLabel=(d,i)=>i===0?(d?.admin_status||'BELUM'):i===1?(d?.substansi_status||'TERKUNCI'):i===2?(d?.diklat_status||'TERKUNCI'):(d?.sertifikat_status||'TERKUNCI');
 function progressHtml(d){const cur=stageIndex(d?.workflow_stage||'ADMINISTRASI');const labels=['1. Seleksi Administrasi','2. Seleksi Substansi','3. Diklat','4. Pencatatan Sertifikat Diklat'];return `<div class="servicegrid" style="margin-bottom:14px">${labels.map((x,i)=>{const unlocked=i<=cur,active=i===cur;const launch=(i===1&&unlocked)?'<button class="btn primary" id="ksbOpenSubstansiPractice" type="button" style="margin-top:10px;width:100%">Buka Modul Latihan</button>':'';return `<div class="service" style="border:${active?'2px solid #2563eb':'1px solid #dbe3ec'};opacity:${unlocked?1:.6}"><div class="small">LEVEL ${i+1}${active?' • AKTIF':''}</div><h3>${esc(x)}</h3><p>${esc(unlocked?stateLabel(d,i):'TERKUNCI')}</p>${launch}</div>`}).join('')}</div>`}
@@ -728,5 +753,5 @@ window.showTab=async id=>{
  ensureSection();ensureNav();await priorShow(id);
  if(id==='diklatKsBcks')await render();
 };
-window.__simantabDiklatKsBcks={version:56,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:57,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
