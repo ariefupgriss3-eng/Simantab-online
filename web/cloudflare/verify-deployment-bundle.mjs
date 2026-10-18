@@ -45,6 +45,7 @@ ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonica
 ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
 ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
 const module=await read('diklat-ks-bcks-v32.js');
-ok(html.includes('./diklat-ks-bcks-v32.js?v=22'),'Cache versi Diklat KS manual bukan v22');
+ok(html.includes('./diklat-ks-bcks-v32.js?v=23'),'Cache versi Diklat KS manual bukan v23');
 ok(module.includes('ks_bcks_submit_local')&&module.includes('ksbCoordManualApprove'),'Alur Diklat KS lokal/manual belum lengkap');
+ok(module.includes('SIMANTAB_KS_INACTIVE_DIKLAT_NAV_VISIBLE_LOCKED_V1')&&module.includes('syncKsDiklatNavState')&&module.includes('b.disabled=locked'),'Kepala Sekolah harus melihat menu Diklat terkunci saat modul nonaktif');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));
