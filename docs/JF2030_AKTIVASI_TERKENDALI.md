@@ -41,3 +41,8 @@ Dokumen kesiapan rilis pada **PR #233 (Draft)**. Kode berada di cabang `feature/
 ## 5. Status perencanaan
 
 **Persiapan kode, migrasi dan tes:** tersedia. **Pengesahan rilis produksi:** belum diberikan. **Uji antarmuka Kabid pada sesi nyata:** masih diperlukan. **Deploy produksi:** jangan dilakukan sebelum gerbang di atas terpenuhi.
+
+## Verifikasi antarmuka Kabid (screenshot uji)
+- Tampilan monitoring Dinas memperlihatkan laporan S-2 yang sudah diisi GTK, tanpa bukti ijazah dan dengan status belum ditelaah. Tombol verifikasi terlihat dinonaktifkan ketika bukti belum tersedia.
+- Label ambigu **Ijazah awal** dalam detail Kabid dibetulkan menjadi **Pendidikan terakhir** dan format jenjang S-2, D-IV, dan seterusnya diseragamkan. Perbaikan ini hanya pada UI, tanpa mengubah nilai pendidikan di database.
+- Pemeriksaan lanjutan: seorang penguji Kabid memastikan perubahan label terlihat pada preview terbaru sebelum pilot terkendali.
