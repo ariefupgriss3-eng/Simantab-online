@@ -6,6 +6,10 @@ on:
     paths:
       - 'web/jf-guru-2026.js'
       - 'web/jf-qualification-2030.js'
+      - 'web/smartgtk-unified.js'
+      - 'web/tests/smartgtk.contract.test.mjs'
+      - 'web/tests/smartgtk-integration.sql'
+      - 'supabase/migrations/20261021150000_smartgtk_unified_intake.sql'
       - 'web/tests/jf2030-qualification.contract.test.mjs'
       - 'web/tests/jf2030-postgres-integration.sql'
       - 'web/tests/jf2030-coverage-integration.sql'
@@ -45,6 +49,8 @@ jobs:
         run: |
           test -s .vercel/output/static/jf-guru-2026.js
           test -s .vercel/output/static/jf-qualification-2030.js
+          test -s .vercel/output/static/smartgtk-unified.js
+          grep -q './smartgtk-unified.js?v=1' .vercel/output/static/index.html
           grep -q './jf-qualification-2030.js?v=5' .vercel/output/static/index.html
           grep -q './jf-guru-2026.js?v=2' .vercel/output/static/index.html
           test "$(grep -o './jf-guru-2026.js?v=2' .vercel/output/static/index.html | wc -l)" -eq 1
@@ -103,3 +109,7 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2030-postgres-integration.sql
       - name: Test completed qualification reporting and diploma verification
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2030-completed-postgres-integration.sql
+      - name: Create unified self-report and classification schema (synthetic only)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021150000_smartgtk_unified_intake.sql
+      - name: Test three-way classification, one data form and RLS
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-integration.sql
