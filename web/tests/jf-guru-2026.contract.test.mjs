@@ -23,3 +23,19 @@ test('legacy Jabfung service not overwritten',()=>{
  assert.doesNotMatch(ui,/\.from\('submissions'\)/);
  assert.match(build.scripts['build:cloudflare'],/node inject-jf-guru-2026\.mjs && node cloudflare\/verify-deployment-bundle\.mjs/);
 });
+
+test('Dinas officers monitor without applicant buttons or draft access',()=>{
+ assert.match(ui,/const applicant=\(\)=>p\(\)\.account_channel==='GTK'/);
+ assert.match(ui,/\$\{applicant\(\)\?/);
+ assert.match(ui,/if\(!c&&!applicant\(\)\)/);
+ assert.match(ui,/if\(!applicant\(\)\)throw new Error\('Hanya akun GTK/);
+});
+test('education must be explicitly selected, including PNS appointment pathway',()=>{
+ assert.match(ui,/name="education"/);
+ assert.match(ui,/value="" disabled \$\{c\?\.education\?'':'selected'\}/);
+ assert.match(ui,/Pilih pendidikan sesuai ijazah/);
+ assert.match(ui,/isNew\?\['S1','DIV'\]:\['DI','DII','DIII','S1','DIV'\]/);
+ assert.match(ui,/PENGALAMAN_2TH/);
+ assert.match(ui,/type="date" name="birth_date"/);
+ assert.match(ui,/name="pns_formasi_jf"/);
+});
