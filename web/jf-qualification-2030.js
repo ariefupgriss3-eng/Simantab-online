@@ -12,7 +12,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&
 const bucket='simantab-jf-ijazah-2030',MAX=1572864;
 const status={BELUM_KULIAH:'Belum kuliah',SEDANG_KULIAH:'Sedang kuliah',LULUS_BELUM_VERIF:'Lulus, menunggu verifikasi'};
 const reviewStatus={BELUM_DITELAAH:'Belum ditelaah',PERLU_PERBAIKAN:'Perlu perbaikan',TERVERIFIKASI:'Ijazah diverifikasi administratif'};
-let mine=null,rows=[],total=0,page=0,filter='',busy=false;
+let mine=null,rows=[],total=0,page=0,filter='',busy=false,mode='tracked',coverage=null,unreported=[];
 const modal=document.createElement('div');modal.id='jf2030Modal';modal.setAttribute('role','dialog');
 modal.innerHTML='<div class="jf2030-panel"><div class="jf2030-head"><b>Pemenuhan S-1/D-IV — 2030</b><button data-act="close">✕ Tutup</button></div><p id="jf2030Msg" role="status"></p><div id="jf2030Body"></div></div>';
 document.body.appendChild(modal);
@@ -40,7 +40,7 @@ async function loadMine(){
 }
 async function open(){
  if(!(gtk()||officer()))return;modal.style.display='flex';msg('Memuat data...');
- try{if(officer()){page=0;await loadOfficer();renderOfficer();}else{await loadMine();renderMine();}msg('');}
+ try{if(officer()){page=0;mode='tracked';await loadCoverage();await loadOfficer();renderOfficer();}else{await loadMine();renderMine();}msg('');}
  catch(e){content().innerHTML='<p>Database pemantauan belum siap. Jangan mengisi data sebelum migrasi dipasang.</p>';msg(e.message||String(e),true);}
 }
 function renderMine(){
@@ -91,6 +91,39 @@ async function upload(){
  const z=await sb.rpc('jf2030_attach_diploma',{p_path:path});if(z.error)throw z.error;
  await loadMine();renderMine();msg('Bukti tersimpan, menunggu pemeriksaan Dinas.');
 }
+async function loadCoverage(){
+ if(!officer())throw Error('Hanya petugas Dinas dapat melihat cakupan akun GTK');
+ const x=await sb.rpc('jf2030_coverage_summary');
+ if(x.error)throw x.error;
+ coverage=x.data;
+}
+async function loadUnreported(){
+ if(!officer())throw Error('Hanya petugas Dinas dapat melihat akun belum melapor');
+ const x=await sb.rpc('jf2030_coverage_unreported',{p_page:page,p_limit:50});
+ if(x.error)throw x.error;
+ unreported=x.data||[];
+}
+function coverageHeader(){
+ if(!coverage)return '<p class="jf2030-note">Rekonsiliasi akun GTK belum tersedia. Data yang tampil hanya pendaftar modul ini.</p>';
+ return '<div class="jf2030-card"><b>Cakupan Data Akun GTK SIMANTAB</b>'+
+ '<div class="jf2030-grid"><p>Aktif/disetujui: <b>'+esc(coverage.active_approved_gtk_accounts)+'</b></p>'+
+ '<p>NIP valid: <b>'+esc(coverage.valid_nip_accounts)+'</b></p>'+
+ '<p>NIP ganda yang perlu diperiksa: <b>'+esc(coverage.ambiguous_duplicate_nip_groups)+'</b></p>'+
+ '<p>NIP tunggal belum mengisi: <b>'+esc(coverage.unreported_unambiguous_accounts)+'</b></p></div>'+
+ '<p class="jf2030-muted"><b>Belum mengisi ≠ belum S-1/D-IV.</b> Cakupan terbatas akun GTK aktif/disetujui di SIMANTAB, bukan populasi semua guru Kabupaten Batang. NIP duplikat tidak otomatis disatukan atau masuk daftar tindak lanjut individual.</p>'+
+ '<div class="jf2030-buttons"><button data-act="tracked">Data perkembangan studi</button><button data-act="unreported">Akun belum mengisi</button></div></div>';
+}
+function renderUnreported(){
+ const n=Number(coverage?.unreported_unambiguous_accounts||0);
+ content().innerHTML=coverageHeader()+
+ '<div class="jf2030-card"><h3>GTK yang belum mengisi data pendidikan</h3>'+
+ '<p class="jf2030-muted">Daftar rekonsiliasi dan sosialisasi pengisian. Bukan daftar guru yang diketahui belum S-1/D-IV. Akses khusus petugas Dinas.</p>'+
+ '<p>'+n+' akun dengan NIP tunggal yang belum melapor • Halaman '+(page+1)+'</p>'+
+ '<div class="jf2030-scroll"><table><thead><tr><th>GTK</th><th>NIP</th><th>Unit kerja</th><th>Role akun</th><th>Status pendataan</th></tr></thead><tbody>'+
+ (unreported.length?unreported.map(x=>'<tr><td>'+esc(x.full_name||'Belum diisi')+'</td><td>'+esc(x.nip)+'</td><td>'+esc(x.unit_work)+'</td><td>'+esc(x.account_role)+'</td><td>Belum mengisi</td></tr>').join(''):'<tr><td colspan="5">Tidak ada akun belum mengisi pada halaman ini.</td></tr>')+
+ '</tbody></table></div><div class="jf2030-buttons"><button data-act="prev" '+(page===0?'disabled':'')+'>Sebelumnya</button>'+
+ '<button data-act="next" '+((page+1)*50>=n?'disabled':'')+'>Berikutnya</button></div></div>';
+}
 async function loadOfficer(){
  let q=sb.from('jf2030_qualification').select('owner_id,nip,full_name,unit_work,education_initial,study_status,university,study_program,start_year,target_graduation,graduation_date,evidence_path,review_status,review_note,updated_at',{count:'exact'}).order('updated_at',{ascending:false});
  if(filter)q=q.eq('education_initial',filter);
@@ -98,7 +131,7 @@ async function loadOfficer(){
 }
 function renderOfficer(){
  const late=rows.filter(x=>['DI','DII','DIII'].includes(x.education_initial)&&x.target_graduation>'2030-05-11'&&x.review_status!=='TERVERIFIKASI').length;
- content().innerHTML=guidance('DI')+'<div class="jf2030-card"><b>Monitoring Dinas</b> — '+total+' data • halaman '+(page+1)+'<p>'+late+' target di halaman ini melewati tenggat diploma.</p>'+
+ content().innerHTML=coverageHeader()+guidance('DI')+'<div class="jf2030-card"><b>Monitoring Dinas</b> — '+total+' data • halaman '+(page+1)+'<p>'+late+' target di halaman ini melewati tenggat diploma.</p>'+
  '<label>Filter pendidikan<select id="jf2030Filter">'+opt('','','Semua')+['SLTA','SPG','DI','DII','DIII'].map(v=>opt(v,filter,v)).join('')+'</select></label><button data-act="filter">Terapkan filter</button>'+
  '<div class="jf2030-scroll"><table><thead><tr><th>Guru/NIP</th><th>Sekolah</th><th>Ijazah awal</th><th>Progres</th><th>Verifikasi</th><th>Aksi</th></tr></thead><tbody>'+
  (rows.length?rows.map(x=>'<tr><td>'+esc(x.full_name)+'<br>'+esc(x.nip)+'</td><td>'+esc(x.unit_work)+'</td><td>'+esc(x.education_initial)+'</td><td>'+esc(status[x.study_status])+'</td><td>'+esc(reviewStatus[x.review_status])+'</td><td><button data-act="detail" data-id="'+esc(x.owner_id)+'">Detail</button></td></tr>').join(''):'<tr><td colspan="6">Belum ada data.</td></tr>')+
@@ -129,8 +162,14 @@ modal.addEventListener('click',async e=>{
  try{busy=true;msg();
  if(a==='save')await save();if(a==='upload')await upload();if(a==='file')await viewFile(b.dataset.path);
  if(a==='reload'){await loadMine();renderMine();}
- if(a==='filter'){filter=document.getElementById('jf2030Filter').value;page=0;await loadOfficer();renderOfficer();}
- if(a==='prev'||a==='next'){page=Math.max(0,page+(a==='next'?1:-1));await loadOfficer();renderOfficer();}
+ if(a==='tracked'){mode='tracked';page=0;await loadCoverage();await loadOfficer();renderOfficer();}
+ if(a==='unreported'){mode='unreported';page=0;await loadCoverage();await loadUnreported();renderUnreported();}
+ if(a==='filter'){mode='tracked';filter=document.getElementById('jf2030Filter').value;page=0;await loadOfficer();renderOfficer();}
+ if(a==='prev'||a==='next'){
+  page=Math.max(0,page+(a==='next'?1:-1));
+  if(mode==='unreported'){await loadUnreported();renderUnreported();}
+  else{await loadOfficer();renderOfficer();}
+ }
  if(a==='back')renderOfficer();
  if(a==='detail'){const x=rows.find(z=>z.owner_id===b.dataset.id);if(x)renderDetail(x);}
  if(a==='review')await review(b.dataset.id,b.dataset.next);
