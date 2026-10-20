@@ -169,6 +169,8 @@ begin
  if auth.uid() is null then raise exception 'Login diperlukan'; end if;
  if not exists(select 1 from public.profiles where id=auth.uid() and is_active and approval_status='APPROVED')
  then raise exception 'Akun belum disetujui'; end if;
+ if not exists(select 1 from public.profiles where id=auth.uid() and nip=p_nip)
+ then raise exception 'NIP harus sama dengan Profil GTK terverifikasi. Lengkapi profil terlebih dahulu'; end if;
  if p_pathway not in ('NOMENKLATUR','PENGANGKATAN')
  or p_education not in ('DI','DII','DIII','S1','DIV')
  or btrim(coalesce(p_full_name,''))='' or btrim(coalesce(p_unit_work,''))=''
@@ -273,3 +275,27 @@ grant execute on function public.jf2026_submit_case(uuid) to authenticated;
 grant execute on function public.jf2026_transition(uuid,text,text,text,date) to authenticated;
 
 comment on table public.jf2026_cases is 'Surat 0294/2026: dua jalur terpisah. Bukti SK dan proses BKPSDM dicatat manual; tidak ada integrasi BKN otomatis.';
+
+-- Explicit audit for officer-only export attempts. Never grant anonymous access.
+create table if not exists public.jf2026_export_audit (
+ id bigint generated always as identity primary key,
+ officer_id uuid not null references auth.users(id),
+ row_count integer not null check(row_count between 0 and 100000),
+ exported_at timestamptz not null default now()
+);
+alter table public.jf2026_export_audit enable row level security;
+revoke all on public.jf2026_export_audit from public,anon,authenticated;
+grant select on public.jf2026_export_audit to authenticated;
+create policy jf2026_export_officer_read on public.jf2026_export_audit
+for select to authenticated using (officer_id=auth.uid() and (select private.jf2026_is_officer()));
+create or replace function public.jf2026_register_export(p_row_count integer) returns void
+language plpgsql security definer set search_path=''
+as $$
+begin
+ if not private.jf2026_is_officer() then raise exception 'Ekspor hanya untuk petugas Dinas'; end if;
+ if p_row_count is null or p_row_count<0 or p_row_count>100000 then raise exception 'Jumlah data ekspor tidak wajar'; end if;
+ insert into public.jf2026_export_audit(officer_id,row_count) values(auth.uid(),p_row_count);
+end;
+$$;
+revoke all on function public.jf2026_register_export(integer) from public,anon;
+grant execute on function public.jf2026_register_export(integer) to authenticated;
