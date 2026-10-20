@@ -61,7 +61,8 @@ test('GTK JF2026 menu awaits profile-ready, remounts after login and is role-lim
  assert.match(ui,/window\.removeEventListener\('simantab:profile-ready',onReady\)/);
  assert.match(ui,/window\.addEventListener\('simantab:profile-ready',\(\)=>/);
  assert.match(ui,/setTimeout\(ensureTile,0\)/);
- assert.match(ui,/if\(!root\|\|!\(applicant\(\)\|\|officer\(\)\)\|\|document\.getElementById\('jf2026ServiceTile'\)\)return/);
+ assert.match(ui,/applicant\(\)&&window\.__simantabSmartGtkReady/);
+ assert.match(ui,/document\.getElementById\('jf2026ServiceTile'\)/);
  assert.doesNotMatch(ui,/i<180&&\(!window\.__simantabSb/);
 });
 
