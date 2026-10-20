@@ -83,3 +83,15 @@ test('S1 DIV S2 S3 self-report is supported without default SLTA/SPG guidance',(
  assert.match(m,/q\.study_status in \('LULUS_BELUM_VERIF','SUDAH_MEMENUHI'\)/);
  assert.match(m,/education_initial=excluded.education_initial/);
 });
+
+test('GTK without digital diploma keeps saved declaration separate from verification',()=>{
+ assert.match(ui,/function documentStatus\(q\)/);
+ assert.match(ui,/q\.study_status==='SUDAH_MEMENUHI' && !q\.evidence_path/);
+ assert.match(ui,/Sudah Memenuhi \(Pernyataan GTK\) — Dokumen Belum Tersedia/);
+ assert.match(ui,/if\(q\.review_status==='TERVERIFIKASI'\)/);
+ assert.match(ui,/Dokumen Diunggah — Menunggu Verifikasi Dinas/);
+ assert.match(ui,/Status dokumen: /);
+ assert.match(ui,/ijazah dapat diunggah di lain waktu/);
+ assert.match(ui,/documentStatus\(x\)/);
+ assert.doesNotMatch(ui,/study_status==='SUDAH_MEMENUHI'\s*\?\s*'Terverifikasi'/);
+});
