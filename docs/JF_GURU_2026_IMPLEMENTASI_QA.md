@@ -10,13 +10,14 @@ Dasar: Surat Dirjen GTK Nomor **0294/B/B.B1/HK.07.00/2026** tanggal 27 Juli 2026
 ## Rute aplikasi
 - GTK masuk ke `Layanan Kepegawaian` → `Penyesuaian dan Pengangkatan JF Guru 2026`.
 - Pemohon memakai NIP yang cocok dengan profil SIMANTAB, memilih tepat satu jalur dan mengunggah PDF/JPG/PNG dengan ukuran maksimum **1,5 MiB**.
+- Akun Dinas hanya memantau/verifikasi sesuai wewenang dan tidak dapat membuat draf pemohon. Pendidikan terakhir wajib dipilih berdasarkan ijazah; belum ada kolom pendidikan terverifikasi pada profil saat ini.
 - Petugas berotorisasi (`SUPER_ADMIN`, `KABID`, `KASI_SD`, `KASI_SMP`, `SUBKOOR_TK`, `STAFF_USUL_SK`, `STAFF_PROMOSI`) dapat memantau, meminta perbaikan, memverifikasi, mencatat pengiriman ke BKPSDM dan pengesahan SK.
 - Rekap CSV bagi petugas **di-audit** di `jf2026_export_audit`; berkas menggunakan bucket privat `simantab-jf-guru-2026` dengan RLS dan URL bertenggat.
 - Nama dan NIP hanya berada di database privat; tidak diletakkan dalam repo atau query logging yang tidak perlu.
 
 ## Urutan penerapan
 1. **Backup** database produksi dan metadata storage. Pastikan tidak ada tabel/bucket nama sama dengan isi yang berbeda.
-2. Review dan jalankan migrasi `supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql` melalui jalur migrasi resmi Supabase (staging disarankan).
+2. Review dan jalankan migrasi awal `supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql` jika belum terpasang, kemudian migrasi pengaman `supabase/migrations/20261020134500_jf2026_gtk_only_applicant_guard.sql` melalui jalur migrasi resmi Supabase (staging disarankan). Migrasi pengaman **belum diterapkan otomatis di produksi** saat PR dibuat; rilis harus ditahan sampai pengaman backend terpasang dan diuji.
 3. Uji RLS dan RPC dalam sesi GTK A, GTK B, petugas berizin, petugas tanpa izin dan anonim.
 4. Bangun aplikasi memakai `npm run build` dari folder `web`. Skrip injeksi yang baru adalah tahapan terakhir dalam `web/package.json`.
 5. Pastikan preview tidak merusak `E_JABFUNG`, layanan kenaikan pangkat, login GTK/Dinas, menu kepala sekolah, dan profil.
