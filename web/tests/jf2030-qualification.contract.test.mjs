@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import vm from 'node:vm';
 const read=p=>fs.readFileSync(new URL(p,import.meta.url),'utf8');
 const ui=read('../jf-qualification-2030.js');
 const sql=read('../../supabase/migrations/20261020162000_jf2030_qualification_monitoring.sql');
@@ -94,4 +95,22 @@ test('GTK without digital diploma keeps saved declaration separate from verifica
  assert.match(ui,/ijazah dapat diunggah di lain waktu/);
  assert.match(ui,/documentStatus\(x\)/);
  assert.doesNotMatch(ui,/study_status==='SUDAH_MEMENUHI'\s*\?\s*'Terverifikasi'/);
+});
+
+test('status dokumen functional scenarios for GTK and Kabid (not only regex matching)',()=>{
+ const marker=ui.match(/function documentStatus\(q\)\{[\s\S]*?\n\}\nlet mine=/);
+ assert.ok(marker,'documentStatus pure helper should exist before module state');
+ const body=marker[0].slice(0,-'\nlet mine='.length);
+ const status=vm.runInNewContext('('+body+')');
+ assert.equal(status(null),'Data pendidikan belum diisi');
+ assert.equal(status({study_status:'SUDAH_MEMENUHI',review_status:'BELUM_DITELAAH',evidence_path:null}),
+   'Sudah Memenuhi (Pernyataan GTK) — Dokumen Belum Tersedia');
+ assert.equal(status({study_status:'SUDAH_MEMENUHI',review_status:'BELUM_DITELAAH',evidence_path:'owner/IJAZAH-uuid.pdf'}),
+   'Dokumen Diunggah — Menunggu Verifikasi Dinas');
+ assert.equal(status({study_status:'SUDAH_MEMENUHI',review_status:'TERVERIFIKASI',evidence_path:'owner/IJAZAH-uuid.pdf'}),
+   'Ijazah telah diverifikasi Dinas');
+ assert.equal(status({study_status:'LULUS_BELUM_VERIF',review_status:'BELUM_DITELAAH',evidence_path:null}),
+   'Lulus (Pernyataan GTK) — Dokumen Belum Tersedia');
+ assert.equal(status({study_status:'SEDANG_KULIAH',review_status:'BELUM_DITELAAH',evidence_path:null}),
+   'Belum ada dokumen ijazah yang diverifikasi');
 });
