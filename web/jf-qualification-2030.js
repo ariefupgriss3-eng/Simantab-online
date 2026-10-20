@@ -15,7 +15,9 @@ const officer=()=>profile().account_channel==='DINAS'&&['SUPER_ADMIN','KABID','S
 const gtk=()=>profile().account_channel==='GTK'&&profile().is_active!==false&&profile().approval_status==='APPROVED';
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const bucket='simantab-jf-ijazah-2030',MAX=1572864;
-const status={BELUM_KULIAH:'Belum kuliah',SEDANG_KULIAH:'Sedang kuliah',LULUS_BELUM_VERIF:'Lulus, menunggu verifikasi'};
+const status={BELUM_KULIAH:'Belum kuliah',SEDANG_KULIAH:'Sedang kuliah',LULUS_BELUM_VERIF:'Lulus, menunggu verifikasi',SUDAH_MEMENUHI:'Sudah S-1/D-IV atau lebih tinggi (belum diverifikasi)'};
+const qualifiedEducation=['S1','DIV','S2','S3'];
+const educationLevels=['SLTA','SPG','DI','DII','DIII',...qualifiedEducation];
 const reviewStatus={BELUM_DITELAAH:'Belum ditelaah',PERLU_PERBAIKAN:'Perlu perbaikan',TERVERIFIKASI:'Ijazah diverifikasi administratif'};
 let mine=null,rows=[],total=0,page=0,filter='',busy=false,mode='tracked',coverage=null,unreported=[];
 const modal=document.createElement('div');modal.id='jf2030Modal';modal.setAttribute('role','dialog');
@@ -45,7 +47,14 @@ window.addEventListener('simantab:profile-ready',()=>{
 });
 tile();
 function guidance(education){
- return '<p class="jf2030-note">'+(['DI','DII','DIII'].includes(education)?'<b>D-I/D-II/D-III:</b> Target pemenuhan S-1/D-IV paling lambat <b>11 Mei 2030</b>.':'<b>SLTA/SPG:</b> Wajib ditelaah secara individual. Ketentuan tenggat yang disebut untuk diploma tidak otomatis berlaku.')+'<br>Data ini untuk pembinaan dan pemantauan, bukan penetapan kelayakan Jabfung atau SK.</p>';
+ const detail=['DI','DII','DIII'].includes(education)
+  ?'<b>D-I/D-II/D-III:</b> Pemantauan pemenuhan S-1/D-IV paling lambat <b>11 Mei 2030</b>.'
+  :education==='SLTA'||education==='SPG'
+   ?'<b>SLTA/SPG:</b> Wajib ditelaah secara individual; tenggat yang disebut untuk diploma tidak otomatis berlaku.'
+   :qualifiedEducation.includes(education)
+    ?'<b>Sudah S-1/D-IV atau lebih tinggi:</b> Pernyataan ini belum terverifikasi. Unggah ijazah dan tunggu pemeriksaan Dinas.'
+    :'<b>Pilih pendidikan terakhir sesuai ijazah</b> agar ketentuan dan formulir yang relevan ditampilkan.';
+ return '<p class="jf2030-note">'+detail+'<br>Data ini untuk pembinaan dan pemantauan, bukan penetapan kelayakan Jabfung atau SK.</p>';
 }
 function opt(v,c,label){return '<option value="'+esc(v)+'" '+(v===c?'selected':'')+'>'+esc(label)+'</option>';}
 async function loadMine(){
@@ -59,32 +68,49 @@ async function open(){
 function renderMine(){
  const x=mine||{},locked=x.review_status==='TERVERIFIKASI';
  content().innerHTML='<div class="jf2030-card"><b>'+esc(profile().full_name||x.full_name||'GTK')+'</b> — NIP '+esc(profile().nip||x.nip||'-')+'<p class="jf2030-muted">'+esc(profile().unit||x.unit_work||'')+'</p></div>'+
- guidance(x.education_initial)+
+ '<div id="jf2030EducationGuidance">'+guidance(x.education_initial)+'</div>'+
  '<div class="jf2030-card"><b>Status verifikasi: '+esc(reviewStatus[x.review_status]||'Belum mengisi')+'</b><p>'+esc(x.review_note||'')+'</p>'+
  '<form id="jf2030Form"><div class="jf2030-grid">'+
  '<label>Pendidikan terakhir *<select required name="education" '+(locked?'disabled':'')+'>'+opt('','','Pilih pendidikan')+
- ['SLTA','SPG','DI','DII','DIII'].map(v=>opt(v,x.education_initial||'',v==='DI'?'D-I':v==='DII'?'D-II':v==='DIII'?'D-III':v)).join('')+'</select></label>'+
+ educationLevels.map(v=>opt(v,x.education_initial||'',v==='DI'?'D-I':v==='DII'?'D-II':v==='DIII'?'D-III':v==='DIV'?'D-IV':v==='S1'?'S-1':v==='S2'?'S-2':v==='S3'?'S-3':v)).join('')+'</select></label>'+
  '<label>Perkembangan studi *<select required name="status" '+(locked?'disabled':'')+'>'+opt('','','Pilih status')+
- Object.entries(status).map(([v,l])=>opt(v,x.study_status||'',l)).join('')+'</select></label>'+
+ Object.entries(status).filter(([v])=>qualifiedEducation.includes(x.education_initial||'')?v==='SUDAH_MEMENUHI':v!=='SUDAH_MEMENUHI').map(([v,l])=>opt(v,x.study_status||'',l)).join('')+'</select></label>'+
  '<label>Perguruan tinggi<input name="university" maxlength="200" value="'+esc(x.university||'')+'" '+(locked?'disabled':'')+'></label>'+
  '<label>Program studi<input name="program" maxlength="200" value="'+esc(x.study_program||'')+'" '+(locked?'disabled':'')+'></label>'+
  '<label>Tahun mulai<input type="number" min="1970" max="2030" name="year" value="'+esc(x.start_year||'')+'" '+(locked?'disabled':'')+'></label>'+
  '<label>Target kelulusan<input type="date" name="target" value="'+esc(x.target_graduation||'')+'" '+(locked?'disabled':'')+'></label>'+
- '<label>Tanggal lulus<input type="date" name="graduation" value="'+esc(x.graduation_date||'')+'" '+(locked?'disabled':'')+'></label></div>'+
+ '<label>Tanggal kelulusan sesuai ijazah<input type="date" name="graduation" value="'+esc(x.graduation_date||'')+'" '+(locked?'disabled':'')+'></label></div>'+
  '<label>Keterangan pembinaan<textarea name="notes" rows="3" maxlength="2000" '+(locked?'disabled':'')+'>'+esc(x.notes||'')+'</textarea></label>'+
  (locked?'<p class="jf2030-muted">Data ijazah sudah dikunci sesudah diverifikasi.</p>':'<button type="button" class="primary" data-act="save">Simpan Perkembangan Studi</button>')+'</form></div>'+
- (x.study_status==='LULUS_BELUM_VERIF'?'<div class="jf2030-card"><b>Bukti ijazah S-1/D-IV</b><p class="jf2030-muted">PDF/JPG/PNG • maksimal 1,5 MB • dokumen privat.</p>'+
+ (x.study_status==='LULUS_BELUM_VERIF'||x.study_status==='SUDAH_MEMENUHI'?'<div class="jf2030-card"><b>Bukti ijazah S-1/D-IV atau lebih tinggi</b><p class="jf2030-muted">PDF/JPG/PNG • maksimal 1,5 MB • dokumen privat.</p>'+
  (x.evidence_path?'<button data-act="file" data-path="'+esc(x.evidence_path)+'">Lihat bukti tersimpan</button>':'<p>Belum ada bukti.</p>')+
  (!locked?'<label>Unggah setelah menyimpan status lulus<input id="jf2030Proof" type="file" accept=".pdf,.jpg,.jpeg,.png"></label><button data-act="upload">Unggah Bukti Ijazah</button>':'')+'</div>':'')+
  '<button type="button" data-act="reload">Muat ulang</button>';
  const f=document.getElementById('jf2030Form');
- f?.elements.status?.addEventListener('change',()=>{
-  const s=f.elements.status.value;
-  f.elements.university.required=s==='SEDANG_KULIAH';
-  f.elements.program.required=s==='SEDANG_KULIAH';
-  f.elements.graduation.required=s==='LULUS_BELUM_VERIF';
- });
- f?.elements.status?.dispatchEvent(new Event('change'));
+ if(!f)return;
+ const refreshFields=()=>{
+  const study=f.elements.status.value;
+  f.elements.university.required=study==='SEDANG_KULIAH';
+  f.elements.program.required=study==='SEDANG_KULIAH';
+  f.elements.graduation.required=study==='LULUS_BELUM_VERIF'||study==='SUDAH_MEMENUHI';
+  const completed=qualifiedEducation.includes(f.elements.education.value);
+  f.elements.target.disabled=locked||completed;
+  if(completed)f.elements.target.value='';
+ };
+ const refreshEducation=()=>{
+  const education=f.elements.education.value;
+  const completed=qualifiedEducation.includes(education);
+  const previous=f.elements.status.value;
+  const options=completed?['SUDAH_MEMENUHI']:Object.keys(status).filter(v=>v!=='SUDAH_MEMENUHI');
+  f.elements.status.innerHTML=opt('','','Pilih status')+options.map(v=>opt(v,previous,v=== 'SUDAH_MEMENUHI'?'Sudah memenuhi (menunggu verifikasi ijazah)':status[v])).join('');
+  f.elements.status.value=completed?'SUDAH_MEMENUHI':options.includes(previous)?previous:'';
+  const note=document.getElementById('jf2030EducationGuidance');
+  if(note)note.innerHTML=guidance(education);
+  refreshFields();
+ };
+ f.elements.education.addEventListener('change',refreshEducation);
+ f.elements.status.addEventListener('change',refreshFields);
+ refreshEducation();
 }
 async function save(){
  if(!gtk())throw Error('Hanya GTK dapat mengisi perkembangan studi');
@@ -94,7 +120,7 @@ async function save(){
  if(x.error)throw x.error;await loadMine();renderMine();msg('Perkembangan studi tersimpan.');
 }
 async function upload(){
- if(!gtk()||mine?.study_status!=='LULUS_BELUM_VERIF'||mine.review_status==='TERVERIFIKASI')throw Error('Simpan status kelulusan lebih dahulu.');
+ if(!gtk()||!['LULUS_BELUM_VERIF','SUDAH_MEMENUHI'].includes(mine?.study_status)||mine.review_status==='TERVERIFIKASI')throw Error('Simpan data ijazah dan tanggal lulus terlebih dahulu.');
  const f=document.getElementById('jf2030Proof')?.files?.[0];
  if(!f)throw Error('Pilih ijazah yang akan diunggah');
  if(f.size<1||f.size>MAX||!['application/pdf','image/png','image/jpeg'].includes(f.type))throw Error('Hanya PDF/JPG/PNG maksimal 1,5 MB');
@@ -144,8 +170,8 @@ async function loadOfficer(){
 }
 function renderOfficer(){
  const late=rows.filter(x=>['DI','DII','DIII'].includes(x.education_initial)&&x.target_graduation>'2030-05-11'&&x.review_status!=='TERVERIFIKASI').length;
- content().innerHTML=coverageHeader()+guidance('DI')+'<div class="jf2030-card"><b>Monitoring Dinas</b> — '+total+' data • halaman '+(page+1)+'<p>'+late+' target di halaman ini melewati tenggat diploma.</p>'+
- '<label>Filter pendidikan<select id="jf2030Filter">'+opt('','','Semua')+['SLTA','SPG','DI','DII','DIII'].map(v=>opt(v,filter,v)).join('')+'</select></label><button data-act="filter">Terapkan filter</button>'+
+ content().innerHTML=coverageHeader()+'<p class="jf2030-note">D-I/D-II/D-III: pemantauan 11 Mei 2030. SLTA/SPG: telaah khusus. S-1/D-IV atau lebih tinggi: sudah dilaporkan GTK, tetapi belum tentu ijazah diverifikasi.</p>'+'<div class="jf2030-card"><b>Monitoring Dinas</b> — '+total+' data • halaman '+(page+1)+'<p>'+late+' target di halaman ini melewati tenggat diploma.</p>'+
+ '<label>Filter pendidikan<select id="jf2030Filter">'+opt('','','Semua')+educationLevels.map(v=>opt(v,filter,v)).join('')+'</select></label><button data-act="filter">Terapkan filter</button>'+
  '<div class="jf2030-scroll"><table><thead><tr><th>Guru/NIP</th><th>Sekolah</th><th>Ijazah awal</th><th>Progres</th><th>Verifikasi</th><th>Aksi</th></tr></thead><tbody>'+
  (rows.length?rows.map(x=>'<tr><td>'+esc(x.full_name)+'<br>'+esc(x.nip)+'</td><td>'+esc(x.unit_work)+'</td><td>'+esc(x.education_initial)+'</td><td>'+esc(status[x.study_status])+'</td><td>'+esc(reviewStatus[x.review_status])+'</td><td><button data-act="detail" data-id="'+esc(x.owner_id)+'">Detail</button></td></tr>').join(''):'<tr><td colspan="6">Belum ada data.</td></tr>')+
  '</tbody></table></div><div class="jf2030-buttons"><button data-act="prev" '+(page===0?'disabled':'')+'>Sebelumnya</button><button data-act="next" '+((page+1)*50>=total?'disabled':'')+'>Berikutnya</button></div></div>';
@@ -188,5 +214,5 @@ modal.addEventListener('click',async e=>{
  if(a==='review')await review(b.dataset.id,b.dataset.next);
  }catch(x){msg(x.message||String(x),true);}finally{busy=false;}
 });
-window.__simantabJF2030={open,version:1,backendRequired:true};
+window.__simantabJF2030={open,version:2,backendRequired:true};
 })();
