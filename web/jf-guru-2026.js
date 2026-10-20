@@ -59,7 +59,7 @@ function show(){modal.style.display='flex';document.body.style.overflow='hidden'
 function close(){modal.style.display='none';document.body.style.overflow='';editCase=null;msg('');}
 function ensureTile(){
  const root=document.getElementById('servicesBody');
- if(!root||!(applicant()||officer())||document.getElementById('jf2026ServiceTile'))return;
+ if(!root||(applicant()&&window.__simantabSmartGtkReady)||!(applicant()||officer())||document.getElementById('jf2026ServiceTile'))return;
  const isGtk=applicant();
  const box=document.createElement('div');box.id='jf2026ServiceTile';box.className=isGtk?'service':'card';
  box.style.cssText='margin:12px 0;border:1px solid #a4c9ed;background:#f4f9ff;padding:13px;border-radius:12px';
