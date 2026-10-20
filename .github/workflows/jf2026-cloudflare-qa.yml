@@ -18,6 +18,8 @@ on:
       - 'supabase/migrations/20261020142000_jf2026_legacy_education.sql'
       - 'supabase/migrations/20261020162000_jf2030_qualification_monitoring.sql'
       - 'supabase/migrations/20261020182500_jf2030_coverage_reconciliation.sql'
+      - 'supabase/migrations/20261021101000_jf2030_qualification_completed.sql'
+      - 'web/tests/jf2030-completed-postgres-integration.sql'
       - '.github/workflows/jf2026-cloudflare-qa.yml'
 jobs:
   cloudflare-bundle:
@@ -43,7 +45,7 @@ jobs:
         run: |
           test -s .vercel/output/static/jf-guru-2026.js
           test -s .vercel/output/static/jf-qualification-2030.js
-          grep -q './jf-qualification-2030.js?v=2' .vercel/output/static/index.html
+          grep -q './jf-qualification-2030.js?v=3' .vercel/output/static/index.html
           grep -q './jf-guru-2026.js?v=2' .vercel/output/static/index.html
           test "$(grep -o './jf-guru-2026.js?v=2' .vercel/output/static/index.html | wc -l)" -eq 1
       - name: Save temporary QA-only static artifact
@@ -95,5 +97,9 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020182500_jf2030_coverage_reconciliation.sql
       - name: Test synthetic GTK account coverage and NIP duplicate safety
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2030-coverage-integration.sql
+      - name: Add completed S-1/D-IV and higher qualification schema in synthetic PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021101000_jf2030_qualification_completed.sql
       - name: Test diploma deadlines, progress, evidence and officer review
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2030-postgres-integration.sql
+      - name: Test completed qualification reporting and diploma verification
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2030-completed-postgres-integration.sql
