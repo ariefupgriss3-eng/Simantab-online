@@ -78,3 +78,9 @@ Dasar: Surat Dirjen GTK Nomor **0294/B/B.B1/HK.07.00/2026** tanggal 27 Juli 2026
 - Sesuai persetujuan pengguna untuk melanjutkan penyempurnaan modul, migrasi `jf2030_qualification_completed` diterapkan dengan sukses ke proyek Supabase aktif `tizxfzvgglkokzvsiwkg` melalui `apply_migration`, setelah Cloudflare dan PostgreSQL sintetis lulus.
 - Audit pascamigrasi: 486 profil tetap, 0 usul Jabfung lama, 0 baris pelaporan pendidikan dan 0 audit pendidikan. Satu kebijakan upload privat tetap ada. Fungsi simpan, lampirkan ijazah dan verifikasi mendukung `SUDAH_MEMENUHI`, tetapi akun `anon` tidak berhak menjalankannya.
 - Perubahan UI versi `jf-qualification-2030.js?v=3` tetap berada di PR Draft #233. **Rilis frontend dan uji GTK nyata masih harus diverifikasi terpisah** sebelum dinyatakan tersedia bagi semua pengguna.
+
+### Status dokumen belum tersedia (preview 2026-10-21)
+- UI GTK dan monitoring Dinas menghitung status dokumen dari `study_status`, `review_status`, dan `evidence_path` yang sudah ada. Tidak membuat kolom baru dan tidak mengubah data GTK.
+- Pada pendidikan S-1/D-IV/S-2/S-3 yang sudah dilaporkan namun belum mengunggah berkas, tampil `Sudah Memenuhi (Pernyataan GTK) — Dokumen Belum Tersedia`. Ini bukan status ijazah terverifikasi, tidak menggantikan pemeriksaan administratif.
+- GTK dapat menyimpan data tanpa ijazah digital dan mengunggahnya saat tersedia. Monitoring Dinas membedakan bukti belum tersedia, bukti terunggah belum ditelaah, butuh perbaikan, dan terverifikasi. Tombol verifikasi tetap dikunci jika `evidence_path` belum tersedia.
+- Tidak ada relaksasi RLS atau fungsi penetapan otomatis, dan tidak ada migrasi database untuk perubahan tampilan ini.
