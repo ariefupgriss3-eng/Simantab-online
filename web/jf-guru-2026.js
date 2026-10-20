@@ -81,7 +81,7 @@ function renderList(){
  editCase=null;
  const dueN='11 Mei 2027',dueP='11 Mei 2028';
  content().innerHTML=`<p class="jf-help"><b>Dua jalur terpisah:</b> (1) Penyesuaian nomenklatur paling lambat ${dueN}, tanpa pelantikan. (2) Pengangkatan PNS formasi JF Guru yang belum diangkat, paling lambat ${dueP}, dengan pelantikan. Guru diploma wajib S-1/D-IV paling lambat 11 Mei 2030. Seluruh keputusan tetap diverifikasi petugas.</p>
- <div class="jf-actions">${applicant()?'<button data-act="new" data-path="NOMENKLATUR" class="jf-primary">+ Penyesuaian Nomenklatur</button><button data-act="new" data-path="PENGANGKATAN" class="jf-primary">+ Pengangkatan JF Guru</button>':'<span class="jf-muted">Pengajuan baru hanya melalui akun GTK yang disetujui; akun Dinas menangani pemantauan dan verifikasi.</span>'}${officer()?'<button data-act="csv">⬇ Ekspor Rekap CSV</button>':''}</div>
+ <div class="jf-actions">${applicant()?'<button data-act="new" data-path="NOMENKLATUR" class="jf-primary">+ Penyesuaian Nomenklatur</button><button data-act="new" data-path="PENGANGKATAN" class="jf-primary">+ Pengangkatan JF Guru</button>':'<span class="jf-muted">Pengajuan baru hanya melalui akun GTK yang disetujui; akun Dinas menangani pemantauan dan verifikasi.</span>'}${officer()?'<button data-act="csv">⬇ Ekspor Rekap CSV</button>':''}<button data-act="qualification">📚 Pemenuhan S-1/D-IV • 2030</button></div>
  <div class="jf-card"><b>${officer()?'Dashboard Pemantauan Dinas':'Daftar Usulan Saya'}</b> <span class="jf-muted">• ${total} kasus sesuai filter • Halaman ${page+1}</span>
  <div class="jf-grid" style="margin-top:10px"><div class="jf-field"><label>Jalur</label><select id="jfFilterPath"><option value="">Semua</option><option value="NOMENKLATUR" ${pathFilter==='NOMENKLATUR'?'selected':''}>Penyesuaian Nomenklatur</option><option value="PENGANGKATAN" ${pathFilter==='PENGANGKATAN'?'selected':''}>Pengangkatan Baru</option></select></div><div class="jf-field"><label>Status</label><select id="jfFilterStatus"><option value="">Semua</option>${Object.entries(statusLabel).map(([v,l])=>`<option value="${v}" ${statusFilter===v?'selected':''}>${esc(l)}</option>`).join('')}</select></div></div>
  <div class="jf-field"><label>Cari nama pemohon</label><input id="jfFilterName" value="${esc(searchText)}" placeholder="Nama guru"><button data-act="filter">Cari / Terapkan Filter</button></div>
@@ -208,6 +208,7 @@ modal.addEventListener('click',async ev=>{
   if(act==='close'){close();return;}
   if(act==='list'){await load();renderList();msg('');return;}
   if(act==='file'){await viewFile(btn.dataset.path);return;}
+  if(act==='qualification'){close();if(!window.__simantabJF2030?.open)throw new Error('Modul pendidikan 2030 belum dimuat');window.__simantabJF2030.open();return;}
   if(act==='new'){if(!applicant())throw new Error('Pengajuan hanya untuk akun GTK');modal.dataset.pathway=btn.dataset.path;await openForm(null,btn.dataset.path);msg('');return;}
   if(act==='view'){
    const item=rows.find(x=>x.id===btn.dataset.id);if(!item)throw new Error('Kasus tidak ditemukan pada halaman ini');
