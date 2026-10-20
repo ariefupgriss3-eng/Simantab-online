@@ -14,6 +14,8 @@ create table public.profiles (
  account_channel text not null default 'GTK',
  approval_status text not null default 'APPROVED',
  is_active boolean not null default true,
+ full_name text,
+ unit text,
  nip text
 );
 create table storage.buckets (
