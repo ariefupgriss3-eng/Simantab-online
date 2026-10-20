@@ -73,3 +73,8 @@ Dasar: Surat Dirjen GTK Nomor **0294/B/B.B1/HK.07.00/2026** tanggal 27 Juli 2026
 - GTK berijazah **S-1/D-IV/S-2/S-3** diberi status mandiri `SUDAH_MEMENUHI` (baru berupa **pernyataan**, bukan data terverifikasi). Tanggal lulus wajib diisi berdasarkan ijazah. Bukti ijazah disimpan dalam bucket privat, lalu diverifikasi staf berwenang berdasarkan berkas, dengan alasan keputusan tercatat.
 - Penjelasan hukum ditampilkan **setelah pendidikan dipilih**. Guru D-I/D-II/D-III menerima keterangan tenggat 11 Mei 2030; SLTA/SPG menerima informasi telaah khusus, sedangkan GTK yang sudah S-1/D-IV atau lebih tinggi menerima informasi verifikasi ijazah. Saat pendidikan belum dipilih, teks tetap netral.
 - Pembaruan skema `supabase/migrations/20261021101000_jf2030_qualification_completed.sql` bersifat aditif pada record dan menjaga RLS. Terapkan hanya sesudah pengujian CI pada PostgreSQL sintetis; jangan menambahkan penanda `TERVERIFIKASI` otomatis.
+
+### Pemasangan pembaruan pendidikan S-1/D-IV+ — 21 Oktober 2026
+- Sesuai persetujuan pengguna untuk melanjutkan penyempurnaan modul, migrasi `jf2030_qualification_completed` diterapkan dengan sukses ke proyek Supabase aktif `tizxfzvgglkokzvsiwkg` melalui `apply_migration`, setelah Cloudflare dan PostgreSQL sintetis lulus.
+- Audit pascamigrasi: 486 profil tetap, 0 usul Jabfung lama, 0 baris pelaporan pendidikan dan 0 audit pendidikan. Satu kebijakan upload privat tetap ada. Fungsi simpan, lampirkan ijazah dan verifikasi mendukung `SUDAH_MEMENUHI`, tetapi akun `anon` tidak berhak menjalankannya.
+- Perubahan UI versi `jf-qualification-2030.js?v=3` tetap berada di PR Draft #233. **Rilis frontend dan uji GTK nyata masih harus diverifikasi terpisah** sebelum dinyatakan tersedia bagi semua pengguna.
