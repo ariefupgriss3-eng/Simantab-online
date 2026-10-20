@@ -29,9 +29,12 @@ const msg=(s='',err=false)=>{const e=document.getElementById('jf2030Msg');e.text
 function tile(){
  const root=document.getElementById('servicesBody');
  if(!(gtk()||officer())||!root||document.getElementById('jf2030ServiceTile'))return;
- const el=document.createElement('div');el.id='jf2030ServiceTile';el.className='card';el.style.cssText='margin:12px 0;padding:13px;background:#f1faf5;border:1px solid #b6dac3;border-radius:12px';
- el.innerHTML='<b>📚 Pemenuhan Kualifikasi S-1/D-IV • 2030</b><p class="small">Monitoring D-I/D-II/D-III sampai 11 Mei 2030. SLTA/SPG memerlukan telaah khusus.</p><button type="button" class="btn primary">Buka Monitoring Pendidikan 2030</button>';
- el.querySelector('button').addEventListener('click',open);root.prepend(el);
+ const isGtk=gtk();
+ const el=document.createElement('div');el.id='jf2030ServiceTile';el.className=isGtk?'service':'card';el.style.cssText='margin:12px 0;padding:13px;background:#f1faf5;border:1px solid #b6dac3;border-radius:12px';
+ el.innerHTML='<div class="emoji">📚</div><h3>Pemenuhan Kualifikasi S-1/D-IV • 2030</h3><p class="small">Monitoring D-I/D-II/D-III sampai 11 Mei 2030. SLTA/SPG memerlukan telaah khusus.</p><button type="button" class="btn primary">Buka Monitoring Pendidikan 2030</button>';
+ el.querySelector('button').addEventListener('click',open);
+ const target=isGtk?(root.querySelector('.servicegrid')||root):root;
+ target.prepend(el);
 }
 const oldShow=window.showTab;window.showTab=async function(...args){const x=await oldShow.apply(this,args);if(args[0]==='services')setTimeout(tile,80);return x;};
 const root=document.getElementById('servicesBody');if(root)new MutationObserver(()=>{if(!document.getElementById('jf2030ServiceTile'))tile()}).observe(root,{childList:true});
