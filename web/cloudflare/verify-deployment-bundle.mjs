@@ -52,6 +52,6 @@ const jf2026=await read('jf-guru-2026.js');
 ok(html.includes('./jf-guru-2026.js?v=2') && html.split('./jf-guru-2026.js?v=2').length===2,'Modul JF Guru 2026 harus muncul tepat satu kali');
 ok(jf2026.includes('SIMANTAB_JF_GURU_SURAT_0294_2026_V1') && jf2026.includes('jf2026_submit_case') && jf2026.includes('jf2026_transition'),'Modul JF Guru tidak lengkap');
 const qualification2030=await read('jf-qualification-2030.js');
-ok(html.includes('./jf-qualification-2030.js?v=3') && html.split('./jf-qualification-2030.js?v=3').length===2,'Modul S1-DIV 2030 harus tepat sekali');
+ok(html.includes('./jf-qualification-2030.js?v=4') && html.split('./jf-qualification-2030.js?v=4').length===2,'Modul S1-DIV 2030 harus tepat sekali');
 ok(qualification2030.includes('SIMANTAB_JF2030_QUALIFICATION_V1')&&qualification2030.includes('jf2030_save_progress')&&qualification2030.includes('jf2030_review'),'Pemantauan S1-DIV 2030 belum dibundel');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));
