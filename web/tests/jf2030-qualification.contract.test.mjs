@@ -67,3 +67,19 @@ test('GTK 2030 monitoring appears in GTK service catalog, not only Dinas dashboa
  assert.match(ui,/root\.querySelector\('\.servicegrid'\)\|\|root/);
  assert.match(ui,/Buka Monitoring Pendidikan 2030/);
 });
+
+test('S1 DIV S2 S3 self-report is supported without default SLTA/SPG guidance',()=>{
+ const m=read('../../supabase/migrations/20261021101000_jf2030_qualification_completed.sql');
+ assert.match(ui,/educationLevels=\['SLTA','SPG','DI','DII','DIII',\.\.\.qualifiedEducation\]/);
+ assert.match(ui,/const qualifiedEducation=\['S1','DIV','S2','S3'\]/);
+ assert.match(ui,/education==='SLTA'\|\|education==='SPG'/);
+ assert.match(ui,/Pilih pendidikan terakhir sesuai ijazah/);
+ assert.match(ui,/SUDAH_MEMENUHI/);
+ assert.match(ui,/refreshEducation/);
+ assert.match(ui,/jf2030EducationGuidance/);
+ assert.match(ui,/f\.elements\.graduation\.required=study==='LULUS_BELUM_VERIF'\|\|study==='SUDAH_MEMENUHI'/);
+ assert.match(m,/jf2030_education_study_coherence_check/);
+ assert.match(m,/study_status='SUDAH_MEMENUHI'/);
+ assert.match(m,/q\.study_status in \('LULUS_BELUM_VERIF','SUDAH_MEMENUHI'\)/);
+ assert.match(m,/education_initial=excluded.education_initial/);
+});
