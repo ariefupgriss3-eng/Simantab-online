@@ -188,7 +188,7 @@ function renderOfficer(){
  '</tbody></table></div><div class="jf2030-buttons"><button data-act="prev" '+(page===0?'disabled':'')+'>Sebelumnya</button><button data-act="next" '+((page+1)*50>=total?'disabled':'')+'>Berikutnya</button></div></div>';
 }
 function renderDetail(x){
- content().innerHTML='<button data-act="back">← Daftar</button><div class="jf2030-card"><h3>'+esc(x.full_name)+'</h3><p>'+esc(x.nip)+' • '+esc(x.unit_work)+'</p><p>Ijazah awal: '+esc(x.education_initial)+' • '+esc(status[x.study_status])+'</p>'+guidance(x.education_initial)+
+ content().innerHTML='<button data-act="back">← Daftar</button><div class="jf2030-card"><h3>'+esc(x.full_name)+'</h3><p>'+esc(x.nip)+' • '+esc(x.unit_work)+'</p><p>Pendidikan terakhir: '+esc({'DI':'D-I','DII':'D-II','DIII':'D-III','DIV':'D-IV','S1':'S-1','S2':'S-2','S3':'S-3'}[x.education_initial]||x.education_initial)+' • '+esc(status[x.study_status])+'</p>'+guidance(x.education_initial)+
  '<p>Perguruan tinggi: '+esc(x.university)+' • Program: '+esc(x.study_program)+'</p><p>Tahun mulai: '+esc(x.start_year||'-')+' • Target: '+esc(x.target_graduation||'-')+' • Lulus: '+esc(x.graduation_date||'-')+'</p>'+
  '<p>Verifikasi: '+esc(reviewStatus[x.review_status])+' • '+esc(x.review_note||'')+'</p><p><b>Status dokumen: '+esc(documentStatus(x))+'</b></p>'+
  (x.evidence_path?'<button data-act="file" data-path="'+esc(x.evidence_path)+'">Lihat bukti ijazah</button>':'<p>Bukti belum diunggah.</p>')+
@@ -225,5 +225,5 @@ modal.addEventListener('click',async e=>{
  if(a==='review')await review(b.dataset.id,b.dataset.next);
  }catch(x){msg(x.message||String(x),true);}finally{busy=false;}
 });
-window.__simantabJF2030={open,version:3,backendRequired:true};
+window.__simantabJF2030={open,version:4,backendRequired:true};
 })();
