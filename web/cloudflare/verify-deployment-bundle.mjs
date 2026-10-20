@@ -48,4 +48,7 @@ const module=await read('diklat-ks-bcks-v32.js');
 ok(html.includes('./diklat-ks-bcks-v32.js?v=23'),'Cache versi Diklat KS manual bukan v23');
 ok(module.includes('ks_bcks_submit_local')&&module.includes('ksbCoordManualApprove'),'Alur Diklat KS lokal/manual belum lengkap');
 ok(module.includes('SIMANTAB_KS_INACTIVE_DIKLAT_NAV_VISIBLE_LOCKED_V1')&&module.includes('syncKsDiklatNavState')&&module.includes('b.disabled=locked'),'Kepala Sekolah harus melihat menu Diklat terkunci saat modul nonaktif');
+const jf2026=await read('jf-guru-2026.js');
+ok(html.includes('./jf-guru-2026.js?v=1') && html.split('./jf-guru-2026.js?v=1').length===2,'Modul JF Guru 2026 harus muncul tepat satu kali');
+ok(jf2026.includes('SIMANTAB_JF_GURU_SURAT_0294_2026_V1') && jf2026.includes('jf2026_submit_case') && jf2026.includes('jf2026_transition'),'Modul JF Guru tidak lengkap');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));
