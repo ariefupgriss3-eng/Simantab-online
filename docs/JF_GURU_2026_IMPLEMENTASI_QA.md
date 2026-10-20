@@ -52,3 +52,10 @@ Dasar: Surat Dirjen GTK Nomor **0294/B/B.B1/HK.07.00/2026** tanggal 27 Juli 2026
 - Dashboard Dinas memuat daftar guru yang sudah mendaftar pada modul ini, bukan populasi otomatis seluruh GTK Batang. Data 0 bukan berarti tidak ada guru yang belum S-1/D-IV.
 - Migrasi tambahan **`supabase/migrations/20261020162000_jf2030_qualification_monitoring.sql`** harus dijalankan pada staging, diuji terpisah, dicadangkan, dan baru dapat dipertimbangkan untuk produksi sesudah persetujuan dan QA. Preview frontend dapat tampil sebelum database tersedia tetapi tidak boleh menyimpan transaksi sampai migrasi diterapkan.
 - Verifikasi administrasi ijazah **bukan** penetapan gelar, hak transisi, SK JF, atau persetujuan BKPSDM.
+
+## Kualitas data identitas dan cakupan pemantauan
+- Data akun aktif/disetujui (jalur GTK dan Kepala Sekolah) dalam SIMANTAB **bukan** sensus lengkap guru Batang. Data pendidikan belum tersedia di tabel `profiles`; pendidikan tidak boleh disimpulkan dari NIP, gelar, jabatan, atau sekolah.
+- Pemetaan menggunakan `owner_id` dan kecocokan NIP 18 digit. NIP aktif ganda ditandai sebagai **ambigu** dan tidak digabung otomatis, tidak dihapus, serta dikecualikan dari daftar tindak lanjut individu hingga rekonsiliasi.
+- Fungsi Dinas `jf2030_coverage_summary()` hanya mengembalikan agregat (akun aktif, NIP valid, NIP unik, ganda, sudah/belum mengisi). Fungsi `jf2030_coverage_unreported(page,limit)` menampilkan maksimal 50 akun GTK aktif/disetujui dengan NIP **tunggal** yang belum mengisi data pendidikan, hanya untuk petugas berizin.
+- **Belum mengisi pendidikan ≠ belum S-1/D-IV**. Daftar belum mengisi hanya untuk sosialisasi/pengingat, tidak boleh diterbitkan sebagai laporan jumlah guru belum S-1.
+- Uji pada PostgreSQL sintetis dan validasi akses Dinas/GTK terlebih dahulu. Migrasi `supabase/migrations/20261020182500_jf2030_coverage_reconciliation.sql` belum dijalankan di produksi.
