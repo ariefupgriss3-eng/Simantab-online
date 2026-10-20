@@ -67,3 +67,9 @@ Dasar: Surat Dirjen GTK Nomor **0294/B/B.B1/HK.07.00/2026** tanggal 27 Juli 2026
 - Permintaan refresh skema PostgREST `pg_notify('pgrst','reload schema')` telah dijalankan.
 - Migrasi pada repositori memakai nomor versi file yang berbeda dari nomor versi yang diberikan Supabase pada saat aplikasi langsung; karena itu kebijakan RLS migrasi pendidikan dilindungi dengan `IF NOT EXISTS` agar penerapan ulang di deployment berikutnya tidak menggagalkan rilis. Tetap audit histori migrasi sebelum `db push`.
 - Dua temuan kualitas data sebelum deployment: beberapa akun GTK memakai NIP yang sama; verifikasi identitas perlu direkonsiliasi sebelum pemutakhiran pendidikan untuk mencegah kekeliruan personifikasi. Status 'belum melapor' bukan bukti 'belum S-1/D-IV'.
+
+## Pilihan guru yang telah menyelesaikan S-1/D-IV atau lebih tinggi
+- Pendidikan terakhir sekarang meliputi **SLTA, SPG, D-I, D-II, D-III, S-1, D-IV, S-2, dan S-3**. Tidak boleh disimpulkan dari gelar pada nama atau NIP; pengguna menyatakan pendidikan berdasarkan ijazah aktual.
+- GTK berijazah **S-1/D-IV/S-2/S-3** diberi status mandiri `SUDAH_MEMENUHI` (baru berupa **pernyataan**, bukan data terverifikasi). Tanggal lulus wajib diisi berdasarkan ijazah. Bukti ijazah disimpan dalam bucket privat, lalu diverifikasi staf berwenang berdasarkan berkas, dengan alasan keputusan tercatat.
+- Penjelasan hukum ditampilkan **setelah pendidikan dipilih**. Guru D-I/D-II/D-III menerima keterangan tenggat 11 Mei 2030; SLTA/SPG menerima informasi telaah khusus, sedangkan GTK yang sudah S-1/D-IV atau lebih tinggi menerima informasi verifikasi ijazah. Saat pendidikan belum dipilih, teks tetap netral.
+- Pembaruan skema `supabase/migrations/20261021101000_jf2030_qualification_completed.sql` bersifat aditif pada record dan menjaga RLS. Terapkan hanya sesudah pengujian CI pada PostgreSQL sintetis; jangan menambahkan penanda `TERVERIFIKASI` otomatis.
