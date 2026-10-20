@@ -1,0 +1,77 @@
+name: QA Cloudflare JF Guru 2026
+on:
+  push:
+    branches: [feature/cloudflare-jf-guru-2026-0294]
+  pull_request:
+    paths:
+      - 'web/jf-guru-2026.js'
+      - 'web/inject-jf-guru-2026.mjs'
+      - 'web/cloudflare/verify-deployment-bundle.mjs'
+      - 'web/package.json'
+      - 'web/tests/jf-guru-2026.contract.test.mjs'
+      - 'supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql'
+      - '.github/workflows/jf2026-cloudflare-qa.yml'
+jobs:
+  cloudflare-bundle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: web
+        run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Test JF Guru client and server contracts
+        working-directory: web
+        run: npm run test:jf2026
+      - name: Build Cloudflare Workers static assets
+        working-directory: web
+        run: npm run build:cloudflare
+      - name: Assert exactly one module was bundled
+        working-directory: web
+        run: |
+          test -s .vercel/output/static/jf-guru-2026.js
+          grep -q './jf-guru-2026.js?v=1' .vercel/output/static/index.html
+          test "$(grep -o './jf-guru-2026.js?v=1' .vercel/output/static/index.html | wc -l)" -eq 1
+      - name: Save temporary QA-only static artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-jf2026-qa-static
+          path: web/.vercel/output/static/
+          retention-days: 1
+
+  postgres-security:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: integration_only
+          POSTGRES_DB: simantab_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d simantab_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: integration_only
+      PGDATABASE: simantab_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Initialize synthetic accounts only
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2026-postgres-bootstrap.sql
+      - name: Migrate synthetic test PostgreSQL only
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql
+      - name: Test account separation, documents, workflow and audit
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2026-postgres-integration.sql
