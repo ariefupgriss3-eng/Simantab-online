@@ -43,9 +43,9 @@ jobs:
         run: |
           test -s .vercel/output/static/jf-guru-2026.js
           test -s .vercel/output/static/jf-qualification-2030.js
-          grep -q './jf-qualification-2030.js?v=1' .vercel/output/static/index.html
-          grep -q './jf-guru-2026.js?v=1' .vercel/output/static/index.html
-          test "$(grep -o './jf-guru-2026.js?v=1' .vercel/output/static/index.html | wc -l)" -eq 1
+          grep -q './jf-qualification-2030.js?v=2' .vercel/output/static/index.html
+          grep -q './jf-guru-2026.js?v=2' .vercel/output/static/index.html
+          test "$(grep -o './jf-guru-2026.js?v=2' .vercel/output/static/index.html | wc -l)" -eq 1
       - name: Save temporary QA-only static artifact
         uses: actions/upload-artifact@v4
         with:
