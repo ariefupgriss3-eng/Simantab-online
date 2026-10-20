@@ -55,3 +55,12 @@ test('SLTA and SPG are accepted for legacy review without relaxing appointment S
  assert.match(extra,/p_education not in \('S1','DIV'\) and p_pathway='PENGANGKATAN'/);
  assert.match(ui,/SLTA\/SPG dicatat untuk telaah kasus lama/);
 });
+
+test('GTK JF2026 menu awaits profile-ready, remounts after login and is role-limited',()=>{
+ assert.match(ui,/window\.addEventListener\('simantab:profile-ready',onReady\)/);
+ assert.match(ui,/window\.removeEventListener\('simantab:profile-ready',onReady\)/);
+ assert.match(ui,/window\.addEventListener\('simantab:profile-ready',\(\)=>/);
+ assert.match(ui,/setTimeout\(ensureTile,0\)/);
+ assert.match(ui,/if\(!root\|\|!\(applicant\(\)\|\|officer\(\)\)\|\|document\.getElementById\('jf2026ServiceTile'\)\)return/);
+ assert.doesNotMatch(ui,/i<180&&\(!window\.__simantabSb/);
+});
