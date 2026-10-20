@@ -41,7 +41,7 @@ const content=()=>document.getElementById('jf2030Body');
 const msg=(s='',err=false)=>{const e=document.getElementById('jf2030Msg');e.textContent=s;e.style.color=err?'#bb241e':'#12649e';};
 function tile(){
  const root=document.getElementById('servicesBody');
- if(!(gtk()||officer())||!root||document.getElementById('jf2030ServiceTile'))return;
+ if(!(gtk()||officer())||!root||(gtk()&&window.__simantabSmartGtkReady)||document.getElementById('jf2030ServiceTile'))return;
  const isGtk=gtk();
  const el=document.createElement('div');el.id='jf2030ServiceTile';el.className=isGtk?'service':'card';el.style.cssText='margin:12px 0;padding:13px;background:#f1faf5;border:1px solid #b6dac3;border-radius:12px';
  el.innerHTML='<div class="emoji">📚</div><h3>Pemenuhan Kualifikasi S-1/D-IV • 2030</h3><p class="small">Monitoring D-I/D-II/D-III sampai 11 Mei 2030. SLTA/SPG memerlukan telaah khusus.</p><button type="button" class="btn primary">Buka Monitoring Pendidikan 2030</button>';
