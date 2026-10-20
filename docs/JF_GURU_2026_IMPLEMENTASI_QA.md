@@ -59,3 +59,11 @@ Dasar: Surat Dirjen GTK Nomor **0294/B/B.B1/HK.07.00/2026** tanggal 27 Juli 2026
 - Fungsi Dinas `jf2030_coverage_summary()` hanya mengembalikan agregat (akun aktif, NIP valid, NIP unik, ganda, sudah/belum mengisi). Fungsi `jf2030_coverage_unreported(page,limit)` menampilkan maksimal 50 akun GTK aktif/disetujui dengan NIP **tunggal** yang belum mengisi data pendidikan, hanya untuk petugas berizin.
 - **Belum mengisi pendidikan ≠ belum S-1/D-IV**. Daftar belum mengisi hanya untuk sosialisasi/pengingat, tidak boleh diterbitkan sebagai laporan jumlah guru belum S-1.
 - Uji pada PostgreSQL sintetis dan validasi akses Dinas/GTK terlebih dahulu. Migrasi `supabase/migrations/20261020182500_jf2030_coverage_reconciliation.sql` belum dijalankan di produksi.
+
+## Pemasangan Supabase resmi — 20 Oktober 2026
+- Sesuai persetujuan pengguna, pada proyek Supabase SIMANTAB aktif `tizxfzvgglkokzvsiwkg` telah dipasang migrasi `jf2030_qualification_monitoring` (versi Supabase `20261020141255`) dan `jf2030_coverage_reconciliation` (versi Supabase `20261020141313`) melalui konektor Supabase. **Bukan** pemasangan otomatis dari deployment GitHub/Cloudflare.
+- Kondisi sebelum dan setelah: 486 profil, 0 kasus JF Guru 2026; tidak ada data pendidikan 2030 yang diimpor atau ditulis atas nama GTK. Modul baru dimulai dari 0 entri.
+- Hasil audit: dua tabel baru RLS aktif; bucket `simantab-jf-ijazah-2030` privat maksimal 1,5 MiB; 5 RPC `jf2030_*` hanya dapat dieksekusi oleh peran `authenticated`, bukan `anon`. Pemeriksaan akses pengguna Dinas dan GTK tetap dilakukan secara runtime oleh SQL; audit lulus secara statis, uji manual akun nyata masih diperlukan.
+- Permintaan refresh skema PostgREST `pg_notify('pgrst','reload schema')` telah dijalankan.
+- Migrasi pada repositori memakai nomor versi file yang berbeda dari nomor versi yang diberikan Supabase pada saat aplikasi langsung; karena itu kebijakan RLS migrasi pendidikan dilindungi dengan `IF NOT EXISTS` agar penerapan ulang di deployment berikutnya tidak menggagalkan rilis. Tetap audit histori migrasi sebelum `db push`.
+- Dua temuan kualitas data sebelum deployment: beberapa akun GTK memakai NIP yang sama; verifikasi identitas perlu direkonsiliasi sebelum pemutakhiran pendidikan untuk mencegah kekeliruan personifikasi. Status 'belum melapor' bukan bukti 'belum S-1/D-IV'.
