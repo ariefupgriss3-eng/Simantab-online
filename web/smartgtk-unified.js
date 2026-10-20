@@ -39,7 +39,7 @@ style.textContent='#smartgtkModal{display:none;position:fixed;inset:0;z-index:10
 const body=()=>document.getElementById('sgBody');
 const info=(s='',error=false)=>{const el=document.getElementById('sgMessage');el.textContent=s;el.style.color=error?'#ae2d25':'#156595'};
 const option=(v,l,selected)=>'<option value="'+esc(v)+'" '+(v===selected?'selected':'')+'>'+esc(l)+'</option>';
-const select=(name,label,value)=>'<label>'+esc(label)+'<select name="'+name+'" required>'+options[name].map(([v,l])=>option(v,l,value)).join('')+'</select></label>';
+const select=(name,label,value,required=true)=>'<label>'+esc(label)+'<select name="'+name+'" '+(required?'required':'')+'>'+options[name].map(([v,l])=>option(v,l,value)).join('')+'</select></label>';
 const input=(name,label,value,type='text')=>'<label>'+esc(label)+'<input name="'+name+'" type="'+type+'" value="'+esc(value||'')+'"></label>';
 function tile(){
  const root=document.getElementById('servicesBody');if(!root)return;
@@ -70,7 +70,7 @@ function form(){
  '<form id="smartgtkForm"><div class="sg-box"><b>A. Data Kepegawaian</b><div class="sg-grid">'+
  select('employment','Status kepegawaian *',x.employment)+
  select('jf_sk','Kepemilikan SK JF Guru *',x.jf_sk)+
- select('old_position','Jabatan sesuai SK JF (jika ada)',x.old_position)+
+ select('old_position','Jabatan sesuai SK JF (jika ada)',x.old_position,false)+
  select('nomenclature_updated','Penyesuaian nomenklatur SK JF *',x.nomenclature_updated)+
  select('pns_jf_formation','Formasi pengangkatan PNS sebagai JF Guru? *',x.pns_jf_formation)+
  '</div></div><div class="sg-box"><b>B. Pendidikan</b><div class="sg-grid">'+
