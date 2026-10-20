@@ -10,6 +10,7 @@ const BUCKET='simantab-jf-guru-2026',LIMIT=1572864;
 const OFFICERS=new Set(['SUPER_ADMIN','KABID','STAFF_USUL_SK']);
 const p=()=>window.__simantabProfile||{};
 const officer=()=>p().account_channel==='DINAS'&&OFFICERS.has(p().role)&&p().is_active!==false&&p().approval_status==='APPROVED';
+const applicant=()=>p().account_channel==='GTK'&&p().is_active!==false&&p().approval_status==='APPROVED';
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 const fmt=s=>s?new Date(s).toLocaleDateString('id-ID'):'-';
 const statusLabel={DRAFT:'Draf',SUBMITTED:'Diajukan',PERBAIKAN:'Perlu Perbaikan',VERIFIED:'Terverifikasi Staf',DISETUJUI_DINAS:'Disetujui Dinas',DIKIRIM_BKPSDM:'Dikirim ke BKPSDM',SK_TERBIT:'SK Terbit'};
@@ -79,7 +80,7 @@ function renderList(){
  editCase=null;
  const dueN='11 Mei 2027',dueP='11 Mei 2028';
  content().innerHTML=`<p class="jf-help"><b>Dua jalur terpisah:</b> (1) Penyesuaian nomenklatur paling lambat ${dueN}, tanpa pelantikan. (2) Pengangkatan PNS formasi JF Guru yang belum diangkat, paling lambat ${dueP}, dengan pelantikan. Guru diploma wajib S-1/D-IV paling lambat 11 Mei 2030. Seluruh keputusan tetap diverifikasi petugas.</p>
- <div class="jf-actions"><button data-act="new" data-path="NOMENKLATUR" class="jf-primary">+ Penyesuaian Nomenklatur</button><button data-act="new" data-path="PENGANGKATAN" class="jf-primary">+ Pengangkatan JF Guru</button>${officer()?'<button data-act="csv">⬇ Ekspor Rekap CSV</button>':''}</div>
+ <div class="jf-actions">${applicant()?'<button data-act="new" data-path="NOMENKLATUR" class="jf-primary">+ Penyesuaian Nomenklatur</button><button data-act="new" data-path="PENGANGKATAN" class="jf-primary">+ Pengangkatan JF Guru</button>':'<span class="jf-muted">Pengajuan baru hanya melalui akun GTK yang disetujui; akun Dinas menangani pemantauan dan verifikasi.</span>'}${officer()?'<button data-act="csv">⬇ Ekspor Rekap CSV</button>':''}</div>
  <div class="jf-card"><b>${officer()?'Dashboard Pemantauan Dinas':'Daftar Usulan Saya'}</b> <span class="jf-muted">• ${total} kasus sesuai filter • Halaman ${page+1}</span>
  <div class="jf-grid" style="margin-top:10px"><div class="jf-field"><label>Jalur</label><select id="jfFilterPath"><option value="">Semua</option><option value="NOMENKLATUR" ${pathFilter==='NOMENKLATUR'?'selected':''}>Penyesuaian Nomenklatur</option><option value="PENGANGKATAN" ${pathFilter==='PENGANGKATAN'?'selected':''}>Pengangkatan Baru</option></select></div><div class="jf-field"><label>Status</label><select id="jfFilterStatus"><option value="">Semua</option>${Object.entries(statusLabel).map(([v,l])=>`<option value="${v}" ${statusFilter===v?'selected':''}>${esc(l)}</option>`).join('')}</select></div></div>
  <div class="jf-field"><label>Cari nama pemohon</label><input id="jfFilterName" value="${esc(searchText)}" placeholder="Nama guru"><button data-act="filter">Cari / Terapkan Filter</button></div>
@@ -88,9 +89,10 @@ function renderList(){
  <p class="jf-muted">Catatan: status “Dikirim ke BKPSDM” dicatat oleh petugas berdasarkan bukti administrasi. Modul tidak otomatis terhubung dengan I-Mut, SIMPEG, atau SIASN.</p>`;
 }
 async function openForm(c,path){
+ if(!c&&!applicant())throw new Error('Pengajuan JF Guru 2026 hanya tersedia untuk akun GTK yang disetujui');
  editCase=c||null;docRows=[];
  if(c){const q=await sb.from('jf2026_documents').select('id,code,storage_path,file_name,created_at').eq('case_id',c.id);if(q.error)throw q.error;docRows=q.data||[];}
- const pathway=c?.pathway||path,editable=!c||((c.owner_id===p().id)&&['DRAFT','PERBAIKAN'].includes(c.status));
+ const pathway=c?.pathway||path,editable=applicant()&&(!c||((c.owner_id===p().id)&&['DRAFT','PERBAIKAN'].includes(c.status)));
  const isNew=pathway==='PENGANGKATAN',required=isNew?docsP:docsN;
  let warning='';
  if(c?.status==='PERBAIKAN')warning='<p class="jf-help">Petugas meminta perbaikan. Lihat riwayat status di bawah, ganti dokumen yang diperlukan, lalu kirim ulang.</p>';
@@ -105,7 +107,7 @@ async function openForm(c,path){
  ${f('unit_work','Unit kerja *',c?.unit_work||p().unit,'required maxlength="200"')}
  ${f('old_position','Jabatan lama / posisi terakhir *',c?.old_position||'','maxlength="160"')}
  <div class="jf-field"><label>Golongan ruang *</label><select name="rank_group" ${editable?'':'disabled'} required><option value="">Pilih golongan</option>${ranks.filter(x=>!isNew||!x.startsWith('II')).map(x=>`<option value="${x}" ${c?.rank_group===x||(!c&&p().golongan_ruang===x)?'selected':''}>${x}</option>`).join('')}</select></div>
- <div class="jf-field"><label>Pendidikan terakhir *</label><select name="education" ${editable?'':'disabled'} required>${(isNew?['S1','DIV']:['DI','DII','DIII','S1','DIV']).map(x=>`<option value="${x}" ${c?.education===x?'selected':''}>${x==='DIV'?'D-IV':x==='S1'?'S-1':x.replace('D','D-')}</option>`).join('')}</select></div>
+ <div class="jf-field"><label>Pendidikan terakhir *</label><select name="education" ${editable?'':'disabled'} required><option value="" disabled ${c?.education?'':'selected'}>Pilih pendidikan sesuai ijazah</option>${(isNew?['S1','DIV']:['DI','DII','DIII','S1','DIV']).map(x=>`<option value="${x}" ${c?.education===x?'selected':''}>${x==='DIV'?'D-IV':x==='S1'?'S-1':x.replace('D','D-')}</option>`).join('')}</select><span class="jf-muted">Pendidikan belum tersedia sebagai data terverifikasi di Profil GTK; wajib dipilih berdasarkan ijazah.</span></div>
  ${isNew?`<div class="jf-field"><label>Tanggal lahir (untuk pemeriksaan batas usia)</label><input type="date" name="birth_date" value="${esc(c?.birth_date||'')}" required ${editable?'':'disabled'}></div><div class="jf-field"><label>Formasi kepegawaian</label><label><input style="width:auto" type="checkbox" name="pns_formasi_jf" ${c?.pns_formasi_jf?'checked':''} ${editable?'':'disabled'}> Saya PNS dengan formasi JF Guru</label></div>`:''}
  </div><div class="jf-field"><label>Catatan/keterangan</label><textarea name="notes" rows="3" maxlength="2000" ${editable?'':'disabled'}>${esc(c?.notes||'')}</textarea></div>
  <hr><h4>Dokumen pendukung • PDF/JPG/PNG • maksimal 1,5 MB per berkas</h4>
@@ -124,6 +126,7 @@ async function renderTimeline(c){
  html+='</div>';out.innerHTML=html;
 }
 async function saveForm(submit){
+ if(!applicant())throw new Error('Hanya akun GTK yang dapat menyimpan atau mengirim usulan');
  const form=document.getElementById('jf2026Form');if(!form)throw new Error('Formulir belum tersedia');
  if(!form.reportValidity())return;
  const v=Object.fromEntries(new FormData(form).entries());
@@ -203,7 +206,7 @@ modal.addEventListener('click',async ev=>{
   if(act==='close'){close();return;}
   if(act==='list'){await load();renderList();msg('');return;}
   if(act==='file'){await viewFile(btn.dataset.path);return;}
-  if(act==='new'){modal.dataset.pathway=btn.dataset.path;await openForm(null,btn.dataset.path);msg('');return;}
+  if(act==='new'){if(!applicant())throw new Error('Pengajuan hanya untuk akun GTK');modal.dataset.pathway=btn.dataset.path;await openForm(null,btn.dataset.path);msg('');return;}
   if(act==='view'){
    const item=rows.find(x=>x.id===btn.dataset.id);if(!item)throw new Error('Kasus tidak ditemukan pada halaman ini');
    modal.dataset.pathway=item.pathway;await openForm(item,item.pathway);msg('');return;
