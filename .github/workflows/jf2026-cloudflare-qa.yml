@@ -10,6 +10,8 @@ on:
       - 'web/package.json'
       - 'web/tests/jf-guru-2026.contract.test.mjs'
       - 'supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql'
+      - 'supabase/migrations/20261020134500_jf2026_gtk_only_applicant_guard.sql'
+      - 'supabase/migrations/20261020142000_jf2026_legacy_education.sql'
       - '.github/workflows/jf2026-cloudflare-qa.yml'
 jobs:
   cloudflare-bundle:
@@ -75,5 +77,7 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql
       - name: Restrict applicant writes to GTK channel (synthetic test only)
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020134500_jf2026_gtk_only_applicant_guard.sql
+      - name: Enable legacy SLTA/SPG nomenclature recording on synthetic PostgreSQL only
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020142000_jf2026_legacy_education.sql
       - name: Test account separation, documents, workflow and audit
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2026-postgres-integration.sql
