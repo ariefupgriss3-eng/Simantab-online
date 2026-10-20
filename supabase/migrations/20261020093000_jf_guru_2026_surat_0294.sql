@@ -23,7 +23,7 @@ create table if not exists public.jf2026_cases (
  updated_at timestamptz not null default now(),
  created_at timestamptz not null default now(),
  unique(owner_id,pathway),
- unique(nip,pathway),
+ unique(nip),
  constraint jf2026_sk_evidence_check check ((status <> 'SK_TERBIT') or (sk_number is not null and sk_date is not null))
 );
 create index if not exists jf2026_case_status_idx on public.jf2026_cases(pathway,status,updated_at desc);
@@ -61,7 +61,7 @@ select exists(
  select 1 from public.profiles p
  where p.id=auth.uid() and p.is_active=true and p.approval_status='APPROVED'
    and p.account_channel='DINAS'
-   and p.role in ('SUPER_ADMIN','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','STAFF_USUL_SK','STAFF_PROMOSI')
+   and p.role in ('SUPER_ADMIN','KABID','STAFF_USUL_SK')
 );
 $$;
 revoke all on function private.jf2026_is_officer() from public,anon;
@@ -248,8 +248,14 @@ begin
   (c.status='DISETUJUI_DINAS' and p_next_status in ('DIKIRIM_BKPSDM','PERBAIKAN')) or
   (c.status='DIKIRIM_BKPSDM' and p_next_status in ('SK_TERBIT','PERBAIKAN'))
  ) then raise exception 'Peralihan status tidak diperbolehkan'; end if;
- if p_next_status='PERBAIKAN' and length(btrim(coalesce(p_note,'')))<5
+ if p_next_status in ('PERBAIKAN','DIKIRIM_BKPSDM') and length(btrim(coalesce(p_note,'')))<5
  then raise exception 'Alasan perbaikan wajib dicantumkan'; end if;
+ -- Persetujuan teknis oleh Kabid; staf tidak boleh melakukan persetujuan atas namanya.
+ if p_next_status='DISETUJUI_DINAS' and not exists (
+  select 1 from public.profiles p where p.id=auth.uid()
+  and p.role='KABID' and p.account_channel='DINAS'
+  and p.is_active=true and p.approval_status='APPROVED'
+ ) then raise exception 'Persetujuan Dinas hanya oleh Kabid yang berwenang'; end if;
  if p_next_status='SK_TERBIT' then
   if length(btrim(coalesce(p_sk_number,'')))<3 or p_sk_date is null
   then raise exception 'Nomor dan tanggal SK wajib diisi'; end if;
