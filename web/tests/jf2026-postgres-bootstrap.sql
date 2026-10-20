@@ -16,6 +16,7 @@ create table public.profiles (
  is_active boolean not null default true,
  full_name text,
  unit text,
+ unit_gtk text,
  nip text
 );
 create table storage.buckets (
