@@ -26,6 +26,30 @@ begin
 end $$;
 -- A case can be created only via RPC.
 select public.jf2026_save_case(null,'NOMENKLATUR','Guru Satu','198001012006042001','SD Negeri Test','Guru Madya','IV/a','S1',null,false,'') as case_id \gset
+-- Historical school qualifications: nomenclature can record SLTA/SPG but cannot auto-approve them.
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000002';
+do $education_guard$
+begin
+ begin
+  perform public.jf2026_save_case(null,'PENGANGKATAN','Guru Dua','198201012007042002','SD Negeri Test','', 'III/a','SPG',date '1982-01-01',true,'');
+  raise exception 'FAIL: SPG permitted for new appointment';
+ exception when others then
+  if position('Jalur pengangkatan mensyaratkan S-1/D-IV' in sqlerrm)=0 then raise; end if;
+ end;
+end $education_guard$;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000001';
+-- Check both newly supported legacy education values can persist on an existing draft.
+select public.jf2026_save_case(:'case_id'::uuid,'NOMENKLATUR','Guru Satu','198001012006042001','SD Negeri Test','Guru Madya','IV/a','SLTA',null,false,'') as slta_case_id \gset
+do $check_slta$
+begin
+ if not exists(select 1 from public.jf2026_cases where nip='198001012006042001' and education='SLTA') then raise exception 'FAIL: SLTA not saved'; end if;
+end $check_slta$;
+select public.jf2026_save_case(:'case_id'::uuid,'NOMENKLATUR','Guru Satu','198001012006042001','SD Negeri Test','Guru Madya','IV/a','SPG',null,false,'') as spg_case_id \gset
+do $check_spg$
+begin
+ if not exists(select 1 from public.jf2026_cases where nip='198001012006042001' and education='SPG') then raise exception 'FAIL: SPG not saved'; end if;
+end $check_spg$;
+
 do $$
 begin
  begin
