@@ -1,0 +1,86 @@
+name: QA JF Guru 2026
+on:
+  pull_request:
+    paths:
+      - 'web/jf-guru-2026.js'
+      - 'web/inject-jf-guru-2026.mjs'
+      - 'web/tests/jf-guru-2026.contract.test.mjs'
+      - 'web/package.json'
+      - 'supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql'
+      - '.github/workflows/jf2026-check.yml'
+  push:
+    branches: [feature/jf-guru-2026-surat-0294]
+jobs:
+  source-contracts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm run test:jf2026
+        working-directory: web
+
+  isolated-preview-build:
+    runs-on: ubuntu-latest
+    needs: [source-contracts]
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install frontend dependencies
+        working-directory: web
+        run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Build isolated preview output (never deploy)
+        working-directory: web
+        run: npm run build
+      - name: Verify new module included exactly once
+        working-directory: web
+        run: |
+          test -s .vercel/output/static/jf-guru-2026.js
+          grep -q './jf-guru-2026.js?v=1' .vercel/output/static/index.html
+          test "$(grep -o './jf-guru-2026.js?v=1' .vercel/output/static/index.html | wc -l)" -eq 1
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: jf2026-isolated-static-preview
+          path: web/.vercel/output/static/
+          retention-days: 1
+
+  postgres-integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: integration_only
+          POSTGRES_DB: simantab_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d simantab_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: integration_only
+      PGDATABASE: simantab_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ensure PostgreSQL client exists
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Create ephemeral Supabase-compatible fixture
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2026-postgres-bootstrap.sql
+      - name: Validate migration in ephemeral PostgreSQL only
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql
+      - name: Exercise actor boundaries, documents and approvals
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2026-postgres-integration.sql
