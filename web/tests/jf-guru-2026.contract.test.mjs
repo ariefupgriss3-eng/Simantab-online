@@ -64,3 +64,9 @@ test('GTK JF2026 menu awaits profile-ready, remounts after login and is role-lim
  assert.match(ui,/if\(!root\|\|!\(applicant\(\)\|\|officer\(\)\)\|\|document\.getElementById\('jf2026ServiceTile'\)\)return/);
  assert.doesNotMatch(ui,/i<180&&\(!window\.__simantabSb/);
 });
+
+test('GTK sees JF Guru as a card in the standard Layanan Kepegawaian grid',()=>{
+ assert.match(ui,/box\.className=isGtk\?'service':'card'/);
+ assert.match(ui,/root\.querySelector\('\.servicegrid'\)\|\|root/);
+ assert.match(ui,/Buka Layanan JF Guru 2026/);
+});
