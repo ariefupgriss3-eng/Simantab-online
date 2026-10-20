@@ -34,8 +34,24 @@ test('education must be explicitly selected, including PNS appointment pathway',
  assert.match(ui,/name="education"/);
  assert.match(ui,/value="" disabled \$\{c\?\.education\?'':'selected'\}/);
  assert.match(ui,/Pilih pendidikan sesuai ijazah/);
- assert.match(ui,/isNew\?\['S1','DIV'\]:\['DI','DII','DIII','S1','DIV'\]/);
+ assert.match(ui,/isNew\?\['S1','DIV'\]:\['SLTA','SPG','DI','DII','DIII','S1','DIV'\]/);
  assert.match(ui,/PENGALAMAN_2TH/);
  assert.match(ui,/type="date" name="birth_date"/);
  assert.match(ui,/name="pns_formasi_jf"/);
+});
+
+test('legacy nomenclature offers six SK Jabfung positions but appointment asks current job',()=>{
+ const positions=['Guru Pertama','Guru Muda','Guru Madya','Guru Ahli Pertama','Guru Ahli Muda','Guru Ahli Madya'];
+ for(const name of positions)assert.ok(ui.includes("'"+name+"'"),name);
+ assert.match(ui,/name="old_position"/);
+ assert.match(ui,/Jabfung lama \(sesuai SK Jabfung\)/);
+ assert.match(ui,/Posisi \/ tugas mengajar saat ini/);
+ assert.match(ui,/nomenclaturePositions\.map/);
+});
+test('SLTA and SPG are accepted for legacy review without relaxing appointment S1-DIV',()=>{
+ const extra=fs.readFileSync(new URL('../../supabase/migrations/20261020142000_jf2026_legacy_education.sql',import.meta.url),'utf8');
+ assert.match(extra,/check \(education in \('SLTA','SPG','DI','DII','DIII','S1','DIV'\)\)/);
+ assert.match(extra,/or p_education not in \('SLTA','SPG','DI','DII','DIII','S1','DIV'\)/);
+ assert.match(extra,/p_education not in \('S1','DIV'\) and p_pathway='PENGANGKATAN'/);
+ assert.match(ui,/SLTA\/SPG dicatat untuk telaah kasus lama/);
 });
