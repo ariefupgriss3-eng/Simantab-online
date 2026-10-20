@@ -7,7 +7,7 @@ for(let i=0;i<180&&(!window.__simantabSb||!window.__simantabProfile||!window.sho
 const sb=window.__simantabSb;
 if(!sb){window.__simantabJF2026Loaded=false;return;}
 const BUCKET='simantab-jf-guru-2026',LIMIT=1572864;
-const OFFICERS=new Set(['SUPER_ADMIN','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK','STAFF_USUL_SK','STAFF_PROMOSI']);
+const OFFICERS=new Set(['SUPER_ADMIN','KABID','STAFF_USUL_SK']);
 const p=()=>window.__simantabProfile||{};
 const officer=()=>p().account_channel==='DINAS'&&OFFICERS.has(p().role)&&p().is_active!==false&&p().approval_status==='APPROVED';
 const esc=s=>String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -120,7 +120,7 @@ async function renderTimeline(c){
  let html='<div class="jf-card"><h4>Jejak Proses (Audit)</h4>';
  if(r.error)html+='<p class="jf-bad">Riwayat belum bisa dibaca.</p>';
  else html+=(r.data||[]).map(x=>`<div class="jf-file"><b>${esc(statusLabel[x.to_status]||x.action)}</b> <span class="jf-muted"> • ${fmt(x.created_at)}</span><div class="jf-muted">${esc(x.note)}</div></div>`).join('');
- if(officer()&&flow[c.status])html+=`<h4>Tindak Lanjut Petugas Dinas</h4><p class="jf-muted">Perubahan status dicatat atas identitas petugas. Untuk SK Terbit, unggah bukti SK terlebih dahulu.</p>${c.status==='DIKIRIM_BKPSDM'?'<div class="jf-field"><label>Unggah bukti SK penetapan dari BKPSDM</label><input type="file" id="jfSkFile" accept=".pdf,.jpg,.jpeg,.png"></div>':''}<div class="jf-actions">${flow[c.status].map(x=>`<button type="button" data-act="transition" data-to="${x}">${esc(statusLabel[x])}</button>`).join('')}</div>`;
+ if(officer()&&flow[c.status])html+=`<h4>Tindak Lanjut Petugas Dinas</h4><p class="jf-muted">Perubahan status dicatat atas identitas petugas. Untuk SK Terbit, unggah bukti SK terlebih dahulu.</p>${c.status==='DIKIRIM_BKPSDM'?'<div class="jf-field"><label>Unggah bukti SK penetapan dari BKPSDM</label><input type="file" id="jfSkFile" accept=".pdf,.jpg,.jpeg,.png"></div>':''}<div class="jf-actions">${flow[c.status].filter(x=>x!=='DISETUJUI_DINAS'||p().role==='KABID').map(x=>`<button type="button" data-act="transition" data-to="${x}">${esc(statusLabel[x])}</button>`).join('')}</div>`;
  html+='</div>';out.innerHTML=html;
 }
 async function saveForm(submit){
