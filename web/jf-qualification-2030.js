@@ -2,8 +2,13 @@
 (async()=>{
 if(window.__simantabJF2030Loaded)return;
 window.__simantabJF2030Loaded=true;
-const sleep=t=>new Promise(r=>setTimeout(r,t));
-for(let i=0;i<180&&(!window.__simantabSb||!window.__simantabProfile||!window.showTab);i++)await sleep(50);
+// Await profile-ready instead of timing out before GTK login.
+await new Promise(resolve=>{
+ const ready=()=>Boolean(window.__simantabSb&&window.__simantabProfile?.role&&typeof window.showTab==='function');
+ if(ready()){resolve();return;}
+ const onReady=()=>{if(!ready())return;window.removeEventListener('simantab:profile-ready',onReady);resolve();};
+ window.addEventListener('simantab:profile-ready',onReady);
+});
 const sb=window.__simantabSb;if(!sb){window.__simantabJF2030Loaded=false;return;}
 const profile=()=>window.__simantabProfile||{};
 const officer=()=>profile().account_channel==='DINAS'&&['SUPER_ADMIN','KABID','STAFF_USUL_SK'].includes(profile().role)&&profile().is_active!==false&&profile().approval_status==='APPROVED';
@@ -30,6 +35,11 @@ function tile(){
 }
 const oldShow=window.showTab;window.showTab=async function(...args){const x=await oldShow.apply(this,args);if(args[0]==='services')setTimeout(tile,80);return x;};
 const root=document.getElementById('servicesBody');if(root)new MutationObserver(()=>{if(!document.getElementById('jf2030ServiceTile'))tile()}).observe(root,{childList:true});
+window.addEventListener('simantab:profile-ready',()=>{
+ const existing=document.getElementById('jf2030ServiceTile');
+ if(existing&&!(gtk()||officer()))existing.remove();
+ setTimeout(tile,0);
+});
 tile();
 function guidance(education){
  return '<p class="jf2030-note">'+(['DI','DII','DIII'].includes(education)?'<b>D-I/D-II/D-III:</b> Target pemenuhan S-1/D-IV paling lambat <b>11 Mei 2030</b>.':'<b>SLTA/SPG:</b> Wajib ditelaah secara individual. Ketentuan tenggat yang disebut untuk diploma tidak otomatis berlaku.')+'<br>Data ini untuk pembinaan dan pemantauan, bukan penetapan kelayakan Jabfung atau SK.</p>';
