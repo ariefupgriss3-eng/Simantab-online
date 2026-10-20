@@ -42,3 +42,15 @@ test('no automatic eligibility or SK issuance, evidence verification requires qu
  assert.doesNotMatch(ui,/jf2026_transition/);
  assert.doesNotMatch(ui,/E_JABFUNG/);
 });
+test('coverage separates unreported profiles from confirmed non-degree teachers',()=>{
+ const report=read('../../supabase/migrations/20261020182500_jf2030_coverage_reconciliation.sql');
+ assert.match(report,/jf2030_coverage_summary/);
+ assert.match(report,/jf2030_coverage_unreported/);
+ assert.match(report,/private\.jf2026_is_officer/);
+ assert.match(report,/having|c\.n=1/);
+ assert.match(report,/approval_status='APPROVED'/);
+ assert.match(report,/distinct_valid_nips/);
+ assert.match(report,/unreported_unambiguous_accounts/);
+ assert.match(ui,/Belum mengisi ≠ belum S-1\/D-IV/);
+ assert.match(ui,/mode==='unreported'/);
+});
