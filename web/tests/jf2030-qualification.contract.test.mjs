@@ -61,3 +61,9 @@ test('2030 menu awaits profile-ready and remounts after delayed GTK login',()=>{
  assert.match(ui,/window\.addEventListener\('simantab:profile-ready',\(\)=>/);
  assert.doesNotMatch(ui,/i<180&&\(!window\.__simantabSb/);
 });
+
+test('GTK 2030 monitoring appears in GTK service catalog, not only Dinas dashboard',()=>{
+ assert.match(ui,/el\.className=isGtk\?'service':'card'/);
+ assert.match(ui,/root\.querySelector\('\.servicegrid'\)\|\|root/);
+ assert.match(ui,/Buka Monitoring Pendidikan 2030/);
+});
