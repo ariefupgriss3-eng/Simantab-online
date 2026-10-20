@@ -182,7 +182,7 @@ async function transition(to){
  msg('Status berhasil diperbarui dan tercatat dalam audit.');
  await load();renderList();
 }
-async function viewFile(path){const r=await sb.storage.from(BUCKET).createSignedUrl(path,60);if(r.error)throw r.error;window.open(r.data.signedUrl,'_blank','noopener,noreferrer');}
+async function viewFile(path){const popup=window.open('about:blank','_blank');const r=await sb.storage.from(BUCKET).createSignedUrl(path,60);if(r.error){popup?.close();throw r.error;}if(popup)popup.location.href=r.data.signedUrl;else window.location.assign(r.data.signedUrl);}
 function csvCell(v){let s=String(v??'').replace(/"/g,'""');if(/^[=+@\-\t\r]/.test(s))s="'"+s;return '"'+s+'"';}
 async function exportCsv(){
  if(!officer())throw new Error('Hanya petugas Dinas yang boleh mengunduh rekap');
@@ -190,6 +190,8 @@ async function exportCsv(){
  for(;;){const r=await sb.from('jf2026_cases').select('full_name,nip,unit_work,pathway,rank_group,education,status,created_at,submitted_at,sk_number,sk_date').order('created_at',{ascending:true}).range(at,at+499);if(r.error)throw r.error;all.push(...(r.data||[]));if((r.data||[]).length<500)break;at+=500;if(at>100000)throw new Error('Rekap terlalu besar');}
  const cols=['full_name','nip','unit_work','pathway','rank_group','education','status','created_at','submitted_at','sk_number','sk_date'];
  const csv='\uFEFF'+cols.join(';')+'\r\n'+all.map(r=>cols.map(c=>csvCell(r[c])).join(';')).join('\r\n');
+ const audited=await sb.rpc('jf2026_register_export',{p_row_count:all.length});
+ if(audited.error)throw new Error('Audit ekspor gagal, unduhan dibatalkan: '+audited.error.message);
  const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
  const a=document.createElement('a');a.href=url;a.download='Rekap-JF-Guru-2026-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),3000);
  msg('Rekap '+all.length+' baris diunduh. Berisi data kepegawaian pribadi: simpan hanya pada perangkat dinas yang aman.');
