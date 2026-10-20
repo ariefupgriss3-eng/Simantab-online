@@ -2,6 +2,18 @@
 \set ON_ERROR_STOP on
 set request.jwt.claim.sub='00000000-0000-4000-8000-000000000001';
 set role authenticated;
+-- Dinas cannot open an applicant record even if its NIP matches a valid approved profile.
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000003';
+do $
+begin
+ begin
+  perform public.jf2026_save_case(null,'NOMENKLATUR','Kabid Test','198301012008042003','Dinas Test','Guru Madya','IV/a','S1',null,false,'');
+  raise exception 'FAIL: Dinas created applicant case';
+ exception when others then
+  if position('Hanya akun GTK' in sqlerrm)=0 then raise; end if;
+ end;
+end $;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000001';
 -- Cannot replace own NIP with another user's NIP.
 do $$
 begin
