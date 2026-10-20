@@ -54,3 +54,10 @@ test('coverage separates unreported profiles from confirmed non-degree teachers'
  assert.match(ui,/Belum mengisi ≠ belum S-1\/D-IV/);
  assert.match(ui,/mode==='unreported'/);
 });
+
+test('2030 menu awaits profile-ready and remounts after delayed GTK login',()=>{
+ assert.match(ui,/window\.addEventListener\('simantab:profile-ready',onReady\)/);
+ assert.match(ui,/setTimeout\(tile,0\)/);
+ assert.match(ui,/window\.addEventListener\('simantab:profile-ready',\(\)=>/);
+ assert.doesNotMatch(ui,/i<180&&\(!window\.__simantabSb/);
+});
