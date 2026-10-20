@@ -21,5 +21,5 @@ test('NIP verified against logged-in profile and stored data private',()=>{
 });
 test('legacy Jabfung service not overwritten',()=>{
  assert.doesNotMatch(ui,/\.from\('submissions'\)/);
- assert.ok(build.scripts.build.endsWith('node inject-jf-guru-2026.mjs'));
+ assert.match(build.scripts['build:cloudflare'],/node inject-jf-guru-2026\.mjs && node cloudflare\/verify-deployment-bundle\.mjs/);
 });
