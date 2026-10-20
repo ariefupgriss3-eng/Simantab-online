@@ -2,8 +2,13 @@
 (async()=>{
 if(window.__simantabJF2026Loaded)return;
 window.__simantabJF2026Loaded=true;
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
-for(let i=0;i<180&&(!window.__simantabSb||!window.__simantabProfile||!window.showTab);i++)await wait(50);
+// Wait for actual authentication, including delayed logins and page reloads.
+await new Promise(resolve=>{
+ const ready=()=>Boolean(window.__simantabSb&&window.__simantabProfile?.role&&typeof window.showTab==='function');
+ if(ready()){resolve();return;}
+ const onReady=()=>{if(!ready())return;window.removeEventListener('simantab:profile-ready',onReady);resolve();};
+ window.addEventListener('simantab:profile-ready',onReady);
+});
 const sb=window.__simantabSb;
 if(!sb){window.__simantabJF2026Loaded=false;return;}
 const BUCKET='simantab-jf-guru-2026',LIMIT=1572864;
@@ -54,7 +59,7 @@ function show(){modal.style.display='flex';document.body.style.overflow='hidden'
 function close(){modal.style.display='none';document.body.style.overflow='';editCase=null;msg('');}
 function ensureTile(){
  const root=document.getElementById('servicesBody');
- if(!root||document.getElementById('jf2026ServiceTile'))return;
+ if(!root||!(applicant()||officer())||document.getElementById('jf2026ServiceTile'))return;
  const box=document.createElement('div');box.id='jf2026ServiceTile';box.className='card';
  box.style.cssText='margin:12px 0;border:1px solid #a4c9ed;background:#f4f9ff;padding:13px;border-radius:12px';
  box.innerHTML='<b>📋 Penyesuaian dan Pengangkatan JF Guru 2026</b><div class="small" style="margin:7px 0">Pelaksanaan Surat Dirjen GTK 0294/B/B.B1/HK.07.00/2026. Jalur khusus, tidak menggantikan usul kenaikan jenjang Jabfung lama.</div><button id="jf2026OpenBtn" class="btn primary" type="button">Buka Layanan JF Guru 2026</button>';
@@ -64,6 +69,11 @@ const oldShow=window.showTab;
 window.showTab=async function(...args){const r=await oldShow.apply(this,args);if(args[0]==='services')setTimeout(ensureTile,60);return r;};
 const serviceRoot=document.getElementById('servicesBody');
 if(serviceRoot)new MutationObserver(()=>{if(!document.getElementById('jf2026ServiceTile'))ensureTile();}).observe(serviceRoot,{childList:true});
+window.addEventListener('simantab:profile-ready',()=>{
+ const tile=document.getElementById('jf2026ServiceTile');
+ if(tile&&!(applicant()||officer()))tile.remove();
+ setTimeout(ensureTile,0);
+});
 ensureTile();
 window.__openJF2026=()=>open();
 
