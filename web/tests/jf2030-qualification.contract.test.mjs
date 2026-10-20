@@ -114,3 +114,11 @@ test('status dokumen functional scenarios for GTK and Kabid (not only regex matc
  assert.equal(status({study_status:'SEDANG_KULIAH',review_status:'BELUM_DITELAAH',evidence_path:null}),
    'Belum ada dokumen ijazah yang diverifikasi');
 });
+
+test('Kabid uses correct latest-education label and formatted degree nomenclature',()=>{
+ assert.match(ui,/Pendidikan terakhir: /);
+ assert.doesNotMatch(ui,/Ijazah awal: /);
+ assert.match(ui,/'S2':'S-2'/);
+ assert.match(ui,/'DIV':'D-IV'/);
+ assert.match(ui,/x\.review_status==='TERVERIFIKASI'\?'':/);
+});
