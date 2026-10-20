@@ -44,3 +44,11 @@ Dasar: Surat Dirjen GTK Nomor **0294/B/B.B1/HK.07.00/2026** tanggal 27 Juli 2026
 - Belum ada impor massal 5.000 guru atau pencocokan otomatis seluruh data SIMANTAB. Perlu pemetaan NIP/akun tervalidasi dan persetujuan aturan hak akses sekolah sebelum fitur impor.
 - Belum membuat rekomendasi hukum otomatis; kualifikasi ijazah lama, umur, dan kesetaraan pangkat/jenjang harus diperiksa petugas.
 - Belum ada persetujuan/pengesahan oleh BKPSDM di dalam SIMANTAB: sistem hanya mencatat hasil resmi, bukan menggantikan kewenangan BKPSDM.
+
+## Modul terpisah Pemenuhan S-1/D-IV (monitoring 2030)
+- GTK dengan ijazah terakhir D-I/D-II/D-III mencatat status belum kuliah, sedang kuliah, atau lulus menunggu pemeriksaan, serta kampus, program studi, tahun masuk, target kelulusan dan bukti ijazah. Pemantauan tenggat **11 Mei 2030** berlaku sesuai cakupan ketentuan untuk kelompok diploma.
+- GTK berijazah SLTA/SPG dapat masuk pendataan pembinaan, **tetapi tenggat transisi diploma tidak otomatis diberlakukan**; status kelayakan hukumnya wajib ditelaah manual.
+- Guru dapat memperbarui progres sendiri, tetapi tidak dapat mengubah verifikasi. Dinas memeriksa bukti ijazah lewat tautan privat yang berlaku singkat dan mencatat alasan, perbaikan, atau hasil verifikasi administratif.
+- Dashboard Dinas memuat daftar guru yang sudah mendaftar pada modul ini, bukan populasi otomatis seluruh GTK Batang. Data 0 bukan berarti tidak ada guru yang belum S-1/D-IV.
+- Migrasi tambahan **`supabase/migrations/20261020162000_jf2030_qualification_monitoring.sql`** harus dijalankan pada staging, diuji terpisah, dicadangkan, dan baru dapat dipertimbangkan untuk produksi sesudah persetujuan dan QA. Preview frontend dapat tampil sebelum database tersedia tetapi tidak boleh menyimpan transaksi sampai migrasi diterapkan.
+- Verifikasi administrasi ijazah **bukan** penetapan gelar, hak transisi, SK JF, atau persetujuan BKPSDM.
