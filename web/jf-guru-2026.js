@@ -60,10 +60,12 @@ function close(){modal.style.display='none';document.body.style.overflow='';edit
 function ensureTile(){
  const root=document.getElementById('servicesBody');
  if(!root||!(applicant()||officer())||document.getElementById('jf2026ServiceTile'))return;
- const box=document.createElement('div');box.id='jf2026ServiceTile';box.className='card';
+ const isGtk=applicant();
+ const box=document.createElement('div');box.id='jf2026ServiceTile';box.className=isGtk?'service':'card';
  box.style.cssText='margin:12px 0;border:1px solid #a4c9ed;background:#f4f9ff;padding:13px;border-radius:12px';
- box.innerHTML='<b>📋 Penyesuaian dan Pengangkatan JF Guru 2026</b><div class="small" style="margin:7px 0">Pelaksanaan Surat Dirjen GTK 0294/B/B.B1/HK.07.00/2026. Jalur khusus, tidak menggantikan usul kenaikan jenjang Jabfung lama.</div><button id="jf2026OpenBtn" class="btn primary" type="button">Buka Layanan JF Guru 2026</button>';
- root.prepend(box);box.querySelector('button').addEventListener('click',()=>open());
+ box.innerHTML='<div class="emoji">📋</div><h3>Penyesuaian dan Pengangkatan JF Guru 2026</h3><p class="small">Layanan khusus Surat Dirjen GTK 0294/2026, terpisah dari usul kenaikan jenjang Jabfung lama.</p><button id="jf2026OpenBtn" class="btn primary" type="button">Buka Layanan JF Guru 2026</button>';
+ const target=isGtk?(root.querySelector('.servicegrid')||root):root;
+ target.prepend(box);box.querySelector('button').addEventListener('click',()=>open());
 }
 const oldShow=window.showTab;
 window.showTab=async function(...args){const r=await oldShow.apply(this,args);if(args[0]==='services')setTimeout(ensureTile,60);return r;};
