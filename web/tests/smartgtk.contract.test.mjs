@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=4/);
+ assert.match(injection,/smartgtk-unified\.js\?v=5/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -110,4 +110,21 @@ test('mass rollout stays PILOT until Dinas explicitly chooses OPEN',()=>{
  assert.match(gate,/private\.jf2026_is_officer/);
  assert.match(gate,/smartgtk_rollout_history/);
  assert.match(read('./smartgtk-mass-integration.sql'),/ordinary GTK opened mass rollout/);
+});
+
+test('SMART-GTK is a prominent dashboard-first GTK priority, not a GTK services card',()=>{
+ assert.match(ui,/const dashboardCardId='smartgtkDashboardPriority'/);
+ assert.match(ui,/const navButtonId='smartgtkPrimaryNav'/);
+ assert.match(ui,/getElementById\('dashboard'\)/);
+ assert.match(ui,/root\.insertBefore\(card,body\)/);
+ assert.match(ui,/PRIORITAS PENDATAAN GTK/);
+ assert.match(ui,/SMART-GTK • Prioritas/);
+ assert.match(ui,/smartgtk_pilot_status/);
+ assert.match(ui,/Isi \/ Lanjutkan SMART-GTK/);
+ assert.match(ui,/Lihat informasi SMART-GTK/);
+ assert.match(ui,/if\(gtk\(\)\)\{ensureGTKDashboard\(\);ensureGTKNav\(\);return\}/);
+ assert.match(ui,/function ensureDinasService\(\)/);
+ assert.match(ui,/function removeOldGTKServiceTiles\(\)/);
+ assert.doesNotMatch(ui,/function tile\(\)/);
+ assert.doesNotThrow(()=>new Function(ui));
 });
