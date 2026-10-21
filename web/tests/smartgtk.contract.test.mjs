@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=12/);
+ assert.match(injection,/smartgtk-unified\.js\?v=13/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -193,11 +193,19 @@ test('PNS completed evidence is labeled awaiting Dinas verification, never appro
  assert.doesNotThrow(()=>new Function(ui));
 });
 
-test('Non-ASN internal code uses public Pendamping Belajar / Pendamping Layanan di Satpen terminology',()=>{
- assert.match(ui,/\['NON_ASN','Pendamping Belajar \/ Pendamping Layanan di Satpen'\]/);
- assert.match(ui,/const employmentLabel=/);
- assert.match(ui,/Pendamping Belajar dan Pendamping Layanan di Satpen cukup mengisi data, tanpa mengunggah dokumen/);
+test('PB and PLS are separate categories and legacy codes remain readable',()=>{
+ const migration=read('../../supabase/migrations/20261021204000_smartgtk_pendamping_pb_pls.sql');
+ assert.match(ui,/\['PB','Pendamping Belajar \(PB\)'\]/);
+ assert.match(ui,/\['PLS','Pendamping Layanan Satpen \(PLS\)'\]/);
+ assert.match(ui,/employmentLabel/);
+ assert.match(ui,/NON_ASN.*Pendamping \(data lama/);
+ assert.match(ui,/Pendamping Belajar \(PB\) harus memilih tugas utama Guru/);
+ assert.match(ui,/Pendamping Layanan Satpen \(PLS\) harus memilih tugas utama Tenaga Kependidikan/);
  assert.doesNotMatch(ui,/Non-ASN|non-ASN/);
- assert.match(ui,/smartgtk_mass_save/);
+ assert.match(migration,/check\(employment in \('PNS','PPPK','PPPK_PW','NON_ASN','PB','PLS','LAINNYA'\)\)/);
+ assert.match(migration,/smartgtk_pendamping_profession_match/);
+ assert.match(migration,/p_employment='PB'/);
+ assert.match(migration,/p_employment='PLS'/);
+ assert.match(read('./smartgtk-pb-pls.integration.sql'),/PLS entered ASN JF screening/);
  assert.doesNotThrow(()=>new Function(ui));
 });
