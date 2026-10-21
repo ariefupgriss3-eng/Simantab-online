@@ -101,3 +101,13 @@ test('guided joining uses existing verified email signup and recovery',()=>{
  assert.match(onboarding,/resetPasswordForEmail/);
  assert.doesNotMatch(onboarding,/createUser|admin\.createUser|defaultPassword/);
 });
+
+test('mass rollout stays PILOT until Dinas explicitly chooses OPEN',()=>{
+ const gate=read('../../supabase/migrations/20261021182000_smartgtk_mass_rollout_gate.sql');
+ assert.match(gate,/mode text not null default 'PILOT'/);
+ assert.match(gate,/config\.mode='OPEN'/);
+ assert.match(gate,/smartgtk_mass_set_rollout/);
+ assert.match(gate,/private\.jf2026_is_officer/);
+ assert.match(gate,/smartgtk_rollout_history/);
+ assert.match(read('./smartgtk-mass-integration.sql'),/ordinary GTK opened mass rollout/);
+});
