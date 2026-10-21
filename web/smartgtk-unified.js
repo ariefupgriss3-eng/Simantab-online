@@ -44,21 +44,109 @@ const info=(s='',error=false)=>{const el=document.getElementById('sgMessage');el
 const option=(v,l,selected)=>'<option value="'+esc(v)+'" '+(v===selected?'selected':'')+'>'+esc(l)+'</option>';
 const select=(name,label,value,required=true)=>'<label>'+esc(label)+'<select name="'+name+'" '+(required?'required':'')+'>'+options[name].map(([v,l])=>option(v,l,value)).join('')+'</select></label>';
 const input=(name,label,value,type='text')=>'<label>'+esc(label)+'<input name="'+name+'" type="'+type+'" value="'+esc(value||'')+'"></label>';
-function tile(){
- const root=document.getElementById('servicesBody');if(!root)return;
- if(!(gtk()||dinas())){document.getElementById('smartgtkTile')?.remove();return}
- if(gtk()){document.getElementById('jf2026ServiceTile')?.remove();document.getElementById('jf2030ServiceTile')?.remove()}
+/* GTK uses the landing dashboard + main nav, not the services grid.
+   Dinas monitoring retains an officer-only services entry. */
+const dashboardCardId='smartgtkDashboardPriority';
+const navButtonId='smartgtkPrimaryNav';
+const priorityCss=document.createElement('style');priorityCss.id='smartgtkPriorityCss';
+priorityCss.textContent=[
+ '#smartgtkDashboardPriority{background:linear-gradient(110deg,#fff3df 0%,#fffaf1 65%,#f2f8ff 100%);border:2px solid #e9a441;color:#163956;border-radius:17px;padding:17px;margin:0 0 18px;box-shadow:0 5px 20px rgba(51,94,135,.10)}',
+ '#smartgtkDashboardPriority .sg-priority-tag{display:inline-block;border-radius:7px;background:#b85b0b;color:#fff;font-size:12px;font-weight:750;letter-spacing:.03em;padding:5px 9px}',
+ '#smartgtkDashboardPriority h3{font-size:clamp(19px,4vw,24px);line-height:1.3;margin:12px 0 5px;color:#15395a}',
+ '#smartgtkDashboardPriority p{margin:7px 0 13px;line-height:1.55;color:#31516e}',
+ '#smartgtkDashboardPriority .sg-priority-action{background:#c56b11;color:#fff;border:0;border-radius:10px;padding:13px 19px;font-weight:750;font-size:15px;width:100%;max-width:340px;cursor:pointer}',
+ '#smartgtkDashboardPriority .sg-priority-action:focus-visible,#smartgtkPrimaryNav:focus-visible{outline:3px solid #206a9e;outline-offset:2px}',
+ '#smartgtkDashboardPriority .sg-priority-help{font-size:13px;line-height:1.5;color:#355675;margin-top:9px}',
+ '#smartgtkPrimaryNav{background:#fff1d5;color:#7d410b;font-weight:800;border-left:4px solid #d18219}',
+ '@media(max-width:520px){#smartgtkDashboardPriority{padding:15px}#smartgtkDashboardPriority .sg-priority-action{max-width:none}}'
+].join('');
+document.head.append(priorityCss);
+function removeOldGTKServiceTiles(){
+ document.getElementById('smartgtkTile')?.remove();
+ document.getElementById('jf2026ServiceTile')?.remove();
+ document.getElementById('jf2030ServiceTile')?.remove();
+}
+function ensureGTKDashboard(){
+ const root=document.getElementById('dashboard');
+ const body=document.getElementById('dashboardBody');
+ if(!gtk()||!root||!body){document.getElementById(dashboardCardId)?.remove();return}
+ removeOldGTKServiceTiles();
+ let card=document.getElementById(dashboardCardId);
+ if(!card){
+  card=document.createElement('section');card.id=dashboardCardId;
+  card.setAttribute('aria-label','Prioritas utama pendataan SMART-GTK');
+  card.innerHTML='<div class="sg-priority-tag">📌 PRIORITAS PENDATAAN GTK</div>'+
+  '<h3>🧭 SMART-GTK — Satu Data, Tiga Analisis</h3>'+
+  '<p>Satu kali isi untuk pendataan guru, kepala sekolah, pengawas, dan tenaga kependidikan. SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS.</p>'+
+  '<button type="button" class="sg-priority-action">Lihat SMART-GTK</button>'+
+  '<p class="sg-priority-help" role="status">Memeriksa apakah akun dapat mengisi SMART-GTK...</p>';
+  card.querySelector('button').addEventListener('click',open);
+ }
+ if(card.parentElement!==root||card.nextElementSibling!==body)root.insertBefore(card,body);
+ void refreshDashboardPriority(card);
+}
+let priorityCheck=0;
+async function refreshDashboardPriority(card){
+ const token=++priorityCheck;
+ const msg=card.querySelector('.sg-priority-help'),btn=card.querySelector('button');
+ if(!gtk())return;
+ try{
+  const access=await sb.rpc('smartgtk_pilot_status');
+  if(access.error)throw access.error;
+  if(token!==priorityCheck||!card.isConnected)return;
+  if(access.data===true){
+   btn.textContent='Isi / Lanjutkan SMART-GTK →';
+   msg.textContent='Akun dapat mengisi. Simpan data dahulu, lalu lengkapi berkas sesuai status kepegawaian.';
+  }else{
+   btn.textContent='Lihat informasi SMART-GTK →';
+   msg.textContent='Saat ini masih uji coba terbatas. Pengisian tersedia setelah akun ditetapkan Dinas atau layanan dibuka secara umum.';
+  }
+ }catch(error){
+  if(token!==priorityCheck||!card.isConnected)return;
+  btn.textContent='Lihat informasi SMART-GTK →';
+  msg.textContent='Status akses belum dapat diperiksa. Coba buka lagi atau hubungi admin SIMANTAB.';
+ }
+}
+function ensureGTKNav(){
+ const root=document.getElementById('nav');
+ if(!root)return;
+ if(!gtk()){document.getElementById(navButtonId)?.remove();return}
+ if(document.getElementById(navButtonId))return;
+ const item=document.createElement('button');item.type='button';item.className='navbtn';
+ item.id=navButtonId;item.innerHTML='<span class="ico" aria-hidden="true">🧭</span>SMART-GTK • Prioritas';
+ item.setAttribute('aria-label','Buka prioritas pendataan SMART-GTK');
+ item.addEventListener('click',open);
+ const dashboardButton=root.querySelector('.navbtn[data-tab="dashboard"]');
+ if(dashboardButton)dashboardButton.insertAdjacentElement('afterend',item);
+ else root.prepend(item);
+}
+function ensureDinasService(){
+ const root=document.getElementById('servicesBody');
+ if(!dinas()||!root){document.getElementById('smartgtkTile')?.remove();return}
  if(document.getElementById('smartgtkTile'))return;
- const item=document.createElement('div');item.id='smartgtkTile';item.className=gtk()?'service':'card';
+ const item=document.createElement('div');item.id='smartgtkTile';item.className='card';
  item.style.cssText='padding:14px;margin:12px 0;background:#eef8ff;border:1px solid #b8d9ed;border-radius:12px';
- item.innerHTML='<div class="emoji">🧭</div><h3>SMART-GTK • Satu Formulir, Tiga Analisis</h3><p class="small">Satu kali isi untuk skrining penyesuaian nomenklatur JF Guru, pengangkatan JF Guru, dan pendidikan S-1/D-IV. Bukan pengajuan resmi otomatis.</p><button type="button" class="btn primary">Buka SMART-GTK</button>';
+ item.innerHTML='<h3>🧭 Monitoring SMART-GTK</h3><p class="small">Pantau pendataan dan skrining awal guru/KS PNS berdasarkan laporan GTK. Bukan persetujuan SK.</p><button type="button" class="btn primary">Buka Monitoring</button>';
  item.querySelector('button').addEventListener('click',open);
- (gtk()?(root.querySelector('.servicegrid')||root):root).prepend(item);
+ root.prepend(item);
+}
+function placeSmartGtk(){
+ if(gtk()){ensureGTKDashboard();ensureGTKNav();return}
+ document.getElementById(dashboardCardId)?.remove();
+ document.getElementById(navButtonId)?.remove();
+ ensureDinasService();
 }
 window.__simantabSmartGtkReady=true;
-const originalShow=window.showTab;window.showTab=async function(...args){const r=await originalShow.apply(this,args);if(args[0]==='services')setTimeout(tile,60);return r};
-const service=document.getElementById('servicesBody');if(service)new MutationObserver(()=>{if(!document.getElementById('smartgtkTile'))tile()}).observe(service,{childList:true});
-window.addEventListener('simantab:profile-ready',()=>setTimeout(tile,0));tile();
+const originalShow=window.showTab;
+window.showTab=async function(...args){
+ const result=await originalShow.apply(this,args);
+ if(args[0]==='dashboard'||args[0]==='services')placeSmartGtk();
+ return result;
+};
+const navRoot=document.getElementById('nav');
+if(navRoot)new MutationObserver(()=>{if(gtk()&&!document.getElementById(navButtonId))ensureGTKNav()}).observe(navRoot,{childList:true});
+window.addEventListener('simantab:profile-ready',placeSmartGtk);
+placeSmartGtk();
 async function loadGTK(){
  const [a,b]=await Promise.all([
   sb.from('smartgtk_intake').select('*').eq('owner_id',p().id).maybeSingle(),
@@ -238,5 +326,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:6,backendRequired:true};
+window.__smartGtkUnified={open,version:7,backendRequired:true};
 })();
