@@ -13,9 +13,10 @@ const gtk=()=>((p().account_channel==='GTK'&&['GTK','KEPALA_SEKOLAH'].includes(p
 const dinas=()=>p().account_channel==='DINAS'&&['SUPER_ADMIN','KABID','STAFF_USUL_SK'].includes(p().role)&&p().approval_status==='APPROVED'&&p().is_active!==false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
 const qualified=['S1','DIV','S2','S3'];
+const employmentLabel=(value)=>value==='NON_ASN'?'Pendamping Belajar / Pendamping Layanan di Satpen':value;
 const options={
  profession:[['','Pilih tugas'],['GURU','Guru'],['KEPALA_SEKOLAH','Kepala Sekolah'],['PENGAWAS','Pengawas Sekolah'],['TENDIK','Tenaga Kependidikan']],
- employment:[['','Pilih status kepegawaian'],['PNS','PNS'],['PPPK','PPPK'],['PPPK_PW','PPPK paruh waktu'],['NON_ASN','Non-ASN'],['LAINNYA','Lainnya']],
+ employment:[['','Pilih status kepegawaian'],['PNS','PNS'],['PPPK','PPPK'],['PPPK_PW','PPPK paruh waktu'],['NON_ASN','Pendamping Belajar / Pendamping Layanan di Satpen'],['LAINNYA','Lainnya']],
  jf_sk:[['','Pilih'],['YA','Sudah ada SK JF Guru'],['TIDAK','Belum ada SK JF Guru'],['BELUM_TAHU','Belum tahu']],
  old_position:[['','Pilih jabatan sesuai SK'],...['Guru Pertama','Guru Muda','Guru Madya','Guru Ahli Pertama','Guru Ahli Muda','Guru Ahli Madya','Jabatan lain pada SK'].map(x=>[x,x])],
  nomenclature_updated:[['','Pilih'],['YA','Sudah disesuaikan'],['TIDAK','Belum disesuaikan'],['BELUM_TAHU','Belum tahu'],['TIDAK_BERLAKU','Tidak berlaku']],
@@ -179,7 +180,7 @@ function form(){
  input('graduation_date','Tanggal kelulusan sesuai ijazah',x.graduation_date||q.graduation_date,'date')+
  '</div>'+input('notes','Keterangan tambahan (opsional)',x.notes)+'</div>'+
  '<div class="sg-actions"><button type="submit" class="primary">Simpan & Analisis Otomatis</button></div></form>'+
- '<p class="sg-note">Data boleh disimpan sebagai draf. PNS wajib berkas sesuai jalur; PPPK/PPPK PW boleh unggah yang dimiliki; non-ASN tanpa unggah. Hasil bukan keputusan atau SK.</p>'+
+ '<p class="sg-note">Data boleh disimpan sebagai draf. PNS wajib berkas sesuai jalur; PPPK/PPPK PW boleh unggah yang dimiliki; Pendamping Belajar dan Pendamping Layanan di Satpen tanpa unggah berkas. Hasil bukan keputusan atau SK.</p>'+
  (old?'<div class="sg-actions"><button type="button" data-action="prior">Lihat Analisis Tersimpan</button></div>':'');
  const f=document.getElementById('smartgtkForm');
  function sync(){
@@ -238,7 +239,7 @@ async function renderDocumentStep(){
  const q=r.data||{},status=q.state||'BELUM_MENGISI';
  const policy=q.evidence_policy||'TANPA_UNGGAH';
  if(policy==='TANPA_UNGGAH'){
-  target.innerHTML='<div class="sg-box"><b>Pendataan tanpa berkas</b><p>GTK non-ASN hanya menyimpan data. Tidak perlu mengunggah dokumen.</p>'+
+  target.innerHTML='<div class="sg-box"><b>Pendataan tanpa berkas</b><p>Pendamping Belajar dan Pendamping Layanan di Satpen cukup mengisi data, tanpa mengunggah dokumen.</p>'+
   '<p>Status: '+esc(status)+'</p><button data-action="complete" type="button">Konfirmasi Data Saya</button></div>';
   return;
  }
@@ -349,7 +350,7 @@ function dashboard(){
  '<p style="font-size:12px">Jumlah GTK yang belum memiliki akun tidak dapat dihitung tanpa daftar induk GTK. Jumlah di atas hanya mencakup akun yang sudah tercatat di SIMANTAB.</p></div>'+
  '<div class="sg-box"><b>Monitoring Hasil Skrining • Halaman '+(pg+1)+'</b><p>Nomenklatur: '+counts.n+' • Pengangkatan: '+counts.a+' • Kualifikasi: '+counts.q+'</p>'+
  '<div class="sg-scroll"><table><thead><tr><th>GTK</th><th>Tugas/ASN</th><th>Nomenklatur</th><th>Pengangkatan</th><th>Pendidikan/Berkas</th></tr></thead><tbody>'+
- (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.profession)+' / '+esc(x.employment)+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(x.data_stage==='BERKAS_LENGKAP'?'Berkas Lengkap (belum diverifikasi Dinas)':x.data_stage)+' ('+esc(x.docs_present)+' berkas; '+esc(x.required_count)+' wajib)'+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
+ (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.profession)+' / '+esc(employmentLabel(x.employment))+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(x.data_stage==='BERKAS_LENGKAP'?'Berkas Lengkap (belum diverifikasi Dinas)':x.data_stage)+' ('+esc(x.docs_present)+' berkas; '+esc(x.required_count)+' wajib)'+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
  '</tbody></table></div><div class="sg-actions"><button data-action="prev" '+(pg===0?'disabled':'')+'>Sebelumnya</button><button data-action="next" '+(items.length<50?'disabled':'')+'>Berikutnya</button></div></div>';
 }
 async function open(){
@@ -382,5 +383,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:12,backendRequired:true};
+window.__smartGtkUnified={open,version:13,backendRequired:true};
 })();
