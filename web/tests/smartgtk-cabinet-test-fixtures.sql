@@ -30,3 +30,6 @@ values
   '00000000-0000-4000-8000-000000000006/example/another-owner.pdf','Private Other Person.pdf',500000,'application/pdf','SK_JF'),
  ('00000000-0000-4000-8000-000000000055','00000000-0000-4000-8000-000000000005',
   '00000000-0000-4000-8000-000000000005/example/unrelated-skck.pdf','SKCK for other service.pdf',510000,'application/pdf','SKCK');
+
+-- CI fixture only; the real submission_files table keeps its production RLS.
+grant select on public.submission_files to authenticated;
