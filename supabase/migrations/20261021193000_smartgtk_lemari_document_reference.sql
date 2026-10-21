@@ -37,7 +37,7 @@ begin
  join storage.objects o on o.bucket_id='simantab-documents' and o.name=sf.storage_path
  where sf.user_id=auth.uid()
    and split_part(sf.storage_path,'/',1)=auth.uid()::text
-   and sf.file_size between 1 and 1572864
+   and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
    and sf.mime_type in ('application/pdf','image/jpeg','image/png')
  order by sf.created_at desc,sf.id desc
  limit 100;
@@ -59,7 +59,7 @@ begin
  select * into sf from public.submission_files where id=p_file_id and user_id=auth.uid();
  if not found then raise exception 'Dokumen bukan milik akun ini atau tidak ditemukan';end if;
  if sf.storage_path is null or split_part(sf.storage_path,'/',1)<>auth.uid()::text
-  or sf.file_size not between 1 and 1572864
+  or sf.file_size not between 1 and 1572864 or length(sf.storage_path)>220
   or sf.mime_type not in ('application/pdf','image/jpeg','image/png') then
   raise exception 'Berkas Lemari Dokumenku tidak memenuhi persyaratan';end if;
  if not exists(select 1 from storage.objects where bucket_id='simantab-documents'
@@ -95,7 +95,7 @@ begin
        or d.source_bucket='simantab-documents' and exists (
          select 1 from public.submission_files sf where sf.id=d.cabinet_file_id
           and sf.user_id=d.owner_id and sf.storage_path=d.storage_path
-          and sf.file_size between 1 and 1572864
+          and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
           and sf.mime_type in ('application/pdf','image/jpeg','image/png')))) then missing:=array_append(missing,t);end if;
  end loop;
  return jsonb_build_object('state',v.data_stage,'employment',v.employment,'profession',v.profession,
@@ -158,7 +158,7 @@ begin
       (d.source_bucket='simantab-smartgtk-private' and d.cabinet_file_id is null
        or d.source_bucket='simantab-documents' and exists(
         select 1 from public.submission_files sf where sf.id=d.cabinet_file_id and sf.user_id=d.owner_id
-         and sf.storage_path=d.storage_path and sf.file_size between 1 and 1572864
+         and sf.storage_path=d.storage_path and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
          and sf.mime_type in ('application/pdf','image/jpeg','image/png')))),
    cardinality(public.smartgtk_mass_required_docs(v.profession,v.employment,v.jf_sk,
     v.nomenclature_updated,v.pns_jf_formation,v.education,v.old_position)),
