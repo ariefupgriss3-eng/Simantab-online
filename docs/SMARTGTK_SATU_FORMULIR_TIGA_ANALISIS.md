@@ -48,3 +48,7 @@ Pedoman harus ditelaah kembali berdasarkan Surat Dirjen GTK Nomor 0294/B/B.B1/HK
 **PR #233 tetap Draft.** Migrasi `supabase/migrations/20261021150000_smartgtk_unified_intake.sql` **belum dipasang pada database produksi**. Build Cloudflare QA bukan bukti deploy produksi. Selesaikan tinjauan hukum, uji preview runtime (dengan database yang memiliki migrasi baru), tinjauan kemudahan isian di Android, dan prosedur rollback sebelum izin penerapan skema dan deployment Worker yang benar.
 
 Ketika kelak diaktifkan, staf dapat meneruskan hasil skrining tertentu ke proses usulan resmi lewat tombol tindakan yang memerlukan pengecekan dokumen, **bukan membuat usulan otomatis dari jawaban survei**.
+
+## Pengaman perubahan data pendidikan
+
+Perubahan SK Jabfung atau status kepegawaian melalui SMART-GTK **tidak memutakhirkan ulang modul pendidikan 2030 ketika data pendidikannya sama**, sehingga catatan Dinas `PERLU_PERBAIKAN` tidak hilang. Ijazah yang `TERVERIFIKASI` juga tidak dapat diubah sepihak melalui isian guru. Migrasi susulan: `20261021160000_smartgtk_preserve_education_reviews.sql`.
