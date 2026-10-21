@@ -1,14 +1,14 @@
 \set ON_ERROR_STOP on
--- Owner candidate list: two valid files, exclude >1.5 MB, exclude all other owners.
+-- Owner candidate list: only exact matching SK-JF, exclude unrelated SKCK, oversized files, and other owners.
 set role authenticated;
 set request.jwt.claim.sub='00000000-0000-4000-8000-000000000005';
 do $test_candidates$
 declare n integer; obj text;
 begin
  select count(*) into n from public.smartgtk_cabinet_candidates('SK_JF');
- if n<>2 then raise exception 'FAIL: cabinet list leaks other user or oversized file, count %',n;end if;
+ if n<>1 then raise exception 'FAIL: cabinet list leaks other user or oversized file, count %',n;end if;
  if exists(select 1 from public.smartgtk_cabinet_candidates('SK_JF')
-   where file_name='Private Other Person.pdf') then raise exception 'FAIL: cross-account cabinet filename visible';end if;
+   where file_name in ('Private Other Person.pdf','SKCK for other service.pdf')) then raise exception 'FAIL: cross-account cabinet filename visible';end if;
 end $test_candidates$;
 -- Import a selection without copying the storage object, while keeping completeness source-aware.
 do $test_attach$
@@ -36,6 +36,12 @@ begin
   raise exception 'FAIL: cross-owner file assigned';
  exception when others then
   if position('Dokumen bukan milik akun ini' in sqlerrm)=0 then raise;end if;
+ end;
+ begin
+  perform public.smartgtk_import_cabinet('SK_JF','00000000-0000-4000-8000-000000000055'::uuid);
+  raise exception 'FAIL: unrelated SKCK linked as Jabfung SK';
+ exception when others then
+  if position('Jenis dokumen di lemari tidak sesuai' in sqlerrm)=0 then raise;end if;
  end;
  begin
   perform public.smartgtk_import_cabinet('SK_KP','00000000-0000-4000-8000-000000000053'::uuid);
