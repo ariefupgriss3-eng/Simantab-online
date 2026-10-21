@@ -62,3 +62,14 @@ test('review state stays intact for personnel-only updates',()=>{
  assert.match(read('./smartgtk-integration.sql'),/personnel edit erased diploma correction review/);
  assert.match(ui,/try\{await save\(\)\}catch\(error\)/);
 });
+
+test('pilot allowlist is enforced by database and visible before GTK form',()=>{
+ const pilot=read('../../supabase/migrations/20261021170000_smartgtk_pilot_allowlist.sql');
+ assert.match(pilot,/create table if not exists public\.smartgtk_pilot_users/);
+ assert.match(pilot,/private\.jf2026_is_officer\(\)/);
+ assert.match(pilot,/if not exists\(select 1 from public\.smartgtk_pilot_users/);
+ assert.match(pilot,/SMART-GTK masih uji coba terbatas/);
+ assert.match(ui,/smartgtk_pilot_status/);
+ assert.match(ui,/belum ditetapkan sebagai peserta/);
+ assert.match(read('./smartgtk-integration.sql'),/unassigned GTK saved during pilot/);
+});
