@@ -109,4 +109,27 @@ begin
  if not exists(select 1 from public.smartgtk_mass_officer_list(0) where profession='PENGAWAS')
  then raise exception 'FAIL: officer cannot monitor pengawas';end if;
 end $officer$;
+
+-- Aggregate never misrepresents thousands of unregistered GTK as known SIMANTAB accounts.
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000003';
+do $onboarding$
+declare a jsonb;
+begin
+ a:=public.smartgtk_mass_onboarding_summary();
+ if (a->>'registered_accounts')::integer<1
+ or a->>'scope'<>'REGISTERED_SIMANTAB_ACCOUNTS_ONLY'
+ or (a->>'unregistered_total_requires_master_roster')::boolean<>true then
+  raise exception 'FAIL: onboarding scope is not explicitly restricted %',a;end if;
+end $onboarding$;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000005';
+do $not_officer$
+begin
+ begin
+  perform public.smartgtk_mass_onboarding_summary();
+  raise exception 'FAIL: GTK read aggregate Dinas monitoring';
+ exception when others then
+  if position('Hanya petugas Dinas' in sqlerrm)=0 then raise;end if;
+ end;
+end $not_officer$;
+
 select 'SMARTGTK mass cohorts and document policy tests PASS' as result;
