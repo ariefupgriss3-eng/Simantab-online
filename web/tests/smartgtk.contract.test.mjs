@@ -63,14 +63,14 @@ test('review state stays intact for personnel-only updates',()=>{
  assert.match(ui,/try\{await save\(\)\}catch\(error\)/);
 });
 
-test('pilot allowlist is enforced by database and visible before GTK form',()=>{
+test('historical pilot enrollment remains guarded, with OPEN access guidance in the UI',()=>{
  const pilot=read('../../supabase/migrations/20261021170000_smartgtk_pilot_allowlist.sql');
  assert.match(pilot,/create table if not exists public\.smartgtk_pilot_users/);
  assert.match(pilot,/private\.jf2026_is_officer\(\)/);
  assert.match(pilot,/if not exists\(select 1 from public\.smartgtk_pilot_users/);
  assert.match(pilot,/SMART-GTK masih uji coba terbatas/);
  assert.match(ui,/smartgtk_pilot_status/);
- assert.match(ui,/belum ditetapkan sebagai peserta/);
+ assert.match(ui,/Akun belum memenuhi ketentuan akses SMART-GTK/);
  assert.match(read('./smartgtk-integration.sql'),/unassigned GTK saved during pilot/);
 });
 
@@ -134,7 +134,7 @@ test('Dashboard GTK has short copy and visible 26 October 2026 23:59 WIB data de
  assert.doesNotMatch(ui,/SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS\./);
  assert.match(ui,/sg-deadline/);
  assert.match(ui,/Deadline input data paling lambat 26 Oktober 2026, pukul 23\.59 WIB\./);
- assert.match(ui,/Saat ini masih uji coba terbatas/);
+ assert.match(ui,/Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas/);
  assert.match(ui,/smartgtk_pilot_status/);
  assert.doesNotThrow(()=>new Function(ui));
 });
