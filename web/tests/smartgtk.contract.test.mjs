@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=11/);
+ assert.match(injection,/smartgtk-unified\.js\?v=12/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -190,5 +190,14 @@ test('PNS completed evidence is labeled awaiting Dinas verification, never appro
  assert.match(ui,/Menunggu verifikasi administratif oleh Dinas/);
  assert.match(ui,/Belum merupakan persetujuan usulan, penetapan JF, atau penerbitan SK/);
  assert.match(ui,/Berkas Lengkap \(belum diverifikasi Dinas\)/);
+ assert.doesNotThrow(()=>new Function(ui));
+});
+
+test('Non-ASN internal code uses public Pendamping Belajar / Pendamping Layanan di Satpen terminology',()=>{
+ assert.match(ui,/\['NON_ASN','Pendamping Belajar \/ Pendamping Layanan di Satpen'\]/);
+ assert.match(ui,/const employmentLabel=/);
+ assert.match(ui,/Pendamping Belajar dan Pendamping Layanan di Satpen cukup mengisi data, tanpa mengunggah dokumen/);
+ assert.doesNotMatch(ui,/Non-ASN|non-ASN/);
+ assert.match(ui,/smartgtk_mass_save/);
  assert.doesNotThrow(()=>new Function(ui));
 });
