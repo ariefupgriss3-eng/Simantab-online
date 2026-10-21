@@ -10,7 +10,7 @@ alter table public.smartgtk_intake
 create or replace function public.smartgtk_mass_classify(
  p_profession text,e text,sk text,nomen text,formasi text,edu text,old_jf text
 ) returns jsonb language plpgsql stable security definer set search_path=''
-as $
+as $$
 declare base jsonb;
 begin
  if e<>'PNS' or p_profession not in ('GURU','KEPALA_SEKOLAH') then
