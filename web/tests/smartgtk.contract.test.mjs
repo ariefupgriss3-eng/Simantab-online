@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=3/);
+ assert.match(injection,/smartgtk-unified\.js\?v=4/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -21,7 +21,7 @@ test('all GTK answer the same fields, with education reused and no false automat
    assert.ok(ui.includes(field),field);
  assert.match(ui,/jf2030_qualification/);
  assert.match(ui,/p_education:v\.education/);
- assert.match(ui,/smartgtk_save/);
+ assert.match(ui,/smartgtk_mass_save/);
  assert.match(ui,/Data tersimpan dan berhasil diklasifikasikan/);
  assert.match(ui,/bukan keputusan|bukan pengajuan resmi otomatis/i);
  assert.doesNotMatch(ui,/jf2026_submit_case/);
@@ -72,4 +72,32 @@ test('pilot allowlist is enforced by database and visible before GTK form',()=>{
  assert.match(ui,/smartgtk_pilot_status/);
  assert.match(ui,/belum ditetapkan sebagai peserta/);
  assert.match(read('./smartgtk-integration.sql'),/unassigned GTK saved during pilot/);
+});
+
+test('teacher and KS PNS screening while other GTK get database-only results',()=>{
+ const sql=read('../../supabase/migrations/20261021180000_smartgtk_mass_roles.sql');
+ assert.match(ui,/p_profession:v.profession/);
+ assert.match(ui,/smartgtk_mass_save/);
+ assert.match(ui,/PENGAWAS/);
+ assert.match(sql,/p_profession not in \('GURU','KEPALA_SEKOLAH'\)/);
+ assert.match(sql,/DATABASE_ONLY/);
+ assert.match(sql,/revoke execute on function public.smartgtk_save/);
+});
+test('PNS complete docs; PPPK/PW optional docs; nonASN cannot upload',()=>{
+ const docs=read('../../supabase/migrations/20261021181000_smartgtk_mass_documents.sql');
+ assert.match(docs,/simantab-smartgtk-private/);
+ assert.match(docs,/file_size_limit/);
+ assert.match(docs,/1572864/);
+ assert.match(docs,/s\.employment in \('PNS','PPPK','PPPK_PW'\)/);
+ assert.match(docs,/Kelompok ini tidak mengunggah dokumen SMART-GTK/);
+ assert.match(docs,/Berkas PNS belum lengkap/);
+ assert.match(ui,/smartgtk_mass_complete/);
+ assert.match(ui,/smartgtk_mass_register_file/);
+});
+test('guided joining uses existing verified email signup and recovery',()=>{
+ const onboarding=read('../smartgtk-onboarding.js');
+ assert.match(onboarding,/window\.toggleAuthMode/);
+ assert.match(onboarding,/window\.setChannel/);
+ assert.match(onboarding,/resetPasswordForEmail/);
+ assert.doesNotMatch(onboarding,/createUser|admin\.createUser|defaultPassword/);
 });
