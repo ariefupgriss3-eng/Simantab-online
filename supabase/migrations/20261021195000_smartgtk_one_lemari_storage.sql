@@ -194,7 +194,7 @@ begin
    and x.file_size between 1 and 1572864
    and length(x.storage_path)<=220
    and x.mime_type in ('application/pdf','image/jpeg','image/png')
- order by uploaded_at desc,file_id desc limit 100;
+ order by 5 desc,1 desc limit 100;
 end;
 $$;
 
@@ -213,11 +213,17 @@ begin
   raise exception 'Kelompok atau jenis dokumen tidak diizinkan';end if;
  select * into x from public.smartgtk_locker_files where id=p_file_id and owner_id=auth.uid();
  if found then
-  if x.doc_type<>p_type then raise exception 'Jenis dokumen tidak sesuai';end if;
+  if x.doc_type<>p_type
+      or not exists(select 1 from storage.objects
+        where bucket_id='simantab-documents' and name=x.storage_path) then
+      raise exception 'Jenis dokumen tidak sesuai atau berkas sumber tidak tersedia';end if;
   insert into public.smartgtk_documents(owner_id,doc_type,storage_path,source_bucket,cabinet_file_id,cabinet_upload_id)
   values(auth.uid(),p_type,x.storage_path,'simantab-documents',null,x.id)
   on conflict(owner_id,doc_type) do update set storage_path=excluded.storage_path,
     source_bucket=excluded.source_bucket,cabinet_file_id=null,cabinet_upload_id=excluded.cabinet_upload_id,uploaded_at=now();
+  update public.smartgtk_intake set data_stage='DRAFT' where owner_id=auth.uid();
+  insert into public.smartgtk_audit(owner_id,actor_id,action)
+    values(auth.uid(),auth.uid(),'CABINET_FILE_LINKED_'||p_type);
   return jsonb_build_object('linked',true,'file_id',x.id,'verified',false);
  end if;
  select * into sf from public.submission_files where id=p_file_id and user_id=auth.uid();
