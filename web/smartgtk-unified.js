@@ -245,7 +245,7 @@ async function renderDocumentStep(){
  labels.map(t=>'<label class="sg-box">'+esc(docLabels[t]||t)+(policy==='WAJIB'?(missing.includes(t)?' — Belum ada':' — Tercatat'):' — Opsional')+
  '<input type="file" data-docfile="'+esc(t)+'" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">'+
  '<div class="sg-actions"><button type="button" data-action="cabinet" data-type="'+esc(t)+'">📁 Ambil dari Lemari Dokumenku</button>'+
- '<button type="button" data-action="fileupload" data-type="'+esc(t)+'">Unggah Berkas Baru</button></div></label>').join('')+
+ '<button type="button" data-action="fileupload" data-type="'+esc(t)+'">Unggah ke Lemari Dokumenku</button></div></label>').join('')+
  '<div id="sgCabinetPicker" class="sg-box" hidden></div>'+
  '<p style="font-size:12px">PDF/JPG/PNG, maksimal 1,5 MB. Gunakan berkas asli yang sesuai. Status belum berarti berkas diverifikasi Dinas.</p>'+
  '<button type="button" data-action="complete">'+(policy==='WAJIB'?'Periksa Kelengkapan PNS':'Selesaikan Pendataan')+'</button></div>';
@@ -287,12 +287,19 @@ async function uploadDocument(type){
  const mime={'pdf':'application/pdf','jpg':'image/jpeg','jpeg':'image/jpeg','png':'image/png'}[ext];
  if(!mime||file.type!==mime)throw Error('Format berkas harus PDF, JPG, atau PNG yang sesuai');
  if(file.size>maxDocBytes||file.size===0)throw Error('Berkas harus lebih dari 0 dan maksimal 1,5 MB');
- const extSafe=ext==='jpeg'?'jpg':ext,path=p().id+'/'+type+'/'+crypto.randomUUID()+'.'+extSafe;
- const uploaded=await sb.storage.from('simantab-smartgtk-private').upload(path,file,{upsert:false,contentType:mime});
+ const extSafe=ext==='jpeg'?'jpg':ext;
+ const path=p().id+'/SMARTGTK/'+crypto.randomUUID()+'.'+extSafe;
+ const uploaded=await sb.storage.from('simantab-documents').upload(path,file,{upsert:false,contentType:mime});
  if(uploaded.error)throw uploaded.error;
- const attached=await sb.rpc('smartgtk_mass_register_file',{p_type:type,p_path:path});
- if(attached.error)throw attached.error;
- info('Berkas '+(docLabels[type]||type)+' telah dicatat. Menunggu verifikasi bila diperlukan.');
+ const attached=await sb.rpc('smartgtk_locker_register',{
+  p_type:type,p_path:path,p_name:file.name.slice(0,180),p_size:file.size,p_mime:mime
+ });
+ if(attached.error){
+  // Undo only the brand-new object if metadata registration was rejected.
+  await sb.storage.from('simantab-documents').remove([path]).catch(()=>{});
+  throw attached.error;
+ }
+ info('Berkas '+(docLabels[type]||type)+' berhasil disimpan sekali di Lemari Dokumenku dan tercatat untuk SMART-GTK. Menunggu verifikasi Dinas.');
  await renderDocumentStep();
 }
 async function confirmCompleteness(){
@@ -361,5 +368,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:9,backendRequired:true};
+window.__smartGtkUnified={open,version:10,backendRequired:true};
 })();
