@@ -55,7 +55,7 @@ const qualification2030=await read('jf-qualification-2030.js');
 ok(html.includes('./jf-qualification-2030.js?v=5') && html.split('./jf-qualification-2030.js?v=5').length===2,'Modul S1-DIV 2030 harus tepat sekali');
 ok(qualification2030.includes('SIMANTAB_JF2030_QUALIFICATION_V1')&&qualification2030.includes('jf2030_save_progress')&&qualification2030.includes('jf2030_review'),'Pemantauan S1-DIV 2030 belum dibundel');
 const smart=await read('smartgtk-unified.js');
-ok(html.includes('./smartgtk-unified.js?v=8')&&html.split('./smartgtk-unified.js?v=8').length===2,'SMART-GTK unified script must load once');
+ok(html.includes('./smartgtk-unified.js?v=9')&&html.split('./smartgtk-unified.js?v=9').length===2,'SMART-GTK unified script must load once');
 ok(smart.includes('SIMANTAB_SMARTGTK_UNIFIED_INTAKE_V1')&&smart.includes("sb.rpc('smartgtk_mass_save'")&&smart.includes("sb.rpc('smartgtk_mass_officer_list'")&&smart.includes("sb.rpc('smartgtk_mass_complete'"),'SMART-GTK mass routes missing');
 ok(smart.includes('smartgtkDashboardPriority')&&smart.includes('smartgtkPrimaryNav')&&smart.includes('root.insertBefore(card,body)'), 'GTK dashboard priority link or main menu missing');
 ok(smart.includes('Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.')&&!smart.includes('SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS.'),'SMART-GTK deadline and concise copy missing');
@@ -64,4 +64,6 @@ const onboarding=await read('smartgtk-onboarding.js');
 ok(html.includes('./smartgtk-onboarding.js?v=1')&&html.split('./smartgtk-onboarding.js?v=1').length===2,'GTK onboarding helper must load once');
 ok(onboarding.includes('SMARTGTK_MASS_ONBOARDING_V1')&&onboarding.includes('resetPasswordForEmail'),'Safe GTK signup and account recovery missing');
 ok(jf2026.includes('window.__simantabSmartGtkReady')&&qualification2030.includes('window.__simantabSmartGtkReady'),'Old GTK duplicate cards must be disabled when SMART-GTK is loaded');
+ok(smart.includes("smartgtk_locker_register")&&smart.includes("storage.from('simantab-documents')")&&
+ !smart.includes("storage.from('simantab-smartgtk-private').upload"),'Single cabinet source upload missing');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));
