@@ -36,6 +36,12 @@ as $$
  );
 $$;
 revoke all on function private.smartgtk_current_user_can_participate() from public,anon,authenticated;
+-- Restrictive insert guard for this private bucket only; unrelated SIMANTAB buckets unaffected.
+create policy smartgtk_upload_rollout_guard on storage.objects
+ as restrictive for insert to authenticated
+ with check(bucket_id<>'simantab-smartgtk-private'
+  or (select private.smartgtk_current_user_can_participate()));
+
 
 create or replace function public.smartgtk_pilot_status()
 returns boolean language sql stable security definer set search_path=''
