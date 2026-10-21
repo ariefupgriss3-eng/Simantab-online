@@ -54,55 +54,7 @@ BEGIN
       reason := 'Nama belum lengkap';
     ELSIF coalesce(nullif(btrim(p.unit_gtk),''),nullif(btrim(p.unit),'')) IS NULL THEN
       reason := 'Unit kerja kosong';
-    ELSIF coalesce(p.nip,'') !~ '^[0-9]{18}
-      reason := 'NIP ASN belum tepat 18 digit';
-    ELSE
-      SELECT count(*) INTO n FROM public.profiles other
-       WHERE other.id<>_target
-         AND regexp_replace(coalesce(other.nip,''),'[^0-9]','','g')=key_nip;
-      IF n>0 THEN
-        reason := 'NIP terdaftar pada akun lain ('||n||')';
-      ELSIF p.requested_role='KEPALA_SEKOLAH' AND NOT EXISTS (
-          SELECT 1 FROM public.school_master s
-          WHERE s.npsn=p.school_npsn AND s.is_active=true
-            AND upper(coalesce(s.school_status,''))='NEGERI'
-      ) THEN
-        reason := 'NPSN sekolah negeri aktif belum cocok';
-      END IF;
-    END IF;
- END IF;
-
- IF reason IS NOT NULL THEN
-   INSERT INTO public.simantab_gtk_bulk_approval_audit
-      (batch_id,actor_id,target_id,outcome,detail)
-      VALUES(_batch,_actor,_target,'SKIPPED',reason);
-   RETURN QUERY SELECT 'SKIPPED'::text,reason;
-   RETURN;
- END IF;
-
- UPDATE public.profiles
- SET role=p.requested_role, approval_status='APPROVED', is_active=true,
-     updated_at=now()
- WHERE id=_target AND approval_status='PENDING' AND account_channel='GTK' AND is_active=false;
- IF NOT FOUND THEN
-   reason:='Status berubah sebelum disetujui';
-   INSERT INTO public.simantab_gtk_bulk_approval_audit
-      (batch_id,actor_id,target_id,outcome,detail)
-      VALUES(_batch,_actor,_target,'SKIPPED',reason);
-   RETURN QUERY SELECT 'SKIPPED'::text,reason;
-   RETURN;
- END IF;
- INSERT INTO public.simantab_gtk_bulk_approval_audit
-      (batch_id,actor_id,target_id,outcome,detail)
-      VALUES(_batch,_actor,_target,'APPROVED','Disetujui melalui verifikasi agregat NIP unik');
- RETURN QUERY SELECT 'APPROVED'::text,'Berhasil disetujui'::text;
-END
-$$;
-REVOKE ALL ON FUNCTION public.simantab_gtk_bulk_approve_one(uuid,uuid,uuid) FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.simantab_gtk_bulk_approve_one(uuid,uuid,uuid) TO service_role;
-COMMENT ON FUNCTION public.simantab_gtk_bulk_approve_one(uuid,uuid,uuid)
- IS 'Dipanggil hanya dari Edge Function berotorisasi Super Admin, memeriksa ulang NIP dan status, serta mengaudit setiap keputusan.';
- THEN
+    ELSIF coalesce(p.nip,'') !~ '^[0-9]{18}$' THEN
       reason := 'NIP ASN belum tepat 18 digit';
     ELSE
       SELECT count(*) INTO n FROM public.profiles other
