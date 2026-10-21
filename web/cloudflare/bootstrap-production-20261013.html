@@ -1333,7 +1333,7 @@ async function refreshDashboard(){
   const [active,done,docs,unread]=await Promise.all([
    countRows('submissions',q=>q.in('status',['SUBMITTED','VERIFYING','REVISION','APPROVED'])),
    countRows('submissions',q=>q.eq('status','COMPLETED')),
-   countRows('submission_files'),
+   Promise.all([countRows('submission_files'),countRows('smartgtk_locker_files')]).then(([regular,smart])=>regular+smart),
    countRows('notifications',q=>q.eq('is_read',false))
   ]);
   $('dashTitle').textContent='Dashboard GTK';$('dashDesc').textContent='Layanan pribadi GTK dan progres pengajuan.';
@@ -1409,7 +1409,12 @@ async function loadStatus(){
  $('statusBody').innerHTML=submissionTable(data||[],false);
 }
 async function loadDocs(){
- const {data,error}=await sb.from('submission_files').select('id,storage_path,file_name,file_size,mime_type,created_at,submission_id').order('created_at',{ascending:false});if(error)throw error;
+ const [legacy,smart]=await Promise.all([
+  sb.from('submission_files').select('id,storage_path,file_name,file_size,mime_type,created_at,submission_id').order('created_at',{ascending:false}),
+  sb.from('smartgtk_locker_files').select('id,storage_path,file_name,file_size,mime_type,created_at,doc_type').order('created_at',{ascending:false})
+ ]);
+ if(legacy.error)throw legacy.error;if(smart.error)throw smart.error;
+ const data=[...(legacy.data||[]),...(smart.data||[])].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
  $('docsBody').innerHTML=data?.length?`<div class="tablewrap"><table><thead><tr><th>Waktu</th><th>Nama Berkas</th><th>Ukuran</th><th>Aksi</th></tr></thead><tbody>${data.map(f=>`<tr><td>${fmtDate(f.created_at)}</td><td>${esc(f.file_name)}</td><td>${(f.file_size/1048576).toFixed(2)} MB</td><td><button class="btn soft" onclick="openFile('${encodeURIComponent(f.storage_path)}')">Buka</button></td></tr>`).join('')}</tbody></table></div>`:'<div class="card empty">Belum ada dokumen.</div>';
 }
 window.openFile=async(encoded)=>{const path=decodeURIComponent(encoded);const {data,error}=await sb.storage.from('simantab-documents').createSignedUrl(path,120);if(error)alert(error.message);else window.open(data.signedUrl,'_blank','noopener')};
