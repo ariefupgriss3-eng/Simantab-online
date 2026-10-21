@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=13/);
+ assert.match(injection,/smartgtk-unified\.js\?v=14/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -207,5 +207,14 @@ test('PB and PLS are separate categories and legacy codes remain readable',()=>{
  assert.match(migration,/p_employment='PB'/);
  assert.match(migration,/p_employment='PLS'/);
  assert.match(read('./smartgtk-pb-pls.integration.sql'),/PLS entered ASN JF screening/);
+ assert.doesNotThrow(()=>new Function(ui));
+});
+
+test('OPEN rollout text directs denied users to account approval rather than pilot enrollment',()=>{
+ assert.match(ui,/Akun belum dapat mengisi SMART-GTK\. Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas/);
+ assert.match(ui,/Akun belum memenuhi ketentuan akses SMART-GTK/);
+ assert.match(ui,/SMART-GTK belum dapat dimuat\. Segarkan halaman/);
+ assert.doesNotMatch(ui,/Saat ini masih uji coba terbatas|SMART-GTK masih tahap pilot terbatas/);
+ assert.match(ui,/smartgtk_pilot_status/); // Keep backwards-compatible backend access RPC.
  assert.doesNotThrow(()=>new Function(ui));
 });
