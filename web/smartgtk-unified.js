@@ -105,7 +105,12 @@ function form(){
  f.elements.education.addEventListener('change',sync);
  f.elements.study_status.addEventListener('change',sync);
  f.elements.employment.addEventListener('change',sync);
- f.addEventListener('submit',e=>{e.preventDefault();save()});sync();
+ f.addEventListener('submit',async e=>{
+  e.preventDefault();if(busy)return;busy=true;info('Menyimpan dan menganalisis data...');
+  const submit=f.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
+  try{await save()}catch(error){info(error.message||String(error),true)}
+  finally{busy=false;if(submit)submit.disabled=false}
+ });sync();
 }
 function results(data){
  const branches=[['Penyesuaian Nomenklatur JF',data.nomenklatur],['Pengangkatan JF Guru',data.pengangkatan],['Pemenuhan Pendidikan S-1/D-IV',data.kualifikasi]];
@@ -148,5 +153,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:1,backendRequired:true};
+window.__smartGtkUnified={open,version:2,backendRequired:true};
 })();
