@@ -8,6 +8,7 @@ const ALLOWED_ORIGINS = new Set([
   "https://simantab-online.vercel.app",
   "https://simantab-cf-preview.m-arief-rohman.workers.dev",
   "https://feature-cloudflare-jf-guru-2026-0294-simantab-cf-preview.m-arief-rohman.workers.dev",
+  "https://simantab.m-arief-rohman.workers.dev",
 ]);
 const VALID_ROLES = new Set(["GTK", "KEPALA_SEKOLAH", "PENGAWAS"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
