@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=10/);
+ assert.match(injection,/smartgtk-unified\.js\?v=11/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -179,5 +179,16 @@ test('Legacy SK Jabfung Terakhir files are selectable only with source-code and 
  assert.match(compat,/private\.smartgtk_cabinet_file_matches\(d\.doc_type,sf\.requirement_code,sf\.file_name\)/);
  assert.match(ui,/SK Jabfung Terakhir \(kode arsip lama\)/);
  assert.match(read('./smartgtk-legacy-sk-jabfung.integration.sql'),/unrelated SK_JABATAN_SEBELUMNYA offered/);
+ assert.doesNotThrow(()=>new Function(ui));
+});
+
+test('PNS completed evidence is labeled awaiting Dinas verification, never approved automatically',()=>{
+ assert.match(ui,/Berkas Lengkap — Menunggu Verifikasi Dinas/);
+ assert.match(ui,/documentStageLabel\(status,missing\.length\)/);
+ assert.match(ui,/status==='BERKAS_LENGKAP'&&missing\.length===0/);
+ assert.match(ui,/Berkas Perlu Dilengkapi Ulang/);
+ assert.match(ui,/Menunggu verifikasi administratif oleh Dinas/);
+ assert.match(ui,/Belum merupakan persetujuan usulan, penetapan JF, atau penerbitan SK/);
+ assert.match(ui,/Berkas Lengkap \(belum diverifikasi Dinas\)/);
  assert.doesNotThrow(()=>new Function(ui));
 });
