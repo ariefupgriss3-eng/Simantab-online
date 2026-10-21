@@ -23,11 +23,13 @@ const options={
  education:[['','Pilih ijazah terakhir'],...['SLTA','SPG','DI','DII','DIII','S1','DIV','S2','S3'].map(x=>[x,({'DI':'D-I','DII':'D-II','DIII':'D-III','DIV':'D-IV','S1':'S-1','S2':'S-2','S3':'S-3'}[x]||x)])],
  study_status:[['','Pilih perkembangan studi'],['BELUM_KULIAH','Belum melanjutkan kuliah'],['SEDANG_KULIAH','Sedang kuliah'],['LULUS_BELUM_VERIF','Lulus, belum diverifikasi'],['SUDAH_MEMENUHI','Sudah S-1/D-IV atau lebih tinggi']]
 };
+const docLabels={SK_KP:'SK Pangkat Terakhir',IJAZAH_TERAKHIR:'Ijazah terakhir',SK_JF:'SK JF Guru',SERDIK:'Sertifikat Pendidik',PENGALAMAN_2TH:'Keterangan pengalaman mengajar ≥ 2 tahun',SKP_TAHUN_1:'SKP tahun pertama',SKP_TAHUN_2:'SKP tahun kedua',SK_PPPK:'SK PPPK (jika ada)',SK_PPPK_PW:'SK PPPK Paruh Waktu (jika ada)',SURAT_TUGAS:'Surat tugas (jika ada)'};
 const meanings={
  POTENSI_USUL:'Potensi usulan — perlu verifikasi Dinas',
  TERTAHAN_KUALIFIKASI:'Potensi usul setelah pemenuhan kualifikasi',
  PERLU_DATA:'Perlu konfirmasi data',
  TIDAK_TERINDIKASI:'Tidak terindikasi',
+ DATABASE_ONLY:'Pendataan GTK saja — tidak dianalisis untuk usulan JF Guru',
  PERLU_PEMENUHAN_2030:'Perlu pemenuhan S-1/D-IV (D-I–D-III)',
  TELAAH_KHUSUS:'SLTA/SPG: pemeriksaan khusus',
  DINYATAKAN_MEMENUHI_BELUM_VERIFIKASI:'Sudah memenuhi menurut pernyataan, ijazah belum diverifikasi'
@@ -128,8 +130,57 @@ function results(data){
  body().innerHTML='<div class="sg-box"><h3>Hasil Skrining Awal SMART-GTK</h3><p>Seorang GTK bisa masuk lebih dari satu kelompok. Semua tindak lanjut perlu verifikasi petugas.</p><div class="sg-results">'+
  branches.map(([title,val])=>'<div class="sg-result"><b>'+esc(title)+'</b>'+esc(meanings[val]||val)+'</div>').join('')+
  '</div><p class="sg-note">SLTA/SPG memerlukan telaah khusus; tenggat diploma tidak otomatis berlaku. Hasil tidak menerbitkan SK atau menyampaikan usulan resmi.</p>'+
- '<div class="sg-actions"><button data-action="edit">Perbarui Data</button><button data-action="education">Lihat Dokumen Pendidikan</button></div></div>';
+ '<div class="sg-actions"><button data-action="edit">Perbarui Data</button></div></div><div id="sgDocumentStep"></div>';
+ void renderDocumentStep();
 }
+
+async function renderDocumentStep(){
+ const target=document.getElementById('sgDocumentStep');if(!target||!gtk())return;
+ const r=await sb.rpc('smartgtk_mass_status');if(r.error){info(r.error.message,true);return}
+ const q=r.data||{},status=q.state||'BELUM_MENGISI';
+ const policy=q.evidence_policy||'TANPA_UNGGAH';
+ if(policy==='TANPA_UNGGAH'){
+  target.innerHTML='<div class="sg-box"><b>Pendataan tanpa berkas</b><p>GTK non-ASN hanya menyimpan data. Tidak perlu mengunggah dokumen.</p>'+
+  '<p>Status: '+esc(status)+'</p><button data-action="complete" type="button">Konfirmasi Data Saya</button></div>';
+  return;
+ }
+ const labels=policy==='WAJIB'?q.required||[]:(q.employment==='PPPK'?
+  ['SK_PPPK','IJAZAH_TERAKHIR','SERDIK','SURAT_TUGAS']:
+  ['SK_PPPK_PW','IJAZAH_TERAKHIR','SERDIK','SURAT_TUGAS']);
+ const missing=q.missing||[];
+ target.innerHTML='<div class="sg-box"><h3>Dokumen '+(policy==='WAJIB'?'Wajib PNS':'PPPK/PPPK PW (hanya yang dimiliki)')+'</h3>'+
+ '<p class="sg-note">'+(policy==='WAJIB'?'PNS harus melengkapi semua berkas wajib sebelum status BERKAS LENGKAP. Simpan draf tetap boleh.':
+ 'Tidak perlu mengunggah SK Jabfung yang belum dimiliki. Semua unggahan bersifat opsional.')+'</p>'+
+ '<p>Status saat ini: <b>'+esc(status)+'</b>'+(policy==='WAJIB'?' • Berkas kurang: '+missing.length:'')+'</p>'+
+ labels.map(t=>'<label class="sg-box">'+esc(docLabels[t]||t)+(policy==='WAJIB'?(missing.includes(t)?' — Belum ada':' — Tercatat'):' — Opsional')+
+ '<input type="file" data-docfile="'+esc(t)+'" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">'+
+ '<button type="button" data-action="fileupload" data-type="'+esc(t)+'">Unggah Berkas</button></label>').join('')+
+ '<p style="font-size:12px">PDF/JPG/PNG, maksimal 1,5 MB. Gunakan berkas asli yang sesuai. Status belum berarti berkas diverifikasi Dinas.</p>'+
+ '<button type="button" data-action="complete">'+(policy==='WAJIB'?'Periksa Kelengkapan PNS':'Selesaikan Pendataan')+'</button></div>';
+}
+async function uploadDocument(type){
+ if(!gtk())throw Error('Hanya pemilik akun yang dapat mengunggah');
+ if(!Object.hasOwn(docLabels,type))throw Error('Jenis berkas tidak dikenal');
+ const file=document.querySelector('#sgDocumentStep input[data-docfile="'+type+'"]')?.files?.[0];
+ if(!file)throw Error('Silakan pilih berkas terlebih dahulu');
+ const ext=(file.name.split('.').pop()||'').toLowerCase();
+ const mime={'pdf':'application/pdf','jpg':'image/jpeg','jpeg':'image/jpeg','png':'image/png'}[ext];
+ if(!mime||file.type!==mime)throw Error('Format berkas harus PDF, JPG, atau PNG yang sesuai');
+ if(file.size>maxDocBytes||file.size===0)throw Error('Berkas harus lebih dari 0 dan maksimal 1,5 MB');
+ const extSafe=ext==='jpeg'?'jpg':ext,path=p().id+'/'+type+'/'+crypto.randomUUID()+'.'+extSafe;
+ const uploaded=await sb.storage.from('simantab-smartgtk-private').upload(path,file,{upsert:false,contentType:mime});
+ if(uploaded.error)throw uploaded.error;
+ const attached=await sb.rpc('smartgtk_mass_register_file',{p_type:type,p_path:path});
+ if(attached.error)throw attached.error;
+ info('Berkas '+(docLabels[type]||type)+' telah dicatat. Menunggu verifikasi bila diperlukan.');
+ await renderDocumentStep();
+}
+async function confirmCompleteness(){
+ const r=await sb.rpc('smartgtk_mass_complete');if(r.error)throw r.error;
+ info(r.data?.state==='BERKAS_LENGKAP'?'Semua berkas wajib PNS tercatat. Menunggu telaah Dinas.':'Pendataan GTK tercatat. Terima kasih.');
+ await renderDocumentStep();
+}
+
 async function save(){
  if(!gtk())throw Error('Hanya GTK aktif yang dapat menyimpan');
  const f=document.getElementById('smartgtkForm');if(!f||!f.reportValidity())return;
@@ -169,10 +220,12 @@ modal.addEventListener('click',async e=>{
  try{
   busy=true;info('');
   if(act==='edit'){await loadGTK();form()}
+  if(act==='fileupload'){await uploadDocument(b.dataset.type)}
+  if(act==='complete'){await confirmCompleteness()}
   if(act==='education'){modal.style.display='none';window.__simantabJF2030?.open()}
   if(act==='prior'){const r=await sb.rpc('smartgtk_mass_get');if(r.error)throw r.error;results(r.data?.classification||{})}
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:4,backendRequired:true};
+window.__smartGtkUnified={open,version:5,backendRequired:true};
 })();
