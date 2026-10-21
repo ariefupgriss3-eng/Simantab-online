@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=6/);
+ assert.match(injection,/smartgtk-unified\.js\?v=7/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -136,5 +136,21 @@ test('Dashboard GTK has short copy and visible 26 October 2026 23:59 WIB data de
  assert.match(ui,/Deadline input data paling lambat 26 Oktober 2026, pukul 23\.59 WIB\./);
  assert.match(ui,/Saat ini masih uji coba terbatas/);
  assert.match(ui,/smartgtk_pilot_status/);
+ assert.doesNotThrow(()=>new Function(ui));
+});
+
+test('reuse Lemari Dokumenku by selecting an owned file; no extra upload',()=>{
+ const migration=read('../../supabase/migrations/20261021193000_smartgtk_lemari_document_reference.sql');
+ assert.match(ui,/Ambil dari Lemari Dokumenku/);
+ assert.match(ui,/sb\.rpc\('smartgtk_cabinet_candidates'/);
+ assert.match(ui,/sb\.rpc\('smartgtk_import_cabinet'/);
+ assert.match(ui,/Berkas hanya ditautkan|Berkas hanya ditautkan|Berkas hanya ditautkan|Berkas hanya ditautkan|ditautkan dari lemari pribadi/);
+ assert.match(migration,/sf\.user_id=auth\.uid\(\)/);
+ assert.match(migration,/split_part\(sf\.storage_path,'\/',1\)=auth\.uid\(\)::text/);
+ assert.match(migration,/sf\.file_size between 1 and 1572864/);
+ assert.match(migration,/o\.bucket_id=d\.source_bucket/);
+ assert.match(migration,/cabinet_file_id/);
+ assert.match(migration,/CABINET_FILE_LINKED_/);
+ assert.match(read('./smartgtk-cabinet-integration.sql'),/cross-owner file assigned/);
  assert.doesNotThrow(()=>new Function(ui));
 });
