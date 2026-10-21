@@ -53,3 +53,12 @@ test('all GTK include non-ASN without ASN NIP but ASN 18-digit requirement remai
  assert.match(migration,/Legacy education 2030 RPC requires NIP/);
  assert.match(read('./smartgtk-integration.sql'),/Non-ASN GTK may not have ASN NIP/);
 });
+
+test('review state stays intact for personnel-only updates',()=>{
+ const safety=read('../../supabase/migrations/20261021160000_smartgtk_preserve_education_reviews.sql');
+ assert.match(safety,/v_existing\.notes is distinct from coalesce\(p_notes,''\)/);
+ assert.match(safety,/v_existing\.university is distinct from btrim/);
+ assert.match(safety,/v_existing\.owner_id is null/);
+ assert.match(read('./smartgtk-integration.sql'),/personnel edit erased diploma correction review/);
+ assert.match(ui,/try\{await save\(\)\}catch\(error\)/);
+});
