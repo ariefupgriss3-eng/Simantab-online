@@ -34,7 +34,7 @@ const meanings={
  TELAAH_KHUSUS:'SLTA/SPG: pemeriksaan khusus',
  DINYATAKAN_MEMENUHI_BELUM_VERIFIKASI:'Sudah memenuhi menurut pernyataan, ijazah belum diverifikasi'
 };
-let old=null,education=null,items=[],pg=0,busy=false;const maxDocBytes=1572864;
+let old=null,education=null,items=[],pg=0,busy=false,onboarding=null;const maxDocBytes=1572864;
 const modal=document.createElement('div');modal.id='smartgtkModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
 modal.innerHTML='<div class="sg-container"><div class="sg-head"><b>SMART-GTK • Satu Data, Tiga Analisis</b><button type="button" data-action="close">✕ Tutup</button></div><p id="sgMessage" role="status"></p><div id="sgBody"></div></div>';document.body.append(modal);
 const style=document.createElement('style');
@@ -192,10 +192,21 @@ async function save(){
  const r=await sb.rpc('smartgtk_mass_save',args);if(r.error)throw r.error;
  await loadGTK();results(r.data);info('Data tersimpan dan berhasil diklasifikasikan.');
 }
-async function listDinas(){const r=await sb.rpc('smartgtk_mass_officer_list',{p_page:pg});if(r.error)throw r.error;items=r.data||[]}
+async function listDinas(){
+ const [r,sum]=await Promise.all([sb.rpc('smartgtk_mass_officer_list',{p_page:pg}),
+  sb.rpc('smartgtk_mass_onboarding_summary')]);
+ if(r.error)throw r.error;if(sum.error)throw sum.error;
+ items=r.data||[];onboarding=sum.data||null;
+}
 function dashboard(){
  const counts={n:0,a:0,q:0};for(const x of items){if(x.screening?.nomenklatur==='POTENSI_USUL')counts.n++;if(['POTENSI_USUL','TERTAHAN_KUALIFIKASI'].includes(x.screening?.pengangkatan))counts.a++;if(['PERLU_PEMENUHAN_2030','TELAAH_KHUSUS'].includes(x.screening?.kualifikasi))counts.q++}
- body().innerHTML='<p class="sg-note">Rekap pada halaman ini saja, bukan seluruh GTK Batang. Data berupa laporan GTK dan bukan keputusan kepegawaian.</p><div class="sg-box"><b>Monitoring Hasil Skrining • Halaman '+(pg+1)+'</b><p>Nomenklatur: '+counts.n+' • Pengangkatan: '+counts.a+' • Kualifikasi: '+counts.q+'</p>'+
+ body().innerHTML='<p class="sg-note">Rekap pada halaman ini saja, bukan seluruh GTK Batang. Data berupa laporan GTK dan bukan keputusan kepegawaian.</p>'+
+ '<div class="sg-box"><b>Progres Akun GTK SIMANTAB</b><p>Terdaftar: '+esc(onboarding?.registered_accounts??'-')+
+ ' • Aktif/disetujui: '+esc(onboarding?.approved_active??'-')+
+ ' • Belum pernah login: '+esc(onboarding?.never_signed_in??'-')+
+ ' • Mengisi SMART-GTK: '+esc(onboarding?.smartgtk_reported??'-')+'</p>'+
+ '<p style="font-size:12px">Jumlah GTK yang belum memiliki akun tidak dapat dihitung tanpa daftar induk GTK. Jumlah di atas hanya mencakup akun yang sudah tercatat di SIMANTAB.</p></div>'+
+ '<div class="sg-box"><b>Monitoring Hasil Skrining • Halaman '+(pg+1)+'</b><p>Nomenklatur: '+counts.n+' • Pengangkatan: '+counts.a+' • Kualifikasi: '+counts.q+'</p>'+
  '<div class="sg-scroll"><table><thead><tr><th>GTK</th><th>Tugas/ASN</th><th>Nomenklatur</th><th>Pengangkatan</th><th>Pendidikan/Berkas</th></tr></thead><tbody>'+
  (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.profession)+' / '+esc(x.employment)+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(x.data_stage)+' ('+esc(x.docs_present)+' berkas; '+esc(x.required_count)+' wajib)'+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
  '</tbody></table></div><div class="sg-actions"><button data-action="prev" '+(pg===0?'disabled':'')+'>Sebelumnya</button><button data-action="next" '+(items.length<50?'disabled':'')+'>Berikutnya</button></div></div>';
@@ -227,5 +238,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:5,backendRequired:true};
+window.__smartGtkUnified={open,version:6,backendRequired:true};
 })();
