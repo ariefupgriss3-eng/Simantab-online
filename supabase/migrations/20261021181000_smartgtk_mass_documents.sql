@@ -169,6 +169,42 @@ $$;
 revoke all on function public.smartgtk_mass_officer_list(integer) from public,anon;
 grant execute on function public.smartgtk_mass_officer_list(integer) to authenticated;
 
+-- Aggregate registered accounts only; an unregistered census requires external GTK master roster.
+create or replace function public.smartgtk_mass_onboarding_summary()
+returns jsonb language plpgsql stable security definer set search_path=''
+as $$
+declare out jsonb;
+begin
+ if not private.jf2026_is_officer() then raise exception 'Hanya petugas Dinas'; end if;
+ with eligible as (
+  select p.id,p.is_active,p.approval_status,p.role,u.last_sign_in_at
+  from public.profiles p left join auth.users u on u.id=p.id
+  where (p.account_channel='GTK' and p.role in ('GTK','KEPALA_SEKOLAH'))
+    or p.role='PENGAWAS'
+ ), tally as (
+  select
+   count(*) as registered_accounts,
+   count(*) filter(where is_active=true and approval_status='APPROVED') as approved_active,
+   count(*) filter(where approval_status<>'APPROVED' or is_active<>true) as awaiting_or_inactive,
+   count(*) filter(where last_sign_in_at is null) as never_signed_in,
+   (select count(*) from public.smartgtk_intake) as smartgtk_reported,
+   (select count(*) from public.smartgtk_intake where data_stage='BERKAS_LENGKAP') as pns_evidence_complete,
+   (select count(*) from public.smartgtk_intake where data_stage='DATA_TERCATAT') as other_data_complete
+  from eligible
+ )
+ select jsonb_build_object('registered_accounts',registered_accounts,
+  'approved_active',approved_active,'awaiting_or_inactive',awaiting_or_inactive,
+  'never_signed_in',never_signed_in,'smartgtk_reported',smartgtk_reported,
+  'pns_evidence_complete',pns_evidence_complete,'other_data_complete',other_data_complete,
+  'scope','REGISTERED_SIMANTAB_ACCOUNTS_ONLY',
+  'unregistered_total_requires_master_roster',true)
+ into out from tally;
+ return out;
+end;
+$$;
+revoke all on function public.smartgtk_mass_onboarding_summary() from public,anon;
+grant execute on function public.smartgtk_mass_onboarding_summary() to authenticated;
+
 revoke all on function public.smartgtk_mass_required_docs(text,text,text,text,text,text,text) from public,anon;
 revoke all on function public.smartgtk_mass_status() from public,anon;
 revoke all on function public.smartgtk_mass_register_file(text,text) from public,anon;
