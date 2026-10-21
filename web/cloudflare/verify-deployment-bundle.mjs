@@ -55,7 +55,7 @@ const qualification2030=await read('jf-qualification-2030.js');
 ok(html.includes('./jf-qualification-2030.js?v=5') && html.split('./jf-qualification-2030.js?v=5').length===2,'Modul S1-DIV 2030 harus tepat sekali');
 ok(qualification2030.includes('SIMANTAB_JF2030_QUALIFICATION_V1')&&qualification2030.includes('jf2030_save_progress')&&qualification2030.includes('jf2030_review'),'Pemantauan S1-DIV 2030 belum dibundel');
 const smart=await read('smartgtk-unified.js');
-ok(html.includes('./smartgtk-unified.js?v=2')&&html.split('./smartgtk-unified.js?v=2').length===2,'SMART-GTK unified script must load once');
+ok(html.includes('./smartgtk-unified.js?v=3')&&html.split('./smartgtk-unified.js?v=3').length===2,'SMART-GTK unified script must load once');
 ok(smart.includes('SIMANTAB_SMARTGTK_UNIFIED_INTAKE_V1')&&smart.includes("sb.rpc('smartgtk_save'")&&smart.includes("sb.rpc('smartgtk_officer_list'"),'SMART-GTK classification or officer listing missing');
 ok(jf2026.includes('window.__simantabSmartGtkReady')&&qualification2030.includes('window.__simantabSmartGtkReady'),'Old GTK duplicate cards must be disabled when SMART-GTK is loaded');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));
