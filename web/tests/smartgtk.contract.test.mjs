@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=2/);
+ assert.match(injection,/smartgtk-unified\.js\?v=3/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
