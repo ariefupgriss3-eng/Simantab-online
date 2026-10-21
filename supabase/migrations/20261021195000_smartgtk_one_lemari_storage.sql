@@ -92,3 +92,39 @@ end;
 $$;
 revoke all on function public.smartgtk_locker_register(text,text,text,bigint,text) from public,anon;
 grant execute on function public.smartgtk_locker_register(text,text,text,bigint,text) to authenticated;
+
+create or replace function public.smartgtk_mass_status()
+returns jsonb language plpgsql stable security definer set search_path=''
+as $$
+declare v public.smartgtk_intake%rowtype; required text[]; missing text[]:=array[]::text[]; t text;
+begin
+ select * into v from public.smartgtk_intake where owner_id=auth.uid();
+ if not found then return jsonb_build_object('state','BELUM_MENGISI','required',jsonb_build_array(),'missing',jsonb_build_array());end if;
+ required:=public.smartgtk_mass_required_docs(v.profession,v.employment,v.jf_sk,
+  v.nomenclature_updated,v.pns_jf_formation,v.education,v.old_position);
+ foreach t in array required loop
+  if not exists(select 1 from public.smartgtk_documents d
+   join storage.objects o on o.bucket_id=d.source_bucket and o.name=d.storage_path
+   where d.owner_id=v.owner_id and d.doc_type=t
+     and (d.source_bucket='simantab-smartgtk-private' and d.cabinet_file_id is null
+       or d.source_bucket='simantab-documents' and exists (
+         select 1 from public.smartgtk_locker_files x
+         where x.id=d.cabinet_upload_id and x.owner_id=d.owner_id
+          and x.storage_path=d.storage_path and x.doc_type=d.doc_type
+          and x.file_size between 1 and 1572864
+          and x.mime_type in ('application/pdf','image/jpeg','image/png'))
+       or d.source_bucket='simantab-documents' and exists (
+         select 1 from public.submission_files sf where sf.id=d.cabinet_file_id
+          and sf.user_id=d.owner_id and sf.storage_path=d.storage_path
+          and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
+          and sf.mime_type in ('application/pdf','image/jpeg','image/png')
+          and private.smartgtk_cabinet_code_matches(d.doc_type,sf.requirement_code)))) then missing:=array_append(missing,t);end if;
+ end loop;
+ return jsonb_build_object('state',v.data_stage,'employment',v.employment,'profession',v.profession,
+  'required',to_jsonb(required),'missing',to_jsonb(missing),'complete',cardinality(missing)=0,
+  'evidence_policy',case when v.employment='PNS' then 'WAJIB' when v.employment in ('PPPK','PPPK_PW')
+    then 'SESUAI_DOKUMEN_DIMILIKI' else 'TANPA_UNGGAH' end,
+  'legal_notice','Hasil pendataan bukan persetujuan usulan JF atau penerbitan SK');
+end;
+$$;
+
