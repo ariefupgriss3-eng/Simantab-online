@@ -29,6 +29,7 @@ create table storage.buckets (
 create table storage.objects (
  id bigint generated always as identity primary key,
  bucket_id text not null references storage.buckets(id),
+ metadata jsonb,
  name text not null unique
 );
 alter table storage.objects enable row level security;
