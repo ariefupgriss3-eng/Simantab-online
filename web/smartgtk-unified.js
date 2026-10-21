@@ -139,7 +139,16 @@ function dashboard(){
 }
 async function open(){
  if(!gtk()&&!dinas())return;modal.style.display='flex';info('Memuat data...');
- try{if(dinas()){pg=0;await listDinas();dashboard()}else{await loadGTK();form()}info('')}
+ try{
+   if(dinas()){pg=0;await listDinas();dashboard()}
+   else {
+    const enrolled=await sb.rpc('smartgtk_pilot_status');
+    if(enrolled.error)throw enrolled.error;
+    if(enrolled.data===true){await loadGTK();form()}
+    else {body().innerHTML='<p class="sg-note">SMART-GTK masih tahap pilot terbatas. Akun GTK ini belum ditetapkan sebagai peserta oleh Dinas. Silakan tetap menggunakan layanan SIMANTAB lainnya.</p>'}
+   }
+   info('')
+  }
  catch(e){body().innerHTML='<p class="sg-note">Modul belum diaktifkan pada database ini. Hubungi admin.</p>';info(e.message||String(e),true)}
 }
 modal.addEventListener('click',async e=>{
@@ -153,5 +162,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:2,backendRequired:true};
+window.__smartGtkUnified={open,version:3,backendRequired:true};
 })();
