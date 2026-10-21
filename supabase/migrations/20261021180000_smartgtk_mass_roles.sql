@@ -47,8 +47,10 @@ begin
   raise exception 'Akun Kepala Sekolah wajib memilih jenis tugas Kepala Sekolah'; end if;
  if v_profile.role='PENGAWAS' and p_profession<>'PENGAWAS' then
   raise exception 'Akun Pengawas wajib memilih jenis tugas Pengawas'; end if;
- if v_profile.role='GTK' and p_profession not in ('GURU','TENDIK') then
-  raise exception 'Akun GTK dapat memilih Guru atau Tenaga Kependidikan'; end if;
+ if v_profile.role='GTK' and p_profession not in ('GURU','KEPALA_SEKOLAH','PENGAWAS','TENDIK') then
+  raise exception 'Tugas utama yang dilaporkan tidak sesuai pilihan'; end if;
+ -- Selection is an unverified SELF-REPORT. Selecting Kepala Sekolah or
+ -- Pengawas does not grant an institutional account role or officer permissions.
  -- Pilot restriction is checked SERVER-SIDE, not inferred from frontend visibility.
  if not exists(select 1 from public.smartgtk_pilot_users g
      where g.owner_id=auth.uid() and g.enabled=true) then
