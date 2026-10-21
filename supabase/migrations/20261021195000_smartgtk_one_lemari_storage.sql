@@ -198,3 +198,51 @@ begin
 end;
 $$;
 
+
+create or replace function public.smartgtk_import_cabinet(p_type text,p_file_id uuid)
+returns jsonb language plpgsql security definer set search_path=''
+as $$
+declare v public.smartgtk_intake%rowtype; sf public.submission_files%rowtype; x public.smartgtk_locker_files%rowtype;
+begin
+ if p_file_id is null then raise exception 'Pilih dokumen terlebih dahulu';end if;
+ select * into v from public.smartgtk_intake where owner_id=auth.uid() for update;
+ if not found then raise exception 'Isi SMART-GTK dahulu';end if;
+ if not private.smartgtk_current_user_can_participate() then
+  raise exception 'Akses pengisian SMART-GTK belum aktif';end if;
+ if not private.smartgtk_cabinet_type_allowed(v.employment,p_type) then
+  raise exception 'Kelompok atau jenis dokumen tidak diizinkan';end if;
+ select * into x from public.smartgtk_locker_files where id=p_file_id and owner_id=auth.uid();
+ if found then
+  if x.doc_type<>p_type then raise exception 'Jenis dokumen tidak sesuai';end if;
+  insert into public.smartgtk_documents(owner_id,doc_type,storage_path,source_bucket,cabinet_file_id,cabinet_upload_id)
+  values(auth.uid(),p_type,x.storage_path,'simantab-documents',null,x.id)
+  on conflict(owner_id,doc_type) do update set storage_path=excluded.storage_path,
+    source_bucket=excluded.source_bucket,cabinet_file_id=null,cabinet_upload_id=excluded.cabinet_upload_id,uploaded_at=now();
+  return jsonb_build_object('linked',true,'file_id',x.id,'verified',false);
+ end if;
+ select * into sf from public.submission_files where id=p_file_id and user_id=auth.uid();
+ if not found then raise exception 'Dokumen bukan milik akun ini atau tidak ditemukan';end if;
+ if not private.smartgtk_cabinet_code_matches(p_type,sf.requirement_code) then
+  raise exception 'Jenis dokumen di lemari tidak sesuai persyaratan SMART-GTK';end if;
+ if sf.storage_path is null or split_part(sf.storage_path,'/',1)<>auth.uid()::text
+  or sf.file_size not between 1 and 1572864 or length(sf.storage_path)>220
+  or sf.mime_type not in ('application/pdf','image/jpeg','image/png') then
+  raise exception 'Berkas Lemari Dokumenku tidak memenuhi persyaratan';end if;
+ if not exists(select 1 from storage.objects where bucket_id='simantab-documents'
+   and name=sf.storage_path) then
+  raise exception 'Berkas sudah tidak tersedia di penyimpanan privat';end if;
+ insert into public.smartgtk_documents(owner_id,doc_type,storage_path,source_bucket,cabinet_file_id)
+ values(auth.uid(),p_type,sf.storage_path,'simantab-documents',sf.id)
+ on conflict(owner_id,doc_type) do update
+ set storage_path=excluded.storage_path,source_bucket='simantab-documents',
+     cabinet_file_id=excluded.cabinet_file_id,cabinet_upload_id=null,uploaded_at=now();
+ update public.smartgtk_intake set data_stage='DRAFT' where owner_id=auth.uid();
+ insert into public.smartgtk_audit(owner_id,actor_id,action)
+ values(auth.uid(),auth.uid(),'CABINET_FILE_LINKED_'||p_type);
+ return jsonb_build_object('linked',true,'doc_type',p_type,'file_id',sf.id,
+   'verified',false,'needs_dinas_review',true);
+end;
+$$;
+
+
+notify pgrst, 'reload schema';
