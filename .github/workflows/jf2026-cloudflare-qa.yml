@@ -1,0 +1,163 @@
+name: QA Cloudflare JF Guru 2026
+on:
+  push:
+    branches: [feature/cloudflare-jf-guru-2026-0294]
+  pull_request:
+    paths:
+      - 'web/jf-guru-2026.js'
+      - 'web/jf-qualification-2030.js'
+      - 'web/smartgtk-unified.js'
+      - 'web/smartgtk-onboarding.js'
+      - 'web/tests/smartgtk-mass-integration.sql'
+      - 'web/tests/smartgtk-cabinet-test-fixtures.sql'
+      - 'web/tests/smartgtk-cabinet-integration.sql'
+      - 'supabase/migrations/20261021193000_smartgtk_lemari_document_reference.sql'
+      - 'supabase/migrations/20261021195000_smartgtk_one_lemari_storage.sql'
+      - 'supabase/migrations/20261021201000_smartgtk_legacy_sk_jabfung_match.sql'
+      - 'supabase/migrations/20261021204000_smartgtk_pendamping_pb_pls.sql'
+      - 'web/tests/smartgtk-pb-pls.integration.sql'
+      - 'web/tests/smartgtk-legacy-sk-jabfung.integration.sql'
+      - 'web/tests/smartgtk-one-lemari-integration.sql'
+      - 'supabase/migrations/20261021180000_smartgtk_mass_roles.sql'
+      - 'supabase/migrations/20261021181000_smartgtk_mass_documents.sql'
+      - 'supabase/migrations/20261021182000_smartgtk_mass_rollout_gate.sql'
+      - 'web/tests/smartgtk.contract.test.mjs'
+      - 'web/tests/smartgtk-integration.sql'
+      - 'supabase/migrations/20261021150000_smartgtk_unified_intake.sql'
+      - 'supabase/migrations/20261021160000_smartgtk_preserve_education_reviews.sql'
+      - 'supabase/migrations/20261021170000_smartgtk_pilot_allowlist.sql'
+      - 'web/tests/jf2030-qualification.contract.test.mjs'
+      - 'web/tests/jf2030-postgres-integration.sql'
+      - 'web/tests/jf2030-coverage-integration.sql'
+      - 'web/inject-jf-guru-2026.mjs'
+      - 'web/cloudflare/verify-deployment-bundle.mjs'
+      - 'web/package.json'
+      - 'web/tests/jf-guru-2026.contract.test.mjs'
+      - 'supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql'
+      - 'supabase/migrations/20261020134500_jf2026_gtk_only_applicant_guard.sql'
+      - 'supabase/migrations/20261020142000_jf2026_legacy_education.sql'
+      - 'supabase/migrations/20261020162000_jf2030_qualification_monitoring.sql'
+      - 'supabase/migrations/20261020182500_jf2030_coverage_reconciliation.sql'
+      - 'supabase/migrations/20261021101000_jf2030_qualification_completed.sql'
+      - 'web/tests/jf2030-completed-postgres-integration.sql'
+      - '.github/workflows/jf2026-cloudflare-qa.yml'
+jobs:
+  cloudflare-bundle:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        working-directory: web
+        run: npm install --no-package-lock --ignore-scripts --no-audit --no-fund
+      - name: Test JF Guru client and server contracts
+        working-directory: web
+        run: npm run test:jf2026
+      - name: Build Cloudflare Workers static assets
+        working-directory: web
+        run: npm run build:cloudflare
+      - name: Assert exactly one module was bundled
+        working-directory: web
+        run: |
+          test -s .vercel/output/static/jf-guru-2026.js
+          test -s .vercel/output/static/jf-qualification-2030.js
+          test -s .vercel/output/static/smartgtk-unified.js
+          test -s .vercel/output/static/smartgtk-onboarding.js
+          grep -q './smartgtk-unified.js?v=13' .vercel/output/static/index.html
+          grep -q './smartgtk-onboarding.js?v=1' .vercel/output/static/index.html
+          grep -q './jf-qualification-2030.js?v=5' .vercel/output/static/index.html
+          grep -q './jf-guru-2026.js?v=2' .vercel/output/static/index.html
+          test "$(grep -o './jf-guru-2026.js?v=2' .vercel/output/static/index.html | wc -l)" -eq 1
+      - name: Save temporary QA-only static artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloudflare-jf2026-qa-static
+          path: web/.vercel/output/static/
+          retention-days: 1
+
+  postgres-security:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: integration_only
+          POSTGRES_DB: simantab_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d simantab_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: integration_only
+      PGDATABASE: simantab_test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: command -v psql || (sudo apt-get update -qq && sudo apt-get install -y postgresql-client)
+      - name: Initialize synthetic accounts only
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2026-postgres-bootstrap.sql
+      - name: Migrate synthetic test PostgreSQL only
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020093000_jf_guru_2026_surat_0294.sql
+      - name: Restrict applicant writes to GTK channel (synthetic test only)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020134500_jf2026_gtk_only_applicant_guard.sql
+      - name: Enable legacy SLTA/SPG nomenclature recording on synthetic PostgreSQL only
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020142000_jf2026_legacy_education.sql
+      - name: Create synthetic qualification monitoring schema
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020162000_jf2030_qualification_monitoring.sql
+      - name: Test account separation, documents, workflow and audit
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2026-postgres-integration.sql
+      - name: Create officer-only coverage functions in synthetic database
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261020182500_jf2030_coverage_reconciliation.sql
+      - name: Test synthetic GTK account coverage and NIP duplicate safety
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2030-coverage-integration.sql
+      - name: Add completed S-1/D-IV and higher qualification schema in synthetic PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021101000_jf2030_qualification_completed.sql
+      - name: Test diploma deadlines, progress, evidence and officer review
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2030-postgres-integration.sql
+      - name: Test completed qualification reporting and diploma verification
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/jf2030-completed-postgres-integration.sql
+      - name: Create unified self-report and classification schema (synthetic only)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021150000_smartgtk_unified_intake.sql
+      - name: Preserve education reviews during personnel-only form saves (synthetic only)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021160000_smartgtk_preserve_education_reviews.sql
+      - name: Enforce limited pilot enrollment in synthetic PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021170000_smartgtk_pilot_allowlist.sql
+      - name: Test three-way classification, one data form and RLS
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-integration.sql
+      - name: Add role-targeted mass GTK intake (synthetic)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021180000_smartgtk_mass_roles.sql
+      - name: Add role-aware private documents (synthetic)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021181000_smartgtk_mass_documents.sql
+      - name: Add default-PILOT audited mass rollout gate (synthetic only)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021182000_smartgtk_mass_rollout_gate.sql
+      - name: Test teacher-only classifications and document policies
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-mass-integration.sql
+      - name: Create isolated synthetic Lemari Dokumenku references
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-cabinet-test-fixtures.sql
+      - name: Enable safe private document references in synthetic database
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021193000_smartgtk_lemari_document_reference.sql
+      - name: Test owner-only cabinet reuse without duplicate uploads
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-cabinet-integration.sql
+      - name: Create single-source SMART-GTK Lemari metadata schema
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021195000_smartgtk_one_lemari_storage.sql
+      - name: Test one real storage object for Lemari and SMART-GTK without duplicated submission
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-one-lemari-integration.sql
+      - name: Apply strict legacy Jabfung file label compatibility (synthetic only)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021201000_smartgtk_legacy_sk_jabfung_match.sql
+      - name: Test correct SK Jabfung Terakhir shown and unrelated SK jabatan rejected
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-legacy-sk-jabfung.integration.sql
+      - name: Apply PB/PLS category split and strict task-category validation
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021204000_smartgtk_pendamping_pb_pls.sql
+      - name: Test PB/PLS document-free status and separate storage
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-pb-pls.integration.sql
