@@ -40,7 +40,7 @@ revoke all on function private.smartgtk_current_user_can_participate() from publ
 create policy smartgtk_upload_rollout_guard on storage.objects
  as restrictive for insert to authenticated
  with check(bucket_id<>'simantab-smartgtk-private'
-  or (select private.smartgtk_current_user_can_participate()));
+  or (select public.smartgtk_pilot_status()));
 
 
 create or replace function public.smartgtk_pilot_status()
