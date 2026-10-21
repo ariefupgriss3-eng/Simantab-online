@@ -9,11 +9,12 @@ await new Promise(resolve=>{
  window.addEventListener('simantab:profile-ready',next);
 });
 const sb=window.__simantabSb,p=()=>window.__simantabProfile||{};
-const gtk=()=>p().account_channel==='GTK'&&p().approval_status==='APPROVED'&&p().is_active!==false;
+const gtk=()=>((p().account_channel==='GTK'&&['GTK','KEPALA_SEKOLAH'].includes(p().role))||p().role==='PENGAWAS')&&p().approval_status==='APPROVED'&&p().is_active!==false;
 const dinas=()=>p().account_channel==='DINAS'&&['SUPER_ADMIN','KABID','STAFF_USUL_SK'].includes(p().role)&&p().approval_status==='APPROVED'&&p().is_active!==false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
 const qualified=['S1','DIV','S2','S3'];
 const options={
+ profession:[['','Pilih tugas'],['GURU','Guru'],['KEPALA_SEKOLAH','Kepala Sekolah'],['PENGAWAS','Pengawas Sekolah'],['TENDIK','Tenaga Kependidikan']],
  employment:[['','Pilih status kepegawaian'],['PNS','PNS'],['PPPK','PPPK'],['PPPK_PW','PPPK paruh waktu'],['NON_ASN','Non-ASN'],['LAINNYA','Lainnya']],
  jf_sk:[['','Pilih'],['YA','Sudah ada SK JF Guru'],['TIDAK','Belum ada SK JF Guru'],['BELUM_TAHU','Belum tahu']],
  old_position:[['','Pilih jabatan sesuai SK'],...['Guru Pertama','Guru Muda','Guru Madya','Guru Ahli Pertama','Guru Ahli Muda','Guru Ahli Madya','Jabatan lain pada SK'].map(x=>[x,x])],
@@ -31,7 +32,7 @@ const meanings={
  TELAAH_KHUSUS:'SLTA/SPG: pemeriksaan khusus',
  DINYATAKAN_MEMENUHI_BELUM_VERIFIKASI:'Sudah memenuhi menurut pernyataan, ijazah belum diverifikasi'
 };
-let old=null,education=null,items=[],pg=0,busy=false;
+let old=null,education=null,items=[],pg=0,busy=false;const maxDocBytes=1572864;
 const modal=document.createElement('div');modal.id='smartgtkModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
 modal.innerHTML='<div class="sg-container"><div class="sg-head"><b>SMART-GTK • Satu Data, Tiga Analisis</b><button type="button" data-action="close">✕ Tutup</button></div><p id="sgMessage" role="status"></p><div id="sgBody"></div></div>';document.body.append(modal);
 const style=document.createElement('style');
@@ -65,10 +66,13 @@ async function loadGTK(){
 }
 function form(){
  const x=old||{},q=education||{},edu=x.education||q.education_initial||'',study=x.study_status||q.study_status||(qualified.includes(edu)?'SUDAH_MEMENUHI':'');
+ const profession=x.profession||({'KEPALA_SEKOLAH':'KEPALA_SEKOLAH','PENGAWAS':'PENGAWAS'}[p().role]||'');
  body().innerHTML='<p class="sg-note">Semua GTK mengisi data yang sama. Identitas berasal dari Profil GTK dan data pendidikan sebelumnya dipakai kembali. SIMANTAB menganalisis secara otomatis; petugas tetap memverifikasi persyaratan sebelum usulan resmi.</p>'+
  '<div class="sg-box"><b>'+esc(p().full_name||'GTK')+'</b><p>NIP '+esc(p().nip||'-')+' • '+esc(p().unit_gtk||p().unit||'')+'</p></div>'+
- '<form id="smartgtkForm"><div class="sg-box"><b>A. Data Kepegawaian</b><div class="sg-grid">'+
+ '<form id="smartgtkForm"><div class="sg-box"><b>A. Tugas dan Status Kepegawaian</b><div class="sg-grid">'+
+ select('profession','Tugas utama *',profession)+
  select('employment','Status kepegawaian *',x.employment)+
+ '</div><div id="sgJFFields" class="sg-grid">'+
  select('jf_sk','Kepemilikan SK JF Guru *',x.jf_sk)+
  select('old_position','Jabatan sesuai SK JF (jika ada)',x.old_position,false)+
  select('nomenclature_updated','Penyesuaian nomenklatur SK JF *',x.nomenclature_updated)+
@@ -83,7 +87,7 @@ function form(){
  input('graduation_date','Tanggal kelulusan sesuai ijazah',x.graduation_date||q.graduation_date,'date')+
  '</div>'+input('notes','Keterangan tambahan (opsional)',x.notes)+'</div>'+
  '<div class="sg-actions"><button type="submit" class="primary">Simpan & Analisis Otomatis</button></div></form>'+
- '<p class="sg-note">Tidak wajib unggah dokumen sekarang. Bukti ijazah dapat menyusul. Hasil klasifikasi bukan keputusan atau SK.</p>'+
+ '<p class="sg-note">Data boleh disimpan sebagai draf. PNS wajib berkas sesuai jalur; PPPK/PPPK PW boleh unggah yang dimiliki; non-ASN tanpa unggah. Hasil bukan keputusan atau SK.</p>'+
  (old?'<div class="sg-actions"><button type="button" data-action="prior">Lihat Analisis Tersimpan</button></div>':'');
  const f=document.getElementById('smartgtkForm');
  function sync(){
@@ -97,14 +101,21 @@ function form(){
   f.elements.program.required=val==='SEDANG_KULIAH';
   f.elements.target_graduation.disabled=isDeg;
   if(isDeg)f.elements.target_graduation.value='';
-  if(f.elements.employment.value&&f.elements.employment.value!=='PNS'){
-   f.elements.pns_jf_formation.value='TIDAK';
-   f.elements.nomenclature_updated.value='TIDAK_BERLAKU';
+  if(p().role==='KEPALA_SEKOLAH')f.elements.profession.value='KEPALA_SEKOLAH';
+  if(p().role==='PENGAWAS')f.elements.profession.value='PENGAWAS';
+  const eligible=f.elements.employment.value==='PNS'&&['GURU','KEPALA_SEKOLAH'].includes(f.elements.profession.value);
+  const fields=document.getElementById('sgJFFields');if(fields)fields.style.display=eligible?'grid':'none';
+  for(const n of ['jf_sk','nomenclature_updated','pns_jf_formation'])f.elements[n].required=eligible;
+  if(!eligible){
+   f.elements.jf_sk.value='BELUM_TAHU';f.elements.old_position.value='';
+   f.elements.pns_jf_formation.value='TIDAK';f.elements.nomenclature_updated.value='TIDAK_BERLAKU';
   }
+  if(['KEPALA_SEKOLAH','PENGAWAS'].includes(p().role))f.elements.profession.disabled=true;
  }
  f.elements.education.addEventListener('change',sync);
  f.elements.study_status.addEventListener('change',sync);
  f.elements.employment.addEventListener('change',sync);
+ f.elements.profession.addEventListener('change',sync);
  f.addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;busy=true;info('Menyimpan dan menganalisis data...');
   const submit=f.querySelector('button[type="submit"]');if(submit)submit.disabled=true;
@@ -123,18 +134,19 @@ async function save(){
  if(!gtk())throw Error('Hanya GTK aktif yang dapat menyimpan');
  const f=document.getElementById('smartgtkForm');if(!f||!f.reportValidity())return;
  const v=Object.fromEntries(new FormData(f).entries());
- if(v.jf_sk==='YA'&&!v.old_position){info('Silakan pilih jabatan sesuai SK Jabfung.',true);return}
- const args={p_employment:v.employment,p_jf_sk:v.jf_sk,p_old_position:v.old_position||'',p_nomenclature_updated:v.nomenclature_updated,p_pns_jf_formation:v.pns_jf_formation,
+ v.profession=f.elements.profession.value;
+ if(v.employment==='PNS'&&['GURU','KEPALA_SEKOLAH'].includes(v.profession)&&v.jf_sk==='YA'&&!v.old_position){info('Silakan pilih jabatan sesuai SK Jabfung.',true);return}
+ const args={p_profession:v.profession,p_employment:v.employment,p_jf_sk:v.jf_sk,p_old_position:v.old_position||'',p_nomenclature_updated:v.nomenclature_updated,p_pns_jf_formation:v.pns_jf_formation,
  p_education:v.education,p_study_status:v.study_status,p_university:v.university||'',p_program:v.program||'',p_start_year:v.start_year?Number(v.start_year):null,p_target_graduation:v.target_graduation||null,p_graduation_date:v.graduation_date||null,p_notes:v.notes||''};
- const r=await sb.rpc('smartgtk_save',args);if(r.error)throw r.error;
+ const r=await sb.rpc('smartgtk_mass_save',args);if(r.error)throw r.error;
  await loadGTK();results(r.data);info('Data tersimpan dan berhasil diklasifikasikan.');
 }
-async function listDinas(){const r=await sb.rpc('smartgtk_officer_list',{p_page:pg});if(r.error)throw r.error;items=r.data||[]}
+async function listDinas(){const r=await sb.rpc('smartgtk_mass_officer_list',{p_page:pg});if(r.error)throw r.error;items=r.data||[]}
 function dashboard(){
  const counts={n:0,a:0,q:0};for(const x of items){if(x.screening?.nomenklatur==='POTENSI_USUL')counts.n++;if(['POTENSI_USUL','TERTAHAN_KUALIFIKASI'].includes(x.screening?.pengangkatan))counts.a++;if(['PERLU_PEMENUHAN_2030','TELAAH_KHUSUS'].includes(x.screening?.kualifikasi))counts.q++}
  body().innerHTML='<p class="sg-note">Rekap pada halaman ini saja, bukan seluruh GTK Batang. Data berupa laporan GTK dan bukan keputusan kepegawaian.</p><div class="sg-box"><b>Monitoring Hasil Skrining • Halaman '+(pg+1)+'</b><p>Nomenklatur: '+counts.n+' • Pengangkatan: '+counts.a+' • Kualifikasi: '+counts.q+'</p>'+
- '<div class="sg-scroll"><table><thead><tr><th>GTK</th><th>Status ASN</th><th>Nomenklatur</th><th>Pengangkatan</th><th>Kualifikasi</th></tr></thead><tbody>'+
- (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.employment)+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(meanings[x.screening?.kualifikasi]||x.screening?.kualifikasi)+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
+ '<div class="sg-scroll"><table><thead><tr><th>GTK</th><th>Tugas/ASN</th><th>Nomenklatur</th><th>Pengangkatan</th><th>Pendidikan/Berkas</th></tr></thead><tbody>'+
+ (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.profession)+' / '+esc(x.employment)+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(x.data_stage)+' ('+esc(x.docs_present)+' berkas; '+esc(x.required_count)+' wajib)'+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
  '</tbody></table></div><div class="sg-actions"><button data-action="prev" '+(pg===0?'disabled':'')+'>Sebelumnya</button><button data-action="next" '+(items.length<50?'disabled':'')+'>Berikutnya</button></div></div>';
 }
 async function open(){
@@ -158,9 +170,9 @@ modal.addEventListener('click',async e=>{
   busy=true;info('');
   if(act==='edit'){await loadGTK();form()}
   if(act==='education'){modal.style.display='none';window.__simantabJF2030?.open()}
-  if(act==='prior'){const x=old;const r=await sb.rpc('smartgtk_classify',{e:x.employment,sk:x.jf_sk,nomen:x.nomenclature_updated,formasi:x.pns_jf_formation,edu:x.education,old_jf:x.old_position});if(r.error)throw r.error;results(r.data)}
+  if(act==='prior'){const r=await sb.rpc('smartgtk_mass_get');if(r.error)throw r.error;results(r.data?.classification||{})}
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:3,backendRequired:true};
+window.__smartGtkUnified={open,version:4,backendRequired:true};
 })();
