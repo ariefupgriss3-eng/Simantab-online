@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=5/);
+ assert.match(injection,/smartgtk-unified\.js\?v=6/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -126,5 +126,15 @@ test('SMART-GTK is a prominent dashboard-first GTK priority, not a GTK services 
  assert.match(ui,/function ensureDinasService\(\)/);
  assert.match(ui,/function removeOldGTKServiceTiles\(\)/);
  assert.doesNotMatch(ui,/function tile\(\)/);
+ assert.doesNotThrow(()=>new Function(ui));
+});
+
+test('Dashboard GTK has short copy and visible 26 October 2026 23:59 WIB data deadline',()=>{
+ assert.match(ui,/Satu kali isi untuk pendataan guru, kepala sekolah, pengawas, dan tenaga kependidikan\.<\/p>/);
+ assert.doesNotMatch(ui,/SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS\./);
+ assert.match(ui,/sg-deadline/);
+ assert.match(ui,/Deadline input data paling lambat 26 Oktober 2026, pukul 23\.59 WIB\./);
+ assert.match(ui,/Saat ini masih uji coba terbatas/);
+ assert.match(ui,/smartgtk_pilot_status/);
  assert.doesNotThrow(()=>new Function(ui));
 });
