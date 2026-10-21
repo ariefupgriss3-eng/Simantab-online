@@ -35,7 +35,7 @@ create policy smartgtk_locker_insert_guard on storage.objects
    or split_part(name,'/',2)<>'SMARTGTK'
    or (split_part(name,'/',1)=auth.uid()::text
      and array_length(string_to_array(name,'/'),1)=3
-     and split_part(name,'/',3) ~ '^[a-f0-9-]{36}\\.(pdf|jpg|png)$'
+     and split_part(name,'/',3) ~ '^[a-f0-9-]{36}\.(pdf|jpg|png)$'
      and (select public.smartgtk_pilot_status())
      and exists(select 1 from public.smartgtk_intake
        where owner_id=auth.uid() and employment in ('PNS','PPPK','PPPK_PW')))
@@ -56,7 +56,7 @@ begin
  or split_part(p_path,'/',1)<>auth.uid()::text
  or split_part(p_path,'/',2)<>'SMARTGTK'
  or array_length(string_to_array(p_path,'/'),1)<>3
- or split_part(p_path,'/',3) !~ '^[a-f0-9-]{36}\\.(pdf|jpg|png)$'
+ or split_part(p_path,'/',3) !~ '^[a-f0-9-]{36}\.(pdf|jpg|png)$'
  then raise exception 'Lokasi berkas tidak sah';end if;
  if p_name is null or length(btrim(p_name)) not between 1 and 180
  or p_size not between 1 and 1572864
