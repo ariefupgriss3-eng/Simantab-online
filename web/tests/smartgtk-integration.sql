@@ -102,4 +102,30 @@ begin
   if position('NIP terhubung dengan lebih dari satu akun' in sqlerrm)=0 then raise;end if;
  end;
 end $test_duplicates$;
+-- Non-ASN GTK may not have ASN NIP; still uses the same factual questionnaire.
+reset role;
+insert into auth.users(id) values('00000000-0000-4000-8000-000000000010');
+insert into public.profiles(id,role,account_channel,approval_status,is_active,nip,full_name,unit_gtk)
+values('00000000-0000-4000-8000-000000000010','GTK','GTK','APPROVED',true,null,'Guru Non ASN Uji','TK Uji');
+set role authenticated;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000010';
+select public.smartgtk_save('NON_ASN','BELUM_TAHU','','TIDAK_BERLAKU','TIDAK',
+ 'DIII','SEDANG_KULIAH','Universitas Uji','PGPAUD',2025,'2030-04-01',null,'Tanpa NIP ASN');
+do $test_non_asn_no_nip$
+begin
+ if not exists(select 1 from public.smartgtk_intake
+   where owner_id=auth.uid() and nip='' and employment='NON_ASN'
+    and education='DIII') then
+  raise exception 'FAIL: Non-ASN without NIP could not report education'; end if;
+ if exists(select 1 from public.jf2030_qualification where owner_id=auth.uid()) then
+  raise exception 'FAIL: Non-ASN without NIP falsely created legacy ASN education record';end if;
+ begin
+  perform public.smartgtk_save('PNS','BELUM_TAHU','','BELUM_TAHU','BELUM_TAHU',
+    'DIII','SEDANG_KULIAH','Universitas Uji','PGSD',2025,'2030-04-01',null,'Invalid ASN NIP');
+  raise exception 'FAIL: no-NIP account falsely treated as PNS';
+ exception when others then
+  if position('ASN harus melengkapi NIP' in sqlerrm)=0 then raise; end if;
+ end;
+end $test_non_asn_no_nip$;
+
 select 'SMARTGTK synthetic classification and RLS PASS' as result;
