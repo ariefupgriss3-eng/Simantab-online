@@ -9,6 +9,9 @@ on:
       - 'web/smartgtk-unified.js'
       - 'web/smartgtk-onboarding.js'
       - 'web/tests/smartgtk-mass-integration.sql'
+      - 'web/tests/smartgtk-cabinet-test-fixtures.sql'
+      - 'web/tests/smartgtk-cabinet-integration.sql'
+      - 'supabase/migrations/20261021193000_smartgtk_lemari_document_reference.sql'
       - 'supabase/migrations/20261021180000_smartgtk_mass_roles.sql'
       - 'supabase/migrations/20261021181000_smartgtk_mass_documents.sql'
       - 'supabase/migrations/20261021182000_smartgtk_mass_rollout_gate.sql'
@@ -58,7 +61,7 @@ jobs:
           test -s .vercel/output/static/jf-qualification-2030.js
           test -s .vercel/output/static/smartgtk-unified.js
           test -s .vercel/output/static/smartgtk-onboarding.js
-          grep -q './smartgtk-unified.js?v=6' .vercel/output/static/index.html
+          grep -q './smartgtk-unified.js?v=7' .vercel/output/static/index.html
           grep -q './smartgtk-onboarding.js?v=1' .vercel/output/static/index.html
           grep -q './jf-qualification-2030.js?v=5' .vercel/output/static/index.html
           grep -q './jf-guru-2026.js?v=2' .vercel/output/static/index.html
@@ -134,3 +137,9 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021182000_smartgtk_mass_rollout_gate.sql
       - name: Test teacher-only classifications and document policies
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-mass-integration.sql
+      - name: Create isolated synthetic Lemari Dokumenku references
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-cabinet-test-fixtures.sql
+      - name: Enable safe private document references in synthetic database
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021193000_smartgtk_lemari_document_reference.sql
+      - name: Test owner-only cabinet reuse without duplicate uploads
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-cabinet-integration.sql
