@@ -3,6 +3,9 @@
 alter table public.smartgtk_intake
  add column if not exists profession text not null default 'BELUM_DITETAPKAN'
  check (profession in ('GURU','KEPALA_SEKOLAH','PENGAWAS','TENDIK','BELUM_DITETAPKAN'));
+alter table public.smartgtk_intake
+ add column if not exists data_stage text not null default 'DRAFT'
+ check(data_stage in ('DRAFT','DATA_TERCATAT','BERKAS_LENGKAP'));
 
 create or replace function public.smartgtk_mass_classify(
  p_profession text,e text,sk text,nomen text,formasi text,edu text,old_jf text
@@ -121,7 +124,7 @@ begin
   education=excluded.education,study_status=excluded.study_status,university=excluded.university,
   study_program=excluded.study_program,start_year=excluded.start_year,
   target_graduation=excluded.target_graduation,graduation_date=excluded.graduation_date,
-  notes=excluded.notes,updated_at=now(),analysis_version=1;
+  notes=excluded.notes,updated_at=now(),analysis_version=2,data_stage='DRAFT';
  insert into public.smartgtk_audit(owner_id,actor_id,action) values(auth.uid(),auth.uid(),'INTAKE_SAVED_ANALYZED');
  v_result:=public.smartgtk_mass_classify(p_profession,p_employment,p_jf_sk,p_nomenclature_updated,p_pns_jf_formation,p_education,p_old_position);
  return v_result;
