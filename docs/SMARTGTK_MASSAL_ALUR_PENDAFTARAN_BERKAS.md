@@ -52,6 +52,15 @@ Monitoring Kabid hanya menampilkan angka akun SIMANTAB terdaftar, aktif/disetuju
 
 ## Status implementasi saat dokumen ini ditulis
 
-Kode frontend `smartgtk-unified.js?v=4` dan panduan pendaftaran `smartgtk-onboarding.js?v=1` tersedia pada cabang Draft PR #233, **bukan produksi**. Migrasi massal `20261021180000_smartgtk_mass_roles.sql`, `20261021181000_smartgtk_mass_documents.sql`, dan `20261021182000_smartgtk_mass_rollout_gate.sql` disiapkan untuk CI sintetik dan belum diterapkan pada Supabase produksi. Migrasi SMART-GTK versi pilot sebelumnya sudah ada di database aktif.
+Kode frontend `smartgtk-unified.js?v=4` dan panduan pendaftaran `smartgtk-onboarding.js?v=1` tersedia pada cabang Draft PR #233, **bukan produksi**. Migrasi massal `20261021180000_smartgtk_mass_roles.sql`, `20261021181000_smartgtk_mass_documents.sql`, dan `20261021182000_smartgtk_mass_rollout_gate.sql` disiapkan untuk CI sintetik dan **telah dipasang pada Supabase SIMANTAB aktif setelah QA sintetik berhasil**. Status awal mode aktivasi tetap **PILOT**, bukan OPEN, sehingga ribuan GTK belum otomatis memiliki izin mengisi. Migrasi SMART-GTK versi pilot sebelumnya juga tetap dipertahankan.
 
 **Gerbang rilis:** audit dokumen wajib bersama pejabat Dinas; hasil tes Cloudflare & PostgreSQL hijau; uji dengan akun GTK/KS/Pengawas asli; pemeriksaan penyimpanan berkas; jalur rollback Worker; lalu minta persetujuan eksplisit sebelum menerapkan migrasi massal maupun mengaktifkan OPEN / deployment Cloudflare produksi.
+
+## Bukti pemasangan terbaru — 21 Oktober 2026
+
+- Tiga migrasi baru sudah diterapkan melalui konektor Supabase: `smartgtk_mass_roles_20261021`, `smartgtk_mass_documents_20261021`, `smartgtk_mass_rollout_pilot_default_20261021`.
+- Pemeriksaan pascamigrasi: **486 profil tetap utuh**, 1 catatan pendidikan lama tetap ada, 0 kasus JF Guru 2026, 0 isian SMART-GTK, 0 dokumen baru, dan 0 peserta pilot. Tidak ada impor atau pengisian massal atas nama GTK.
+- Bucket dokumen SMART-GTK bersifat privat, RLS aktif, ukuran maksimum 1,5 MB, akses anonim tidak tersedia, penyimpanan data dikunci pada RPC tervalidasi. Fungsi lama `smartgtk_save` tidak lagi dapat dipanggil langsung oleh peran authenticated untuk menghindari bypass penentuan profesi.
+- Hasil klasifikasi di Supabase diverifikasi baca-saja: guru PNS dan KS PNS dapat masuk hasil skrining, sedangkan pengawas PNS dan PPPK dikembalikan sebagai `DATABASE_ONLY`.
+- Nilai mode rilis terbaca **PILOT**, daftar peserta kosong, dan percobaan akses GTK yang belum ditunjuk mengembalikan false. Mode OPEN belum pernah diminta atau diaktifkan.
+- Modul frontend `smartgtk-unified.js?v=4` dan `smartgtk-onboarding.js?v=1` tersedia pada **Cloudflare Preview**. **Cloudflare produksi masih belum diperbarui**. Pengujian browser menggunakan login nyata, pengisian, unggah dan dokumen asli harus dilakukan sebelum rilis umum.
