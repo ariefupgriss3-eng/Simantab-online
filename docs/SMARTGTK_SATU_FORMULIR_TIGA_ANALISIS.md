@@ -30,7 +30,7 @@ Pedoman harus ditelaah kembali berdasarkan Surat Dirjen GTK Nomor 0294/B/B.B1/HK
 
 ## 3. Tata kelola akses dan privasi
 
-- Backend `public.smartgtk_save` hanya untuk akun jalur GTK yang aktif/disetujui dan memiliki NIP 18 digit. Sistem menolak **NIP yang sama digunakan lebih dari satu akun aktif**: hanya administrator dapat merekonsiliasi.
+- Backend `public.smartgtk_save` untuk akun GTK yang aktif/disetujui. **PNS/PPPK wajib memiliki NIP 18 digit**; GTK non-ASN tanpa NIP ASN tetap dapat mengisi laporan berdasarkan identitas akun. Sinkronisasi modul pendidikan lama dijalankan hanya untuk pemilik NIP valid; laporan lainnya tetap disimpan di SMART-GTK. Sistem menolak **NIP yang sama digunakan lebih dari satu akun aktif**: hanya administrator dapat merekonsiliasi.
 - Tabel `smartgtk_intake` dan `smartgtk_audit` RLS: GTK hanya membaca miliknya; pejabat Dinas yang berwenang memiliki monitoring. Insert/update/delete langsung ditolak; perubahan melalui fungsi resmi dengan jejak audit.
 - Petugas memakai `smartgtk_officer_list`, maksimal 50 laporan per halaman; rekap yang tampil hanya jumlah per halaman, bukan statistik seluruh GTK Kabupaten Batang.
 - Penyimpanan tidak otomatis mengajukan `jf2026_submit_case`, menyetujui dokumen, mengubah status kepegawaian atau menerbitkan SK.
