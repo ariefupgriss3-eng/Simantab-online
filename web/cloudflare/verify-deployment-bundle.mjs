@@ -55,7 +55,7 @@ const qualification2030=await read('jf-qualification-2030.js');
 ok(html.includes('./jf-qualification-2030.js?v=5') && html.split('./jf-qualification-2030.js?v=5').length===2,'Modul S1-DIV 2030 harus tepat sekali');
 ok(qualification2030.includes('SIMANTAB_JF2030_QUALIFICATION_V1')&&qualification2030.includes('jf2030_save_progress')&&qualification2030.includes('jf2030_review'),'Pemantauan S1-DIV 2030 belum dibundel');
 const smart=await read('smartgtk-unified.js');
-ok(html.includes('./smartgtk-unified.js?v=13')&&html.split('./smartgtk-unified.js?v=13').length===2,'SMART-GTK unified script must load once');
+ok(html.includes('./smartgtk-unified.js?v=14')&&html.split('./smartgtk-unified.js?v=14').length===2,'SMART-GTK unified script must load once');
 ok(smart.includes('SIMANTAB_SMARTGTK_UNIFIED_INTAKE_V1')&&smart.includes("sb.rpc('smartgtk_mass_save'")&&smart.includes("sb.rpc('smartgtk_mass_officer_list'")&&smart.includes("sb.rpc('smartgtk_mass_complete'"),'SMART-GTK mass routes missing');
 ok(smart.includes('smartgtkDashboardPriority')&&smart.includes('smartgtkPrimaryNav')&&smart.includes('root.insertBefore(card,body)'), 'GTK dashboard priority link or main menu missing');
 ok(smart.includes('Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.')&&!smart.includes('SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS.'),'SMART-GTK deadline and concise copy missing');
@@ -73,4 +73,9 @@ ok(smart.includes("['PB','Pendamping Belajar (PB)']")&&
  smart.includes("Pendamping (data lama: belum dipilah PB/PLS)")&&
  !smart.includes('Non-ASN')&&!smart.includes('non-ASN'),
  'PB / PLS must be separate choices while old records remain labeled');
+ok(!smart.includes('Saat ini masih uji coba terbatas')&&
+ !smart.includes('SMART-GTK masih tahap pilot terbatas')&&
+ smart.includes('Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas.')&&
+ smart.includes('Akun belum memenuhi ketentuan akses SMART-GTK.'),
+ 'UI OPEN masih menampilkan petunjuk pilot lama');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));
