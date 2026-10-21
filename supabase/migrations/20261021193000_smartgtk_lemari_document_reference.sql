@@ -19,6 +19,33 @@ as $$
 $$;
 revoke all on function private.smartgtk_cabinet_type_allowed(text,text) from public,anon,authenticated;
 
+-- A file is eligible only if its original cabinet requirement code matches this obligation.
+-- No filename inference, which could incorrectly classify SKCK/other diklat documents as an SK Jabfung.
+create or replace function private.smartgtk_cabinet_code_matches(p_type text,p_code text)
+returns boolean language sql immutable set search_path=''
+as $$
+ select case p_type
+  when 'SK_KP' then upper(btrim(coalesce(p_code,''))) in
+    ('SK_KP','SK_KP_TERAKHIR','SK_KENAIKAN_PANGKAT','SK_PANGKAT_TERAKHIR')
+  when 'IJAZAH_TERAKHIR' then upper(btrim(coalesce(p_code,''))) in
+    ('IJAZAH_TERAKHIR','IJAZAH','IJAZAH_S1','IJAZAH_S2','IJAZAH_S3','IJAZAH_D4')
+  when 'SK_JF' then upper(btrim(coalesce(p_code,''))) in
+    ('SK_JF','SK_JABFUNG','SK_JABATAN_FUNGSIONAL')
+  when 'SERDIK' then upper(btrim(coalesce(p_code,''))) in
+    ('SERDIK','SERTIFIKAT_PENDIDIK')
+  when 'PENGALAMAN_2TH' then upper(btrim(coalesce(p_code,''))) in
+    ('PENGALAMAN_2TH','SK_PENGALAMAN_MENGAJAR')
+  when 'SKP_TAHUN_1' then upper(btrim(coalesce(p_code,''))) in
+    ('SKP_TAHUN_1','SKP_1')
+  when 'SKP_TAHUN_2' then upper(btrim(coalesce(p_code,''))) in
+    ('SKP_TAHUN_2','SKP_2')
+  when 'SK_PPPK' then upper(btrim(coalesce(p_code,'')))='SK_PPPK'
+  when 'SK_PPPK_PW' then upper(btrim(coalesce(p_code,''))) in ('SK_PPPK_PW','SK_PPPK_PARUH_WAKTU')
+  when 'SURAT_TUGAS' then upper(btrim(coalesce(p_code,'')))='SURAT_TUGAS'
+  else false end;
+$$;
+revoke all on function private.smartgtk_cabinet_code_matches(text,text) from public,anon,authenticated;
+
 create or replace function public.smartgtk_cabinet_candidates(p_type text)
 returns table(file_id uuid,file_name text,file_size bigint,mime_type text,uploaded_at timestamptz,requirement_code text)
 language plpgsql stable security definer set search_path=''
@@ -39,6 +66,7 @@ begin
    and split_part(sf.storage_path,'/',1)=auth.uid()::text
    and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
    and sf.mime_type in ('application/pdf','image/jpeg','image/png')
+   and private.smartgtk_cabinet_code_matches(p_type,sf.requirement_code)
  order by sf.created_at desc,sf.id desc
  limit 100;
 end;
@@ -58,6 +86,8 @@ begin
   raise exception 'Kelompok atau jenis dokumen tidak diizinkan';end if;
  select * into sf from public.submission_files where id=p_file_id and user_id=auth.uid();
  if not found then raise exception 'Dokumen bukan milik akun ini atau tidak ditemukan';end if;
+ if not private.smartgtk_cabinet_code_matches(p_type,sf.requirement_code) then
+  raise exception 'Jenis dokumen di lemari tidak sesuai persyaratan SMART-GTK';end if;
  if sf.storage_path is null or split_part(sf.storage_path,'/',1)<>auth.uid()::text
   or sf.file_size not between 1 and 1572864 or length(sf.storage_path)>220
   or sf.mime_type not in ('application/pdf','image/jpeg','image/png') then
@@ -96,7 +126,8 @@ begin
          select 1 from public.submission_files sf where sf.id=d.cabinet_file_id
           and sf.user_id=d.owner_id and sf.storage_path=d.storage_path
           and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
-          and sf.mime_type in ('application/pdf','image/jpeg','image/png')))) then missing:=array_append(missing,t);end if;
+          and sf.mime_type in ('application/pdf','image/jpeg','image/png')
+          and private.smartgtk_cabinet_code_matches(d.doc_type,sf.requirement_code)))) then missing:=array_append(missing,t);end if;
  end loop;
  return jsonb_build_object('state',v.data_stage,'employment',v.employment,'profession',v.profession,
   'required',to_jsonb(required),'missing',to_jsonb(missing),'complete',cardinality(missing)=0,
@@ -159,7 +190,8 @@ begin
        or d.source_bucket='simantab-documents' and exists(
         select 1 from public.submission_files sf where sf.id=d.cabinet_file_id and sf.user_id=d.owner_id
          and sf.storage_path=d.storage_path and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
-         and sf.mime_type in ('application/pdf','image/jpeg','image/png')))),
+         and sf.mime_type in ('application/pdf','image/jpeg','image/png')
+          and private.smartgtk_cabinet_code_matches(d.doc_type,sf.requirement_code)))),
    cardinality(public.smartgtk_mass_required_docs(v.profession,v.employment,v.jf_sk,
     v.nomenclature_updated,v.pns_jf_formation,v.education,v.old_position)),
    v.updated_at
