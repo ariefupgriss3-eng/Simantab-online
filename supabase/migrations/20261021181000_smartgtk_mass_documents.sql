@@ -142,6 +142,33 @@ begin
 end;
 $$;
 
+-- Officer report never treats classification as an issued SK.
+create or replace function public.smartgtk_mass_officer_list(p_page integer default 0)
+returns table(owner_id uuid,full_name text,unit_work text,
+ profession text,employment text,education text,
+ data_stage text,screening jsonb,docs_present integer,required_count integer,updated_at timestamptz)
+language plpgsql stable security definer set search_path=''
+as $$
+begin
+ if not private.jf2026_is_officer() then raise exception 'Hanya petugas Dinas';end if;
+ if p_page is null or p_page<0 or p_page>10000 then raise exception 'Halaman tidak valid';end if;
+ return query select v.owner_id,v.full_name,v.unit_work,v.profession,v.employment,
+   v.education,v.data_stage,
+   public.smartgtk_mass_classify(v.profession,v.employment,v.jf_sk,
+    v.nomenclature_updated,v.pns_jf_formation,v.education,v.old_position),
+   (select count(*)::integer from public.smartgtk_documents d
+      join storage.objects o on o.bucket_id='simantab-smartgtk-private' and o.name=d.storage_path
+      where d.owner_id=v.owner_id),
+   cardinality(public.smartgtk_mass_required_docs(v.profession,v.employment,v.jf_sk,
+    v.nomenclature_updated,v.pns_jf_formation,v.education,v.old_position)),
+   v.updated_at
+ from public.smartgtk_intake v order by v.updated_at desc,v.owner_id
+ limit 50 offset (p_page::bigint*50);
+end;
+$$;
+revoke all on function public.smartgtk_mass_officer_list(integer) from public,anon;
+grant execute on function public.smartgtk_mass_officer_list(integer) to authenticated;
+
 revoke all on function public.smartgtk_mass_required_docs(text,text,text,text,text,text,text) from public,anon;
 revoke all on function public.smartgtk_mass_status() from public,anon;
 revoke all on function public.smartgtk_mass_register_file(text,text) from public,anon;
