@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=9/);
+ assert.match(injection,/smartgtk-unified\.js\?v=10/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -169,4 +169,15 @@ test('one-time SMART-GTK upload is visible in Lemari Dokumenku',()=>{
  assert.match(migration,/smartgtk_cabinet_candidates/);
  assert.match(shell,/sb\.from\('smartgtk_locker_files'\)/);
  assert.match(read('./smartgtk-one-lemari-integration.sql'),/one-file upload created a fake service submission/);
+});
+
+test('Legacy SK Jabfung Terakhir files are selectable only with source-code and filename evidence',()=>{
+ const compat=read('../../supabase/migrations/20261021201000_smartgtk_legacy_sk_jabfung_match.sql');
+ assert.match(compat,/SK_JABATAN_SEBELUMNYA/);
+ assert.match(compat,/JABFUNG\|JF\|JABATAN FUNGSIONAL/);
+ assert.match(compat,/private\.smartgtk_cabinet_file_matches\(p_type,sf\.requirement_code,sf\.file_name\)/);
+ assert.match(compat,/private\.smartgtk_cabinet_file_matches\(d\.doc_type,sf\.requirement_code,sf\.file_name\)/);
+ assert.match(ui,/SK Jabfung Terakhir \(kode arsip lama\)/);
+ assert.match(read('./smartgtk-legacy-sk-jabfung.integration.sql'),/unrelated SK_JABATAN_SEBELUMNYA offered/);
+ assert.doesNotThrow(()=>new Function(ui));
 });
