@@ -16,7 +16,8 @@ insert into storage.objects(bucket_id,name) values
  ('simantab-documents','00000000-0000-4000-8000-000000000005/example/owner-sk.pdf'),
  ('simantab-documents','00000000-0000-4000-8000-000000000005/example/owner-ijazah.pdf'),
  ('simantab-documents','00000000-0000-4000-8000-000000000005/example/too-big.pdf'),
- ('simantab-documents','00000000-0000-4000-8000-000000000006/example/another-owner.pdf');
+ ('simantab-documents','00000000-0000-4000-8000-000000000006/example/another-owner.pdf'),
+ ('simantab-documents','00000000-0000-4000-8000-000000000005/example/unrelated-skck.pdf');
 insert into public.submission_files(id,user_id,storage_path,file_name,file_size,mime_type,requirement_code)
 values
  ('00000000-0000-4000-8000-000000000051','00000000-0000-4000-8000-000000000005',
@@ -24,6 +25,8 @@ values
  ('00000000-0000-4000-8000-000000000052','00000000-0000-4000-8000-000000000005',
   '00000000-0000-4000-8000-000000000005/example/owner-ijazah.pdf','Ijazah - Uji.pdf',850000,'application/pdf','IJAZAH_TERAKHIR'),
  ('00000000-0000-4000-8000-000000000053','00000000-0000-4000-8000-000000000005',
-  '00000000-0000-4000-8000-000000000005/example/too-big.pdf','File > 1.5 MB.pdf',1700000,'application/pdf','LAIN'),
+  '00000000-0000-4000-8000-000000000005/example/too-big.pdf','File > 1.5 MB.pdf',1700000,'application/pdf','SK_KP'),
  ('00000000-0000-4000-8000-000000000054','00000000-0000-4000-8000-000000000006',
-  '00000000-0000-4000-8000-000000000006/example/another-owner.pdf','Private Other Person.pdf',500000,'application/pdf','SK_JF');
+  '00000000-0000-4000-8000-000000000006/example/another-owner.pdf','Private Other Person.pdf',500000,'application/pdf','SK_JF'),
+ ('00000000-0000-4000-8000-000000000055','00000000-0000-4000-8000-000000000005',
+  '00000000-0000-4000-8000-000000000005/example/unrelated-skck.pdf','SKCK for other service.pdf',510000,'application/pdf','SKCK');
