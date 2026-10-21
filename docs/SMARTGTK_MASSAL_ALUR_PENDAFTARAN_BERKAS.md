@@ -10,7 +10,7 @@ Seluruh guru, kepala sekolah, pengawas, dan tenaga kependidikan dapat melengkapi
 2. **Belum punya akun → Daftar GTK.** Nama lengkap, email pribadi aktif, password sendiri minimal delapan karakter sesuai sistem; konfirmasi email bila diminta dan tunggu persetujuan akun. Operator membantu panduan, bukan memegang password.
 3. **Lupa password → pemulihan melalui email akun.** Jangan memakai password umum, NIP sebagai password, atau password yang dibagikan melalui WhatsApp.
 4. Login, lengkapi Profil GTK (identitas/NIP jika ASN dan unit kerja), kemudian masuk **SMART-GTK**.
-5. Pilih tugas utama (guru, kepala sekolah, pengawas, tendik), status kerja, dan pendidikan. Pertanyaan JF hanya muncul bagi **guru/KS PNS**. Data pendidikan yang telah tersimpan digunakan sebagai nilai awal.
+5. Pilih tugas utama (guru, kepala sekolah, pengawas, tendik), status kerja, dan pendidikan. GTK baru boleh melaporkan tugas sebenarnya meskipun admin belum menetapkan role khusus. **Pilihan ini hanya laporan mandiri dan tidak memberi hak akses Kepala Sekolah/Pengawas atau membuktikan jabatan secara hukum**; Dinas tetap memeriksa. Pertanyaan JF hanya muncul bagi **guru/KS PNS**. Data pendidikan yang telah tersimpan digunakan sebagai nilai awal.
 6. **Simpan draf lebih dahulu.** Pengguna tidak perlu menentukan sendiri jenis usulan JF. Sistem menghitung skrining awal.
 7. Lengkapi berkas sesuai kelompok, lalu tekan **Periksa Kelengkapan**. Bukti belum diverifikasi Dinas walaupun status "Berkas Lengkap" muncul.
 
