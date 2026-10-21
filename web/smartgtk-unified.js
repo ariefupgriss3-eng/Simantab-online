@@ -259,13 +259,13 @@ async function openCabinetPicker(type){
  const count=rows.length;
  container.hidden=false;
  container.innerHTML='<b>📁 Lemari Dokumenku — '+esc(docLabels[type])+'</b>'+
- '<p class="sg-note">Pilih berkas yang benar untuk jenis dokumen ini. Berkas hanya ditautkan dari lemari pribadi, tidak disalin atau diunggah ulang. Penetapan jenis dokumen belum berarti diverifikasi Dinas.</p>'+
+ '<p class="sg-note">Pilih berkas dengan kategori dokumen yang sesuai. Hanya dokumen dengan jenis cocok yang ditampilkan; berkas hanya ditautkan dari lemari pribadi tanpa unggah ulang. Penetapan jenis dokumen belum berarti diverifikasi Dinas.</p>'+
  (count?'<div class="sg-scroll"><table><thead><tr><th>Dokumen tersedia</th><th>Ukuran</th><th>Tindakan</th></tr></thead><tbody>'+
  rows.map(x=>'<tr><td>'+esc(x.file_name)+'<div style="font-size:12px">'+esc(x.requirement_code||'Dokumen pribadi')+'</div></td><td>'+
  (Number(x.file_size)/1048576).toFixed(2)+' MB</td><td><button type="button" data-action="pickcabinet" data-type="'+esc(type)+
  '" data-fileid="'+esc(x.file_id)+'">Gunakan berkas ini</button></td></tr>').join('')+
  '</tbody></table></div>':
- '<p>Belum ada berkas PDF/JPG/PNG yang memenuhi syarat di Lemari Dokumenku. Gunakan unggah berkas baru jika diperlukan.</p>')+
+ '<p>Belum ada berkas dengan jenis yang sesuai di Lemari Dokumenku. Gunakan unggah berkas baru untuk memenuhi persyaratan ini.</p>')+
  '<button type="button" data-action="hidecabinet">Tutup pilihan</button>';
  container.scrollIntoView({block:'nearest'});
 }
