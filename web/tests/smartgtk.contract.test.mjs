@@ -92,7 +92,7 @@ test('PNS complete docs; PPPK/PW optional docs; nonASN cannot upload',()=>{
  assert.match(docs,/Kelompok ini tidak mengunggah dokumen SMART-GTK/);
  assert.match(docs,/Berkas PNS belum lengkap/);
  assert.match(ui,/smartgtk_mass_complete/);
- assert.match(ui,/smartgtk_mass_register_file/);
+ assert.match(ui,/smartgtk_locker_register/);
 });
 test('guided joining uses existing verified email signup and recovery',()=>{
  const onboarding=read('../smartgtk-onboarding.js');
