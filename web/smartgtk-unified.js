@@ -224,6 +224,14 @@ function results(data){
  void renderDocumentStep();
 }
 
+function documentStageLabel(stage,missing=0){
+ if(stage==='BERKAS_LENGKAP'){
+  return missing>0?'Berkas Perlu Dilengkapi Ulang':'Berkas Lengkap — Menunggu Verifikasi Dinas';
+ }
+ if(stage==='DATA_TERCATAT')return 'Data Tercatat';
+ if(stage==='DRAFT')return missing===0?'Draf — Silakan Periksa Kelengkapan':'Draf — Belum Lengkap';
+ return stage==='BELUM_MENGISI'?'Belum Mengisi':String(stage||'Belum Mengisi');
+}
 async function renderDocumentStep(){
  const target=document.getElementById('sgDocumentStep');if(!target||!gtk())return;
  const r=await sb.rpc('smartgtk_mass_status');if(r.error){info(r.error.message,true);return}
@@ -238,10 +246,13 @@ async function renderDocumentStep(){
   ['SK_PPPK','IJAZAH_TERAKHIR','SERDIK','SURAT_TUGAS']:
   ['SK_PPPK_PW','IJAZAH_TERAKHIR','SERDIK','SURAT_TUGAS']);
  const missing=q.missing||[];
+ const stageLabel=documentStageLabel(status,missing.length);
+ const awaitingDinas=policy==='WAJIB'&&status==='BERKAS_LENGKAP'&&missing.length===0;
  target.innerHTML='<div class="sg-box"><h3>Dokumen '+(policy==='WAJIB'?'Wajib PNS':'PPPK/PPPK PW (hanya yang dimiliki)')+'</h3>'+
- '<p class="sg-note">'+(policy==='WAJIB'?'PNS harus melengkapi semua berkas wajib sebelum status BERKAS LENGKAP. Simpan draf tetap boleh.':
+ '<p class="sg-note">'+(policy==='WAJIB'?'PNS melengkapi dokumen wajib sebelum status Berkas Lengkap. Simpan draf tetap diperbolehkan. Status lengkap belum berarti dokumen diverifikasi Dinas.':
  'Tidak perlu mengunggah SK Jabfung yang belum dimiliki. Semua unggahan bersifat opsional.')+'</p>'+
- '<p>Status saat ini: <b>'+esc(status)+'</b>'+(policy==='WAJIB'?' • Berkas kurang: '+missing.length:'')+'</p>'+
+ '<p role="status" aria-live="polite"><strong>Status saat ini: '+esc(stageLabel)+'</strong>'+(policy==='WAJIB'?' • Berkas kurang: '+missing.length:'')+'</p>'+ 
+ (awaitingDinas?'<p class="sg-note"><b>Seluruh dokumen wajib sudah tercatat.</b> Menunggu verifikasi administratif oleh Dinas. Belum merupakan persetujuan usulan, penetapan JF, atau penerbitan SK.</p>':'')+
  labels.map(t=>'<label class="sg-box">'+esc(docLabels[t]||t)+(policy==='WAJIB'?(missing.includes(t)?' — Belum ada':' — Tercatat'):' — Opsional')+
  '<input type="file" data-docfile="'+esc(t)+'" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">'+
  '<div class="sg-actions"><button type="button" data-action="cabinet" data-type="'+esc(t)+'">📁 Ambil dari Lemari Dokumenku</button>'+
@@ -307,7 +318,7 @@ async function uploadDocument(type){
 }
 async function confirmCompleteness(){
  const r=await sb.rpc('smartgtk_mass_complete');if(r.error)throw r.error;
- info(r.data?.state==='BERKAS_LENGKAP'?'Semua berkas wajib PNS tercatat. Menunggu telaah Dinas.':'Pendataan GTK tercatat. Terima kasih.');
+ info(r.data?.state==='BERKAS_LENGKAP'?'Berkas Lengkap — Menunggu Verifikasi Dinas. Kelengkapan belum berarti berkas disahkan.':'Pendataan GTK tercatat. Terima kasih.');
  await renderDocumentStep();
 }
 
@@ -338,7 +349,7 @@ function dashboard(){
  '<p style="font-size:12px">Jumlah GTK yang belum memiliki akun tidak dapat dihitung tanpa daftar induk GTK. Jumlah di atas hanya mencakup akun yang sudah tercatat di SIMANTAB.</p></div>'+
  '<div class="sg-box"><b>Monitoring Hasil Skrining • Halaman '+(pg+1)+'</b><p>Nomenklatur: '+counts.n+' • Pengangkatan: '+counts.a+' • Kualifikasi: '+counts.q+'</p>'+
  '<div class="sg-scroll"><table><thead><tr><th>GTK</th><th>Tugas/ASN</th><th>Nomenklatur</th><th>Pengangkatan</th><th>Pendidikan/Berkas</th></tr></thead><tbody>'+
- (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.profession)+' / '+esc(x.employment)+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(x.data_stage)+' ('+esc(x.docs_present)+' berkas; '+esc(x.required_count)+' wajib)'+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
+ (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.profession)+' / '+esc(x.employment)+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(x.data_stage==='BERKAS_LENGKAP'?'Berkas Lengkap (belum diverifikasi Dinas)':x.data_stage)+' ('+esc(x.docs_present)+' berkas; '+esc(x.required_count)+' wajib)'+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
  '</tbody></table></div><div class="sg-actions"><button data-action="prev" '+(pg===0?'disabled':'')+'>Sebelumnya</button><button data-action="next" '+(items.length<50?'disabled':'')+'>Berikutnya</button></div></div>';
 }
 async function open(){
@@ -371,5 +382,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:11,backendRequired:true};
+window.__smartGtkUnified={open,version:12,backendRequired:true};
 })();
