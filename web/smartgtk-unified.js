@@ -13,10 +13,10 @@ const gtk=()=>((p().account_channel==='GTK'&&['GTK','KEPALA_SEKOLAH'].includes(p
 const dinas=()=>p().account_channel==='DINAS'&&['SUPER_ADMIN','KABID','STAFF_USUL_SK'].includes(p().role)&&p().approval_status==='APPROVED'&&p().is_active!==false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
 const qualified=['S1','DIV','S2','S3'];
-const employmentLabel=(value)=>value==='NON_ASN'?'Pendamping Belajar / Pendamping Layanan di Satpen':value;
+const employmentLabel=(value)=>({'PB':'Pendamping Belajar (PB)','PLS':'Pendamping Layanan Satpen (PLS)','NON_ASN':'Pendamping (data lama: belum dipilah PB/PLS)'}[value]||value);
 const options={
  profession:[['','Pilih tugas'],['GURU','Guru'],['KEPALA_SEKOLAH','Kepala Sekolah'],['PENGAWAS','Pengawas Sekolah'],['TENDIK','Tenaga Kependidikan']],
- employment:[['','Pilih status kepegawaian'],['PNS','PNS'],['PPPK','PPPK'],['PPPK_PW','PPPK paruh waktu'],['NON_ASN','Pendamping Belajar / Pendamping Layanan di Satpen'],['LAINNYA','Lainnya']],
+ employment:[['','Pilih status kepegawaian'],['PNS','PNS'],['PPPK','PPPK'],['PPPK_PW','PPPK paruh waktu'],['PB','Pendamping Belajar (PB)'],['PLS','Pendamping Layanan Satpen (PLS)'],['LAINNYA','Lainnya']],
  jf_sk:[['','Pilih'],['YA','Sudah ada SK JF Guru'],['TIDAK','Belum ada SK JF Guru'],['BELUM_TAHU','Belum tahu']],
  old_position:[['','Pilih jabatan sesuai SK'],...['Guru Pertama','Guru Muda','Guru Madya','Guru Ahli Pertama','Guru Ahli Muda','Guru Ahli Madya','Jabatan lain pada SK'].map(x=>[x,x])],
  nomenclature_updated:[['','Pilih'],['YA','Sudah disesuaikan'],['TIDAK','Belum disesuaikan'],['BELUM_TAHU','Belum tahu'],['TIDAK_BERLAKU','Tidak berlaku']],
@@ -43,7 +43,7 @@ style.textContent='#smartgtkModal{display:none;position:fixed;inset:0;z-index:10
 const body=()=>document.getElementById('sgBody');
 const info=(s='',error=false)=>{const el=document.getElementById('sgMessage');el.textContent=s;el.style.color=error?'#ae2d25':'#156595'};
 const option=(v,l,selected)=>'<option value="'+esc(v)+'" '+(v===selected?'selected':'')+'>'+esc(l)+'</option>';
-const select=(name,label,value,required=true)=>'<label>'+esc(label)+'<select name="'+name+'" '+(required?'required':'')+'>'+options[name].map(([v,l])=>option(v,l,value)).join('')+'</select></label>';
+const select=(name,label,value,required=true)=>'<label>'+esc(label)+'<select name="'+name+'" '+(required?'required':'')+'>'+options[name].map(([v,l])=>option(v,l,value)).join('')+(name==='employment'&&value==='NON_ASN'?option('NON_ASN','Pendamping (data lama — pilih PB atau PLS)',value):'')+'</select></label>';
 const input=(name,label,value,type='text')=>'<label>'+esc(label)+'<input name="'+name+'" type="'+type+'" value="'+esc(value||'')+'"></label>';
 /* GTK uses the landing dashboard + main nav, not the services grid.
    Dinas monitoring retains an officer-only services entry. */
@@ -164,7 +164,7 @@ function form(){
  '<div class="sg-box"><b>'+esc(p().full_name||'GTK')+'</b><p>NIP '+esc(p().nip||'-')+' • '+esc(p().unit_gtk||p().unit||'')+'</p></div>'+
  '<form id="smartgtkForm"><div class="sg-box"><b>A. Tugas dan Status Kepegawaian</b><div class="sg-grid">'+
  select('profession','Tugas utama *',profession)+
- select('employment','Status kepegawaian *',x.employment)+
+ select('employment','Kategori kepegawaian/pendamping *',x.employment)+
  '</div><div id="sgJFFields" class="sg-grid">'+
  select('jf_sk','Kepemilikan SK JF Guru *',x.jf_sk)+
  select('old_position','Jabatan sesuai SK JF (jika ada)',x.old_position,false)+
@@ -180,7 +180,7 @@ function form(){
  input('graduation_date','Tanggal kelulusan sesuai ijazah',x.graduation_date||q.graduation_date,'date')+
  '</div>'+input('notes','Keterangan tambahan (opsional)',x.notes)+'</div>'+
  '<div class="sg-actions"><button type="submit" class="primary">Simpan & Analisis Otomatis</button></div></form>'+
- '<p class="sg-note">Data boleh disimpan sebagai draf. PNS wajib berkas sesuai jalur; PPPK/PPPK PW boleh unggah yang dimiliki; Pendamping Belajar dan Pendamping Layanan di Satpen tanpa unggah berkas. Hasil bukan keputusan atau SK.</p>'+
+ '<p class="sg-note">PNS wajib melengkapi dokumen sesuai jalur; PPPK/PPPK paruh waktu dapat mengunggah dokumen yang dimiliki. Pendamping Belajar (PB) dan Pendamping Layanan Satpen (PLS) cukup mengisi data tanpa unggah berkas. Istilah pendamping merupakan kategori pendataan, bukan status ASN atau dasar pengangkatan.</p>'+
  (old?'<div class="sg-actions"><button type="button" data-action="prior">Lihat Analisis Tersimpan</button></div>':'');
  const f=document.getElementById('smartgtkForm');
  function sync(){
@@ -203,11 +203,24 @@ function form(){
    f.elements.jf_sk.value='BELUM_TAHU';f.elements.old_position.value='';
    f.elements.pns_jf_formation.value='TIDAK';f.elements.nomenclature_updated.value='TIDAK_BERLAKU';
   }
+  const employment=f.elements.employment.value;
+  for(const o of f.elements.employment.options){
+   if(['PB','PLS'].includes(o.value))o.disabled=['KEPALA_SEKOLAH','PENGAWAS'].includes(p().role);
+  }
+  let categoryError='';
+  if(employment==='NON_ASN')categoryError='Pilih kategori Pendamping Belajar (PB) atau Pendamping Layanan Satpen (PLS) untuk memperbarui data lama.';
+  if(employment==='PB'&&f.elements.profession.value!=='GURU')categoryError='Pendamping Belajar (PB) harus memilih tugas utama Guru.';
+  if(employment==='PLS'&&f.elements.profession.value!=='TENDIK')categoryError='Pendamping Layanan Satpen (PLS) harus memilih tugas utama Tenaga Kependidikan.';
+  f.elements.employment.setCustomValidity(categoryError);
   if(['KEPALA_SEKOLAH','PENGAWAS'].includes(p().role))f.elements.profession.disabled=true;
  }
  f.elements.education.addEventListener('change',sync);
  f.elements.study_status.addEventListener('change',sync);
- f.elements.employment.addEventListener('change',sync);
+ f.elements.employment.addEventListener('change',()=>{
+  if(p().role==='GTK'&&f.elements.employment.value==='PB')f.elements.profession.value='GURU';
+  if(p().role==='GTK'&&f.elements.employment.value==='PLS')f.elements.profession.value='TENDIK';
+  sync();
+ });
  f.elements.profession.addEventListener('change',sync);
  f.addEventListener('submit',async e=>{
   e.preventDefault();if(busy)return;busy=true;info('Menyimpan dan menganalisis data...');
@@ -239,7 +252,7 @@ async function renderDocumentStep(){
  const q=r.data||{},status=q.state||'BELUM_MENGISI';
  const policy=q.evidence_policy||'TANPA_UNGGAH';
  if(policy==='TANPA_UNGGAH'){
-  target.innerHTML='<div class="sg-box"><b>Pendataan tanpa berkas</b><p>Pendamping Belajar dan Pendamping Layanan di Satpen cukup mengisi data, tanpa mengunggah dokumen.</p>'+
+  target.innerHTML='<div class="sg-box"><b>Pendataan tanpa berkas</b><p>Pendamping Belajar (PB) dan Pendamping Layanan Satpen (PLS) cukup mengisi data tanpa mengunggah dokumen.</p>'+
   '<p>Status: '+esc(status)+'</p><button data-action="complete" type="button">Konfirmasi Data Saya</button></div>';
   return;
  }
@@ -383,5 +396,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:13,backendRequired:true};
+window.__smartGtkUnified={open,version:14,backendRequired:true};
 })();
