@@ -12,6 +12,25 @@ insert into public.profiles(id,role,account_channel,approval_status,is_active,ni
 ('00000000-0000-4000-8000-000000000007','GTK','GTK','APPROVED',true,'197001012006042007','Guru Uji Tujuh','SD Uji'),
 ('00000000-0000-4000-8000-000000000008','GTK','GTK','APPROVED',true,'197001012006042008','Guru Uji Delapan','SD Uji');
 set role authenticated;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000003';
+select public.smartgtk_pilot_assign('00000000-0000-4000-8000-000000000001',true);
+select public.smartgtk_pilot_assign('00000000-0000-4000-8000-000000000005',true);
+select public.smartgtk_pilot_assign('00000000-0000-4000-8000-000000000006',true);
+select public.smartgtk_pilot_assign('00000000-0000-4000-8000-000000000007',true);
+select public.smartgtk_pilot_assign('00000000-0000-4000-8000-000000000008',true);
+-- Unassigned GTK cannot save even with approved login and valid NIP.
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000002';
+do $test_block_unassigned$
+begin
+ if public.smartgtk_pilot_status() then raise exception 'FAIL: nonmember pilot unexpectedly enabled';end if;
+ begin
+  perform public.smartgtk_save('PNS','BELUM_TAHU','','BELUM_TAHU','BELUM_TAHU',
+   'DIII','SEDANG_KULIAH','Universitas Uji','PGSD',2024,'2030-04-01',null,'Unassigned');
+  raise exception 'FAIL: unassigned GTK saved during pilot';
+ exception when others then
+  if position('akun belum masuk peserta pilot' in sqlerrm)=0 then raise;end if;
+ end;
+end $test_block_unassigned$;
 -- Existing JF SK + nomenclature not updated, while diploma unqualified -> TWO independent queues.
 set request.jwt.claim.sub='00000000-0000-4000-8000-000000000005';
 select public.smartgtk_save('PNS','YA','Guru Muda','TIDAK','TIDAK',
@@ -108,6 +127,8 @@ insert into auth.users(id) values('00000000-0000-4000-8000-000000000010');
 insert into public.profiles(id,role,account_channel,approval_status,is_active,nip,full_name,unit_gtk)
 values('00000000-0000-4000-8000-000000000010','GTK','GTK','APPROVED',true,null,'Guru Non ASN Uji','TK Uji');
 set role authenticated;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000003';
+select public.smartgtk_pilot_assign('00000000-0000-4000-8000-000000000010',true);
 set request.jwt.claim.sub='00000000-0000-4000-8000-000000000010';
 select public.smartgtk_save('NON_ASN','BELUM_TAHU','','TIDAK_BERLAKU','TIDAK',
  'DIII','SEDANG_KULIAH','Universitas Uji','PGPAUD',2025,'2030-04-01',null,'Tanpa NIP ASN');
