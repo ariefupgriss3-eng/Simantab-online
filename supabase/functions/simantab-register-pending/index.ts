@@ -1,19 +1,20 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 const allowedOrigin="https://simantab-online.vercel.app";
 const cloudflareOrigin="https://simantab-cf-preview.m-arief-rohman.workers.dev";
+const shortOrigin="https://simantab.m-arief-rohman.workers.dev";
 const cors={"Access-Control-Allow-Origin":allowedOrigin,"Access-Control-Allow-Headers":"authorization, x-client-info, apikey, content-type","Access-Control-Allow-Methods":"POST, OPTIONS","Content-Type":"application/json"};
-const corsFor=(origin:string)=>({...cors,"Access-Control-Allow-Origin":origin===cloudflareOrigin?cloudflareOrigin:allowedOrigin,"Vary":"Origin"});
+const corsFor=(origin:string)=>({...cors,"Access-Control-Allow-Origin":origin===shortOrigin?shortOrigin:origin===cloudflareOrigin?cloudflareOrigin:allowedOrigin,"Vary":"Origin"});
 const emailOk=(v:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
 Deno.serve(async(req)=>{
  const origin=req.headers.get("origin")||"";
  const reply=(body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:corsFor(origin)});
- if(req.method==="OPTIONS")return new Response("ok",{status:(!origin||origin===allowedOrigin||origin===cloudflareOrigin)?200:403,headers:corsFor(origin)});
+ if(req.method==="OPTIONS")return new Response("ok",{status:(!origin||origin===allowedOrigin||origin===cloudflareOrigin||origin===shortOrigin)?200:403,headers:corsFor(origin)});
  if(req.method!=="POST")return reply({error:"Method not allowed"},405);
- if(origin&&origin!==allowedOrigin&&origin!==cloudflareOrigin)return reply({error:"Origin tidak diizinkan."},403);
+ if(origin&&origin!==allowedOrigin&&origin!==cloudflareOrigin&&origin!==shortOrigin)return reply({error:"Origin tidak diizinkan."},403);
  try{
   const b=await req.json();
   const role=String(b.role||"").trim().toUpperCase(),email=String(b.email||"").trim().toLowerCase(),password=String(b.password||""),fullName=String(b.full_name||"").trim(),rawNip=String(b.nip||"").trim(),nip=rawNip.replace(/\D/g,""),npsn=String(b.school_npsn||"").trim(),unit=String(b.unit||"").trim(),employment=String(b.employment_status||"").trim().toUpperCase();
-  const requireIdentity=origin===cloudflareOrigin||Object.prototype.hasOwnProperty.call(b,"employment_status")||Object.prototype.hasOwnProperty.call(b,"unit");
+  const requireIdentity=(origin===cloudflareOrigin||origin===shortOrigin)||Object.prototype.hasOwnProperty.call(b,"employment_status")||Object.prototype.hasOwnProperty.call(b,"unit");
   if(!["KEPALA_SEKOLAH","PENGAWAS","GTK"].includes(role))return reply({error:"Jenis akun tidak valid."},400);
   if(!fullName||!emailOk(email)||password.length<8)return reply({error:"Nama, email, dan password minimal 8 karakter wajib diisi dengan benar."},400);
   if(requireIdentity){
