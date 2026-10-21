@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=8/);
+ assert.match(injection,/smartgtk-unified\.js\?v=9/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -155,4 +155,18 @@ test('reuse Lemari Dokumenku by selecting an owned file; no extra upload',()=>{
  assert.match(read('./smartgtk-cabinet-integration.sql'),/unrelated SKCK linked as Jabfung SK/);
  assert.match(read('./smartgtk-cabinet-integration.sql'),/cross-owner file assigned/);
  assert.doesNotThrow(()=>new Function(ui));
+});
+
+test('one-time SMART-GTK upload is visible in Lemari Dokumenku',()=>{
+ const migration=read('../../supabase/migrations/20261021195000_smartgtk_one_lemari_storage.sql');
+ const shell=read('../cloudflare/bootstrap-production-20261013.html');
+ assert.match(ui,/storage\.from\('simantab-documents'\)\.upload/);
+ assert.match(ui,/smartgtk_locker_register/);
+ assert.doesNotMatch(ui,/storage\.from\('simantab-smartgtk-private'\)\.upload/);
+ assert.match(migration,/smartgtk_locker_files/);
+ assert.match(migration,/smartgtk_documents/);
+ assert.match(migration,/CABINET_UPLOADED_/);
+ assert.match(migration,/smartgtk_cabinet_candidates/);
+ assert.match(shell,/sb\.from\('smartgtk_locker_files'\)/);
+ assert.match(read('./smartgtk-one-lemari-integration.sql'),/one-file upload created a fake service submission/);
 });
