@@ -64,3 +64,11 @@ Kode frontend `smartgtk-unified.js?v=4` dan panduan pendaftaran `smartgtk-onboar
 - Hasil klasifikasi di Supabase diverifikasi baca-saja: guru PNS dan KS PNS dapat masuk hasil skrining, sedangkan pengawas PNS dan PPPK dikembalikan sebagai `DATABASE_ONLY`.
 - Nilai mode rilis terbaca **PILOT**, daftar peserta kosong, dan percobaan akses GTK yang belum ditunjuk mengembalikan false. Mode OPEN belum pernah diminta atau diaktifkan.
 - Modul frontend `smartgtk-unified.js?v=4` dan `smartgtk-onboarding.js?v=1` tersedia pada **Cloudflare Preview**. **Cloudflare produksi masih belum diperbarui**. Pengujian browser menggunakan login nyata, pengisian, unggah dan dokumen asli harus dilakukan sebelum rilis umum.
+
+## Penempatan SMART-GTK sebagai prioritas Dashboard GTK
+
+- Saat GTK masuk ke SIMANTAB Preview, **SMART-GTK tampil di bagian paling atas Dashboard GTK**, sebelum kartu statistik lain. Penanda `📌 PRIORITAS PENDATAAN GTK` dan tombol tindakan dibuat mudah ditemukan dan sesuai ukuran layar ponsel.
+- Menu utama/sidebar GTK menambahkan **🧭 SMART-GTK • Prioritas** tepat setelah Dashboard GTK. Keduanya membuka modul yang sama dan memakai kontrol akses backend.
+- Kartu lama SMART-GTK di `Layanan Kepegawaian` dihapus **khusus sisi GTK** agar tidak terjadi duplikasi dan pengguna tidak perlu mencari menu. **Monitoring Dinas tetap tersedia** di Layanan Kepegawaian.
+- Jika backend mengizinkan pengisian (peserta PILOT atau mode OPEN), tombol bertuliskan `Isi / Lanjutkan SMART-GTK`. Jika belum diizinkan, tombol `Lihat informasi SMART-GTK` dan keterangan pilot terbatas. **Penekanan visual bukan pembukaan akses atau kewajiban unggah dokumen saat PILOT**.
+- Perubahan hanya di frontend Cloudflare Preview; tidak memodifikasi akun, hasil skrining, data pendidikan, atau hak akses. Pengujian Cloudflare dan PostgreSQL perlu lulus, lalu verifikasi tampilan nyata di Chrome Android sebelum rilis produksi.
