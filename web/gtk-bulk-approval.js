@@ -128,6 +128,7 @@
       preview = null; selected.clear(); acknowledged=false;
       await window.showTab("users");
       try { await window.__simantabDuplicateNipAudit?.render?.(true); } catch (_) {}
+      busy = false;
       await fetchPreview();
       // fetchPreview clears the summary; restore actionable result for admin.
       summary = "Hasil agregat: "+fmt(result.approved)+" disetujui, "+fmt(result.skipped)+" dilewati, "+fmt(result.errors)+" gagal. Audit: "+result.batch_id;
