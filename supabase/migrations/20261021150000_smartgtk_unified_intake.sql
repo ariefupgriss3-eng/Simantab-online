@@ -3,7 +3,7 @@
 -- Additive; requires existing jf2030_save_progress and private.jf2026_is_officer.
 create table if not exists public.smartgtk_intake (
  owner_id uuid primary key references auth.users(id),
- nip text not null check(nip ~ '^[0-9]{18}$'),
+ nip text not null default '' check(nip='' or nip ~ '^[0-9]{18}$'),
  full_name text not null,
  unit_work text not null,
  employment text not null check(employment in ('PNS','PPPK','PPPK_PW','NON_ASN','LAINNYA')),
@@ -88,10 +88,12 @@ declare v_profile public.profiles%rowtype; v_existing public.jf2030_qualificatio
         v_result jsonb;
 begin
  select * into v_profile from public.profiles where id=auth.uid()
- and account_channel='GTK' and approval_status='APPROVED' and is_active=true
- and nip ~ '^[0-9]{18}$';
- if not found then raise exception 'Hanya GTK aktif/disetujui dengan NIP 18 digit'; end if;
- if (select count(*) from public.profiles
+ and account_channel='GTK' and approval_status='APPROVED' and is_active=true;
+ if not found then raise exception 'Hanya akun GTK aktif/disetujui yang dapat mengisi'; end if;
+ if p_employment in ('PNS','PPPK','PPPK_PW') and coalesce(v_profile.nip,'') !~ '^[0-9]{18}$' then
+  raise exception 'GTK ASN harus melengkapi NIP 18 digit di Profil GTK terlebih dahulu';
+ end if;
+ if coalesce(v_profile.nip,'') ~ '^[0-9]{18}$' and (select count(*) from public.profiles
      where account_channel='GTK' and is_active=true and approval_status='APPROVED'
        and nip=v_profile.nip)>1 then
   raise exception 'NIP terhubung dengan lebih dari satu akun aktif. Hubungi admin untuk rekonsiliasi.';
@@ -119,7 +121,9 @@ begin
    if v_existing.education_initial<>p_education or v_existing.study_status<>p_study_status
       or v_existing.graduation_date is distinct from p_graduation_date then
      raise exception 'Ijazah terverifikasi berbeda dengan isian baru; minta koreksi melalui Dinas'; end if;
- else
+ elsif coalesce(v_profile.nip,'') ~ '^[0-9]{18}$' then
+   -- Legacy education 2030 RPC requires NIP. Preserve non-ASN education
+   -- in SMART-GTK when they have no valid ASN NIP instead of blocking intake.
    perform public.jf2030_save_progress(p_education,p_study_status,
      coalesce(p_university,''),coalesce(p_program,''),p_start_year,
      p_target_graduation,p_graduation_date,coalesce(p_notes,''));
@@ -129,7 +133,7 @@ begin
   pns_jf_formation,education,study_status,university,study_program,start_year,
   target_graduation,graduation_date,notes
  ) values (
-  auth.uid(),v_profile.nip,coalesce(nullif(btrim(v_profile.full_name),''),'GTK'),
+  auth.uid(),coalesce(v_profile.nip,''),coalesce(nullif(btrim(v_profile.full_name),''),'GTK'),
   coalesce(nullif(btrim(v_profile.unit_gtk),''),nullif(btrim(v_profile.unit),''),'Belum diisi'),
   p_employment,p_jf_sk,coalesce(p_old_position,''),p_nomenclature_updated,
   p_pns_jf_formation,p_education,p_study_status,coalesce(p_university,''),
