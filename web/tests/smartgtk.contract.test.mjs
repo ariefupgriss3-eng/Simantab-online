@@ -151,6 +151,8 @@ test('reuse Lemari Dokumenku by selecting an owned file; no extra upload',()=>{
  assert.match(migration,/o\.bucket_id=d\.source_bucket/);
  assert.match(migration,/cabinet_file_id/);
  assert.match(migration,/CABINET_FILE_LINKED_/);
+ assert.match(migration,/private\.smartgtk_cabinet_code_matches\(p_type,sf\.requirement_code\)/);
+ assert.match(read('./smartgtk-cabinet-integration.sql'),/unrelated SKCK linked as Jabfung SK/);
  assert.match(read('./smartgtk-cabinet-integration.sql'),/cross-owner file assigned/);
  assert.doesNotThrow(()=>new Function(ui));
 });
