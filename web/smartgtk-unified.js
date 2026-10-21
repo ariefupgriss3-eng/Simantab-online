@@ -54,6 +54,7 @@ priorityCss.textContent=[
  '#smartgtkDashboardPriority .sg-priority-tag{display:inline-block;border-radius:7px;background:#b85b0b;color:#fff;font-size:12px;font-weight:750;letter-spacing:.03em;padding:5px 9px}',
  '#smartgtkDashboardPriority h3{font-size:clamp(19px,4vw,24px);line-height:1.3;margin:12px 0 5px;color:#15395a}',
  '#smartgtkDashboardPriority p{margin:7px 0 13px;line-height:1.55;color:#31516e}',
+ '#smartgtkDashboardPriority .sg-deadline{background:#fff0d8;border:1px solid #d99a36;border-radius:10px;padding:11px 13px;color:#793d0a;font-size:14px;font-weight:700;line-height:1.5;margin:12px 0 15px}',
  '#smartgtkDashboardPriority .sg-priority-action{background:#c56b11;color:#fff;border:0;border-radius:10px;padding:13px 19px;font-weight:750;font-size:15px;width:100%;max-width:340px;cursor:pointer}',
  '#smartgtkDashboardPriority .sg-priority-action:focus-visible,#smartgtkPrimaryNav:focus-visible{outline:3px solid #206a9e;outline-offset:2px}',
  '#smartgtkDashboardPriority .sg-priority-help{font-size:13px;line-height:1.5;color:#355675;margin-top:9px}',
@@ -77,7 +78,8 @@ function ensureGTKDashboard(){
   card.setAttribute('aria-label','Prioritas utama pendataan SMART-GTK');
   card.innerHTML='<div class="sg-priority-tag">📌 PRIORITAS PENDATAAN GTK</div>'+
   '<h3>🧭 SMART-GTK — Satu Data, Tiga Analisis</h3>'+
-  '<p>Satu kali isi untuk pendataan guru, kepala sekolah, pengawas, dan tenaga kependidikan. SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS.</p>'+
+  '<p>Satu kali isi untuk pendataan guru, kepala sekolah, pengawas, dan tenaga kependidikan.</p>'+
+  '<p class="sg-deadline">⏰ Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.</p>'+
   '<button type="button" class="sg-priority-action">Lihat SMART-GTK</button>'+
   '<p class="sg-priority-help" role="status">Memeriksa apakah akun dapat mengisi SMART-GTK...</p>';
   card.querySelector('button').addEventListener('click',open);
@@ -326,5 +328,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:7,backendRequired:true};
+window.__smartGtkUnified={open,version:8,backendRequired:true};
 })();
