@@ -82,7 +82,7 @@ begin
   'S1','SUDAH_MEMENUHI','Univ','PGSD',2015,null,'2020-07-01','Impersonation');
   raise exception 'FAIL: Dinas wrote GTK intake';
  exception when others then
-  if position('Hanya GTK' in sqlerrm)=0 then raise;end if;
+  if position('Hanya akun GTK' in sqlerrm)=0 then raise;end if;
  end;
 end $test_officer$;
 reset role;
