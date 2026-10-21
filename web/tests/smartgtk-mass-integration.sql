@@ -132,4 +132,42 @@ begin
  end;
 end $not_officer$;
 
+
+-- Full deployment is opt-in: default PILOT, open only through authorized Dinas RPC.
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000003';
+do $default_pilot$
+begin
+ if public.smartgtk_mass_rollout_mode()<>'PILOT' then
+  raise exception 'FAIL: rollout not fail closed';end if;
+end $default_pilot$;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000002';
+do $deny_rollout$
+begin
+ begin
+  perform public.smartgtk_mass_set_rollout('OPEN');
+  raise exception 'FAIL: ordinary GTK opened mass rollout';
+ exception when others then
+  if position('Hanya petugas Dinas' in sqlerrm)=0 then raise;end if;
+ end;
+ if public.smartgtk_pilot_status() then raise exception 'FAIL: no pilot enrollment should be disabled';end if;
+end $deny_rollout$;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000003';
+select public.smartgtk_mass_set_rollout('OPEN');
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000002';
+do $open_rollout$
+begin
+ if not public.smartgtk_pilot_status() then
+  raise exception 'FAIL: approved GTK cannot onboard when Dinas explicitly opens';end if;
+end $open_rollout$;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000003';
+select public.smartgtk_mass_set_rollout('OFF');
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000005';
+do $off_rollout$
+begin
+ if public.smartgtk_pilot_status() then
+  raise exception 'FAIL: OFF mode still admits enrolled pilot';end if;
+end $off_rollout$;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000003';
+select public.smartgtk_mass_set_rollout('PILOT');
+
 select 'SMARTGTK mass cohorts and document policy tests PASS' as result;
