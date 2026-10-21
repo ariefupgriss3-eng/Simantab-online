@@ -59,4 +59,11 @@ Perubahan SK Jabfung atau status kepegawaian melalui SMART-GTK **tidak memutakhi
 - RLS aktif pada dua tabel; `anon` tidak boleh membaca tabel atau mengeksekusi RPC SMART-GTK; authenticated tidak boleh INSERT/UPDATE langsung (melalui RPC tervalidasi). Petugas Kabid dapat membaca roster dengan `smartgtk_officer_list`.
 - Validasi sinkronisasi: perubahan murni pada SK/status kerja tidak menimpa dokumen atau catatan koreksi pendidikan yang sedang diproses Dinas.
 - Preview Cloudflare memuat aset `smartgtk-unified.js?v=2`. **Login, pengisian dan penyimpanan nyata oleh 5–10 peserta pilot yang ditunjuk belum dilaksanakan**. Jangan menganggap pemeriksaan sintetik sebagai pilot lapangan selesai.
-- Selama pilot, URL preview hanya dibagikan kepada GTK yang ditunjuk. **Belum ada pembatasan allowlist pilot tingkat backend**; akun GTK lain yang mengetahui alamat preview dan berstatus aktif/disetujui secara teknis dapat mengisi. Untuk pembatasan keras, perlu pengembangan gerbang allowlist sebelum penyebaran tautan pilot secara luas.
+- Akses pilot sekarang dibatasi **allowlist backend**. Migrasi `smartgtk_pilot_allowlist_gate_20261021` membuat tabel pilot privat, RPC `smartgtk_pilot_status`, dan fungsi penetapan khusus Dinas `smartgtk_pilot_assign`. Akun GTK yang tidak terdaftar dapat melihat informasi pilot tetapi tidak bisa menyimpan laporan SMART-GTK. Daftar pilot awal **kosong**; menunggu penetapan 5–10 GTK atas persetujuan Kabid.
+
+### Gerbang pilot terbaru (21 Oktober 2026)
+- Migrasi ketiga `smartgtk_pilot_allowlist_gate_20261021` telah diterapkan dengan persetujuan pengguna. CI cloudflare-bundle dan postgres-security lulus pada commit `9ffad635d1f69741614d4efda1be427e6321d211`.
+- Audit setelah pemasangan: **486 profil**, **1 laporan pendidikan lama**, **0 pengajuan Jabfung 2026**, dan **0 laporan SMART-GTK**. Daftar pilot berisi **0 akun**; tidak ada pengguna otomatis diikutkan.
+- Tabel pilot RLS aktif dan tidak dapat dibaca/ditulis langsung oleh akun `authenticated` atau `anon`. Pendaftaran pilot hanya melalui RPC Dinas dengan validasi akun GTK aktif/disetujui; pengisian GTK juga mengecek keanggotaan pilot di backend.
+- Aset frontend Preview `smartgtk-unified.js?v=3` menampilkan informasi bagi GTK yang belum ditetapkan sebagai peserta. **Frontend belum dirilis ke Cloudflare produksi**.
+- Uji penyimpanan pilot sesungguhnya baru dapat dilakukan setelah calon peserta dipilih; tidak menggunakan identitas sintetis di database aktif.
