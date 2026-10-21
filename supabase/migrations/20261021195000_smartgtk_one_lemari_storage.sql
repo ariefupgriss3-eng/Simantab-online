@@ -164,3 +164,37 @@ begin
 end;
 $$;
 
+
+create or replace function public.smartgtk_cabinet_candidates(p_type text)
+returns table(file_id uuid,file_name text,file_size bigint,mime_type text,uploaded_at timestamptz,requirement_code text)
+language plpgsql stable security definer set search_path=''
+as $$
+declare v public.smartgtk_intake%rowtype;
+begin
+ select * into v from public.smartgtk_intake where owner_id=auth.uid();
+ if not found then raise exception 'Simpan pendataan SMART-GTK terlebih dahulu';end if;
+ if not private.smartgtk_current_user_can_participate() then
+  raise exception 'Akses pengisian SMART-GTK belum aktif';end if;
+ if not private.smartgtk_cabinet_type_allowed(v.employment,p_type) then
+  raise exception 'Jenis dokumen tidak diperbolehkan untuk status ini';end if;
+ return query
+ select sf.id,sf.file_name,sf.file_size,sf.mime_type,sf.created_at,sf.requirement_code
+ from public.submission_files sf
+ join storage.objects o on o.bucket_id='simantab-documents' and o.name=sf.storage_path
+ where sf.user_id=auth.uid()
+   and split_part(sf.storage_path,'/',1)=auth.uid()::text
+   and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
+   and sf.mime_type in ('application/pdf','image/jpeg','image/png')
+   and private.smartgtk_cabinet_code_matches(p_type,sf.requirement_code)
+ union all
+ select x.id,x.file_name,x.file_size,x.mime_type,x.created_at,x.doc_type
+ from public.smartgtk_locker_files x
+ join storage.objects o on o.bucket_id='simantab-documents' and o.name=x.storage_path
+ where x.owner_id=auth.uid() and x.doc_type=p_type
+   and x.file_size between 1 and 1572864
+   and length(x.storage_path)<=220
+   and x.mime_type in ('application/pdf','image/jpeg','image/png')
+ order by uploaded_at desc,file_id desc limit 100;
+end;
+$$;
+
