@@ -45,10 +45,18 @@ Pedoman harus ditelaah kembali berdasarkan Surat Dirjen GTK Nomor 0294/B/B.B1/HK
 
 ## 5. Status rilis
 
-**PR #233 tetap Draft.** Migrasi `supabase/migrations/20261021150000_smartgtk_unified_intake.sql` **belum dipasang pada database produksi**. Build Cloudflare QA bukan bukti deploy produksi. Selesaikan tinjauan hukum, uji preview runtime (dengan database yang memiliki migrasi baru), tinjauan kemudahan isian di Android, dan prosedur rollback sebelum izin penerapan skema dan deployment Worker yang benar.
+**PR #233 tetap Draft dan frontend belum dirilis ke Cloudflare produksi.** Dua migrasi SMART-GTK sudah dipasang ke Supabase SIMANTAB aktif atas persetujuan pengguna: `smartgtk_unified_intake_gtk_all_20261021` (versi Supabase `20261021002053`) dan `smartgtk_preserve_education_reviews_20261021` (`20261021002718`). Build Cloudflare QA bukan bukti deploy produksi. Selesaikan tinjauan hukum, uji preview runtime (dengan database yang memiliki migrasi baru), tinjauan kemudahan isian di Android, dan prosedur rollback sebelum izin penerapan skema dan deployment Worker yang benar.
 
 Ketika kelak diaktifkan, staf dapat meneruskan hasil skrining tertentu ke proses usulan resmi lewat tombol tindakan yang memerlukan pengecekan dokumen, **bukan membuat usulan otomatis dari jawaban survei**.
 
 ## Pengaman perubahan data pendidikan
 
 Perubahan SK Jabfung atau status kepegawaian melalui SMART-GTK **tidak memutakhirkan ulang modul pendidikan 2030 ketika data pendidikannya sama**, sehingga catatan Dinas `PERLU_PERBAIKAN` tidak hilang. Ijazah yang `TERVERIFIKASI` juga tidak dapat diubah sepihak melalui isian guru. Migrasi susulan: `20261021160000_smartgtk_preserve_education_reviews.sql`.
+
+### Hasil pemasangan database dan uji awal (21 Oktober 2026)
+- GitHub Actions `cloudflare-bundle` dan `postgres-security` lulus pada commit `bb8180605e47d8ecf3772101712607ac05c7e5d7`.
+- Setelah pemasangan: **486 profil** tetap ada, **1 laporan pendidikan lama** dan **1 audit pendidikan** tetap ada, **0 kasus JF2026** tetap 0. Tabel SMART-GTK dan audit-nya baru, masing-masing **0 baris**; tidak membuat laporan atas nama GTK secara otomatis.
+- RLS aktif pada dua tabel; `anon` tidak boleh membaca tabel atau mengeksekusi RPC SMART-GTK; authenticated tidak boleh INSERT/UPDATE langsung (melalui RPC tervalidasi). Petugas Kabid dapat membaca roster dengan `smartgtk_officer_list`.
+- Validasi sinkronisasi: perubahan murni pada SK/status kerja tidak menimpa dokumen atau catatan koreksi pendidikan yang sedang diproses Dinas.
+- Preview Cloudflare memuat aset `smartgtk-unified.js?v=2`. **Login, pengisian dan penyimpanan nyata oleh 5–10 peserta pilot yang ditunjuk belum dilaksanakan**. Jangan menganggap pemeriksaan sintetik sebagai pilot lapangan selesai.
+- Selama pilot, URL preview hanya dibagikan kepada GTK yang ditunjuk. **Belum ada pembatasan allowlist pilot tingkat backend**; akun GTK lain yang mengetahui alamat preview dan berstatus aktif/disetujui secara teknis dapat mengisi. Untuk pembatasan keras, perlu pengembangan gerbang allowlist sebelum penyebaran tautan pilot secara luas.
