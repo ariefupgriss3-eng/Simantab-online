@@ -11,6 +11,7 @@ on:
       - 'web/tests/smartgtk-mass-integration.sql'
       - 'supabase/migrations/20261021180000_smartgtk_mass_roles.sql'
       - 'supabase/migrations/20261021181000_smartgtk_mass_documents.sql'
+      - 'supabase/migrations/20261021182000_smartgtk_mass_rollout_gate.sql'
       - 'web/tests/smartgtk.contract.test.mjs'
       - 'web/tests/smartgtk-integration.sql'
       - 'supabase/migrations/20261021150000_smartgtk_unified_intake.sql'
@@ -129,5 +130,7 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021180000_smartgtk_mass_roles.sql
       - name: Add role-aware private documents (synthetic)
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021181000_smartgtk_mass_documents.sql
+      - name: Add default-PILOT audited mass rollout gate (synthetic only)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021182000_smartgtk_mass_rollout_gate.sql
       - name: Test teacher-only classifications and document policies
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-mass-integration.sql
