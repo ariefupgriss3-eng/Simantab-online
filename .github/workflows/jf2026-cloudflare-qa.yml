@@ -13,6 +13,8 @@ on:
       - 'web/tests/smartgtk-cabinet-integration.sql'
       - 'supabase/migrations/20261021193000_smartgtk_lemari_document_reference.sql'
       - 'supabase/migrations/20261021195000_smartgtk_one_lemari_storage.sql'
+      - 'supabase/migrations/20261021201000_smartgtk_legacy_sk_jabfung_match.sql'
+      - 'web/tests/smartgtk-legacy-sk-jabfung.integration.sql'
       - 'web/tests/smartgtk-one-lemari-integration.sql'
       - 'supabase/migrations/20261021180000_smartgtk_mass_roles.sql'
       - 'supabase/migrations/20261021181000_smartgtk_mass_documents.sql'
@@ -63,7 +65,7 @@ jobs:
           test -s .vercel/output/static/jf-qualification-2030.js
           test -s .vercel/output/static/smartgtk-unified.js
           test -s .vercel/output/static/smartgtk-onboarding.js
-          grep -q './smartgtk-unified.js?v=9' .vercel/output/static/index.html
+          grep -q './smartgtk-unified.js?v=10' .vercel/output/static/index.html
           grep -q './smartgtk-onboarding.js?v=1' .vercel/output/static/index.html
           grep -q './jf-qualification-2030.js?v=5' .vercel/output/static/index.html
           grep -q './jf-guru-2026.js?v=2' .vercel/output/static/index.html
@@ -149,3 +151,7 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021195000_smartgtk_one_lemari_storage.sql
       - name: Test one real storage object for Lemari and SMART-GTK without duplicated submission
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-one-lemari-integration.sql
+      - name: Apply strict legacy Jabfung file label compatibility (synthetic only)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021201000_smartgtk_legacy_sk_jabfung_match.sql
+      - name: Test correct SK Jabfung Terakhir shown and unrelated SK jabatan rejected
+        run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-legacy-sk-jabfung.integration.sql
