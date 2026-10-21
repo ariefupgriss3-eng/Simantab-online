@@ -244,10 +244,40 @@ async function renderDocumentStep(){
  '<p>Status saat ini: <b>'+esc(status)+'</b>'+(policy==='WAJIB'?' • Berkas kurang: '+missing.length:'')+'</p>'+
  labels.map(t=>'<label class="sg-box">'+esc(docLabels[t]||t)+(policy==='WAJIB'?(missing.includes(t)?' — Belum ada':' — Tercatat'):' — Opsional')+
  '<input type="file" data-docfile="'+esc(t)+'" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">'+
- '<button type="button" data-action="fileupload" data-type="'+esc(t)+'">Unggah Berkas</button></label>').join('')+
+ '<div class="sg-actions"><button type="button" data-action="cabinet" data-type="'+esc(t)+'">📁 Ambil dari Lemari Dokumenku</button>'+
+ '<button type="button" data-action="fileupload" data-type="'+esc(t)+'">Unggah Berkas Baru</button></div></label>').join('')+
+ '<div id="sgCabinetPicker" class="sg-box" hidden></div>'+
  '<p style="font-size:12px">PDF/JPG/PNG, maksimal 1,5 MB. Gunakan berkas asli yang sesuai. Status belum berarti berkas diverifikasi Dinas.</p>'+
  '<button type="button" data-action="complete">'+(policy==='WAJIB'?'Periksa Kelengkapan PNS':'Selesaikan Pendataan')+'</button></div>';
 }
+async function openCabinetPicker(type){
+ if(!gtk()||!Object.hasOwn(docLabels,type))throw Error('Jenis berkas tidak valid');
+ const container=document.getElementById('sgCabinetPicker');if(!container)return;
+ const response=await sb.rpc('smartgtk_cabinet_candidates',{p_type:type});
+ if(response.error)throw response.error;
+ const rows=response.data||[];
+ const count=rows.length;
+ container.hidden=false;
+ container.innerHTML='<b>📁 Lemari Dokumenku — '+esc(docLabels[type])+'</b>'+
+ '<p class="sg-note">Pilih berkas yang benar untuk jenis dokumen ini. Berkas hanya ditautkan dari lemari pribadi, tidak disalin atau diunggah ulang. Penetapan jenis dokumen belum berarti diverifikasi Dinas.</p>'+
+ (count?'<div class="sg-scroll"><table><thead><tr><th>Dokumen tersedia</th><th>Ukuran</th><th>Tindakan</th></tr></thead><tbody>'+
+ rows.map(x=>'<tr><td>'+esc(x.file_name)+'<div style="font-size:12px">'+esc(x.requirement_code||'Dokumen pribadi')+'</div></td><td>'+
+ (Number(x.file_size)/1048576).toFixed(2)+' MB</td><td><button type="button" data-action="pickcabinet" data-type="'+esc(type)+
+ '" data-fileid="'+esc(x.file_id)+'">Gunakan berkas ini</button></td></tr>').join('')+
+ '</tbody></table></div>':
+ '<p>Belum ada berkas PDF/JPG/PNG yang memenuhi syarat di Lemari Dokumenku. Gunakan unggah berkas baru jika diperlukan.</p>')+
+ '<button type="button" data-action="hidecabinet">Tutup pilihan</button>';
+ container.scrollIntoView({block:'nearest'});
+}
+async function attachCabinetFile(type,fileId){
+ if(!gtk()||!Object.hasOwn(docLabels,type)||!/^[a-f0-9-]{36}$/i.test(fileId||''))
+  throw Error('Pilihan dokumen tidak valid');
+ const response=await sb.rpc('smartgtk_import_cabinet',{p_type:type,p_file_id:fileId});
+ if(response.error)throw response.error;
+ info('Berkas '+(docLabels[type]||type)+' berhasil diambil dari Lemari Dokumenku sebagai referensi. Belum diverifikasi Dinas.');
+ await renderDocumentStep();
+}
+
 async function uploadDocument(type){
  if(!gtk())throw Error('Hanya pemilik akun yang dapat mengunggah');
  if(!Object.hasOwn(docLabels,type))throw Error('Jenis berkas tidak dikenal');
@@ -322,11 +352,14 @@ modal.addEventListener('click',async e=>{
   busy=true;info('');
   if(act==='edit'){await loadGTK();form()}
   if(act==='fileupload'){await uploadDocument(b.dataset.type)}
+  if(act==='cabinet'){await openCabinetPicker(b.dataset.type)}
+  if(act==='pickcabinet'){await attachCabinetFile(b.dataset.type,b.dataset.fileid)}
+  if(act==='hidecabinet'){const el=document.getElementById('sgCabinetPicker');if(el)el.hidden=true}
   if(act==='complete'){await confirmCompleteness()}
   if(act==='education'){modal.style.display='none';window.__simantabJF2030?.open()}
   if(act==='prior'){const r=await sb.rpc('smartgtk_mass_get');if(r.error)throw r.error;results(r.data?.classification||{})}
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:8,backendRequired:true};
+window.__smartGtkUnified={open,version:9,backendRequired:true};
 })();
