@@ -4,7 +4,7 @@ create role anon nologin;
 create schema if not exists auth;
 create schema if not exists storage;
 create extension if not exists pgcrypto;
-create table auth.users(id uuid primary key);
+create table auth.users(id uuid primary key,last_sign_in_at timestamptz);
 create or replace function auth.uid() returns uuid language sql stable as $$
  select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid
 $$;
