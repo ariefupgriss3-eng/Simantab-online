@@ -128,3 +128,39 @@ begin
 end;
 $$;
 
+
+create or replace function public.smartgtk_mass_officer_list(p_page integer default 0)
+returns table(owner_id uuid,full_name text,unit_work text,
+ profession text,employment text,education text,
+ data_stage text,screening jsonb,docs_present integer,required_count integer,updated_at timestamptz)
+language plpgsql stable security definer set search_path=''
+as $$
+begin
+ if not private.jf2026_is_officer() then raise exception 'Hanya petugas Dinas';end if;
+ if p_page is null or p_page<0 or p_page>10000 then raise exception 'Halaman tidak valid';end if;
+ return query select v.owner_id,v.full_name,v.unit_work,v.profession,v.employment,
+   v.education,v.data_stage,
+   public.smartgtk_mass_classify(v.profession,v.employment,v.jf_sk,
+    v.nomenclature_updated,v.pns_jf_formation,v.education,v.old_position),
+   (select count(*)::integer from public.smartgtk_documents d
+      join storage.objects o on o.bucket_id=d.source_bucket and o.name=d.storage_path
+      where d.owner_id=v.owner_id and
+      (d.source_bucket='simantab-smartgtk-private' and d.cabinet_file_id is null
+       or d.source_bucket='simantab-documents' and exists(
+        select 1 from public.smartgtk_locker_files x
+        where x.id=d.cabinet_upload_id and x.owner_id=d.owner_id
+         and x.storage_path=d.storage_path and x.doc_type=d.doc_type
+         and x.file_size between 1 and 1572864 and x.mime_type in ('application/pdf','image/jpeg','image/png'))
+       or d.source_bucket='simantab-documents' and exists(
+        select 1 from public.submission_files sf where sf.id=d.cabinet_file_id and sf.user_id=d.owner_id
+         and sf.storage_path=d.storage_path and sf.file_size between 1 and 1572864 and length(sf.storage_path)<=220
+         and sf.mime_type in ('application/pdf','image/jpeg','image/png')
+          and private.smartgtk_cabinet_code_matches(d.doc_type,sf.requirement_code)))),
+   cardinality(public.smartgtk_mass_required_docs(v.profession,v.employment,v.jf_sk,
+    v.nomenclature_updated,v.pns_jf_formation,v.education,v.old_position)),
+   v.updated_at
+ from public.smartgtk_intake v order by v.updated_at desc,v.owner_id
+ limit 50 offset (p_page::bigint*50);
+end;
+$$;
+
