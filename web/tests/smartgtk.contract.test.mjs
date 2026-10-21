@@ -46,3 +46,10 @@ test('three classifications remain independent, provisional, and qualification-a
  assert.match(migration,/SKRINING_AWAL_BUKAN_KEPUTUSAN/);
  assert.match(migration,/p_employment<>'PNS'/);
 });
+
+test('all GTK include non-ASN without ASN NIP but ASN 18-digit requirement remains',()=>{
+ assert.match(migration,/nip text not null default ''/);
+ assert.match(migration,/p_employment in \('PNS','PPPK','PPPK_PW'\)/);
+ assert.match(migration,/Legacy education 2030 RPC requires NIP/);
+ assert.match(read('./smartgtk-integration.sql'),/Non-ASN GTK may not have ASN NIP/);
+});
