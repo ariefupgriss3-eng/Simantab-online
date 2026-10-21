@@ -11,6 +11,7 @@ on:
       - 'web/tests/smartgtk-integration.sql'
       - 'supabase/migrations/20261021150000_smartgtk_unified_intake.sql'
       - 'supabase/migrations/20261021160000_smartgtk_preserve_education_reviews.sql'
+      - 'supabase/migrations/20261021170000_smartgtk_pilot_allowlist.sql'
       - 'web/tests/jf2030-qualification.contract.test.mjs'
       - 'web/tests/jf2030-postgres-integration.sql'
       - 'web/tests/jf2030-coverage-integration.sql'
@@ -51,7 +52,7 @@ jobs:
           test -s .vercel/output/static/jf-guru-2026.js
           test -s .vercel/output/static/jf-qualification-2030.js
           test -s .vercel/output/static/smartgtk-unified.js
-          grep -q './smartgtk-unified.js?v=2' .vercel/output/static/index.html
+          grep -q './smartgtk-unified.js?v=3' .vercel/output/static/index.html
           grep -q './jf-qualification-2030.js?v=5' .vercel/output/static/index.html
           grep -q './jf-guru-2026.js?v=2' .vercel/output/static/index.html
           test "$(grep -o './jf-guru-2026.js?v=2' .vercel/output/static/index.html | wc -l)" -eq 1
@@ -114,5 +115,7 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021150000_smartgtk_unified_intake.sql
       - name: Preserve education reviews during personnel-only form saves (synthetic only)
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021160000_smartgtk_preserve_education_reviews.sql
+      - name: Enforce limited pilot enrollment in synthetic PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021170000_smartgtk_pilot_allowlist.sql
       - name: Test three-way classification, one data form and RLS
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-integration.sql
