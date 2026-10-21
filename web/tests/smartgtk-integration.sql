@@ -128,4 +128,33 @@ begin
  end;
 end $test_non_asn_no_nip$;
 
+
+-- An unrelated SK edit must not clear an officer request to correct diploma evidence.
+reset role;
+update public.jf2030_qualification set review_status='PERLU_PERBAIKAN',
+ review_note='Perbaiki dokumen',updated_at=now()
+ where owner_id='00000000-0000-4000-8000-000000000006';
+set role authenticated;
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000006';
+select public.smartgtk_save('PNS','YA','Guru Pertama','TIDAK','TIDAK',
+ 'S1','SUDAH_MEMENUHI','Univ Contoh','PGSD',2015,null,'2020-07-01','Data sintetis');
+do $test_review_retained$
+begin
+ if not exists(select 1 from public.jf2030_qualification where owner_id=auth.uid()
+   and review_status='PERLU_PERBAIKAN' and review_note='Perbaiki dokumen') then
+   raise exception 'FAIL: personnel edit erased diploma correction review';end if;
+end $test_review_retained$;
+-- Independently verified education cannot be rewritten by unified form.
+set request.jwt.claim.sub='00000000-0000-4000-8000-000000000001';
+do $test_verified_protected$
+begin
+ begin
+  perform public.smartgtk_save('PNS','YA','Guru Muda','TIDAK','TIDAK',
+   'DI','LULUS_BELUM_VERIF','Univ Salah','PGSD',2025,'2030-04-15','2026-10-01','Not authorized');
+  raise exception 'FAIL: verified education metadata overwritten';
+ exception when others then
+  if position('Ijazah terverifikasi berbeda' in sqlerrm)=0 then raise;end if;
+ end;
+end $test_verified_protected$;
+
 select 'SMARTGTK synthetic classification and RLS PASS' as result;
