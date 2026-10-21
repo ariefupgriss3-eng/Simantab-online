@@ -102,7 +102,7 @@ async function refreshDashboardPriority(card){
    msg.textContent='Akun dapat mengisi. Simpan data dahulu, lalu lengkapi berkas sesuai status kepegawaian.';
   }else{
    btn.textContent='Lihat informasi SMART-GTK →';
-   msg.textContent='Saat ini masih uji coba terbatas. Pengisian tersedia setelah akun ditetapkan Dinas atau layanan dibuka secara umum.';
+   msg.textContent='Akun belum dapat mengisi SMART-GTK. Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas. Jika sudah, segarkan halaman atau hubungi admin.';
   }
  }catch(error){
   if(token!==priorityCheck||!card.isConnected)return;
@@ -374,11 +374,11 @@ async function open(){
     const enrolled=await sb.rpc('smartgtk_pilot_status');
     if(enrolled.error)throw enrolled.error;
     if(enrolled.data===true){await loadGTK();form()}
-    else {body().innerHTML='<p class="sg-note">SMART-GTK masih tahap pilot terbatas. Akun GTK ini belum ditetapkan sebagai peserta oleh Dinas. Silakan tetap menggunakan layanan SIMANTAB lainnya.</p>'}
+    else {body().innerHTML='<p class="sg-note">Akun belum memenuhi ketentuan akses SMART-GTK. Pastikan akun aktif dan disetujui Dinas; jika perlu, hubungi admin SIMANTAB. Layanan lainnya tetap dapat digunakan.</p>'}
    }
    info('')
   }
- catch(e){body().innerHTML='<p class="sg-note">Modul belum diaktifkan pada database ini. Hubungi admin.</p>';info(e.message||String(e),true)}
+ catch(e){body().innerHTML='<p class="sg-note">SMART-GTK belum dapat dimuat. Segarkan halaman dan coba kembali. Jika kendala berlanjut, hubungi admin SIMANTAB.</p>';info(e.message||String(e),true)}
 }
 modal.addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b||busy)return;
@@ -396,5 +396,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:14,backendRequired:true};
+window.__smartGtkUnified={open,version:15,backendRequired:true};
 })();
