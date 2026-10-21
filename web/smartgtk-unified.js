@@ -261,7 +261,10 @@ async function openCabinetPicker(type){
  container.innerHTML='<b>📁 Lemari Dokumenku — '+esc(docLabels[type])+'</b>'+
  '<p class="sg-note">Pilih berkas dengan kategori dokumen yang sesuai. Hanya dokumen dengan jenis cocok yang ditampilkan; berkas hanya ditautkan dari lemari pribadi tanpa unggah ulang. Penetapan jenis dokumen belum berarti diverifikasi Dinas.</p>'+
  (count?'<div class="sg-scroll"><table><thead><tr><th>Dokumen tersedia</th><th>Ukuran</th><th>Tindakan</th></tr></thead><tbody>'+
- rows.map(x=>'<tr><td>'+esc(x.file_name)+'<div style="font-size:12px">'+esc(x.requirement_code||'Dokumen pribadi')+'</div></td><td>'+
+ rows.map(x=>'<tr><td>'+esc(x.file_name)+'<div style="font-size:12px">'+
+ (type==='SK_JF'&&x.requirement_code==='SK_JABATAN_SEBELUMNYA'?
+ 'SK Jabfung Terakhir (kode arsip lama) — pastikan benar, perlu verifikasi Dinas':esc(x.requirement_code||'Dokumen pribadi'))+
+ '</div></td><td>'+
  (Number(x.file_size)/1048576).toFixed(2)+' MB</td><td><button type="button" data-action="pickcabinet" data-type="'+esc(type)+
  '" data-fileid="'+esc(x.file_id)+'">Gunakan berkas ini</button></td></tr>').join('')+
  '</tbody></table></div>':
@@ -368,5 +371,5 @@ modal.addEventListener('click',async e=>{
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:10,backendRequired:true};
+window.__smartGtkUnified={open,version:11,backendRequired:true};
 })();
