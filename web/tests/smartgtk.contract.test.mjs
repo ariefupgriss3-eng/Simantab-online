@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=14/);
+ assert.match(injection,/smartgtk-unified\.js\?v=23/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -122,7 +122,7 @@ test('SMART-GTK is a prominent dashboard-first GTK priority, not a GTK services 
  assert.match(ui,/smartgtk_pilot_status/);
  assert.match(ui,/Isi \/ Lanjutkan SMART-GTK/);
  assert.match(ui,/Lihat informasi SMART-GTK/);
- assert.match(ui,/if\(gtk\(\)\)\{ensureGTKDashboard\(\);ensureGTKNav\(\);return\}/);
+ assert.match(ui,/ensureGTKDashboard\(\);ensureGTKNav\(\);return/);
  assert.match(ui,/function ensureDinasService\(\)/);
  assert.match(ui,/function removeOldGTKServiceTiles\(\)/);
  assert.doesNotMatch(ui,/function tile\(\)/);
@@ -130,7 +130,7 @@ test('SMART-GTK is a prominent dashboard-first GTK priority, not a GTK services 
 });
 
 test('Dashboard GTK has short copy and visible 26 October 2026 23:59 WIB data deadline',()=>{
- assert.match(ui,/Satu kali isi untuk pendataan guru, kepala sekolah, pengawas, dan tenaga kependidikan\.<\/p>/);
+ assert.match(ui,/PNS Guru\/Kepala Sekolah: 3 analisis\. PPPK dan PPPK PW: tampungan data terpisah/);
  assert.doesNotMatch(ui,/SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS\./);
  assert.match(ui,/sg-deadline/);
  assert.match(ui,/Deadline input data paling lambat 26 Oktober 2026, pukul 23\.59 WIB\./);
