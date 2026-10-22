@@ -10,7 +10,7 @@ await new Promise(resolve=>{
 });
 const sb=window.__simantabSb,p=()=>window.__simantabProfile||{};
 const gtk=()=>((p().account_channel==='GTK'&&['GTK','KEPALA_SEKOLAH'].includes(p().role))||p().role==='PENGAWAS')&&p().approval_status==='APPROVED'&&p().is_active!==false;
-const dinas=()=>p().account_channel==='DINAS'&&['SUPER_ADMIN','KABID','STAFF_USUL_SK'].includes(p().role)&&p().approval_status==='APPROVED'&&p().is_active!==false;
+const dinas=()=>p().account_channel==='DINAS'&&(['SUPER_ADMIN','KABID','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role)||/^STAFF_|^ADMIN_/.test(p().role||''))&&p().approval_status==='APPROVED'&&p().is_active!==false;
 const esc=v=>String(v??'').replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
 const qualified=['S1','DIV','S2','S3'];
 const employmentLabel=(value)=>({'PB':'Pendamping Belajar (PB)','PLS':'Pendamping Layanan Satpen (PLS)','NON_ASN':'Pendamping (data lama: belum dipilah PB/PLS)'}[value]||value);
@@ -36,6 +36,7 @@ const meanings={
  DINYATAKAN_MEMENUHI_BELUM_VERIFIKASI:'Sudah memenuhi menurut pernyataan, ijazah belum diverifikasi'
 };
 let old=null,education=null,items=[],pg=0,busy=false,onboarding=null;const maxDocBytes=1572864;
+let workflowPage=0,workflowItems=[],workflowTotal=0,workflowStaff=[];
 const modal=document.createElement('div');modal.id='smartgtkModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
 modal.innerHTML='<div class="sg-container"><div class="sg-head"><b>SMART-GTK • Satu Data, Tiga Analisis</b><button type="button" data-action="close">✕ Tutup</button></div><p id="sgMessage" role="status"></p><div id="sgBody"></div></div>';document.body.append(modal);
 const style=document.createElement('style');
@@ -129,7 +130,7 @@ function ensureDinasService(){
  if(document.getElementById('smartgtkTile'))return;
  const item=document.createElement('div');item.id='smartgtkTile';item.className='card';
  item.style.cssText='padding:14px;margin:12px 0;background:#eef8ff;border:1px solid #b8d9ed;border-radius:12px';
- item.innerHTML='<h3>🧭 Monitoring SMART-GTK</h3><p class="small">Pantau pendataan dan skrining awal guru/KS PNS berdasarkan laporan GTK. Bukan persetujuan SK.</p><button type="button" class="btn primary">Buka Monitoring</button>';
+ item.innerHTML='<h3>🧭 Workflow SMART-GTK</h3><p class="small">Staf memeriksa; Kasi SD, Kasi SMP, atau Subkoor TK/PAUD/PNF memvalidasi sesuai jenjang; Kabid memberikan keputusan telaah akhir. Bukan persetujuan SK.</p><button type="button" class="btn primary">Buka Workflow SMART-GTK</button>';
  item.querySelector('button').addEventListener('click',open);
  root.prepend(item);
 }
@@ -347,6 +348,105 @@ async function save(){
  const r=await sb.rpc('smartgtk_mass_save',args);if(r.error)throw r.error;
  await loadGTK();results(r.data);info('Data tersimpan dan berhasil diklasifikasikan.');
 }
+/* SIMANTAB_SMARTGTK_ROLE_WORKFLOW_V1: all transitions validated by Supabase RPC; the UI never writes workflow rows directly. */
+const flowRoles={KABID:'Kabid Ketenagaan',KASI_SD:'Kasi SD',KASI_SMP:'Kasi SMP',SUBKOOR_TK:'Subkoor TK/PAUD/PNF'};
+const flowLabels={
+ MENUNGGU_DATA:'Data GTK perlu dilengkapi',MENUNGGU_PENUGASAN:'Menunggu penugasan staf',
+ MENUNGGU_STAF:'Pemeriksaan staf',MENUNGGU_KASI:'Validasi Kasi/Subkoor',
+ MENUNGGU_KABID:'Keputusan Kabid',PERBAIKAN_GTK:'Perbaikan oleh GTK',
+ PERBAIKAN_STAF:'Perbaikan oleh staf',PERBAIKAN_KASI:'Perbaikan Kasi/Subkoor',
+ SELESAI:'Telaah administratif selesai'
+};
+const flowCoordinator=()=>['KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role);
+const flowStaff=()=>/^STAFF_|^ADMIN_/.test(p().role||'');
+async function loadDinasWorkflow(){
+ const req=[sb.rpc('smartgtk_workflow_list',{p_page:workflowPage})];
+ if(flowCoordinator())req.push(sb.rpc('smartgtk_workflow_staff'));
+ const response=await Promise.all(req);
+ if(response[0].error)throw response[0].error;
+ if(response[1]?.error)throw response[1].error;
+ const data=response[0].data||{};
+ workflowItems=Array.isArray(data.items)?data.items:[];
+ workflowTotal=Number(data.total||0);
+ workflowStaff=Array.isArray(response[1]?.data)?response[1].data:[];
+}
+function workflowActions(item){
+ const status=item.status,role=p().role;
+ const make=(action,title)=>'<button type="button" data-action="wf-act" data-owner="'+esc(item.owner_id)+'" data-operation="'+esc(action)+'">'+esc(title)+'</button>';
+ if(role==='KABID'){
+  if(item.scope==='BELUM_TERPETAKAN'&&status==='MENUNGGU_PENUGASAN')return make('SET_SCOPE','Tentukan Jenjang');
+  if(status==='MENUNGGU_KABID')return make('APPROVE','✓ Selesaikan Telaah')+make('RETURN_COORD','↶ Kembalikan ke Kasi/Subkoor')+make('RETURN_GTK','↶ Perbaikan GTK');
+ }
+ if(flowCoordinator()){
+  if(['MENUNGGU_PENUGASAN','MENUNGGU_STAF','PERBAIKAN_STAF'].includes(status))
+   return '<div class="sg-actions"><select data-staff-for="'+esc(item.owner_id)+'" aria-label="Pilih staf pemeriksa">'+
+    '<option value="">Pilih staf pemeriksa</option>'+
+    workflowStaff.map(x=>option(x.id,(x.name||'Staf')+' · '+x.role,'')).join('')+
+    '</select>'+make('ASSIGN_STAFF','Tugaskan Staf')+'</div>';
+  if(['MENUNGGU_KASI','PERBAIKAN_KASI'].includes(status))
+   return make('FORWARD_KABID','✓ Teruskan ke Kabid')+(item.assigned_staff?make('RETURN_STAFF','↶ Perbaikan Staf'):'')+make('RETURN_GTK','↶ Perbaikan GTK');
+ }
+ if(flowStaff()&&item.assigned_staff===p().id&&['MENUNGGU_STAF','PERBAIKAN_STAF'].includes(status))
+  return make('SEND_KASI','✓ Kirim ke Kasi/Subkoor')+make('RETURN_GTK','↶ Minta Perbaikan GTK');
+ return '<span class="small">Menunggu tahap berikutnya</span>';
+}
+function workflowDashboard(){
+ const role=flowRoles[p().role]||(flowStaff()?'Staf Ketenagaan':'Monitoring Dinas');
+ const grouped={};for(const i of workflowItems)grouped[i.status]=(grouped[i.status]||0)+1;
+ const counters=Object.entries(grouped).map(([k,n])=>'<span style="display:inline-block;background:#edf6ff;border-radius:7px;padding:6px 8px;margin:4px 5px 4px 0">'+esc(flowLabels[k]||k)+': <b>'+n+'</b></span>').join('');
+ body().innerHTML='<div class="sg-box"><h3>🧭 Workflow SMART-GTK · '+esc(role)+'</h3>'+
+ '<p class="sg-note">Alur: staf memeriksa → Kasi/Subkoor memvalidasi menurut jenjang → Kabid menyelesaikan telaah. Kasus NPSN belum terpetakan menunggu penetapan jenjang oleh Kabid. Tidak mengubah isian awal GTK maupun menerbitkan SK/JF.</p>'+
+ '<p><b>'+workflowTotal+'</b> kasus dalam cakupan akun ini · halaman '+(workflowPage+1)+'. Ringkasan status berikut hanya menghitung halaman aktif.</p>'+
+ '<div>'+counters+'</div>'+
+ (['KABID','SUPER_ADMIN','STAFF_USUL_SK'].includes(p().role)?'<button type="button" data-action="wf-legacy">Lihat Skrining Lama</button>':'')+
+ '<div class="sg-scroll"><table><thead><tr><th>Nama dan Satuan Pendidikan</th><th>Data GTK</th><th>Jenjang/Tahap</th><th>Staf Pemeriksa</th><th>Keputusan/Tindakan</th></tr></thead><tbody>'+
+ (workflowItems.length?workflowItems.map(x=>'<tr><td><b>'+esc(x.full_name||'-')+'</b><div class="small">'+esc(x.unit_work||'-')+'</div></td>'+
+ '<td>'+esc(x.profession||'-')+' / '+esc(employmentLabel(x.employment)||'-')+'<div class="small">Status berkas: '+esc(x.data_stage||'-')+' · '+esc(x.document_records||0)+' dokumen tercatat</div></td>'+
+ '<td><b>'+esc(x.scope||'-')+'</b><div class="small">'+esc(flowLabels[x.status]||x.status||'-')+'</div></td>'+
+ '<td>'+esc(x.staff_name||'Belum ditugaskan')+'</td>'+
+ '<td><div class="sg-actions">'+workflowActions(x)+'</div>'+
+ (x.staff_note?'<div class="small">Staf: '+esc(x.staff_note)+'</div>':'')+
+ (x.coordinator_note?'<div class="small">Kasi/Subkoor: '+esc(x.coordinator_note)+'</div>':'')+
+ (x.kabid_note?'<div class="small">Kabid: '+esc(x.kabid_note)+'</div>':'')+
+ '</td></tr>').join(''):'<tr><td colspan="5">Tidak ada antrean dalam cakupan peran ini. Draf GTK belum masuk alur verifikasi.</td></tr>')+
+ '</tbody></table></div><div class="sg-actions" style="margin-top:10px">'+
+ '<button type="button" data-action="wf-prev" '+(workflowPage===0?'disabled':'')+'>← Sebelumnya</button>'+
+ '<button type="button" data-action="wf-next" '+((workflowPage+1)*50>=workflowTotal?'disabled':'')+'>Berikutnya →</button>'+
+ '<button type="button" data-action="wf-refresh">↻ Segarkan</button></div></div>';
+}
+async function workflowAction(btn){
+ const owner=String(btn.dataset.owner||'');
+ const action=String(btn.dataset.operation||'');
+ const row=workflowItems.find(x=>x.owner_id===owner);
+ if(!row)throw Error('Peserta tidak ditemukan di antrean saat ini. Segarkan daftar.');
+ const valid=/^[a-f0-9-]{36}$/i.test(owner);
+ if(!valid)throw Error('Identitas peserta tidak valid');
+ let staff=null,scope=null,note='';
+ if(action==='SET_SCOPE'){
+  scope=(prompt('Pemetaan resmi '+row.full_name+'. Isi SD, SMP, atau TK_PAUD_PNF:')||'').trim().toUpperCase();
+  if(!['SD','SMP','TK_PAUD_PNF'].includes(scope))return info('Jenjang tidak valid. Tidak ada perubahan.',true);
+ }
+ if(action==='ASSIGN_STAFF'){
+  staff=document.querySelector('[data-staff-for="'+owner+'"]')?.value||'';
+  if(!staff)return info('Pilih staf pemeriksa yang aktif.',true);
+ }
+ if(['RETURN_GTK','RETURN_STAFF','RETURN_COORD'].includes(action)){
+  note=(prompt('Catatan perbaikan untuk '+row.full_name+' (minimal 10 karakter):')||'').trim();
+  if(note.length<10)return info('Perbaikan dibatalkan: catatan minimal 10 karakter.',true);
+ }else if(action==='SEND_KASI'||action==='FORWARD_KABID'||action==='APPROVE'){
+  note='Verifikasi administratif SMART-GTK dilakukan sesuai tugas dan jenjang.';
+ }
+ if(!confirm('Proses '+row.full_name+'?\nTahap saat ini: '+(flowLabels[row.status]||row.status)+
+  '\nTindakan: '+action+'\nTindakan ini dicatat dalam audit.'))return;
+ const result=await sb.rpc('smartgtk_workflow_act',{
+  p_owner:owner,p_action:action,p_note:note||null,p_staff:staff||null,p_scope:scope||null
+ });
+ if(result.error)throw result.error;
+ if(result.data?.ok!==true)throw Error('Server belum mengonfirmasi perubahan workflow.');
+ info('Alur berhasil diperbarui untuk '+row.full_name+'.');
+ await loadDinasWorkflow();workflowDashboard();
+}
+
 async function listDinas(){
  const [r,sum]=await Promise.all([sb.rpc('smartgtk_mass_officer_list',{p_page:pg}),
   sb.rpc('smartgtk_mass_onboarding_summary')]);
@@ -369,7 +469,7 @@ function dashboard(){
 async function open(){
  if(!gtk()&&!dinas())return;modal.style.display='flex';info('Memuat data...');
  try{
-   if(dinas()){pg=0;await listDinas();dashboard()}
+   if(dinas()){workflowPage=0;await loadDinasWorkflow();workflowDashboard()}
    else {
     const enrolled=await sb.rpc('smartgtk_pilot_status');
     if(enrolled.error)throw enrolled.error;
@@ -394,7 +494,17 @@ modal.addEventListener('click',async e=>{
   if(act==='education'){modal.style.display='none';window.__simantabJF2030?.open()}
   if(act==='prior'){const r=await sb.rpc('smartgtk_mass_get');if(r.error)throw r.error;results(r.data?.classification||{})}
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
+  if(act==='wf-act')await workflowAction(b);
+  if(act==='wf-next'||act==='wf-prev'||act==='wf-refresh'){
+   if(act==='wf-next')workflowPage++;
+   if(act==='wf-prev')workflowPage=Math.max(0,workflowPage-1);
+   await loadDinasWorkflow();workflowDashboard();
+  }
+  if(act==='wf-legacy'){pg=0;await listDinas();dashboard();
+   body().insertAdjacentHTML('afterbegin','<button type="button" data-action="wf-return">← Kembali ke Workflow SMART-GTK</button>');
+  }
+  if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:15,backendRequired:true};
+window.__smartGtkUnified={open,version:16,backendRequired:true,roleWorkflow:true};
 })();
