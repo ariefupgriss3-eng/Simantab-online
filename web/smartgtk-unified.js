@@ -37,6 +37,7 @@ const meanings={
 };
 let old=null,education=null,items=[],pg=0,busy=false,onboarding=null;const maxDocBytes=1572864;
 let workflowPage=0,workflowItems=[],workflowTotal=0,workflowStaff=[];
+let workflowDraftPage=0,workflowDraftItems=[],workflowDraftTotal=0;
 const modal=document.createElement('div');modal.id='smartgtkModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
 modal.innerHTML='<div class="sg-container"><div class="sg-head"><b>SMART-GTK • Satu Data, Tiga Analisis</b><button type="button" data-action="close">✕ Tutup</button></div><p id="sgMessage" role="status"></p><div id="sgBody"></div></div>';document.body.append(modal);
 const style=document.createElement('style');
@@ -471,15 +472,21 @@ const flowLabels={
 const flowCoordinator=()=>['KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role);
 const flowStaff=()=>/^STAFF_|^ADMIN_/.test(p().role||'');
 async function loadDinasWorkflow(){
- const req=[sb.rpc('smartgtk_workflow_list',{p_page:workflowPage})];
- if(flowCoordinator())req.push(sb.rpc('smartgtk_workflow_staff'));
+ const canSeeDrafts=['KABID','SUPER_ADMIN','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role);
+ const req=[
+  sb.rpc('smartgtk_workflow_list',{p_page:workflowPage}),
+  flowCoordinator()?sb.rpc('smartgtk_workflow_staff'):Promise.resolve({data:[]}),
+  canSeeDrafts?sb.rpc('smartgtk_workflow_drafts',{p_page:workflowDraftPage}):
+   Promise.resolve({data:{items:[],total:0,read_only:true}})
+ ];
  const response=await Promise.all(req);
- if(response[0].error)throw response[0].error;
- if(response[1]?.error)throw response[1].error;
- const data=response[0].data||{};
+ for(const r of response)if(r.error)throw r.error;
+ const data=response[0].data||{},draftData=response[2].data||{};
  workflowItems=Array.isArray(data.items)?data.items:[];
  workflowTotal=Number(data.total||0);
  workflowStaff=Array.isArray(response[1]?.data)?response[1].data:[];
+ workflowDraftItems=Array.isArray(draftData.items)?draftData.items:[];
+ workflowDraftTotal=Number(draftData.total||0);
 }
 function workflowActions(item){
  const status=item.status,role=p().role;
@@ -501,14 +508,32 @@ function workflowActions(item){
   return make('SEND_KASI','✓ Kirim ke Kasi/Subkoor')+make('RETURN_GTK','↶ Minta Perbaikan GTK');
  return '<span class="small">Menunggu tahap berikutnya</span>';
 }
+/* SIMANTAB_SMARTGTK_KABID_DRAFT_MONITOR_V1: read-only preview; never include drafts in approval or staff assignment. */
+function workflowDraftsPanel(){
+ if(!['KABID','SUPER_ADMIN','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role))return '';
+ return '<div class="sg-box" style="margin:12px 0;border:1px solid #e3b86a;background:#fffaf0">'+
+ '<h3>📝 Pemantauan Draf SMART GTK · '+workflowDraftTotal+' akun</h3>'+
+ '<p class="small">Draf belum diajukan oleh GTK. Nama terlihat untuk pemantauan saja; <b>belum dapat ditugaskan kepada staf, diverifikasi, atau disetujui</b>.</p>'+
+ '<div class="sg-scroll"><table><thead><tr><th>Nama dan Satuan Pendidikan</th><th>Status Kepegawaian</th><th>Jenjang</th><th>Status Isian</th></tr></thead><tbody>'+
+ (workflowDraftItems.length?workflowDraftItems.map(x=>'<tr>'+
+  '<td><b>'+esc(x.full_name||'-')+'</b><div class="small">'+esc(x.unit_work||'-')+'</div></td>'+
+  '<td>'+esc(x.profession||'-')+' / '+esc(employmentLabel(x.employment)||'-')+'</td>'+
+  '<td>'+esc(x.scope||'BELUM_TERPETAKAN')+'</td>'+
+  '<td><b style="color:#995c14">DRAFT</b><div class="small">'+esc(x.document_records??0)+' dokumen tercatat</div>'+
+  '<div class="small">Menunggu GTK mengonfirmasi kelengkapan</div></td></tr>').join(''):
+  '<tr><td colspan="4">Tidak ada draf pada cakupan akun ini.</td></tr>')+
+ '</tbody></table></div><div class="sg-actions" style="margin-top:8px">'+
+ '<button type="button" data-action="wf-draft-prev" '+(workflowDraftPage===0?'disabled':'')+'>← Draf sebelumnya</button>'+
+ '<button type="button" data-action="wf-draft-next" '+((workflowDraftPage+1)*50>=workflowDraftTotal?'disabled':'')+'>Draf berikutnya →</button></div></div>';
+}
 function workflowDashboard(){
  const role=flowRoles[p().role]||(flowStaff()?'Staf Ketenagaan':'Monitoring Dinas');
  const grouped={};for(const i of workflowItems)grouped[i.status]=(grouped[i.status]||0)+1;
  const counters=Object.entries(grouped).map(([k,n])=>'<span style="display:inline-block;background:#edf6ff;border-radius:7px;padding:6px 8px;margin:4px 5px 4px 0">'+esc(flowLabels[k]||k)+': <b>'+n+'</b></span>').join('');
  body().innerHTML='<div class="sg-box"><h3>🧭 Workflow SMART-GTK · '+esc(role)+'</h3>'+
  '<p class="sg-note">Alur: staf memeriksa → Kasi/Subkoor memvalidasi menurut jenjang → Kabid menyelesaikan telaah. Kasus NPSN belum terpetakan menunggu penetapan jenjang oleh Kabid. Tidak mengubah isian awal GTK maupun menerbitkan SK/JF.</p>'+
- '<p><b>'+workflowTotal+'</b> kasus dalam cakupan akun ini · halaman '+(workflowPage+1)+'. Ringkasan status berikut hanya menghitung halaman aktif.</p>'+
- '<div>'+counters+'</div>'+
+ '<p><b>'+workflowTotal+'</b> kasus siap diproses · <b>'+workflowDraftTotal+'</b> draf belum selesai pada cakupan akun ini. Halaman antrean '+(workflowPage+1)+'. Ringkasan tahap berikut hanya menghitung halaman aktif.</p>'+
+ '<div>'+counters+'</div>'+workflowDraftsPanel()+
  (['KABID','SUPER_ADMIN','STAFF_USUL_SK'].includes(p().role)?'<button type="button" data-action="wf-legacy">Lihat Skrining Lama</button>':'')+
  '<div class="sg-scroll"><table><thead><tr><th>Nama dan Satuan Pendidikan</th><th>Data GTK</th><th>Jenjang/Tahap</th><th>Staf Pemeriksa</th><th>Keputusan/Tindakan</th></tr></thead><tbody>'+
  (workflowItems.length?workflowItems.map(x=>'<tr><td><b>'+esc(x.full_name||'-')+'</b><div class="small">'+esc(x.unit_work||'-')+'</div></td>'+
@@ -600,7 +625,7 @@ async function open(){
  }
  modal.style.display='flex';info('Memuat data...');
  try{
-   if(dinas()){workflowPage=0;await loadDinasWorkflow();workflowDashboard()}
+   if(dinas()){workflowPage=0;workflowDraftPage=0;await loadDinasWorkflow();workflowDashboard()}
    else {
     const enrolled=await sb.rpc('smartgtk_pilot_status');
     if(enrolled.error)throw enrolled.error;
@@ -631,11 +656,16 @@ modal.addEventListener('click',async e=>{
    if(act==='wf-prev')workflowPage=Math.max(0,workflowPage-1);
    await loadDinasWorkflow();workflowDashboard();
   }
+  if(act==='wf-draft-next'||act==='wf-draft-prev'){
+   if(act==='wf-draft-next')workflowDraftPage++;
+   if(act==='wf-draft-prev')workflowDraftPage=Math.max(0,workflowDraftPage-1);
+   await loadDinasWorkflow();workflowDashboard();
+  }
   if(act==='wf-legacy'){pg=0;await listDinas();dashboard();
    body().insertAdjacentHTML('afterbegin','<button type="button" data-action="wf-return">← Kembali ke Workflow SMART-GTK</button>');
   }
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:20,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:21,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
