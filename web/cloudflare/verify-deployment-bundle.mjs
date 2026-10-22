@@ -45,7 +45,12 @@ ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonica
 ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
 ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
 const module=await read('diklat-ks-bcks-v32.js');
-ok(html.includes('./diklat-ks-bcks-v32.js?v=27'),'Cache versi Diklat KS manual bukan v27');
+ok(html.includes('./diklat-ks-bcks-v32.js?v=28'),'Cache versi Diklat KS manual bukan v28');
+ok(module.includes('kabidShowsFailedCentralResults:true') &&
+   module.includes('❌ TIDAK LULUS · Seleksi Substansi') &&
+   module.includes('ready===120&&failed===0') &&
+   module.includes('version:62'),
+   'Pelabelan peserta tidak lulus dan pembatasan aksi agregat belum lengkap.');
 ok(module.includes('KSB_KABID_PER_PESERTA_CENTRAL_DECISION_V1') &&
    module.includes('kabidKsbSinglePanel(rows,names)') &&
    module.includes('data-ksb-single-submit') &&
