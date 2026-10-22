@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_BULK_APPROVAL_UI_V2
+/* SIMANTAB_GTK_BULK_APPROVAL_UI_V3
  * Only SUPER_ADMIN can preview and select verified distinct-NIP GTK accounts.
  * No implicit selection or approval, no storage of sensitive data.
  */
@@ -42,12 +42,12 @@
     root.innerHTML =
       '<div class="label">SUPER ADMIN · PERSETUJUAN AGREGAT TERKENDALI</div>' +
       '<h3 style="margin:6px 0">✅ Persetujuan Agregat Daftar Akun</h3>' +
-      '<div class="small" style="margin-bottom:12px">Hanya akun PENDING dengan NIP 18 digit unik pada <b>seluruh akun</b>, unit kerja terisi, dan peran sah. Kepala Sekolah juga harus memiliki NPSN negeri aktif. Identitas dan jabatan tetap wajib diperiksa Super Admin. Akun tanpa NIP atau ganda <b>tidak</b> diproses otomatis.</div>' +
+      '<div class="small" style="margin-bottom:12px">Akun PENDING dengan <b>NIP atau unit kerja belum diisi tetap bisa dipilih</b>. Setelah disetujui, pengguna wajib melengkapi tujuh isian profil sebelum membuka layanan. NIP terisi harus valid dan unik; NIP ganda, peran dan NPSN KS bermasalah tetap diperiksa manual.</div>' +
       (summary ? '<div class="info" role="status" style="margin-bottom:10px">'+esc(summary)+'</div>' : '') +
       (batchResults.length ? '<details style="margin-bottom:12px"><summary>Rincian hasil persetujuan ('+fmt(batchResults.length)+' akun)</summary><div style="max-height:220px;overflow:auto" class="small">'+batchResults.map(x=>'<div style="padding:5px 0;border-bottom:1px solid #e2e8f0"><b>'+esc(x.name)+'</b> — '+esc(x.outcome)+' · '+esc(x.detail)+'</div>').join('')+'</div></details>' : '') +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">' +
-        '<button class="btn soft" type="button" id="simGtkBulkRefresh"'+(busy?' disabled':'')+'>🔎 '+(busy?'Sedang memeriksa...':'Periksa Akun Non-Ganda')+'</button>' +
-        (preview ? '<span class="small"><b>'+fmt(preview.eligible_count)+'</b> layak ditinjau · '+fmt(preview.manual_count)+' perlu penanganan manual · '+fmt(preview.pending_count)+' GTK pending</span>' : '<span class="small">Klik Periksa untuk memuat data terbaru.</span>') +
+        '<button class="btn soft" type="button" id="simGtkBulkRefresh"'+(busy?' disabled':'')+'>🔎 '+(busy?'Sedang memeriksa...':'Periksa Semua Akun PENDING')+'</button>' +
+        (preview ? '<span class="small"><b>'+fmt(preview.eligible_count)+'</b> dapat disetujui · '+fmt(preview.incomplete_count)+' profil belum lengkap · '+fmt(preview.manual_count)+' perlu pemeriksaan manual · '+fmt(preview.pending_count)+' GTK pending</span>' : '<span class="small">Klik Periksa untuk memuat data terbaru.</span>') +
       '</div>' +
       (preview ? (list.length ?
         '<div style="margin:0 0 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
@@ -57,19 +57,19 @@
         '</div>'+
         '<div style="max-height:340px;overflow:auto;border:1px solid var(--line);border-radius:9px">'+
          '<table class="table" style="min-width:680px;width:100%"><thead><tr>'+
-          '<th>Pilih</th><th>Nama</th><th>NIP (tersamar)</th><th>Peran</th><th>Unit Kerja</th>'+
+          '<th>Pilih</th><th>Nama</th><th>NIP (tersamar)</th><th>Peran</th><th>Unit Kerja</th><th>Profil</th>'+
          '</tr></thead><tbody>'+list.map(a=>
            '<tr><td><input type="checkbox" class="simGtkBulkChoice" data-id="'+esc(a.id)+'" aria-label="Pilih '+esc(a.full_name)+'"'+(selected.has(a.id)?' checked':'')+(busy?' disabled':'')+'></td>'+
            '<td>'+esc(a.full_name)+'</td><td>'+esc(a.nip_masked)+'</td><td>'+esc(roleLabel(a.role))+'</td>'+
-           '<td>'+esc(a.unit)+'</td></tr>'
+           '<td>'+esc(a.unit || 'Belum diisi')+'</td><td>'+(a.profile_incomplete?'<span style="color:#b45309">Wajib lengkapi setelah disetujui</span><div class="small">'+esc((a.missing_fields||[]).join(', '))+'</div>':'Lengkap')+'</td></tr>'
          ).join('')+'</tbody></table></div>'+
          '<label style="display:flex;gap:8px;margin:12px 0;align-items:flex-start">'+
            '<input type="checkbox" id="simGtkBulkAck"'+(acknowledged?' checked':'')+(busy?' disabled':'')+'>'+
-           '<span class="small">Saya telah mencocokkan identitas, status kepegawaian, serta kewenangan peran setiap akun yang dipilih dengan sumber administrasi yang sah.</span>'+
+           '<span class="small">Saya telah memeriksa identitas pendaftar dan kewenangan perannya. Saya memahami akun dengan profil belum lengkap wajib melengkapi data sebelum menggunakan layanan.</span>'+
          '</label>'+
          '<button type="button" class="btn primary" id="simGtkBulkApprove"'+
            (busy || !selected.size || !acknowledged?' disabled':'')+'>✅ Setujui Agregat ('+fmt(selected.size)+' akun)</button>'+
-         '<div class="small" style="margin-top:8px">Hanya akun yang Anda pilih diproses. Server memeriksa ulang NIP, status, dan unit kerja serta menyimpan audit keputusan. Maksimal 50 akun per proses.</div>'
+         '<div class="small" style="margin-top:8px">Hanya akun yang Anda pilih diproses. Server memeriksa ulang status PENDING, keunikan NIP yang terisi, peran dan NPSN KS serta mencatat audit. Data kosong wajib dilengkapi setelah login. Maksimal 50 akun per proses.</div>'
         : '<div class="info">Belum ada akun memenuhi syarat. Lanjutkan pemeriksaan manual pada akun bermasalah.</div>') : '');
     $("simGtkBulkRefresh")?.addEventListener("click", fetchPreview);
     $("simGtkBulkSelectAll")?.addEventListener("click", () => {
@@ -172,5 +172,5 @@
     state();
     if (!preview && !busy) void fetchPreview();
   }
-  window.__simantabGtkBulkApproval = { version:2, render:state, refresh:fetchPreview };
+  window.__simantabGtkBulkApproval = { version:3, render:state, refresh:fetchPreview };
 })();
