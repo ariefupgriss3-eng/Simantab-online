@@ -392,13 +392,17 @@ function leaderKsbSummary(rows){
    ['MENUNGGU_APPROVAL_KOORDINATOR','Persetujuan Kasi/Subkoor'],
   ['MENUNGGU_PERSETUJUAN_KABID','Persetujuan Kabid'],
   ['PERBAIKAN','Perbaikan'],
-  ['SELESAI','Selesai / Naik Level']
+  ['SELESAI','Administrasi Selesai']
  ];
  const activeRows=(rows||[]).filter(x=>String(x.workflow_state||'').toUpperCase()!=='DRAFT');
  const totalPengusulAktif=new Set(activeRows.map(x=>x.user_id).filter(Boolean)).size;
  const statusCards=defs.map(([st,label])=>`<div class="card s4"><div class="label">${esc(label)}</div><div class="metric">${rows.filter(x=>x.workflow_state===st).length}</div></div>`).join('');
  const totalCard=`<div class="card s4"><div class="label">TOTAL PENGUSUL AKTIF</div><div class="metric">${totalPengusulAktif}</div><div class="small">Tidak termasuk Draft</div></div>`;
- return `<div class="grid" style="margin-bottom:12px">${statusCards}${totalCard}</div>`;
+ /* KSB_SUBSTANSI_OUTCOME_SCOREBOARD_V1: status SELESAI concerns administrative routing, not passing selection. */
+ const uniqueResultCount=state=>new Set((rows||[]).filter(x=>x.ksb_substansi_status===state).map(x=>x.user_id).filter(Boolean)).size;
+ const outcomes=[['LULUS','Lulus Seleksi Substansi','#166534'],['TIDAK_LULUS','Tidak Lulus Seleksi Substansi','#b91c1c'],['MENUNGGU','Menunggu Hasil','#64748b']];
+ const resultCards=outcomes.map(([state,label,color])=>`<div class="card s4"><div class="label">${esc(label)}</div><div class="metric" style="color:${color}">${uniqueResultCount(state)}</div></div>`).join('');
+ return `<div class="card" style="margin-bottom:10px"><div class="label">HASIL SELEKSI SUBSTANSI · BERDASARKAN KEPUTUSAN PUSAT</div><div class="grid" style="margin-top:8px">${resultCards}</div><div class="small">Hasil seleksi berbeda dari status penyelesaian administrasi.</div></div><div class="grid" style="margin-bottom:12px">${statusCards}${totalCard}</div>`;
 }
 
 const kabidSuccessNoteForName=name=>{
@@ -527,7 +531,17 @@ function kabidKsbBulkPanel(rows){
   ['DISETUJUI','TERVERIFIKASI'].includes(s.ksb_admin_status)
  ).length;
  const failed=(rows||[]).filter(s=>s.ksb_substansi_status==='TIDAK_LULUS').length;
- const permitted=ready===120&&failed===0;
+ const passed=(rows||[]).filter(s=>s.ksb_substansi_status==='LULUS').length;
+ const permitted=ready===120&&failed===0&&passed===0;
+ /* KSB_HIDE_AGGREGATE_AFTER_CENTRAL_RESULTS_V1: never imply all 120 are passing once the center issued outcomes. */
+ if(passed>0||failed>0){
+  return '<div class="card" style="margin-bottom:12px;border:1px solid #bfdbfe">'+
+   '<div class="label">HASIL SELEKSI SUBSTANSI · KHUSUS KABID</div>'+
+   '<h3 style="margin:7px 0">Penetapan Hasil Keputusan Pusat</h3>'+
+   '<div class="small"><b>'+passed+'</b> peserta LULUS pada Level 3, <b>'+failed+'</b> peserta TIDAK LULUS pada Level 2, dan <b>'+ready+'</b> peserta menunggu penetapan.</div>'+
+   '<div class="small" style="margin-top:8px">Tombol penetapan massal 120 peserta tidak ditampilkan setelah terdapat hasil seleksi. Lihat rincian masing-masing peserta pada panel individu.</div>'+
+   '</div>';
+ }
  return '<div class="card" style="margin-bottom:12px;border:1px solid #bfdbfe">'+
   '<div class="label">PENETAPAN KELULUSAN SELEKSI SUBSTANSI · KHUSUS KABID</div>'+
   '<h3 style="margin:7px 0">⬆ Naikkan 120 Peserta ke Level 3 + Ucapan Personal</h3>'+
@@ -883,5 +897,5 @@ window.showTab=async id=>{
  ensureSection();ensureNav();await priorShow(id);
  if(id==='diklatKsBcks')await render();
 };
-window.__simantabDiklatKsBcks={version:62,kabidShowsFailedCentralResults:true,kabidIndividualSubstansiButtons:true,kabidPromoteLevel:true,kabidPersonalGreetings120:true,kabidDecisionSource:'PUSAT',kabidNoManualBasisInput:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:63,kabidOutcomeScoreboard:true,kabidNoStaleBulkButton:true,kabidShowsFailedCentralResults:true,kabidIndividualSubstansiButtons:true,kabidPromoteLevel:true,kabidPersonalGreetings120:true,kabidDecisionSource:'PUSAT',kabidNoManualBasisInput:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
