@@ -432,6 +432,53 @@ function kabidKsbAction(s,names){
 
 /* KSB_KABID_LEVEL_UP_OFFICIAL_120_V1: secure RPC, fixed official cohort, audit & notification. */
 const ksbKabidPendingPromotions=new Set();
+/* KSB_KABID_PER_PESERTA_CENTRAL_DECISION_V1: per-account controls adjacent to verified participant identity. */
+let ksbKabidSearchTerm='';
+function kabidKsbIsSubstansiReady(s){
+ return s.workflow_state==='SELESAI'&&s.status==='ADMIN_APPROVED'&&
+  s.ksb_stage==='SUBSTANSI'&&s.ksb_substansi_status==='MENUNGGU'&&
+  ['DISETUJUI','TERVERIFIKASI'].includes(s.ksb_admin_status);
+}
+function kabidKsbSinglePanel(rows,names){
+ if(!isKabid())return '';
+ const listed=(rows||[]).filter(s=>kabidKsbIsSubstansiReady(s)||s.ksb_substansi_status==='LULUS')
+  .sort((a,b)=>Number(kabidKsbIsSubstansiReady(b))-Number(kabidKsbIsSubstansiReady(a))||
+   String(names.get(a.user_id)?.full_name||'').localeCompare(String(names.get(b.user_id)?.full_name||''),'id'));
+ const pending=listed.filter(kabidKsbIsSubstansiReady).length;
+ const passed=listed.filter(s=>s.ksb_substansi_status==='LULUS').length;
+ return '<div class="card" style="margin-bottom:12px;border:1px solid #dbe5f1">'+
+  '<div class="label">KEPUTUSAN PUSAT · KHUSUS KABID</div>'+
+  '<h3 style="margin:6px 0">✅ Penetapan Kelulusan Satu per Satu</h3>'+
+  '<div class="small" style="margin-bottom:9px">Pilih peserta yang tercantum LULUS pada keputusan pusat. Tombol hanya mengubah akun peserta tersebut; tidak meminta nomor berita acara atau kode. Ucapan personal dikirim setelah konfirmasi.</div>'+
+  '<div class="small" style="margin-bottom:8px"><b>'+pending+'</b> menunggu penetapan · <b>'+passed+'</b> sudah lulus</div>'+
+  '<label class="small" for="ksbKabidSingleSearch">Cari nama atau unit kerja</label>'+
+  '<input id="ksbKabidSingleSearch" type="search" placeholder="Ketik nama peserta / sekolah…" autocomplete="off" style="width:100%;max-width:540px;display:block;margin:5px 0 8px;padding:10px;border:1px solid #ccd8e5;border-radius:10px" />'+
+  '<div id="ksbKabidSingleCount" class="small" style="margin-bottom:6px">'+listed.length+' peserta ditampilkan</div>'+
+  '<div id="ksbKabidSingleList" style="max-height:460px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:12px">'+
+  (listed.length?listed.map(s=>{const user=names.get(s.user_id)||{};const name=String(user.full_name||'Peserta');const unit=String(user.unit||'-');const ready=kabidKsbIsSubstansiReady(s);return '<div data-ksb-single-row data-search="'+esc(name+' '+unit)+'" style="padding:12px;border-bottom:1px solid #e2e8f0;display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+
+   '<div style="flex:1;min-width:180px"><b>'+esc(name)+'</b><div class="small">'+esc(unit)+'</div></div>'+
+   (ready?'<button type="button" class="btn primary" data-ksb-single-submit="'+esc(s.id)+'" data-ksb-single-name="'+esc(name)+'" style="white-space:nowrap">✓ Tetapkan Lulus</button>':
+    '<span style="font-weight:800;color:#166534">✅ LULUS · Level 3</span>')+'</div>';}).join(''):'<div class="small" style="padding:12px">Belum ada peserta untuk penetapan kelulusan.</div>')+
+  '</div></div>';
+}
+function bindKabidKsbSinglePanel(){
+ if(!isKabid())return;
+ const search=$('ksbKabidSingleSearch');
+ const items=[...document.querySelectorAll('[data-ksb-single-row]')];
+ const count=$('ksbKabidSingleCount');
+ const filter=()=>{
+  const keyword=String(search?.value||'').trim().toLocaleLowerCase('id');
+  ksbKabidSearchTerm=search?.value||'';
+  let displayed=0;
+  for(const item of items){const visible=String(item.dataset.search||'').toLocaleLowerCase('id').includes(keyword);item.style.display=visible?'flex':'none';if(visible)displayed++;}
+  if(count)count.textContent=displayed+' dari '+items.length+' peserta ditampilkan';
+ };
+ if(search){search.value=ksbKabidSearchTerm;search.addEventListener('input',filter);filter();}
+ for(const btn of document.querySelectorAll('[data-ksb-single-submit]')){
+  btn.onclick=()=>ksbKabidNaikLevel(btn.dataset.ksbSingleSubmit,'DIKLAT',btn.dataset.ksbSingleName);
+ }
+}
+
 function kabidKsbLevelAction(s){
  if(!isKabid())return '';
  const stage=String(s.ksb_stage||'');
@@ -445,7 +492,7 @@ function kabidKsbLevelAction(s){
   :'';
  return '<div style="min-width:175px"><b>'+esc(label)+'</b>'+button+(target?'<div class="small" style="margin-top:4px">Sesuai keputusan pusat; tanpa isian BA</div>':'')+'</div>';
 }
-window.ksbKabidNaikLevel=async(id,target)=>{
+window.ksbKabidNaikLevel=async(id,target,participantName='')=>{
  if(!isKabid())return toast('Hanya Kabid dapat menaikkan level peserta.',true);
  if(ksbKabidPendingPromotions.has(id))return;
  if(!['DIKLAT','SERTIFIKAT'].includes(target))return toast('Level tujuan tidak diizinkan.',true);
@@ -453,7 +500,8 @@ window.ksbKabidNaikLevel=async(id,target)=>{
  const note=target==='DIKLAT'
   ?'Kelulusan Seleksi Substansi berdasarkan keputusan pusat.'
   :'Kelulusan Diklat KS berdasarkan keputusan pusat.';
- if(!confirm('Konfirmasi keputusan pusat untuk peserta ini: naik ke '+toLabel+'?\n\nPastikan nama peserta tercantum sebagai LULUS pada hasil resmi pusat.\nNotifikasi dan catatan audit akan dibuat otomatis.'))return;
+ const identity=String(participantName||'peserta terpilih').trim();
+ if(!confirm('Konfirmasi LULUS berdasarkan keputusan pusat untuk '+identity+'?\n\nHanya akun ini yang akan dinaikkan ke '+toLabel+'.\nUcapan personal dan catatan audit dibuat otomatis.'))return;
  ksbKabidPendingPromotions.add(id);
  try{
   const {data,error}=await sb.rpc('ks_bcks_kabid_promote_level',{p_submission_id:id,p_target_stage:target,p_note:note});
@@ -561,9 +609,11 @@ async function renderLeadershipDiklat(){
   </div>
   ${isKabidView?'<div class="card" id="ksbKabidSimulatorCard" style="margin-bottom:12px"><div class="label">SIMULASI SELEKSI SUBSTANSI</div><h3 style="margin:5px 0">🧠 Dashboard Simulasi dan Thinking Culture</h3><div class="small">Monitoring Basic, Premium One, Pro, Thinking Culture, AI Coach, serta kesiapan peserta. Akses uji Feronika bersifat khusus akun uji dan tidak membuka akses umum.</div><div id="ksbSimAccessState" class="small" style="margin-top:8px"><b>Status akses umum:</b> memeriksa…</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn primary" id="ksbOpenSimulatorDashboard" type="button">Buka Dashboard Simulasi</button><button class="btn soft" id="ksbToggleSimulatorAccess" type="button">Kontrol Akses Simulasi</button></div></div>':''}
   ${aggSummary}
+  ${kabidKsbSinglePanel(rows,names)}
   ${kabidKsbBulkPanel(rows)}
   ${leaderKsbSummary(rows)}
   <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>KS Pengusul</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Kasi/Subkoor Pembagi</th><th>Status / Proses</th><th>Hasil AI</th>${isKabidView?'<th>Persetujuan Kabid</th><th>Level / Tindakan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{},coordinator=names.get(s.assigned_by)||{},aiAssignment=String(s.assignment_note||'').startsWith('AI Bagi Tugas');return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${esc(coordinator.full_name||'-')}${aiAssignment?'<div class="small">🤖 AI Bagi Tugas</div>':''}</td><td>${coordKsbPill(s.workflow_state)}</td><td>${aiCompactHtml(s.id,vis)}</td>${isKabidView?`<td>${kabidKsbAction(s,names)||'—'}</td><td>${kabidKsbLevelAction(s)}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
+  bindKabidKsbSinglePanel();
   await bindKabidSimulatorDirect();
  }catch(e){body.innerHTML=`<div class="card err">${esc(e.message||e)}</div>`}
 }
@@ -830,5 +880,5 @@ window.showTab=async id=>{
  ensureSection();ensureNav();await priorShow(id);
  if(id==='diklatKsBcks')await render();
 };
-window.__simantabDiklatKsBcks={version:60,kabidPromoteLevel:true,kabidPersonalGreetings120:true,kabidDecisionSource:'PUSAT',kabidNoManualBasisInput:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:61,kabidIndividualSubstansiButtons:true,kabidPromoteLevel:true,kabidPersonalGreetings120:true,kabidDecisionSource:'PUSAT',kabidNoManualBasisInput:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
