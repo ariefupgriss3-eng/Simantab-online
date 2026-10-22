@@ -21,7 +21,7 @@ test('NIP verified against logged-in profile and stored data private',()=>{
 });
 test('legacy Jabfung service not overwritten',()=>{
  assert.doesNotMatch(ui,/\.from\('submissions'\)/);
- assert.match(build.scripts['build:cloudflare'],/node inject-jf-guru-2026\.mjs && node cloudflare\/verify-deployment-bundle\.mjs/);
+ assert.match(build.scripts['build:cloudflare'],/node inject-jf-guru-2026\.mjs && node inject-gtk-bulk-approval\.mjs && node cloudflare\/verify-deployment-bundle\.mjs/);
 });
 
 test('Dinas officers monitor without applicant buttons or draft access',()=>{
