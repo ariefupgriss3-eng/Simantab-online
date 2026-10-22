@@ -475,7 +475,7 @@ function bindKabidKsbSinglePanel(){
  };
  if(search){search.value=ksbKabidSearchTerm;search.addEventListener('input',filter);filter();}
  for(const btn of document.querySelectorAll('[data-ksb-single-submit]')){
-  btn.onclick=()=>ksbKabidNaikLevel(btn.dataset.ksbSingleSubmit,'DIKLAT',btn.dataset.ksbSingleName);
+  btn.onclick=()=>window.ksbKabidNaikLevel(btn.dataset.ksbSingleSubmit,'DIKLAT',btn.dataset.ksbSingleName);
  }
 }
 
