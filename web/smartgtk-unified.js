@@ -60,6 +60,12 @@ priorityCss.textContent=[
  '#smartgtkDashboardPriority .sg-priority-action{background:#c56b11;color:#fff;border:0;border-radius:10px;padding:13px 19px;font-weight:750;font-size:15px;width:100%;max-width:340px;cursor:pointer}',
  '#smartgtkDashboardPriority .sg-priority-action:focus-visible,#smartgtkPrimaryNav:focus-visible{outline:3px solid #206a9e;outline-offset:2px}',
  '#smartgtkDashboardPriority .sg-priority-help{font-size:13px;line-height:1.5;color:#355675;margin-top:9px}',
+ '#smartgtkDashboardPriority .sg-reminder{padding:12px 14px;border:1px solid #ecbc6f;border-radius:11px;background:#fff9ec;color:#8a420b;margin:12px 0;line-height:1.5;font-size:13px}',
+ '#smartgtkDashboardPriority .sg-reminder[data-level="urgent"]{background:#fff1ef;border-color:#e59e91;color:#9b271c}',
+ '#smartgtkDashboardPriority .sg-reminder[data-level="done"]{background:#ecfdf3;border-color:#9bd9b6;color:#166534}',
+ '#smartgtkDashboardPriority .sg-reminder[data-level="expired"]{background:#f1f3f5;border-color:#bdc5cc;color:#404b57}',
+ '#smartgtkDashboardPriority .sg-reminder strong{display:block;font-size:15px}',
+ '#smartgtkDashboardPriority .sg-countdown{font-weight:850;font-variant-numeric:tabular-nums}',
  '#smartgtkPrimaryNav{background:#fff1d5;color:#7d410b;font-weight:800;border-left:4px solid #d18219}',
  '@media(max-width:520px){#smartgtkDashboardPriority{padding:15px}#smartgtkDashboardPriority .sg-priority-action{max-width:none}}'
 ].join('');
@@ -68,6 +74,56 @@ function removeOldGTKServiceTiles(){
  document.getElementById('smartgtkTile')?.remove();
  document.getElementById('jf2026ServiceTile')?.remove();
  document.getElementById('jf2030ServiceTile')?.remove();
+}
+/* SIMANTAB_SMARTGTK_DEADLINE_REMINDER_V1: client-only reminder; do NOT enforce automatic closure.
+ * Deadline is 26 Oct 2026 at 23:59 WIB (UTC+7), equivalently 16:59 UTC.
+ * Whether an account is complete is decided from its own Supabase SMART-GTK status. */
+const smartGtkDeadlineMs=Date.UTC(2026,9,26,16,59,0);
+const smartGtkCompleted=new Set(['BERKAS_LENGKAP','DATA_TERCATAT']);
+let smartGtkDeadlineTick=null;
+function smartGtkTimeLeft(nowMs=Date.now()){
+ const remaining=Math.max(0,smartGtkDeadlineMs-nowMs);
+ const days=Math.floor(remaining/86400000),hours=Math.floor((remaining%86400000)/3600000),
+  minutes=Math.floor((remaining%3600000)/60000);
+ return {remaining,days,hours,minutes,text:(days?days+' hari ':'')+hours+' jam '+minutes+' menit'};
+}
+function smartGtkReminderHTML(state,missingCount=0,nowMs=Date.now()){
+ const completed=smartGtkCompleted.has(String(state||''))&&missingCount===0;
+ const left=smartGtkTimeLeft(nowMs);
+ const overdue=left.remaining<=0;
+ const level=completed?'done':overdue?'expired':left.remaining<=86400000?'urgent':'normal';
+ const heading=completed?'✅ Isian SMART GTK sudah lengkap':overdue?'Tenggat pengisian SMART GTK telah lewat':
+  level==='urgent'?'🔴 Pengingat terakhir SMART GTK':'⏰ Segera lengkapi SMART GTK';
+ const detail=completed?'Data Anda sudah dicatat. Tetap pantau jika Dinas meminta perbaikan.':
+  state==='DRAFT'?'Data masih DRAF. Lanjutkan, lengkapi persyaratan, lalu konfirmasi data.':
+  state==='BELUM_MENGISI'?'Anda belum mengisi SMART GTK. Segera lakukan pendataan.':
+  state==='AKSES_BELUM_MEMENUHI'?'Lengkapi Kebutuhan GTK Riil terlebih dahulu sebelum mengakses SMART GTK.':
+  'Periksa kembali kelengkapan dan status pengiriman data Anda.';
+ const counter=completed?'':'<span class="sg-countdown">'+(overdue?'Tenggat terlewati': 'Sisa waktu: '+left.text)+'</span>';
+ return '<div class="sg-reminder" data-level="'+level+'" role="status" aria-live="polite">'+
+  '<strong>'+heading+'</strong>'+
+  '<div>Batas pengisian: <b>Senin, 26 Oktober 2026 · 23.59 WIB</b></div>'+
+  '<div>'+detail+'</div>'+counter+'</div>';
+}
+function smartGtkRenderReminder(card){
+ const target=card?.querySelector('[data-smartgtk-reminder]');
+ if(!target)return;
+ const state=card.dataset.smartgtkStage||'BELUM_MENGISI';
+ if(state==='SEDANG_DIPERIKSA'){
+  target.innerHTML='<div class="sg-reminder"><strong>⏰ Batas pengisian SMART GTK</strong>'+
+   '<div>26 Oktober 2026, pukul 23.59 WIB</div><div>Status kelengkapan sedang diperiksa…</div></div>';
+  return;
+ }
+ const missing=Number(card.dataset.smartgtkMissing||0);
+ target.innerHTML=smartGtkReminderHTML(state,missing);
+}
+function smartGtkStartDeadlineTimer(){
+ if(smartGtkDeadlineTick!==null)return;
+ smartGtkDeadlineTick=setInterval(()=>{
+  const card=document.getElementById(dashboardCardId);
+  if(!card||!gtk()){clearInterval(smartGtkDeadlineTick);smartGtkDeadlineTick=null;return;}
+  smartGtkRenderReminder(card);
+ },60000);
 }
 function ensureGTKDashboard(){
  const root=document.getElementById('dashboard');
@@ -82,11 +138,15 @@ function ensureGTKDashboard(){
   '<h3>🧭 SMART-GTK — Satu Data, Tiga Analisis</h3>'+
   '<p>Satu kali isi untuk pendataan guru, kepala sekolah, pengawas, dan tenaga kependidikan.</p>'+
   '<p class="sg-deadline">⏰ Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.</p>'+
+  '<div data-smartgtk-reminder></div>'+
   '<button type="button" class="sg-priority-action">Lihat SMART-GTK</button>'+
   '<p class="sg-priority-help" role="status">Memeriksa apakah akun dapat mengisi SMART-GTK...</p>';
   card.querySelector('button').addEventListener('click',open);
+  card.dataset.smartgtkStage='SEDANG_DIPERIKSA';
  }
  if(card.parentElement!==root||card.nextElementSibling!==body)root.insertBefore(card,body);
+ smartGtkRenderReminder(card);
+ smartGtkStartDeadlineTimer();
  void refreshDashboardPriority(card);
 }
 let priorityCheck=0;
@@ -100,13 +160,29 @@ async function refreshDashboardPriority(card){
   if(token!==priorityCheck||!card.isConnected)return;
   if(access.data===true){
    btn.textContent='Isi / Lanjutkan SMART-GTK →';
-   msg.textContent='Akun dapat mengisi. Simpan data dahulu, lalu lengkapi berkas sesuai status kepegawaian.';
+   const status=await sb.rpc('smartgtk_mass_status');
+   if(token!==priorityCheck||!card.isConnected)return;
+   if(status.error){
+    card.dataset.smartgtkStage='SEDANG_DIPERIKSA';
+    msg.textContent='Akses tersedia, tetapi status kelengkapan belum dapat diperiksa. Buka SMART GTK untuk melihat rincian.';
+   }else{
+    card.dataset.smartgtkStage=String(status.data?.state||'BELUM_MENGISI');
+    card.dataset.smartgtkMissing=String(Array.isArray(status.data?.missing)?status.data.missing.length:0);
+    const isDone=smartGtkCompleted.has(card.dataset.smartgtkStage)&&Number(card.dataset.smartgtkMissing)===0;
+    btn.textContent=isDone?'Lihat hasil SMART GTK →':'Lengkapi SMART GTK sekarang →';
+    msg.textContent=isDone?'Pendataan telah lengkap; menunggu tindak lanjut verifikasi Dinas.':
+     'Simpan isian, lengkapi dokumen sesuai jalur, kemudian klik Konfirmasi Data Saya / Selesaikan Pendataan.';
+   }
   }else{
+   card.dataset.smartgtkStage=p().role==='KEPALA_SEKOLAH'?'AKSES_BELUM_MEMENUHI':'SEDANG_DIPERIKSA';
    btn.textContent='Lihat informasi SMART-GTK →';
-   msg.textContent='Akun belum dapat mengisi SMART-GTK. Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas. Jika sudah, segarkan halaman atau hubungi admin.';
+   msg.textContent='Akun belum dapat mengisi SMART-GTK. Untuk KS negeri, ajukan Kebutuhan GTK Riil terlebih dahulu; akun lain dapat menghubungi admin jika akses masih terkendala.';
   }
+  smartGtkRenderReminder(card);
  }catch(error){
   if(token!==priorityCheck||!card.isConnected)return;
+  card.dataset.smartgtkStage='SEDANG_DIPERIKSA';
+  smartGtkRenderReminder(card);
   btn.textContent='Lihat informasi SMART-GTK →';
   msg.textContent='Status akses belum dapat diperiksa. Coba buka lagi atau hubungi admin SIMANTAB.';
  }
@@ -367,6 +443,8 @@ async function uploadDocument(type){
 async function confirmCompleteness(){
  const r=await sb.rpc('smartgtk_mass_complete');if(r.error)throw r.error;
  info(r.data?.state==='BERKAS_LENGKAP'?'Berkas Lengkap — Menunggu Verifikasi Dinas. Kelengkapan belum berarti berkas disahkan.':'Pendataan GTK tercatat. Terima kasih.');
+ const card=document.getElementById(dashboardCardId);
+ if(card)void refreshDashboardPriority(card);
  await renderDocumentStep();
 }
 
@@ -559,5 +637,5 @@ modal.addEventListener('click',async e=>{
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:19,ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:20,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
