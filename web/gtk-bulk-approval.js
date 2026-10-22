@@ -144,8 +144,10 @@
       await window.showTab("users");
       try { await window.__simantabDuplicateNipAudit?.render?.(true); } catch (_) {}
       busy = false;
+      const completedResults = batchResults.slice();
       await fetchPreview();
-      // fetchPreview clears the summary; restore actionable result for admin.
+      // Keep the audited per-account outcomes visible after refreshing the queue.
+      batchResults = completedResults;
       summary = "Hasil agregat: "+fmt(result.approved)+" disetujui, "+fmt(result.skipped)+" dilewati, "+fmt(result.errors)+" gagal. Audit: "+result.batch_id;
     } catch (err) {
       summary = "Persetujuan belum tuntas: "+(err?.message || err)+". Periksa kembali status akun sebelum mengulang.";
