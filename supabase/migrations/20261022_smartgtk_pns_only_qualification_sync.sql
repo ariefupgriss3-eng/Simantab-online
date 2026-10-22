@@ -1,4 +1,4 @@
--- Restrict SMART GTK education follow-up synchronization to PNS. Keep prior records and JF2030 review data unchanged.
+-- SMART GTK qualification review routing restricted to PNS; do not erase historical reviews.
 CREATE OR REPLACE FUNCTION public.smartgtk_mass_save(p_profession text, p_employment text, p_jf_sk text, p_old_position text, p_nomenclature_updated text, p_pns_jf_formation text, p_education text, p_study_status text, p_university text, p_program text, p_start_year integer, p_target_graduation date, p_graduation_date date, p_notes text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -64,47 +64,7 @@ begin
       or v_existing.target_graduation is distinct from p_target_graduation
       or v_existing.graduation_date is distinct from p_graduation_date then
      raise exception 'Ijazah terverifikasi berbeda dengan isian baru; minta koreksi melalui Dinas'; end if;
- elsif p_employment='PNS' and v_profile.account_channel='GTK' and coalesce(v_profile.nip,'') ~ '^[0-9]{18}
-     v_existing.owner_id is null
-     or v_existing.education_initial is distinct from p_education
-     or v_existing.study_status is distinct from p_study_status
-     or v_existing.university is distinct from btrim(coalesce(p_university,''))
-     or v_existing.study_program is distinct from btrim(coalesce(p_program,''))
-     or v_existing.start_year is distinct from p_start_year
-     or v_existing.target_graduation is distinct from p_target_graduation
-     or v_existing.graduation_date is distinct from p_graduation_date
-     or v_existing.notes is distinct from coalesce(p_notes,'')
-   ) then
-   -- Legacy education 2030 RPC requires NIP. Preserve non-ASN education
-   -- in SMART-GTK when they have no valid ASN NIP instead of blocking intake.
-   perform public.jf2030_save_progress(p_education,p_study_status,
-     coalesce(p_university,''),coalesce(p_program,''),p_start_year,
-     p_target_graduation,p_graduation_date,coalesce(p_notes,''));
- end if;
- insert into public.smartgtk_intake(
-  owner_id,nip,full_name,unit_work,employment,jf_sk,old_position,nomenclature_updated,profession,
-  pns_jf_formation,education,study_status,university,study_program,start_year,
-  target_graduation,graduation_date,notes
- ) values (
-  auth.uid(),coalesce(v_profile.nip,''),coalesce(nullif(btrim(v_profile.full_name),''),'GTK'),
-  coalesce(nullif(btrim(v_profile.unit_gtk),''),nullif(btrim(v_profile.unit),''),'Belum diisi'),
-  p_employment,p_jf_sk,coalesce(p_old_position,''),p_nomenclature_updated,p_profession,
-  p_pns_jf_formation,p_education,p_study_status,coalesce(p_university,''),
-  coalesce(p_program,''),p_start_year,p_target_graduation,p_graduation_date,coalesce(p_notes,'')
- ) on conflict (owner_id) do update set
-  nip=excluded.nip,full_name=excluded.full_name,unit_work=excluded.unit_work,
-  employment=excluded.employment,jf_sk=excluded.jf_sk,old_position=excluded.old_position,profession=excluded.profession,
-  nomenclature_updated=excluded.nomenclature_updated,pns_jf_formation=excluded.pns_jf_formation,
-  education=excluded.education,study_status=excluded.study_status,university=excluded.university,
-  study_program=excluded.study_program,start_year=excluded.start_year,
-  target_graduation=excluded.target_graduation,graduation_date=excluded.graduation_date,
-  notes=excluded.notes,updated_at=now(),analysis_version=2,data_stage='DRAFT';
- insert into public.smartgtk_audit(owner_id,actor_id,action) values(auth.uid(),auth.uid(),'INTAKE_SAVED_ANALYZED');
- v_result:=public.smartgtk_mass_classify(p_profession,p_employment,p_jf_sk,p_nomenclature_updated,p_pns_jf_formation,p_education,p_old_position);
- return v_result;
-end;
-$function$
- and (
+ elsif p_employment='PNS' and v_profile.account_channel='GTK' and coalesce(v_profile.nip,'') ~ '^[0-9]{18}$' and (
      v_existing.owner_id is null
      or v_existing.education_initial is distinct from p_education
      or v_existing.study_status is distinct from p_study_status
