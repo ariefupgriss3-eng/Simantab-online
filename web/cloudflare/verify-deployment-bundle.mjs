@@ -127,4 +127,12 @@ ok(!smart.includes('Saat ini masih uji coba terbatas')&&
  smart.includes('Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas.')&&
  smart.includes('Akun belum memenuhi ketentuan akses SMART-GTK.'),
  'UI OPEN masih menampilkan petunjuk pilot lama');
+const gtkDailyReport=await read('gtk-daily-report.js');
+ok(html.includes('./gtk-daily-report.js?v=1') && html.split('./gtk-daily-report.js?v=1').length===2,
+  'Laporan Pagi SMART-GTK harus dimuat persis sekali');
+ok(gtkDailyReport.includes('SIMANTAB_GTK_DAILY_REPORT_V1') &&
+   gtkDailyReport.includes("window.__simantabSb.rpc('simantab_gtk_daily_report')") &&
+   gtkDailyReport.includes('roleOk(') &&
+   !gtkDailyReport.includes('service_role'),
+   'Laporan Pagi harus memakai RPC read-only dan tidak boleh memiliki service key');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));

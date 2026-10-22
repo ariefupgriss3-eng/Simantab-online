@@ -239,6 +239,16 @@ if('serviceWorker' in navigator){
 </script>`;
 assert(html.includes('</head>'),'HTML head tidak valid.');
 html=html.replace('</head>',previewNoSw+'\n</head>');
+const dailyReportSource=new URL('../gtk-daily-report.js',import.meta.url);
+const dailyReportScript=await fs.readFile(dailyReportSource,'utf8');
+assert(dailyReportScript.includes('SIMANTAB_GTK_DAILY_REPORT_V1') &&
+  dailyReportScript.includes("window.__simantabSb.rpc('simantab_gtk_daily_report')") &&
+  dailyReportScript.includes('roleOk('),
+  'Modul laporan GTK belum memakai RPC resmi dan pembatasan Dinas.');
+await fs.copyFile(dailyReportSource,path.join(output,'gtk-daily-report.js'));
+assert(html.includes('</body>'),'HTML tidak memiliki penutup body');
+assert(!html.includes('./gtk-daily-report.js?v=1'),'Modul laporan GTK sudah dimuat ganda.');
+html=html.replace('</body>','<script src="./gtk-daily-report.js?v=1" defer></script>\n</body>');
 await fs.writeFile(htmlPath,html,'utf8');
 assert(html.includes("simantab:profile-ready"),'Event profil belum terpasang.');
 assert(!html.includes("navigator.serviceWorker.register('./sw.js')"),'Registrasi PWA preview masih aktif.');
