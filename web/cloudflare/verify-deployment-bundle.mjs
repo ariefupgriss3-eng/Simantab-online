@@ -153,7 +153,7 @@ ok(smart.includes("['PB','Pendamping Belajar (PB)']")&&
  'PB / PLS must be separate choices while old records remain labeled');
 ok(!smart.includes('Saat ini masih uji coba terbatas')&&
  !smart.includes('SMART-GTK masih tahap pilot terbatas')&&
- smart.includes('Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas.')&&
+ smart.includes('Untuk KS negeri, ajukan Kebutuhan GTK Riil terlebih dahulu')&&
  smart.includes('Akun belum memenuhi ketentuan akses SMART-GTK.'),
  'UI OPEN masih menampilkan petunjuk pilot lama');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));
