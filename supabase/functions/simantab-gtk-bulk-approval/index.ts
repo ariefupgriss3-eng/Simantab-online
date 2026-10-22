@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
-/* SIMANTAB_GTK_BULK_APPROVAL_V2
+/* SIMANTAB_GTK_BULK_APPROVAL_V3
  * Preview + Super Admin-selected approval. Never auto-approve on page load.
  * Every target is rechecked atomically by simantab_gtk_bulk_approve_one.
  */
@@ -121,9 +121,31 @@ Deno.serve(async (req: Request) => {
           missing_fields, profile_incomplete: missing_fields.length > 0,
         };
       });
+      // Keep all eligible-role PENDING accounts visible, but mark duplicates and
+      // inconsistent identifiers as manual-review only (never actionable in bulk).
+      const eligibleIds = new Set(eligible.map(p=>p.id));
+      const manual_items = pending.filter(p=>
+        VALID_ROLES.has(String(p.requested_role || "")) && !eligibleIds.has(p.id)
+      ).map(p=>{
+        const key=nipKey(p.nip);
+        const rawNip=String(p.nip||"").trim();
+        let issue="Perlu verifikasi identitas";
+        if (!VALID_ROLES.has(String(p.role||""))) issue="Peran akun belum sesuai";
+        else if (String(p.full_name||"").trim().length < 3) issue="Nama belum lengkap";
+        else if (rawNip && !/^[0-9]{18}$/.test(rawNip)) issue="Format NIP tidak valid";
+        else if (key.length===18 && (multiplicity.get(key)||0)>1) issue="NIP ganda pada akun lain";
+        else if (p.requested_role==="KEPALA_SEKOLAH" && !schools.has(String(p.school_npsn||""))) issue="NPSN sekolah negeri belum cocok";
+        return {
+          id:p.id, full_name:p.full_name, role:p.requested_role,
+          nip_masked:maskNip(p.nip), unit:workUnit(p),
+          incomplete: !rawNip || !workUnit(p),
+          issue
+        };
+      });
       return reply({ ok: true, eligible_count: items.length, pending_count: pending.length,
-        manual_count: pending.length - items.length,
-        incomplete_count: items.filter(p=>p.profile_incomplete).length, items });
+        manual_count: manual_items.length,
+        incomplete_count: items.filter(p=>p.profile_incomplete).length,
+        items, manual_items });
     }
 
     // Frontend cannot override this server-side confirmation and candidate validation.
