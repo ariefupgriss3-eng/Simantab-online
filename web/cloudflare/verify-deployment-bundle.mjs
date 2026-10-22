@@ -48,4 +48,38 @@ const module=await read('diklat-ks-bcks-v32.js');
 ok(html.includes('./diklat-ks-bcks-v32.js?v=23'),'Cache versi Diklat KS manual bukan v23');
 ok(module.includes('ks_bcks_submit_local')&&module.includes('ksbCoordManualApprove'),'Alur Diklat KS lokal/manual belum lengkap');
 ok(module.includes('SIMANTAB_KS_INACTIVE_DIKLAT_NAV_VISIBLE_LOCKED_V1')&&module.includes('syncKsDiklatNavState')&&module.includes('b.disabled=locked'),'Kepala Sekolah harus melihat menu Diklat terkunci saat modul nonaktif');
+const jf2026=await read('jf-guru-2026.js');
+ok(html.includes('./jf-guru-2026.js?v=2') && html.split('./jf-guru-2026.js?v=2').length===2,'Modul JF Guru 2026 harus muncul tepat satu kali');
+ok(jf2026.includes('SIMANTAB_JF_GURU_SURAT_0294_2026_V1') && jf2026.includes('jf2026_submit_case') && jf2026.includes('jf2026_transition'),'Modul JF Guru tidak lengkap');
+const qualification2030=await read('jf-qualification-2030.js');
+ok(html.includes('./jf-qualification-2030.js?v=5') && html.split('./jf-qualification-2030.js?v=5').length===2,'Modul S1-DIV 2030 harus tepat sekali');
+ok(qualification2030.includes('SIMANTAB_JF2030_QUALIFICATION_V1')&&qualification2030.includes('jf2030_save_progress')&&qualification2030.includes('jf2030_review'),'Pemantauan S1-DIV 2030 belum dibundel');
+const bulkApproval=await read('gtk-bulk-approval.js');
+ok(html.includes('./gtk-bulk-approval.js?v=2') && html.split('./gtk-bulk-approval.js?v=2').length===2,
+  'Tombol persetujuan agregat harus terpasang tepat satu kali');
+ok(bulkApproval.includes('SIMANTAB_GTK_BULK_APPROVAL_UI_V2') &&
+   bulkApproval.includes('selected.size >= 50') &&
+   bulkApproval.includes('verified_identity_and_role:true') &&
+   bulkApproval.includes('APPROVE_SELECTED') &&
+   bulkApproval.includes('Rincian hasil persetujuan'),
+   'Batas 50 akun, konfirmasi Super Admin dan rincian audit harus tersedia');
+const smart=await read('smartgtk-unified.js');
+ok(html.includes('./smartgtk-unified.js?v=13')&&html.split('./smartgtk-unified.js?v=13').length===2,'SMART-GTK unified script must load once');
+ok(smart.includes('SIMANTAB_SMARTGTK_UNIFIED_INTAKE_V1')&&smart.includes("sb.rpc('smartgtk_mass_save'")&&smart.includes("sb.rpc('smartgtk_mass_officer_list'")&&smart.includes("sb.rpc('smartgtk_mass_complete'"),'SMART-GTK mass routes missing');
+ok(smart.includes('smartgtkDashboardPriority')&&smart.includes('smartgtkPrimaryNav')&&smart.includes('root.insertBefore(card,body)'), 'GTK dashboard priority link or main menu missing');
+ok(smart.includes('Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.')&&!smart.includes('SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS.'),'SMART-GTK deadline and concise copy missing');
+ok(smart.includes('smartgtk_cabinet_candidates')&&smart.includes('smartgtk_import_cabinet')&&smart.includes('Ambil dari Lemari Dokumenku'), 'SMART-GTK cabinet reuse control missing');
+const onboarding=await read('smartgtk-onboarding.js');
+ok(html.includes('./smartgtk-onboarding.js?v=1')&&html.split('./smartgtk-onboarding.js?v=1').length===2,'GTK onboarding helper must load once');
+ok(onboarding.includes('SMARTGTK_MASS_ONBOARDING_V1')&&onboarding.includes('resetPasswordForEmail'),'Safe GTK signup and account recovery missing');
+ok(jf2026.includes('window.__simantabSmartGtkReady')&&qualification2030.includes('window.__simantabSmartGtkReady'),'Old GTK duplicate cards must be disabled when SMART-GTK is loaded');
+ok(smart.includes("smartgtk_locker_register")&&smart.includes("storage.from('simantab-documents')")&&
+ !smart.includes("storage.from('simantab-smartgtk-private').upload"),'Single cabinet source upload missing');
+ok(smart.includes('Berkas Lengkap — Menunggu Verifikasi Dinas')&&
+ smart.includes('Menunggu verifikasi administratif oleh Dinas'),'PNS status pending-Dinas guidance missing');
+ok(smart.includes("['PB','Pendamping Belajar (PB)']")&&
+ smart.includes("['PLS','Pendamping Layanan Satpen (PLS)']")&&
+ smart.includes("Pendamping (data lama: belum dipilah PB/PLS)")&&
+ !smart.includes('Non-ASN')&&!smart.includes('non-ASN'),
+ 'PB / PLS must be separate choices while old records remain labeled');
 console.log(JSON.stringify({cloudflareFinalBundleQA:'PASS',scope:'build-only',login:true,roleEvent:true,securePwa:true,offlinePublicOnly:true,manualDiklat:true,socialLogin:true,productionBrowserQA:'PENDING'}));

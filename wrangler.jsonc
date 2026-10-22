@@ -1,0 +1,8 @@
+{
+  "name": "simantab-cf-preview",
+  "compatibility_date": "2026-10-13",
+  "assets": {
+    "directory": "./web/.vercel/output/static"
+  },
+  "previews": {}
+}
