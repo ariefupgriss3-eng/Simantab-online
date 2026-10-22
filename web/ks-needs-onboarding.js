@@ -24,6 +24,13 @@
   }
 
   function setNavigation() {
+    /* SIMANTAB_KS_NEEDS_SMARTGTK_NAV_GUARD_V2: SMART-GTK is a separate button without data-tab. */
+    const smartGtkButton = document.getElementById('smartgtkPrimaryNav');
+    if (smartGtkButton) {
+      smartGtkButton.disabled = required;
+      smartGtkButton.title = required ? 'Ajukan Kebutuhan GTK Riil terlebih dahulu' : '';
+      smartGtkButton.setAttribute('aria-disabled', required ? 'true' : 'false');
+    }
     document.querySelectorAll('#nav .navbtn[data-tab]').forEach(button => {
       const shouldBlock = required && !['needs','profile'].includes(button.dataset.tab);
       if (shouldBlock) {
