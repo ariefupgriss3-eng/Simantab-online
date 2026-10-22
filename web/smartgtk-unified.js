@@ -124,6 +124,21 @@ function ensureGTKNav(){
  if(dashboardButton)dashboardButton.insertAdjacentElement('afterend',item);
  else root.prepend(item);
 }
+/* SIMANTAB_SMARTGTK_DINAS_NAV_V1: visible independently of the Services dashboard route. */
+const dinasWorkflowNavId='smartgtkDinasWorkflowNav';
+function ensureDinasWorkflowNav(){
+ const root=document.getElementById('nav');
+ if(!dinas()||!root){document.getElementById(dinasWorkflowNavId)?.remove();return;}
+ if(document.getElementById(dinasWorkflowNavId))return;
+ const btn=document.createElement('button');
+ btn.type='button';btn.id=dinasWorkflowNavId;btn.className='navbtn';
+ btn.innerHTML='<span class="ico" aria-hidden="true">🧭</span>Workflow SMART-GTK';
+ btn.setAttribute('aria-label','Buka workflow SMART-GTK untuk petugas Dinas');
+ btn.addEventListener('click',open);
+ const first=root.querySelector('.navbtn[data-tab="dashboard"]');
+ if(first)first.insertAdjacentElement('afterend',btn);
+ else root.prepend(btn);
+}
 function ensureDinasService(){
  const root=document.getElementById('servicesBody');
  if(!dinas()||!root){document.getElementById('smartgtkTile')?.remove();return}
@@ -135,9 +150,10 @@ function ensureDinasService(){
  root.prepend(item);
 }
 function placeSmartGtk(){
- if(gtk()){ensureGTKDashboard();ensureGTKNav();return}
+ if(gtk()){document.getElementById(dinasWorkflowNavId)?.remove();ensureGTKDashboard();ensureGTKNav();return}
  document.getElementById(dashboardCardId)?.remove();
  document.getElementById(navButtonId)?.remove();
+ ensureDinasWorkflowNav();
  ensureDinasService();
 }
 window.__simantabSmartGtkReady=true;
@@ -148,7 +164,10 @@ window.showTab=async function(...args){
  return result;
 };
 const navRoot=document.getElementById('nav');
-if(navRoot)new MutationObserver(()=>{if(gtk()&&!document.getElementById(navButtonId))ensureGTKNav()}).observe(navRoot,{childList:true});
+if(navRoot)new MutationObserver(()=>{
+ if(gtk()&&!document.getElementById(navButtonId))ensureGTKNav();
+ if(dinas()&&!document.getElementById(dinasWorkflowNavId))ensureDinasWorkflowNav();
+}).observe(navRoot,{childList:true});
 window.addEventListener('simantab:profile-ready',placeSmartGtk);
 placeSmartGtk();
 async function loadGTK(){
@@ -520,5 +539,5 @@ modal.addEventListener('click',async e=>{
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:17,backendRequired:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:18,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
