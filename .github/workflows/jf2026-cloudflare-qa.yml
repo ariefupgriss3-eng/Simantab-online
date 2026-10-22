@@ -5,6 +5,11 @@ on:
   pull_request:
     paths:
       - 'web/jf-guru-2026.js'
+      - 'web/gtk-bulk-approval.js'
+      - 'web/inject-gtk-bulk-approval.mjs'
+      - 'web/tests/gtk-bulk-approval-incomplete.test.mjs'
+      - 'supabase/migrations/20261022_bulk_approval_incomplete_profile.sql'
+      - 'supabase/functions/simantab-gtk-bulk-approval/index.ts'
       - 'web/jf-qualification-2030.js'
       - 'web/smartgtk-unified.js'
       - 'web/smartgtk-onboarding.js'
@@ -67,7 +72,7 @@ jobs:
           test -s .vercel/output/static/jf-qualification-2030.js
           test -s .vercel/output/static/smartgtk-unified.js
           test -s .vercel/output/static/gtk-bulk-approval.js
-          grep -q './gtk-bulk-approval.js?v=2' .vercel/output/static/index.html
+          grep -q './gtk-bulk-approval.js?v=3' .vercel/output/static/index.html
           test -s .vercel/output/static/smartgtk-onboarding.js
           grep -q './smartgtk-unified.js?v=23' .vercel/output/static/index.html
           grep -q './smartgtk-onboarding.js?v=1' .vercel/output/static/index.html
