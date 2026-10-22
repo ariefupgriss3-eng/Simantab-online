@@ -1,6 +1,4 @@
--- Only PNS flows from SMART-GTK intake into the S-1/D-IV qualification follow-up table.
--- Non-PNS educational responses are retained in their own intake and (for PPPK/PW) private buffers.
--- Existing verified educational records are never erased or rewritten here.
+-- Restrict SMART GTK education follow-up synchronization to PNS. Keep prior records and JF2030 review data unchanged.
 CREATE OR REPLACE FUNCTION public.smartgtk_mass_save(p_profession text, p_employment text, p_jf_sk text, p_old_position text, p_nomenclature_updated text, p_pns_jf_formation text, p_education text, p_study_status text, p_university text, p_program text, p_start_year integer, p_target_graduation date, p_graduation_date date, p_notes text)
  RETURNS jsonb
  LANGUAGE plpgsql
