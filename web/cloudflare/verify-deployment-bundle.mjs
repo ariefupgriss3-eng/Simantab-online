@@ -45,7 +45,9 @@ ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonica
 ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
 ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
 const module=await read('diklat-ks-bcks-v32.js');
-ok(html.includes('./diklat-ks-bcks-v32.js?v=24'),'Cache versi Diklat KS manual bukan v24');
+ok(html.includes('./diklat-ks-bcks-v32.js?v=25'),'Cache versi Diklat KS manual bukan v25');
+ok(module.includes('KSB_KABID_120_PERSONAL_GREETING_V1') && module.includes('ks_bcks_kabid_promote_all_120'),
+  'Tombol Kabid untuk 120 ucapan personal belum ditemukan pada bundle.');
 ok(module.includes('KSB_KABID_LEVEL_UP_OFFICIAL_120_V1')&&module.includes('ks_bcks_kabid_promote_level'),'Kenaikan level Kabid belum disertakan dalam build');
 ok(module.includes('ks_bcks_submit_local')&&module.includes('ksbCoordManualApprove'),'Alur Diklat KS lokal/manual belum lengkap');
 ok(module.includes('SIMANTAB_KS_INACTIVE_DIKLAT_NAV_VISIBLE_LOCKED_V1')&&module.includes('syncKsDiklatNavState')&&module.includes('b.disabled=locked'),'Kepala Sekolah harus melihat menu Diklat terkunci saat modul nonaktif');
