@@ -218,3 +218,32 @@ test('OPEN rollout text directs denied users to account approval rather than pil
  assert.match(ui,/smartgtk_pilot_status/); // Keep backwards-compatible backend access RPC.
  assert.doesNotThrow(()=>new Function(ui));
 });
+
+
+test('PNS-only three-goal screening cannot enroll PPPK or PPPK PW',()=>{
+ const pns=read('../../supabase/migrations/20261022_smartgtk_pns_three_goal_boundaries.sql');
+ assert.match(pns,/e IS DISTINCT FROM 'PNS'/);
+ assert.match(pns,/src\.employment IS DISTINCT FROM 'PNS'/);
+ assert.match(pns,/i\.employment='PNS'/);
+ assert.match(pns,/si\.employment='PNS'/);
+ assert.match(pns,/from public\.smartgtk_intake v WHERE v\.employment='PNS'/i);
+ assert.match(ui,/SIMANTAB_SMARTGTK_PNS_THREE_GOAL_UI_V1/);
+ assert.match(ui,/pnsEligible=report\.employment==='PNS'/);
+ assert.match(ui,/Tampungan Data PPPK/);
+ assert.match(ui,/Pemenuhan Kualifikasi S-1\/D-IV/);
+});
+
+test('PPPK and PPPK paruh waktu have separate private holding tables, not PNS approval',()=>{
+ const sql=read('../../supabase/migrations/20261022_smartgtk_pppk_pppkpw_buffers.sql');
+ assert.match(sql,/CREATE TABLE IF NOT EXISTS private\.smartgtk_pppk_buffer/);
+ assert.match(sql,/CREATE TABLE IF NOT EXISTS private\.smartgtk_pppk_pw_buffer/);
+ assert.match(sql,/trg_smartgtk_contract_buffer_sync/);
+ assert.match(sql,/CREATE OR REPLACE FUNCTION public\.smartgtk_contract_buffer_list/);
+ assert.match(sql,/is_current=true/);
+ assert.match(sql,/REVOKE ALL ON private\.smartgtk_pppk_buffer,private\.smartgtk_pppk_pw_buffer FROM PUBLIC,anon,authenticated/);
+ assert.match(sql,/REVOKE ALL ON FUNCTION public\.smartgtk_contract_buffer_list\(text,integer\) FROM PUBLIC,anon/);
+ assert.match(ui,/SIMANTAB_SMARTGTK_SEPARATE_CONTRACT_BUCKETS_UI_V1/);
+ assert.match(ui,/workflowContractPanel\('PPPK'\)\+workflowContractPanel\('PPPK_PW'\)/);
+ assert.match(ui,/version:23,pnsThreeGoals:true,contractBuffers:true/);
+ assert.doesNotThrow(()=>new Function(ui));
+});
