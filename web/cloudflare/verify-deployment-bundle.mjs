@@ -94,7 +94,7 @@ const qualification2030=await read('jf-qualification-2030.js');
 ok(html.includes('./jf-qualification-2030.js?v=5') && html.split('./jf-qualification-2030.js?v=5').length===2,'Modul S1-DIV 2030 harus tepat sekali');
 ok(qualification2030.includes('SIMANTAB_JF2030_QUALIFICATION_V1')&&qualification2030.includes('jf2030_save_progress')&&qualification2030.includes('jf2030_review'),'Pemantauan S1-DIV 2030 belum dibundel');
 const smart=await read('smartgtk-unified.js');
-ok(html.includes('./smartgtk-unified.js?v=18')&&html.split('./smartgtk-unified.js?v=18').length===2,'SMART-GTK unified script must load once');
+ok(html.includes('./smartgtk-unified.js?v=19')&&html.split('./smartgtk-unified.js?v=19').length===2,'SMART-GTK unified script must load once');
 ok(smart.includes('SIMANTAB_SMARTGTK_UNIFIED_INTAKE_V1')&&smart.includes("sb.rpc('smartgtk_mass_save'")&&smart.includes("sb.rpc('smartgtk_mass_officer_list'")&&smart.includes("sb.rpc('smartgtk_mass_complete'"),'SMART-GTK mass routes missing');
 ok(smart.includes('smartgtkDashboardPriority')&&smart.includes('smartgtkPrimaryNav')&&smart.includes('root.insertBefore(card,body)'), 'GTK dashboard priority link or main menu missing');
 ok(smart.includes('Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.')&&!smart.includes('SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS.'),'SMART-GTK deadline and concise copy missing');
@@ -107,8 +107,15 @@ ok(smart.includes('SIMANTAB_SMARTGTK_ROLE_WORKFLOW_V1') &&
    'Workflow SMART GTK 4 peran tidak terpasang pada paket Cloudflare.');
 ok(smart.includes('SIMANTAB_SMARTGTK_OWNER_FEEDBACK_V1') && smart.includes('smartgtk_workflow_my_status') && smart.includes('ownerWorkflowFeedback:true') && smart.includes('version:17'),
  'SMART-GTK tidak menampilkan status perbaikan untuk pemilik data.');
-ok(smart.includes('SIMANTAB_SMARTGTK_DINAS_NAV_V1') && smart.includes('ensureDinasWorkflowNav()') && smart.includes('dinasWorkflowNav:true') && smart.includes('version:18'),
+ok(smart.includes('SIMANTAB_SMARTGTK_DINAS_NAV_V1') && smart.includes('ensureDinasWorkflowNav()') && smart.includes('dinasWorkflowNav:true') && smart.includes('version:19'),
  'Menu khusus Workflow SMART GTK pada sidebar Dinas belum dimuat.');
+ok(smart.includes('SIMANTAB_SMARTGTK_KS_NEEDS_PRIORITY_V1') && smart.includes('ksNeedsPriority:true') &&
+   smart.includes("window.showTab?.('needs')"),
+  'SMART-GTK KS dapat melewati kewajiban Kebutuhan GTK Riil.');
+const ksNeedsOnboarding=await read('ks-needs-onboarding.js');
+ok(ksNeedsOnboarding.includes('SIMANTAB_KS_NEEDS_SMARTGTK_NAV_GUARD_V2') &&
+   html.includes('./ks-needs-onboarding.js?v=2'),
+  'Navigasi KS wajib Kebutuhan GTK Riil belum menggunakan penjaga SMART-GTK.');
 const onboarding=await read('smartgtk-onboarding.js');
 ok(html.includes('./smartgtk-onboarding.js?v=1')&&html.split('./smartgtk-onboarding.js?v=1').length===2,'GTK onboarding helper must load once');
 ok(onboarding.includes('SMARTGTK_MASS_ONBOARDING_V1')&&onboarding.includes('resetPasswordForEmail'),'Safe GTK signup and account recovery missing');
