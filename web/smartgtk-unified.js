@@ -38,8 +38,9 @@ const meanings={
 let old=null,education=null,items=[],pg=0,busy=false,onboarding=null;const maxDocBytes=1572864;
 let workflowPage=0,workflowItems=[],workflowTotal=0,workflowStaff=[];
 let workflowDraftPage=0,workflowDraftItems=[],workflowDraftTotal=0;
+let contractPages={PPPK:0,PPPK_PW:0},contractRecords={PPPK:[],PPPK_PW:[]},contractTotals={PPPK:0,PPPK_PW:0};
 const modal=document.createElement('div');modal.id='smartgtkModal';modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');
-modal.innerHTML='<div class="sg-container"><div class="sg-head"><b>SMART-GTK • Satu Data, Tiga Analisis</b><button type="button" data-action="close">✕ Tutup</button></div><p id="sgMessage" role="status"></p><div id="sgBody"></div></div>';document.body.append(modal);
+modal.innerHTML='<div class="sg-container"><div class="sg-head"><b>SMART-GTK • 3 Analisis PNS | Tampungan PPPK</b><button type="button" data-action="close">✕ Tutup</button></div><p id="sgMessage" role="status"></p><div id="sgBody"></div></div>';document.body.append(modal);
 const style=document.createElement('style');
 style.textContent='#smartgtkModal{display:none;position:fixed;inset:0;z-index:1000010;background:#10223fcb;padding:12px;overflow:auto;align-items:flex-start;justify-content:center}#smartgtkModal .sg-container{background:#fff;color:#1b3451;border-radius:14px;padding:17px;width:min(940px,100%);max-height:calc(100vh - 24px);overflow:auto;font:14px system-ui,sans-serif}#smartgtkModal .sg-head,#smartgtkModal .sg-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}#smartgtkModal .sg-box{border:1px solid #d5e0ed;border-radius:11px;margin:12px 0;padding:12px}#smartgtkModal .sg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#smartgtkModal label{display:flex;flex-direction:column;gap:6px;margin:7px 0}#smartgtkModal select,#smartgtkModal input{box-sizing:border-box;width:100%;padding:10px;border-radius:8px;border:1px solid #aebed1;color:#1d3652;background:white}#smartgtkModal button{cursor:pointer;padding:9px;border-radius:8px;border:1px solid #9dbed7;background:#eaf4fc;color:#185782;font-weight:700}#smartgtkModal button.primary{background:#ee7d17;border:0;color:white}#smartgtkModal .sg-note{background:#edf6ff;border-radius:9px;padding:10px;line-height:1.5}#smartgtkModal .sg-results{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#smartgtkModal .sg-result{border:1px solid #b9cadc;border-radius:9px;padding:11px}#smartgtkModal .sg-result b{display:block;margin-bottom:8px}#smartgtkModal .sg-scroll{overflow:auto}#smartgtkModal table{min-width:610px;border-collapse:collapse;width:100%}#smartgtkModal td,#smartgtkModal th{border-bottom:1px solid #dbe5ef;padding:9px;text-align:left;vertical-align:top}@media(max-width:650px){#smartgtkModal .sg-grid,#smartgtkModal .sg-results{grid-template-columns:1fr}}';document.head.append(style);
 const body=()=>document.getElementById('sgBody');
@@ -136,8 +137,8 @@ function ensureGTKDashboard(){
   card=document.createElement('section');card.id=dashboardCardId;
   card.setAttribute('aria-label','Prioritas utama pendataan SMART-GTK');
   card.innerHTML='<div class="sg-priority-tag">📌 PRIORITAS PENDATAAN GTK</div>'+
-  '<h3>🧭 SMART-GTK — Satu Data, Tiga Analisis</h3>'+
-  '<p>Satu kali isi untuk pendataan guru, kepala sekolah, pengawas, dan tenaga kependidikan.</p>'+
+  '<h3>🧭 SMART-GTK — Analisis PNS dan Tampungan PPPK</h3>'+
+  '<p>PNS Guru/Kepala Sekolah: 3 analisis. PPPK dan PPPK PW: tampungan data terpisah. PB/PLS: pendataan pendamping.</p>'+
   '<p class="sg-deadline">⏰ Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.</p>'+
   '<div data-smartgtk-reminder></div>'+
   '<button type="button" class="sg-priority-action">Lihat SMART-GTK</button>'+
@@ -257,7 +258,7 @@ async function loadGTK(){
 function form(){
  const x=old||{},q=education||{},edu=x.education||q.education_initial||'',study=x.study_status||q.study_status||(qualified.includes(edu)?'SUDAH_MEMENUHI':'');
  const profession=x.profession||({'KEPALA_SEKOLAH':'KEPALA_SEKOLAH','PENGAWAS':'PENGAWAS'}[p().role]||'');
- body().innerHTML='<p class="sg-note">Semua GTK mengisi data yang sama. Identitas berasal dari Profil GTK dan data pendidikan sebelumnya dipakai kembali. SIMANTAB menganalisis secara otomatis; petugas tetap memverifikasi persyaratan sebelum usulan resmi.</p>'+
+ body().innerHTML='<p class="sg-note">Identitas dari Profil GTK. Tiga analisis (penyesuaian JF, pengangkatan JF, pemenuhan S-1/D-IV) KHUSUS PNS Guru/Kepala Sekolah. Data PPPK dan PPPK PW masuk tampungan masing-masing, bukan daftar analisis atau usulan PNS.</p>'+
  '<div class="sg-box"><b>'+esc(p().full_name||'GTK')+'</b><p>NIP '+esc(p().nip||'-')+' • '+esc(p().unit_gtk||p().unit||'')+'</p></div>'+
  '<form id="smartgtkForm"><div class="sg-box"><b>A. Tugas dan Status Kepegawaian</b><div class="sg-grid">'+
  select('profession','Tugas utama *',profession)+
@@ -277,7 +278,7 @@ function form(){
  input('graduation_date','Tanggal kelulusan sesuai ijazah',x.graduation_date||q.graduation_date,'date')+
  '</div>'+input('notes','Keterangan tambahan (opsional)',x.notes)+'</div>'+
  '<div class="sg-actions"><button type="submit" class="primary">Simpan & Analisis Otomatis</button></div></form>'+
- '<p class="sg-note">PNS wajib melengkapi dokumen sesuai jalur; PPPK/PPPK paruh waktu dapat mengunggah dokumen yang dimiliki. Pendamping Belajar (PB) dan Pendamping Layanan Satpen (PLS) cukup mengisi data tanpa unggah berkas. Istilah pendamping merupakan kategori pendataan, bukan status ASN atau dasar pengangkatan.</p>'+
+ '<p class="sg-note">PNS melengkapi dokumen sesuai jalur tiga analisis. PPPK/PPPK Paruh Waktu boleh melampirkan dokumen yang dimiliki; data disimpan dalam tampungan masing-masing dan bukan analisis JF/S-1 PNS. PB/PLS cukup melakukan pendataan tanpa unggah berkas. Istilah pendamping bukan status kepegawaian atau dasar pengangkatan.</p>'+
  (old?'<div class="sg-actions"><button type="button" data-action="prior">Lihat Analisis Tersimpan</button></div>':'');
  const f=document.getElementById('smartgtkForm');
  function sync(){
@@ -326,11 +327,31 @@ function form(){
   finally{busy=false;if(submit)submit.disabled=false}
  });sync();
 }
+/* SIMANTAB_SMARTGTK_PNS_THREE_GOAL_UI_V1: non-PNS results never render PNS screening cards. */
 function results(data){
- const branches=[['Penyesuaian Nomenklatur JF',data.nomenklatur],['Pengangkatan JF Guru',data.pengangkatan],['Pemenuhan Pendidikan S-1/D-IV',data.kualifikasi]];
- body().innerHTML='<div class="sg-box"><h3>Hasil Skrining Awal SMART-GTK</h3><p>Seorang GTK bisa masuk lebih dari satu kelompok. Semua tindak lanjut perlu verifikasi petugas.</p><div class="sg-results">'+
+ const report=old||{};
+ const pnsEligible=report.employment==='PNS'&&['GURU','KEPALA_SEKOLAH'].includes(report.profession)&&
+  data?.hasil!=='PENDATAAN_BUKAN_USULAN';
+ if(!pnsEligible){
+  const employee=String(report.employment||'');
+  const label=employee==='PPPK'?'PPPK':employee==='PPPK_PW'?'PPPK Paruh Waktu':
+   employee==='PB'?'Pendamping Belajar':employee==='PLS'?'Pendamping Layanan Satuan Pendidikan':'Pendataan GTK';
+  const isContract=employee==='PPPK'||employee==='PPPK_PW';
+  body().innerHTML='<div class="sg-box"><h3>📁 '+esc(isContract?'Tampungan Data '+label:'Pendataan '+label)+'</h3>'+
+   '<p>Data '+esc(label)+' disimpan '+(isContract?'pada tampungan khusus berdasarkan kategori kepegawaiannya.':
+   'untuk kebutuhan pemetaan, terpisah dari analisis PNS.')+'</p>'+
+   '<p class="sg-note"><b>Tidak termasuk tiga analisis PNS:</b> penyesuaian JF, pengangkatan JF, atau pemenuhan S-1/D-IV PNS.'+
+   ' Tidak menghasilkan usulan atau SK kepegawaian.</p>'+
+   '<div class="sg-actions"><button data-action="edit">Perbarui Data</button></div></div><div id="sgDocumentStep"></div>';
+  void renderDocumentStep();return;
+ }
+ const branches=[['1. Penyesuaian Nomenklatur JF',data.nomenklatur],
+  ['2. Pengangkatan JF Guru',data.pengangkatan],
+  ['3. Pemenuhan Kualifikasi S-1/D-IV',data.kualifikasi]];
+ body().innerHTML='<div class="sg-box"><h3>Hasil Skrining SMART-GTK · PNS Guru/Kepala Sekolah</h3>'+
+ '<p>Ketiga tujuan ini khusus PNS dan harus diverifikasi Dinas. Satu PNS dapat memerlukan lebih dari satu tindak lanjut.</p><div class="sg-results">'+
  branches.map(([title,val])=>'<div class="sg-result"><b>'+esc(title)+'</b>'+esc(meanings[val]||val)+'</div>').join('')+
- '</div><p class="sg-note">SLTA/SPG memerlukan telaah khusus; tenggat diploma tidak otomatis berlaku. Hasil tidak menerbitkan SK atau menyampaikan usulan resmi.</p>'+
+ '</div><p class="sg-note">Kualifikasi di bawah S-1/D-IV memerlukan tindak lanjut sesuai aturan yang berlaku. Hasil ini bukan SK atau usulan resmi.</p>'+
  '<div class="sg-actions"><button data-action="edit">Perbarui Data</button></div></div><div id="sgDocumentStep"></div>';
  void renderDocumentStep();
 }
@@ -375,7 +396,7 @@ async function renderDocumentStep(){
  const awaitingDinas=policy==='WAJIB'&&status==='BERKAS_LENGKAP'&&missing.length===0;
  target.innerHTML=wfNotice+'<div class="sg-box"><h3>Dokumen '+(policy==='WAJIB'?'Wajib PNS':'PPPK/PPPK PW (hanya yang dimiliki)')+'</h3>'+
  '<p class="sg-note">'+(policy==='WAJIB'?'PNS melengkapi dokumen wajib sebelum status Berkas Lengkap. Simpan draf tetap diperbolehkan. Status lengkap belum berarti dokumen diverifikasi Dinas.':
- 'Tidak perlu mengunggah SK Jabfung yang belum dimiliki. Semua unggahan bersifat opsional.')+'</p>'+
+ 'PPPK/PPPK PW disimpan di tampungan khusus dan tidak mengikuti tiga analisis PNS. Tidak wajib mengunggah SK Jabfung yang belum dimiliki. Semua unggahan pada jalur ini opsional.')+'</p>'+
  '<p role="status" aria-live="polite"><strong>Status saat ini: '+esc(stageLabel)+'</strong>'+(policy==='WAJIB'?' • Berkas kurang: '+missing.length:'')+'</p>'+ 
  (awaitingDinas?'<p class="sg-note"><b>Seluruh dokumen wajib sudah tercatat.</b> Menunggu verifikasi administratif oleh Dinas. Belum merupakan persetujuan usulan, penetapan JF, atau penerbitan SK.</p>':'')+
  labels.map(t=>'<label class="sg-box">'+esc(docLabels[t]||t)+(policy==='WAJIB'?(missing.includes(t)?' — Belum ada':' — Tercatat'):' — Opsional')+
@@ -591,13 +612,13 @@ async function listDinas(){
 }
 function dashboard(){
  const counts={n:0,a:0,q:0};for(const x of items){if(x.screening?.nomenklatur==='POTENSI_USUL')counts.n++;if(['POTENSI_USUL','TERTAHAN_KUALIFIKASI'].includes(x.screening?.pengangkatan))counts.a++;if(['PERLU_PEMENUHAN_2030','TELAAH_KHUSUS'].includes(x.screening?.kualifikasi))counts.q++}
- body().innerHTML='<p class="sg-note">Rekap pada halaman ini saja, bukan seluruh GTK Batang. Data berupa laporan GTK dan bukan keputusan kepegawaian.</p>'+
+ body().innerHTML='<p class="sg-note">Rekap analisis tiga tujuan hanya untuk PNS Guru/Kepala Sekolah pada halaman ini. PPPK dan PPPK PW tersedia pada tampungan khusus; ini bukan keputusan kepegawaian.</p>'+
  '<div class="sg-box"><b>Progres Akun GTK SIMANTAB</b><p>Terdaftar: '+esc(onboarding?.registered_accounts??'-')+
  ' • Aktif/disetujui: '+esc(onboarding?.approved_active??'-')+
  ' • Belum pernah login: '+esc(onboarding?.never_signed_in??'-')+
  ' • Mengisi SMART-GTK: '+esc(onboarding?.smartgtk_reported??'-')+'</p>'+
  '<p style="font-size:12px">Jumlah GTK yang belum memiliki akun tidak dapat dihitung tanpa daftar induk GTK. Jumlah di atas hanya mencakup akun yang sudah tercatat di SIMANTAB.</p></div>'+
- '<div class="sg-box"><b>Monitoring Hasil Skrining • Halaman '+(pg+1)+'</b><p>Nomenklatur: '+counts.n+' • Pengangkatan: '+counts.a+' • Kualifikasi: '+counts.q+'</p>'+
+ '<div class="sg-box"><b>Monitoring 3 Analisis PNS • Halaman '+(pg+1)+'</b><p>Penyesuaian JF: '+counts.n+' • Pengangkatan JF: '+counts.a+' • Pemenuhan S-1/D-IV: '+counts.q+'</p>'+
  '<div class="sg-scroll"><table><thead><tr><th>GTK</th><th>Tugas/ASN</th><th>Nomenklatur</th><th>Pengangkatan</th><th>Pendidikan/Berkas</th></tr></thead><tbody>'+
  (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.profession)+' / '+esc(employmentLabel(x.employment))+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(x.data_stage==='BERKAS_LENGKAP'?'Berkas Lengkap (belum diverifikasi Dinas)':x.data_stage)+' ('+esc(x.docs_present)+' berkas; '+esc(x.required_count)+' wajib)'+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
  '</tbody></table></div><div class="sg-actions"><button data-action="prev" '+(pg===0?'disabled':'')+'>Sebelumnya</button><button data-action="next" '+(items.length<50?'disabled':'')+'>Berikutnya</button></div></div>';
@@ -667,5 +688,5 @@ modal.addEventListener('click',async e=>{
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:21,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:22,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
