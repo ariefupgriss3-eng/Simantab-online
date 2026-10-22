@@ -252,8 +252,22 @@ async function renderDocumentStep(){
  const r=await sb.rpc('smartgtk_mass_status');if(r.error){info(r.error.message,true);return}
  const q=r.data||{},status=q.state||'BELUM_MENGISI';
  const policy=q.evidence_policy||'TANPA_UNGGAH';
+ /* SIMANTAB_SMARTGTK_OWNER_FEEDBACK_V1: only the applicant can read their own returned correction note. */
+ const wfResult=await sb.rpc('smartgtk_workflow_my_status');
+ const wf=wfResult.error?{}:wfResult.data||{};
+ const wfState=String(wf.state||'');
+ const wfTitles={MENUNGGU_DATA:'Data perlu dikonfirmasi ulang',MENUNGGU_PENUGASAN:'Menunggu penugasan staf',
+  MENUNGGU_STAF:'Sedang diperiksa staf',MENUNGGU_KASI:'Sedang diverifikasi Kasi/Subkoor',
+  MENUNGGU_KABID:'Menunggu telaah akhir Kabid',PERBAIKAN_GTK:'Perlu perbaikan data GTK',
+  PERBAIKAN_STAF:'Sedang diperbaiki staf',PERBAIKAN_KASI:'Sedang diperbaiki Kasi/Subkoor',
+  SELESAI:'Telaah administratif SMART-GTK selesai'};
+ const wfNotice=wfTitles[wfState]?
+  '<div class="sg-box" role="'+(wfState==='PERBAIKAN_GTK'?'alert':'status')+'" style="border:1px solid '+(wfState==='PERBAIKAN_GTK'?'#ed9c79':'#b7d8f2')+'">'+
+  '<b>Status tindak lanjut Dinas: '+esc(wfTitles[wfState])+'</b>'+
+  (wfState==='PERBAIKAN_GTK'?'<p>'+esc(wf.note||'Periksa data, lakukan perbaikan bila diperlukan, lalu konfirmasi kelengkapan kembali.')+'</p>':'')+
+  '<p class="small">Status verifikasi administratif, bukan SK atau penetapan jabatan.</p></div>':'';
  if(policy==='TANPA_UNGGAH'){
-  target.innerHTML='<div class="sg-box"><b>Pendataan tanpa berkas</b><p>Pendamping Belajar (PB) dan Pendamping Layanan Satpen (PLS) cukup mengisi data tanpa mengunggah dokumen.</p>'+
+  target.innerHTML=wfNotice+'<div class="sg-box"><b>Pendataan tanpa berkas</b><p>Pendamping Belajar (PB) dan Pendamping Layanan Satpen (PLS) cukup mengisi data tanpa mengunggah dokumen.</p>'+
   '<p>Status: '+esc(status)+'</p><button data-action="complete" type="button">Konfirmasi Data Saya</button></div>';
   return;
  }
@@ -263,7 +277,7 @@ async function renderDocumentStep(){
  const missing=q.missing||[];
  const stageLabel=documentStageLabel(status,missing.length);
  const awaitingDinas=policy==='WAJIB'&&status==='BERKAS_LENGKAP'&&missing.length===0;
- target.innerHTML='<div class="sg-box"><h3>Dokumen '+(policy==='WAJIB'?'Wajib PNS':'PPPK/PPPK PW (hanya yang dimiliki)')+'</h3>'+
+ target.innerHTML=wfNotice+'<div class="sg-box"><h3>Dokumen '+(policy==='WAJIB'?'Wajib PNS':'PPPK/PPPK PW (hanya yang dimiliki)')+'</h3>'+
  '<p class="sg-note">'+(policy==='WAJIB'?'PNS melengkapi dokumen wajib sebelum status Berkas Lengkap. Simpan draf tetap diperbolehkan. Status lengkap belum berarti dokumen diverifikasi Dinas.':
  'Tidak perlu mengunggah SK Jabfung yang belum dimiliki. Semua unggahan bersifat opsional.')+'</p>'+
  '<p role="status" aria-live="polite"><strong>Status saat ini: '+esc(stageLabel)+'</strong>'+(policy==='WAJIB'?' • Berkas kurang: '+missing.length:'')+'</p>'+ 
@@ -506,5 +520,5 @@ modal.addEventListener('click',async e=>{
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:16,backendRequired:true,roleWorkflow:true};
+window.__smartGtkUnified={open,version:17,backendRequired:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
