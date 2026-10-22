@@ -123,7 +123,13 @@ assert(redistribMenu.includes("if(['PENGAWAS','KORWIL'].includes(role()))return;
 assert(diklatMenu.includes("if(profile().role==='PENGAWAS')return;"), 'Diklat KS/BCKS masih menambahkan tombol ke sidebar Pengawas.');
 assert(diklatMenu.includes('SIMANTAB_KS_INACTIVE_DIKLAT_NAV_VISIBLE_LOCKED_V1') && diklatMenu.includes("b.disabled=locked"), 'Kepala Sekolah harus tetap melihat menu Diklat KS terkunci saat modul nonaktif.');
 assert(html.includes('./gtk-redistribution-analysis.js?v=9'), 'Cache Redistribusi GTK Cloudflare belum diganti.');
-assert(html.includes('./diklat-ks-bcks-v32.js?v=26'), 'Cache Diklat KS/BCKS Cloudflare belum diganti.');
+assert(html.includes('./diklat-ks-bcks-v32.js?v=27'), 'Cache Diklat KS/BCKS Cloudflare belum diganti.');
+assert(diklatMenu.includes('KSB_KABID_PER_PESERTA_CENTRAL_DECISION_V1') &&
+  diklatMenu.includes('kabidKsbSinglePanel(rows,names)') &&
+  diklatMenu.includes('bindKabidKsbSinglePanel();') &&
+  diklatMenu.includes('data-ksb-single-submit') &&
+  diklatMenu.includes('✓ Tetapkan Lulus'),
+  'Panel tombol penetapan kelulusan satu per satu belum terpasang di dashboard Kabid.');
 assert(diklatMenu.includes('KSB_KABID_CENTRAL_DECISION_NO_INPUT_V1') &&
   !diklatMenu.includes("prompt('Cantumkan nomor dan tanggal berita acara") &&
   !diklatMenu.includes("const evidence=prompt('Dasar keputusan resmi"),
