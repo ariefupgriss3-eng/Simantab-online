@@ -453,7 +453,7 @@ window.ksbKabidNaikLevel=async(id,target)=>{
  const note=target==='DIKLAT'
   ?'Kelulusan Seleksi Substansi berdasarkan keputusan pusat.'
   :'Kelulusan Diklat KS berdasarkan keputusan pusat.';
- if(!confirm('Konfirmasi keputusan pusat untuk peserta ini: naik ke '+toLabel+'?\\n\\nPastikan nama peserta tercantum sebagai LULUS pada hasil resmi pusat.\\nNotifikasi dan catatan audit akan dibuat otomatis.'))return;
+ if(!confirm('Konfirmasi keputusan pusat untuk peserta ini: naik ke '+toLabel+'?\n\nPastikan nama peserta tercantum sebagai LULUS pada hasil resmi pusat.\nNotifikasi dan catatan audit akan dibuat otomatis.'))return;
  ksbKabidPendingPromotions.add(id);
  try{
   const {data,error}=await sb.rpc('ks_bcks_kabid_promote_level',{p_submission_id:id,p_target_stage:target,p_note:note});
@@ -491,7 +491,7 @@ window.ksbKabidNaikLevel120=async()=>{
  if(!isKabid())return toast('Hanya Kabid yang berwenang.',true);
  if(ksbKabidBatchBusy)return;
  const note='Kelulusan Seleksi Substansi berdasarkan keputusan pusat.';
- if(!confirm('Konfirmasi keputusan pusat: tetapkan LULUS seluruh 120 peserta resmi dan kirim ucapan personal?\\n\\nPastikan semua 120 nama dinyatakan LULUS oleh pusat.\\nTidak diperlukan nomor berita acara, pengisian kode, atau catatan manual. Hasil keputusan akan dicatat secara otomatis.'))return;
+ if(!confirm('Konfirmasi keputusan pusat: tetapkan LULUS seluruh 120 peserta resmi dan kirim ucapan personal?\n\nPastikan semua 120 nama dinyatakan LULUS oleh pusat.\nTidak diperlukan nomor berita acara, pengisian kode, atau catatan manual. Hasil keputusan akan dicatat secara otomatis.'))return;
  ksbKabidBatchBusy=true;
  const btn=$('ksbKabidNaik120');
  if(btn){btn.disabled=true;btn.textContent='Memproses keputusan Kabid…'}
