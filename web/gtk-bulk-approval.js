@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_BULK_APPROVAL_UI_V1
+/* SIMANTAB_GTK_BULK_APPROVAL_UI_V2
  * Only SUPER_ADMIN can preview and select verified distinct-NIP GTK accounts.
  * No implicit selection or approval, no storage of sensitive data.
  */
@@ -12,14 +12,13 @@
   const $ = id => document.getElementById(id);
   const isAdmin = () => {
     const p = window.__simantabProfile;
-    return p?.role === "SUPER_ADMIN" &&
-      p?.approval_status === "APPROVED" && p?.is_active === true;
+    return p?.role === "SUPER_ADMIN"; // Server rechecks activation and approval status.
   };
   const esc = value => String(value ?? "").replace(/[&<>"']/g, ch =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch]);
   const fmt = n => Number(n || 0).toLocaleString("id-ID");
   const roleLabel = role => ({ GTK:"GTK", KEPALA_SEKOLAH:"Kepala Sekolah", PENGAWAS:"Pengawas" })[role] || role;
-  let preview = null, selected = new Set(), acknowledged = false, busy = false, summary = "";
+  let preview = null, selected = new Set(), acknowledged = false, busy = false, summary = "", batchResults = [];
   function panel() {
     if (!isAdmin()) return null;
     const parent = $("usersBody");
@@ -42,16 +41,17 @@
     selected = new Set([...selected].filter(id => idList.has(id)));
     root.innerHTML =
       '<div class="label">SUPER ADMIN · PERSETUJUAN AGREGAT TERKENDALI</div>' +
-      '<h3 style="margin:6px 0">✅ Setujui Akun GTK Non-Ganda</h3>' +
+      '<h3 style="margin:6px 0">✅ Persetujuan Agregat Daftar Akun</h3>' +
       '<div class="small" style="margin-bottom:12px">Hanya akun PENDING dengan NIP 18 digit unik pada <b>seluruh akun</b>, unit kerja terisi, dan peran sah. Kepala Sekolah juga harus memiliki NPSN negeri aktif. Identitas dan jabatan tetap wajib diperiksa Super Admin. Akun tanpa NIP atau ganda <b>tidak</b> diproses otomatis.</div>' +
       (summary ? '<div class="info" role="status" style="margin-bottom:10px">'+esc(summary)+'</div>' : '') +
+      (batchResults.length ? '<details style="margin-bottom:12px"><summary>Rincian hasil persetujuan ('+fmt(batchResults.length)+' akun)</summary><div style="max-height:220px;overflow:auto" class="small">'+batchResults.map(x=>'<div style="padding:5px 0;border-bottom:1px solid #e2e8f0"><b>'+esc(x.name)+'</b> — '+esc(x.outcome)+' · '+esc(x.detail)+'</div>').join('')+'</div></details>' : '') +
       '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px">' +
         '<button class="btn soft" type="button" id="simGtkBulkRefresh"'+(busy?' disabled':'')+'>🔎 '+(busy?'Sedang memeriksa...':'Periksa Akun Non-Ganda')+'</button>' +
         (preview ? '<span class="small"><b>'+fmt(preview.eligible_count)+'</b> layak ditinjau · '+fmt(preview.manual_count)+' perlu penanganan manual · '+fmt(preview.pending_count)+' GTK pending</span>' : '<span class="small">Klik Periksa untuk memuat data terbaru.</span>') +
       '</div>' +
       (preview ? (list.length ?
         '<div style="margin:0 0 10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">'+
-          '<button class="btn soft" type="button" id="simGtkBulkSelectAll"'+(busy?' disabled':'')+'>Pilih semua kandidat</button>'+
+          '<button class="btn soft" type="button" id="simGtkBulkSelectAll"'+(busy?' disabled':'')+'>Pilih Maks. 50 Akun</button>'+
           '<button class="btn soft" type="button" id="simGtkBulkClear"'+(busy?' disabled':'')+'>Kosongkan pilihan</button>'+
           '<span class="small" id="simGtkBulkSelectedCount">'+fmt(selected.size)+' akun dipilih</span>'+
         '</div>'+
@@ -73,18 +73,30 @@
         : '<div class="info">Belum ada akun memenuhi syarat. Lanjutkan pemeriksaan manual pada akun bermasalah.</div>') : '');
     $("simGtkBulkRefresh")?.addEventListener("click", fetchPreview);
     $("simGtkBulkSelectAll")?.addEventListener("click", () => {
-      selected = new Set(list.map(a => a.id));state();
+      selected = new Set(list.slice(0, 50).map(a => a.id));
+      acknowledged = false;
+      summary = list.length > 50 ? "Dipilih 50 akun pertama. Lakukan persetujuan berikutnya untuk akun lainnya." : "";
+      state();
     });
     $("simGtkBulkClear")?.addEventListener("click", () => {
       selected.clear();acknowledged=false;state();
     });
     root.querySelectorAll(".simGtkBulkChoice").forEach(box => box.addEventListener("change", event => {
       const id = event.target.dataset.id;
+      if (event.target.checked && selected.size >= 50) {
+        event.target.checked = false;
+        summary = "Maksimal 50 akun per persetujuan. Selesaikan pilihan sekarang sebelum memilih lainnya.";
+        state();
+        return;
+      }
       if (event.target.checked) selected.add(id); else selected.delete(id);
+      acknowledged = false; // Re-acknowledge after every selection change.
+      const ack = $("simGtkBulkAck");
+      if (ack) ack.checked = false;
       const count = $("simGtkBulkSelectedCount");
       if (count) count.textContent = fmt(selected.size)+" akun dipilih";
       const b = $("simGtkBulkApprove");
-      if (b) { b.disabled = !selected.size || !acknowledged; b.textContent = "✅ Setujui Agregat ("+fmt(selected.size)+" akun)"; }
+      if (b) { b.disabled = true; b.textContent = "✅ Setujui Agregat ("+fmt(selected.size)+" akun)"; }
     }));
     $("simGtkBulkAck")?.addEventListener("change", event => {
       acknowledged = !!event.target.checked;
@@ -105,7 +117,7 @@
   }
   async function fetchPreview() {
     if (!isAdmin() || busy) return;
-    busy = true; summary = ""; state();
+    busy = true; summary = ""; batchResults = []; state();
     try {
       const response = await invoke({ action:"PREVIEW" });
       preview = response; selected.clear(); acknowledged = false;
@@ -114,7 +126,8 @@
     } finally { busy = false; state(); }
   }
   async function execute() {
-    if (!isAdmin() || busy || !preview || !selected.size || selected.size>50 || !acknowledged) return;
+    if (!isAdmin() || busy || !preview || !selected.size || !acknowledged) return;
+    if (selected.size > 50) return alert("Maksimal 50 akun dalam satu proses persetujuan.");
     const ids = [...selected];
     const current = new Set(preview.items.map(a => a.id));
     if (ids.some(id => !current.has(id))) return;
@@ -123,14 +136,18 @@
     try {
       const result = await invoke({ action:"APPROVE_SELECTED", user_ids:ids,
         verified_identity_and_role:true, confirmation:"SETUJUI AKUN TERPILIH" });
+      const byId = new Map(preview.items.map(a => [a.id, a.full_name]));
+      batchResults = (result.results || []).map(row => ({ name: byId.get(row.id) || row.id, outcome: row.outcome, detail: row.detail }));
       summary = "Selesai: "+fmt(result.approved)+" disetujui, "+fmt(result.skipped)+" dilewati, "+fmt(result.errors)+" gagal. Kode audit: "+result.batch_id;
       if (result.errors || result.skipped) summary += ". Periksa kembali akun yang belum selesai secara individual.";
       preview = null; selected.clear(); acknowledged=false;
       await window.showTab("users");
       try { await window.__simantabDuplicateNipAudit?.render?.(true); } catch (_) {}
       busy = false;
+      const completedResults = batchResults.slice();
       await fetchPreview();
-      // fetchPreview clears the summary; restore actionable result for admin.
+      // Keep the audited per-account outcomes visible after refreshing the queue.
+      batchResults = completedResults;
       summary = "Hasil agregat: "+fmt(result.approved)+" disetujui, "+fmt(result.skipped)+" dilewati, "+fmt(result.errors)+" gagal. Audit: "+result.batch_id;
     } catch (err) {
       summary = "Persetujuan belum tuntas: "+(err?.message || err)+". Periksa kembali status akun sebelum mengulang.";
@@ -139,12 +156,21 @@
   const oldShowTab = window.showTab;
   window.showTab = async function(tab, ...args) {
     const result = await oldShowTab.call(this, tab, ...args);
-    if (tab === "users" && isAdmin()) state();
+    if (tab === "users" && isAdmin()) {
+      state();
+      if (!preview && !busy) void fetchPreview();
+    }
     return result;
   };
   window.addEventListener("simantab:profile-ready", () => {
-    if ($("users")?.classList.contains("active") && isAdmin()) state();
+    if ($("users")?.classList.contains("active") && isAdmin()) {
+      state();
+      if (!preview && !busy) void fetchPreview();
+    }
   });
-  if ($("users")?.classList.contains("active") && isAdmin()) state();
-  window.__simantabGtkBulkApproval = { version:1, render:state, refresh:fetchPreview };
+  if ($("users")?.classList.contains("active") && isAdmin()) {
+    state();
+    if (!preview && !busy) void fetchPreview();
+  }
+  window.__simantabGtkBulkApproval = { version:2, render:state, refresh:fetchPreview };
 })();
