@@ -34,7 +34,7 @@ html=html.replace(/<script type="module" src="\.\/login-developer-branding\.js\?
 html=html.replace(/<script type="module" src="\.\/premium-dashboard-theme\.js\?v=\d+"><\/script>\s*/g,'');
 html=html.replace(/<script type="module" src="\.\/dashboard-order-fix\.js\?v=\d+"><\/script>\s*/g,'');
 
-const tags=`<script type="module" src="./${brandingName}?v=2"></script>\n<script type="module" src="./${kasimName}?v=1"></script>\n<script type="module" src="./${loginBrandingName}?v=2"></script>\n<script type="module" src="./${premiumDashboardName}?v=2"></script>\n<script type="module" src="./${dashboardOrderName}?v=1"></script>\n`;
+const tags=`<script type="module" src="./${brandingName}?v=4"></script>\n<script type="module" src="./${kasimName}?v=1"></script>\n<script type="module" src="./${loginBrandingName}?v=4"></script>\n<script type="module" src="./${premiumDashboardName}?v=2"></script>\n<script type="module" src="./${dashboardOrderName}?v=1"></script>\n`;
 html=html.slice(0,bodyClose)+tags+html.slice(bodyClose);
 
 await fs.writeFile(outputPath,html);
