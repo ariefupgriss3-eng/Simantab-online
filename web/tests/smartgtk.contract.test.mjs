@@ -229,7 +229,7 @@ test('PNS-only three-goal screening cannot enroll PPPK or PPPK PW',()=>{
  assert.match(pns,/from public\.smartgtk_intake v WHERE v\.employment='PNS'/i);
  assert.match(ui,/SIMANTAB_SMARTGTK_PNS_THREE_GOAL_UI_V1/);
  assert.match(ui,/pnsEligible=report\.employment==='PNS'/);
- assert.match(ui,/Tampungan Data PPPK/);
+ assert.match(ui,/Tampungan Data '\+title/);
  assert.match(ui,/Pemenuhan Kualifikasi S-1\/D-IV/);
 });
 
