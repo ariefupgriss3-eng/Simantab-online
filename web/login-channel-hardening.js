@@ -1,4 +1,5 @@
 /* SIMANTAB_LOGIN_CHANNEL_HARDENING_V4 */
+/* SIMANTAB_LOGIN_CHANNEL_NETWORK_MESSAGES_V1 */
 (async()=>{
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 for(let i=0;i<200&&(!window.__simantabSb||!window.submitAuth);i++)await wait(50);
@@ -56,7 +57,16 @@ async function hardenedLogin(){
   const actual=effectiveChannel(prof);
   if(actual!==wanted){await sb.auth.signOut();throw new Error(actual==='GTK'?'Akun ini adalah akun Sekolah/GTK/Pengawas. Gunakan Login GTK.':'Akun ini adalah akun Dinas. Gunakan Login Dinas.');}
   location.reload();
- }catch(e){let detail='';try{detail=(await e?.context?.clone?.().json())?.error||''}catch(_){}show(detail||e?.message||'Username/email atau password tidak sesuai.');btn.disabled=false}
+  }catch(e){
+  let detail='';try{detail=(await e?.context?.clone?.().json())?.error||''}catch(_){}
+  const msg=String(detail||e?.message||'Username/email atau password tidak sesuai.');
+  if(/failed to fetch|networkerror|network request failed|load failed|fetch failed|timeout|timed out/i.test(msg)){
+   show('Gagal terhubung ke Supabase. Coba muat ulang situs, jaringan/hotspot lain, atau mode penyamaran. Ini belum membuktikan password salah.');
+  }else if(e?.code==='invalid_credentials'||/invalid login credentials/i.test(msg)){
+   show('Username/email atau password tidak sesuai. Gunakan Lupa Password jika perlu.');
+  }else show(msg);
+  btn.disabled=false;
+ }
 }
 window.submitAuth=async()=>isSignup()?oldSubmit():hardenedLogin();
 if(oldChannel)window.setChannel=c=>{window.__simantabSelectedLoginChannel=String(c||'').toUpperCase()==='GTK'?'GTK':'DINAS';oldChannel(c);setTimeout(updateUi,0)};
