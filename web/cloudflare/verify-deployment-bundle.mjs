@@ -55,13 +55,13 @@ ok(module.includes('KSB_SUBSTANSI_OUTCOME_SCOREBOARD_V1') &&
 ok(module.includes('kabidShowsFailedCentralResults:true') &&
    module.includes('❌ TIDAK LULUS · Seleksi Substansi') &&
    module.includes('ready===120&&failed===0') &&
-   module.includes('version:62'),
+   module.includes('version:63'),
    'Pelabelan peserta tidak lulus dan pembatasan aksi agregat belum lengkap.');
 ok(module.includes('KSB_KABID_PER_PESERTA_CENTRAL_DECISION_V1') &&
    module.includes('kabidKsbSinglePanel(rows,names)') &&
    module.includes('data-ksb-single-submit') &&
    module.includes('bindKabidKsbSinglePanel();') &&
-   module.includes('version:61'),
+   module.includes('version:63'),
    'Panel penetapan kelulusan per peserta belum lengkap.');
 ok(module.includes('KSB_KABID_CENTRAL_DECISION_NO_INPUT_V1') &&
   module.includes("kabidNoManualBasisInput:true") &&
