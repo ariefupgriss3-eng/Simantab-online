@@ -441,16 +441,17 @@ function kabidKsbIsSubstansiReady(s){
 }
 function kabidKsbSinglePanel(rows,names){
  if(!isKabid())return '';
- const listed=(rows||[]).filter(s=>kabidKsbIsSubstansiReady(s)||s.ksb_substansi_status==='LULUS')
+ const listed=(rows||[]).filter(s=>kabidKsbIsSubstansiReady(s)||['LULUS','TIDAK_LULUS'].includes(s.ksb_substansi_status))
   .sort((a,b)=>Number(kabidKsbIsSubstansiReady(b))-Number(kabidKsbIsSubstansiReady(a))||
    String(names.get(a.user_id)?.full_name||'').localeCompare(String(names.get(b.user_id)?.full_name||''),'id'));
  const pending=listed.filter(kabidKsbIsSubstansiReady).length;
  const passed=listed.filter(s=>s.ksb_substansi_status==='LULUS').length;
+ const failed=listed.filter(s=>s.ksb_substansi_status==='TIDAK_LULUS').length;
  return '<div class="card" style="margin-bottom:12px;border:1px solid #dbe5f1">'+
   '<div class="label">KEPUTUSAN PUSAT · KHUSUS KABID</div>'+
   '<h3 style="margin:6px 0">✅ Penetapan Kelulusan Satu per Satu</h3>'+
   '<div class="small" style="margin-bottom:9px">Pilih peserta yang tercantum LULUS pada keputusan pusat. Tombol hanya mengubah akun peserta tersebut; tidak meminta nomor berita acara atau kode. Ucapan personal dikirim setelah konfirmasi.</div>'+
-  '<div class="small" style="margin-bottom:8px"><b>'+pending+'</b> menunggu penetapan · <b>'+passed+'</b> sudah lulus</div>'+
+  '<div class="small" style="margin-bottom:8px"><b>'+pending+'</b> menunggu penetapan · <b>'+passed+'</b> lulus · <b>'+failed+'</b> tidak lulus</div>'+
   '<label class="small" for="ksbKabidSingleSearch">Cari nama atau unit kerja</label>'+
   '<input id="ksbKabidSingleSearch" type="search" placeholder="Ketik nama peserta / sekolah…" autocomplete="off" style="width:100%;max-width:540px;display:block;margin:5px 0 8px;padding:10px;border:1px solid #ccd8e5;border-radius:10px" />'+
   '<div id="ksbKabidSingleCount" class="small" style="margin-bottom:6px">'+listed.length+' peserta ditampilkan</div>'+
@@ -458,7 +459,7 @@ function kabidKsbSinglePanel(rows,names){
   (listed.length?listed.map(s=>{const user=names.get(s.user_id)||{};const name=String(user.full_name||'Peserta');const unit=String(user.unit||'-');const ready=kabidKsbIsSubstansiReady(s);return '<div data-ksb-single-row data-search="'+esc(name+' '+unit)+'" style="padding:12px;border-bottom:1px solid #e2e8f0;display:flex;gap:12px;align-items:center;flex-wrap:wrap">'+
    '<div style="flex:1;min-width:180px"><b>'+esc(name)+'</b><div class="small">'+esc(unit)+'</div></div>'+
    (ready?'<button type="button" class="btn primary" data-ksb-single-submit="'+esc(s.id)+'" data-ksb-single-name="'+esc(name)+'" style="white-space:nowrap">✓ Tetapkan Lulus</button>':
-    '<span style="font-weight:800;color:#166534">✅ LULUS · Level 3</span>')+'</div>';}).join(''):'<div class="small" style="padding:12px">Belum ada peserta untuk penetapan kelulusan.</div>')+
+    (s.ksb_substansi_status==='TIDAK_LULUS'?'<span style="font-weight:800;color:#b91c1c">❌ TIDAK LULUS · Seleksi Substansi</span>':'<span style="font-weight:800;color:#166534">✅ LULUS · Level 3</span>'))+'</div>';}).join(''):'<div class="small" style="padding:12px">Belum ada peserta untuk penetapan kelulusan.</div>')+
   '</div></div>';
 }
 function bindKabidKsbSinglePanel(){
@@ -487,10 +488,11 @@ function kabidKsbLevelAction(s){
  let target='';
  if(ready&&stage==='SUBSTANSI'&&s.ksb_substansi_status==='MENUNGGU'&&s.status==='ADMIN_APPROVED')target='DIKLAT';
  if(ready&&stage==='DIKLAT'&&s.ksb_substansi_status==='LULUS'&&s.ksb_diklat_status==='MENUNGGU'&&s.status==='SUBSTANSI_LULUS')target='SERTIFIKAT';
+ const failureLabel=s.ksb_substansi_status==='TIDAK_LULUS'?'<div style="margin-top:6px;font-weight:850;color:#b91c1c">❌ Tidak Lulus · Keputusan Pusat</div>':'';
  const button=target
   ?'<button type="button" class="btn primary" style="margin-top:7px;white-space:nowrap" onclick="ksbKabidNaikLevel(\''+esc(s.id)+'\',\''+target+'\')">⬆ Naikkan ke Level '+(target==='DIKLAT'?'3 + Ucapan':'4')+'</button>'
   :'';
- return '<div style="min-width:175px"><b>'+esc(label)+'</b>'+button+(target?'<div class="small" style="margin-top:4px">Sesuai keputusan pusat; tanpa isian BA</div>':'')+'</div>';
+ return '<div style="min-width:175px"><b>'+esc(label)+'</b>'+failureLabel+button+(target?'<div class="small" style="margin-top:4px">Sesuai keputusan pusat; tanpa isian BA</div>':'')+'</div>';
 }
 window.ksbKabidNaikLevel=async(id,target,participantName='')=>{
  if(!isKabid())return toast('Hanya Kabid dapat menaikkan level peserta.',true);
@@ -524,14 +526,15 @@ function kabidKsbBulkPanel(rows){
   s.ksb_stage==='SUBSTANSI'&&s.ksb_substansi_status==='MENUNGGU'&&
   ['DISETUJUI','TERVERIFIKASI'].includes(s.ksb_admin_status)
  ).length;
- const permitted=ready===120;
+ const failed=(rows||[]).filter(s=>s.ksb_substansi_status==='TIDAK_LULUS').length;
+ const permitted=ready===120&&failed===0;
  return '<div class="card" style="margin-bottom:12px;border:1px solid #bfdbfe">'+
   '<div class="label">PENETAPAN KELULUSAN SELEKSI SUBSTANSI · KHUSUS KABID</div>'+
   '<h3 style="margin:7px 0">⬆ Naikkan 120 Peserta ke Level 3 + Ucapan Personal</h3>'+
   '<div class="small" style="margin-bottom:7px"><b>'+ready+'/120</b> peserta siap berdasarkan status aplikasi. Penetapan mengikuti hasil kelulusan dari pusat. Pastikan seluruh 120 nama tercantum dalam keputusan pusat; status siap di aplikasi bukan bukti kelulusan. Tidak perlu mengisi nomor BA, catatan, atau kode. Ucapan dibuat otomatis per akun.</div>'+
   '<button type="button" class="btn primary" id="ksbKabidNaik120" '+(permitted?'':'disabled')+
   ' onclick="ksbKabidNaikLevel120()">⬆ Tetapkan Lulus dan Kirim Ucapan ke 120 Akun</button>'+
-  (!permitted?'<div class="small" style="margin-top:6px;color:#92400e">Aksi agregat terkunci: tidak tepat 120 akun pada Level 2. Gunakan tombol per peserta.</div>':'')+
+  (!permitted?'<div class="small" style="margin-top:6px;color:#92400e">'+(failed?'Aksi agregat 120 lulus dinonaktifkan karena '+failed+' peserta berstatus TIDAK LULUS.':'Aksi agregat terkunci: tidak tepat 120 akun pada Level 2.')+' Gunakan panel penetapan per peserta.</div>':'')+
   '<div class="small" style="margin-top:8px">Tidak ada perubahan data atau notifikasi sebelum Kabid melakukan konfirmasi. Setiap penetapan tersimpan pada jejak audit.</div>'+
   '</div>';
 }
@@ -880,5 +883,5 @@ window.showTab=async id=>{
  ensureSection();ensureNav();await priorShow(id);
  if(id==='diklatKsBcks')await render();
 };
-window.__simantabDiklatKsBcks={version:61,kabidIndividualSubstansiButtons:true,kabidPromoteLevel:true,kabidPersonalGreetings120:true,kabidDecisionSource:'PUSAT',kabidNoManualBasisInput:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:62,kabidShowsFailedCentralResults:true,kabidIndividualSubstansiButtons:true,kabidPromoteLevel:true,kabidPersonalGreetings120:true,kabidDecisionSource:'PUSAT',kabidNoManualBasisInput:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
