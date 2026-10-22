@@ -134,7 +134,7 @@ test('Dashboard GTK has short copy and visible 26 October 2026 23:59 WIB data de
  assert.doesNotMatch(ui,/SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS\./);
  assert.match(ui,/sg-deadline/);
  assert.match(ui,/Deadline input data paling lambat 26 Oktober 2026, pukul 23\.59 WIB\./);
- assert.match(ui,/Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas/);
+ assert.match(ui,/Untuk KS negeri, ajukan Kebutuhan GTK Riil terlebih dahulu/);
  assert.match(ui,/smartgtk_pilot_status/);
  assert.doesNotThrow(()=>new Function(ui));
 });
@@ -211,7 +211,7 @@ test('PB and PLS are separate categories and legacy codes remain readable',()=>{
 });
 
 test('OPEN rollout text directs denied users to account approval rather than pilot enrollment',()=>{
- assert.match(ui,/Akun belum dapat mengisi SMART-GTK\. Pastikan akun SIMANTAB aktif dan sudah disetujui Dinas/);
+ assert.match(ui,/Akun belum dapat mengisi SMART-GTK\. Untuk KS negeri, ajukan Kebutuhan GTK Riil terlebih dahulu/);
  assert.match(ui,/Akun belum memenuhi ketentuan akses SMART-GTK/);
  assert.match(ui,/SMART-GTK belum dapat dimuat\. Segarkan halaman/);
  assert.doesNotMatch(ui,/Saat ini masih uji coba terbatas|SMART-GTK masih tahap pilot terbatas/);
