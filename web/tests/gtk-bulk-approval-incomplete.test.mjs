@@ -31,7 +31,10 @@ test('PENDING to APPROVED requires Super Admin; completion of profile remains ma
  assert.match(sql,/WHERE id=_target AND approval_status='PENDING' AND account_channel='GTK';/);
  assert.doesNotMatch(sql,/Unit kerja kosong/);
  assert.match(ui,/Wajib lengkapi setelah disetujui/);
- assert.match(ui,/SIMANTAB_GTK_BULK_APPROVAL_UI_V3/);
+ assert.match(ui,/Akun PENDING Perlu Pemeriksaan Manual/);
+ assert.match(edge,/manual_items/);
+ assert.match(edge,/NIP ganda pada akun lain/);
+ assert.match(ui,/SIMANTAB_GTK_BULK_APPROVAL_UI_V4/);
  assert.match(mandatory,/state\.blocked=missingFields\(data\)\.length>0/);
  assert.match(mandatory,/const target=\(eligible\(\)\&\&\(state\.blocked\|\|state\.loading\)\)\?'profile':id/);
  assert.match(pkg.scripts['build:cloudflare'],/node inject-gtk-bulk-approval\.mjs/);
