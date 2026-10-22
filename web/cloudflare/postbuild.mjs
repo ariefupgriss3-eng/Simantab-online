@@ -123,7 +123,13 @@ assert(redistribMenu.includes("if(['PENGAWAS','KORWIL'].includes(role()))return;
 assert(diklatMenu.includes("if(profile().role==='PENGAWAS')return;"), 'Diklat KS/BCKS masih menambahkan tombol ke sidebar Pengawas.');
 assert(diklatMenu.includes('SIMANTAB_KS_INACTIVE_DIKLAT_NAV_VISIBLE_LOCKED_V1') && diklatMenu.includes("b.disabled=locked"), 'Kepala Sekolah harus tetap melihat menu Diklat KS terkunci saat modul nonaktif.');
 assert(html.includes('./gtk-redistribution-analysis.js?v=9'), 'Cache Redistribusi GTK Cloudflare belum diganti.');
-assert(html.includes('./diklat-ks-bcks-v32.js?v=23'), 'Cache Diklat KS/BCKS Cloudflare belum diganti.');
+assert(html.includes('./diklat-ks-bcks-v32.js?v=24'), 'Cache Diklat KS/BCKS Cloudflare belum diganti.');
+assert(diklatMenu.includes('KSB_KABID_LEVEL_UP_OFFICIAL_120_V1') &&
+  diklatMenu.includes("sb.rpc('ks_bcks_kabid_promote_level'") &&
+  diklatMenu.includes('kabidKsbLevelAction(s)') &&
+  diklatMenu.includes("if(!isKabid())return ''"),
+  'Tombol kenaikan level Kabid dan pembatasan akses belum tersedia.');
+
 
 const required = ['manifest.json', 'sw.js', 'pwa-install.js', 'gtk-redistribution-analysis.js'];
 for (const file of required) {

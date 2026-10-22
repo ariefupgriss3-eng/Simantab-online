@@ -427,7 +427,7 @@ const modules=[
  ['korwil-dashboard-title.js',1],
  ['cuti-requirements.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 2 : 1],
  ['super-admin-merge-pengawas.js',1],
- ['diklat-ks-bcks-v32.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 23 : 19],
+ ['diklat-ks-bcks-v32.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 24 : 19],
  ['ui-branding-icons.js',3],
  ['kasim-role-label.js',1],
  ['login-developer-branding.js',3],
