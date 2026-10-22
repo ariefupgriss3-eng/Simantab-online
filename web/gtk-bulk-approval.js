@@ -1,4 +1,4 @@
-/* SIMANTAB_GTK_BULK_APPROVAL_UI_V3
+/* SIMANTAB_GTK_BULK_APPROVAL_UI_V4
  * Only SUPER_ADMIN can preview and select verified distinct-NIP GTK accounts.
  * No implicit selection or approval, no storage of sensitive data.
  */
@@ -70,7 +70,14 @@
          '<button type="button" class="btn primary" id="simGtkBulkApprove"'+
            (busy || !selected.size || !acknowledged?' disabled':'')+'>✅ Setujui Agregat ('+fmt(selected.size)+' akun)</button>'+
          '<div class="small" style="margin-top:8px">Hanya akun yang Anda pilih diproses. Server memeriksa ulang status PENDING, keunikan NIP yang terisi, peran dan NPSN KS serta mencatat audit. Data kosong wajib dilengkapi setelah login. Maksimal 50 akun per proses.</div>'
-        : '<div class="info">Belum ada akun memenuhi syarat. Lanjutkan pemeriksaan manual pada akun bermasalah.</div>') : '');
+        : '<div class="info">Belum ada akun yang aman untuk persetujuan massal. Daftar akun yang memerlukan pemeriksaan tetap tersedia di bawah.</div>') : '') +
+      (preview?.manual_items?.length ?
+       '<h4 style="margin:16px 0 5px">⚠ Akun PENDING Perlu Pemeriksaan Manual ('+fmt(preview.manual_items.length)+')</h4>'+
+       '<div class="small" style="margin-bottom:8px">Akun ini tetap ditampilkan walaupun profilnya belum lengkap. Untuk mencegah akun ganda, kotak persetujuannya dinonaktifkan sampai identitas/peran diperbaiki.</div>'+
+       '<div style="max-height:280px;overflow:auto;border:1px solid var(--line);border-radius:9px"><table class="table" style="min-width:640px;width:100%">'+
+       '<thead><tr><th>Nama</th><th>NIP</th><th>Peran</th><th>Unit</th><th>Alasan perlu pemeriksaan</th></tr></thead><tbody>'+
+       preview.manual_items.map(p=>'<tr><td>'+esc(p.full_name)+'</td><td>'+esc(p.nip_masked)+'</td><td>'+esc(roleLabel(p.role))+'</td><td>'+esc(p.unit||'Belum diisi')+'</td><td><strong>'+esc(p.issue)+'</strong>'+(p.incomplete?'<div class="small">Profil belum lengkap</div>':'')+'</td></tr>').join('')+
+       '</tbody></table></div>' : '');
     $("simGtkBulkRefresh")?.addEventListener("click", fetchPreview);
     $("simGtkBulkSelectAll")?.addEventListener("click", () => {
       selected = new Set(list.slice(0, 50).map(a => a.id));
@@ -172,5 +179,5 @@
     state();
     if (!preview && !busy) void fetchPreview();
   }
-  window.__simantabGtkBulkApproval = { version:3, render:state, refresh:fetchPreview };
+  window.__simantabGtkBulkApproval = { version:4, render:state, refresh:fetchPreview };
 })();
