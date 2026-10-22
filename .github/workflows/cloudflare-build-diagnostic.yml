@@ -1,0 +1,41 @@
+name: SIMANTAB Cloudflare Build Diagnostic
+on:
+  push:
+    branches:
+      - migration/cloudflare-pages-simantab-20261013
+    paths:
+      - 'web/**'
+      - '.github/workflows/cloudflare-build-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulate-cloudflare:
+    name: Build Cloudflare bundle without deploying
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - name: Checkout Cloudflare production branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install --no-package-lock --no-audit --no-fund
+      - name: Build as Cloudflare
+        run: npm run build:cloudflare
+      - name: Verify institutional credits in bundle
+        run: |
+          grep -Fq 'Bambang Suryantoro Sudibyo' .vercel/output/static/ui-branding-icons.js
+          grep -Fq 'Bambang Suryantoro Sudibyo' .vercel/output/static/login-developer-branding.js
+          grep -Fq 'ui-branding-icons.js?v=4' .vercel/output/static/index.html
+          grep -Fq 'login-developer-branding.js?v=4' .vercel/output/static/index.html
+          echo "SIMANTAB institutional-credit bundle VERIFIED"
