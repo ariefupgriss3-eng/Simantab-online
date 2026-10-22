@@ -45,7 +45,11 @@ ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonica
 ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
 ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
 const module=await read('diklat-ks-bcks-v32.js');
-ok(html.includes('./diklat-ks-bcks-v32.js?v=25'),'Cache versi Diklat KS manual bukan v25');
+ok(html.includes('./diklat-ks-bcks-v32.js?v=26'),'Cache versi Diklat KS manual bukan v26');
+ok(module.includes('KSB_KABID_CENTRAL_DECISION_NO_INPUT_V1') &&
+  module.includes("kabidNoManualBasisInput:true") &&
+  !module.includes("prompt('Cantumkan nomor dan tanggal berita acara"),
+  'Alur penetapan Kabid masih meminta isian manual keputusan.');
 ok(module.includes('KSB_KABID_120_PERSONAL_GREETING_V1') && module.includes('ks_bcks_kabid_promote_all_120'),
   'Tombol Kabid untuk 120 ucapan personal belum ditemukan pada bundle.');
 ok(module.includes('KSB_KABID_LEVEL_UP_OFFICIAL_120_V1')&&module.includes('ks_bcks_kabid_promote_level'),'Kenaikan level Kabid belum disertakan dalam build');
