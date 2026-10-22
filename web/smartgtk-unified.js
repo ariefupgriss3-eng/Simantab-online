@@ -493,22 +493,32 @@ const flowLabels={
 const flowCoordinator=()=>['KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role);
 const flowStaff=()=>/^STAFF_|^ADMIN_/.test(p().role||'');
 async function loadDinasWorkflow(){
- const canSeeDrafts=['KABID','SUPER_ADMIN','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role);
+ const officer=['KABID','SUPER_ADMIN','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role);
  const req=[
   sb.rpc('smartgtk_workflow_list',{p_page:workflowPage}),
   flowCoordinator()?sb.rpc('smartgtk_workflow_staff'):Promise.resolve({data:[]}),
-  canSeeDrafts?sb.rpc('smartgtk_workflow_drafts',{p_page:workflowDraftPage}):
+  officer?sb.rpc('smartgtk_workflow_drafts',{p_page:workflowDraftPage}):
+   Promise.resolve({data:{items:[],total:0,read_only:true}}),
+  officer?sb.rpc('smartgtk_contract_buffer_list',{p_jenis:'PPPK',p_page:contractPages.PPPK}):
+   Promise.resolve({data:{items:[],total:0,read_only:true}}),
+  officer?sb.rpc('smartgtk_contract_buffer_list',{p_jenis:'PPPK_PW',p_page:contractPages.PPPK_PW}):
    Promise.resolve({data:{items:[],total:0,read_only:true}})
  ];
  const response=await Promise.all(req);
- for(const r of response)if(r.error)throw r.error;
+ for(const result of response)if(result.error)throw result.error;
  const data=response[0].data||{},draftData=response[2].data||{};
  workflowItems=Array.isArray(data.items)?data.items:[];
  workflowTotal=Number(data.total||0);
  workflowStaff=Array.isArray(response[1]?.data)?response[1].data:[];
  workflowDraftItems=Array.isArray(draftData.items)?draftData.items:[];
  workflowDraftTotal=Number(draftData.total||0);
+ for(const [key,index] of [['PPPK',3],['PPPK_PW',4]]){
+  const holding=response[index].data||{};
+  contractRecords[key]=Array.isArray(holding.items)?holding.items:[];
+  contractTotals[key]=Number(holding.total||0);
+ }
 }
+
 function workflowActions(item){
  const status=item.status,role=p().role;
  const make=(action,title)=>'<button type="button" data-action="wf-act" data-owner="'+esc(item.owner_id)+'" data-operation="'+esc(action)+'">'+esc(title)+'</button>';
@@ -547,14 +557,34 @@ function workflowDraftsPanel(){
  '<button type="button" data-action="wf-draft-prev" '+(workflowDraftPage===0?'disabled':'')+'>← Draf sebelumnya</button>'+
  '<button type="button" data-action="wf-draft-next" '+((workflowDraftPage+1)*50>=workflowDraftTotal?'disabled':'')+'>Draf berikutnya →</button></div></div>';
 }
+/* SIMANTAB_SMARTGTK_SEPARATE_CONTRACT_BUCKETS_UI_V1: category-specific read-only holding lists. */
+function workflowContractPanel(kind){
+ if(!['KABID','SUPER_ADMIN','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role))return '';
+ const title=kind==='PPPK'?'PPPK':'PPPK Paruh Waktu';
+ const records=contractRecords[kind]||[],total=contractTotals[kind]||0;
+ const page=contractPages[kind]||0;
+ return '<div class="sg-box" style="margin:12px 0;border:1px solid #c5d6ee;background:#f5f9ff">'+
+  '<h3>📁 Tampungan Data '+title+' · '+total+' akun</h3>'+
+  '<p class="small">Database khusus '+title+'. Data dipertahankan sebagai catatan administratif, terpisah dari tiga analisis dan penetapan JF/S-1 bagi PNS. '+ 
+  'Bukan antrean persetujuan PNS. Jika NPSN belum terpetakan, jenjang belum terkonfirmasi.</p>'+
+  '<div class="sg-scroll"><table><thead><tr><th>Nama dan Satuan Pendidikan</th><th>NIP</th><th>Jenis dan Pendidikan</th><th>Status Pendataan</th></tr></thead><tbody>'+
+  (records.length?records.map(x=>'<tr><td><b>'+esc(x.full_name||'-')+'</b><div class="small">'+esc(x.unit_work||'-')+'</div></td>'+
+   '<td>'+esc(x.nip||'-')+'</td><td>'+esc(x.profession||'-')+' / '+esc(x.education||'-')+
+   '<div class="small">Jenjang: '+esc(x.scope||'BELUM_TERPETAKAN')+'</div></td>'+
+   '<td><b>'+esc(x.data_stage||'-')+'</b><div class="small">Tampungan '+title+' — tidak termasuk analisis PNS</div></td></tr>').join(''):
+   '<tr><td colspan="4">Belum ada isian '+title+' dalam cakupan akun ini.</td></tr>')+
+  '</tbody></table></div><div class="sg-actions" style="margin-top:9px">'+
+  '<button type="button" data-action="wf-contract-prev" data-contract-kind="'+kind+'" '+(page===0?'disabled':'')+'>← Sebelumnya</button>'+
+  '<button type="button" data-action="wf-contract-next" data-contract-kind="'+kind+'" '+((page+1)*50>=total?'disabled':'')+'>Berikutnya →</button></div></div>';
+}
 function workflowDashboard(){
  const role=flowRoles[p().role]||(flowStaff()?'Staf Ketenagaan':'Monitoring Dinas');
  const grouped={};for(const i of workflowItems)grouped[i.status]=(grouped[i.status]||0)+1;
  const counters=Object.entries(grouped).map(([k,n])=>'<span style="display:inline-block;background:#edf6ff;border-radius:7px;padding:6px 8px;margin:4px 5px 4px 0">'+esc(flowLabels[k]||k)+': <b>'+n+'</b></span>').join('');
  body().innerHTML='<div class="sg-box"><h3>🧭 Workflow SMART-GTK · '+esc(role)+'</h3>'+
  '<p class="sg-note">Alur: staf memeriksa → Kasi/Subkoor memvalidasi menurut jenjang → Kabid menyelesaikan telaah. Kasus NPSN belum terpetakan menunggu penetapan jenjang oleh Kabid. Tidak mengubah isian awal GTK maupun menerbitkan SK/JF.</p>'+
- '<p><b>'+workflowTotal+'</b> kasus siap diproses · <b>'+workflowDraftTotal+'</b> draf belum selesai pada cakupan akun ini. Halaman antrean '+(workflowPage+1)+'. Ringkasan tahap berikut hanya menghitung halaman aktif.</p>'+
- '<div>'+counters+'</div>'+workflowDraftsPanel()+
+ '<p><b>'+workflowTotal+'</b> kasus PNS siap diproses · <b>'+workflowDraftTotal+'</b> draf PNS · <b>'+contractTotals.PPPK+'</b> tampungan PPPK · <b>'+contractTotals.PPPK_PW+'</b> tampungan PPPK PW. Halaman antrean '+(workflowPage+1)+'.</p>'+
+ '<div>'+counters+'</div>'+workflowDraftsPanel()+workflowContractPanel('PPPK')+workflowContractPanel('PPPK_PW')+
  (['KABID','SUPER_ADMIN','STAFF_USUL_SK'].includes(p().role)?'<button type="button" data-action="wf-legacy">Lihat Skrining Lama</button>':'')+
  '<div class="sg-scroll"><table><thead><tr><th>Nama dan Satuan Pendidikan</th><th>Data GTK</th><th>Jenjang/Tahap</th><th>Staf Pemeriksa</th><th>Keputusan/Tindakan</th></tr></thead><tbody>'+
  (workflowItems.length?workflowItems.map(x=>'<tr><td><b>'+esc(x.full_name||'-')+'</b><div class="small">'+esc(x.unit_work||'-')+'</div></td>'+
@@ -646,7 +676,7 @@ async function open(){
  }
  modal.style.display='flex';info('Memuat data...');
  try{
-   if(dinas()){workflowPage=0;workflowDraftPage=0;await loadDinasWorkflow();workflowDashboard()}
+   if(dinas()){workflowPage=0;workflowDraftPage=0;contractPages={PPPK:0,PPPK_PW:0};await loadDinasWorkflow();workflowDashboard()}
    else {
     const enrolled=await sb.rpc('smartgtk_pilot_status');
     if(enrolled.error)throw enrolled.error;
@@ -682,11 +712,18 @@ modal.addEventListener('click',async e=>{
    if(act==='wf-draft-prev')workflowDraftPage=Math.max(0,workflowDraftPage-1);
    await loadDinasWorkflow();workflowDashboard();
   }
+  if(act==='wf-contract-prev'||act==='wf-contract-next'){
+   const kind=String(b.dataset.contractKind||'');
+   if(!['PPPK','PPPK_PW'].includes(kind))throw Error('Kategori tampungan tidak dikenal');
+   if(act==='wf-contract-prev')contractPages[kind]=Math.max(0,contractPages[kind]-1);
+   else if((contractPages[kind]+1)*50<contractTotals[kind])contractPages[kind]++;
+   await loadDinasWorkflow();workflowDashboard();
+  }
   if(act==='wf-legacy'){pg=0;await listDinas();dashboard();
    body().insertAdjacentHTML('afterbegin','<button type="button" data-action="wf-return">← Kembali ke Workflow SMART-GTK</button>');
   }
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:22,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:23,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
