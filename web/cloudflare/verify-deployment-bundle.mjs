@@ -44,6 +44,21 @@ ok([PREVIEW_ORIGIN, SHORT_ORIGIN, OFFICIAL_ORIGIN].includes(requestedOrigin),'Al
 ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonical site origin tidak cocok dengan konfigurasi domain');
 ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
 ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
+/* SIMANTAB_LOGIN_FETCH_DIAGNOSTIC_BUILD_QA_V1: check login transport errors are distinct from invalid passwords. */
+const loginClickRescue=await read('login-click-rescue.js');
+const loginChannelHardening=await read('login-channel-hardening.js');
+ok(html.includes('./login-click-rescue.js?v=4') &&
+   html.includes('./login-channel-hardening.js?v=5'),
+   'Browser masih dapat menggunakan JS login lama dari cache.');
+ok(loginClickRescue.includes('SIMANTAB_LOGIN_NETWORK_DIAGNOSTIC_V1') &&
+   loginClickRescue.includes("'/auth/v1/health'") &&
+   loginClickRescue.includes('simantabLoginConnectivityCheck') &&
+   loginClickRescue.includes('networkDiagnostic:true'),
+   'Pemeriksa koneksi browser ke Supabase belum aktif.');
+ok(loginChannelHardening.includes('SIMANTAB_LOGIN_CHANNEL_NETWORK_MESSAGES_V1') &&
+   loginChannelHardening.includes('failed to fetch') &&
+   loginChannelHardening.includes('invalid_credentials'),
+   'Galat jaringan login masih disamakan dengan kredensial salah.');
 const module=await read('diklat-ks-bcks-v32.js');
 ok(html.includes('./diklat-ks-bcks-v32.js?v=29'),'Cache versi Diklat KS manual bukan v29');
 ok(module.includes('KSB_SUBSTANSI_OUTCOME_SCOREBOARD_V1') &&
