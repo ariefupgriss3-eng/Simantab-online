@@ -45,7 +45,13 @@ ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonica
 ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
 ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
 const module=await read('diklat-ks-bcks-v32.js');
-ok(html.includes('./diklat-ks-bcks-v32.js?v=26'),'Cache versi Diklat KS manual bukan v26');
+ok(html.includes('./diklat-ks-bcks-v32.js?v=27'),'Cache versi Diklat KS manual bukan v27');
+ok(module.includes('KSB_KABID_PER_PESERTA_CENTRAL_DECISION_V1') &&
+   module.includes('kabidKsbSinglePanel(rows,names)') &&
+   module.includes('data-ksb-single-submit') &&
+   module.includes('bindKabidKsbSinglePanel();') &&
+   module.includes('version:61'),
+   'Panel penetapan kelulusan per peserta belum lengkap.');
 ok(module.includes('KSB_KABID_CENTRAL_DECISION_NO_INPUT_V1') &&
   module.includes("kabidNoManualBasisInput:true") &&
   !module.includes("prompt('Cantumkan nomor dan tanggal berita acara"),
