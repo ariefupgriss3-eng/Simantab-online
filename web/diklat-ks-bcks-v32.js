@@ -441,7 +441,7 @@ function kabidKsbLevelAction(s){
  if(ready&&stage==='SUBSTANSI'&&s.ksb_substansi_status==='MENUNGGU'&&s.status==='ADMIN_APPROVED')target='DIKLAT';
  if(ready&&stage==='DIKLAT'&&s.ksb_substansi_status==='LULUS'&&s.ksb_diklat_status==='MENUNGGU'&&s.status==='SUBSTANSI_LULUS')target='SERTIFIKAT';
  const button=target
-  ?'<button type="button" class="btn primary" style="margin-top:7px;white-space:nowrap" onclick="ksbKabidNaikLevel(\''+esc(s.id)+'\',\''+target+'\')">⬆ Naikkan ke Level '+(target==='DIKLAT'?'3':'4')+'</button>'
+  ?'<button type="button" class="btn primary" style="margin-top:7px;white-space:nowrap" onclick="ksbKabidNaikLevel(\''+esc(s.id)+'\',\''+target+'\')">⬆ Naikkan ke Level '+(target==='DIKLAT'?'3 + Ucapan':'4')+'</button>'
   :'';
  return '<div style="min-width:175px"><b>'+esc(label)+'</b>'+button+(target?'<div class="small" style="margin-top:4px">Wajib dasar keputusan/BA resmi</div>':'')+'</div>';
 }
@@ -464,6 +464,50 @@ window.ksbKabidNaikLevel=async(id,target)=>{
   await renderLeadershipDiklat();
  }catch(e){toast(e.message||String(e),true)}
  finally{ksbKabidPendingPromotions.delete(id)}
+};
+
+
+/* KSB_KABID_120_PERSONAL_GREETING_V1: permissions and 120-person count rechecked by SQL. */
+let ksbKabidBatchBusy=false;
+function kabidKsbBulkPanel(rows){
+ if(!isKabid())return '';
+ const ready=(rows||[]).filter(s=>
+  s.workflow_state==='SELESAI'&&s.status==='ADMIN_APPROVED'&&
+  s.ksb_stage==='SUBSTANSI'&&s.ksb_substansi_status==='MENUNGGU'&&
+  ['DISETUJUI','TERVERIFIKASI'].includes(s.ksb_admin_status)
+ ).length;
+ const permitted=ready===120;
+ return '<div class="card" style="margin-bottom:12px;border:1px solid #bfdbfe">'+
+  '<div class="label">PENETAPAN KELULUSAN SELEKSI SUBSTANSI · KHUSUS KABID</div>'+
+  '<h3 style="margin:7px 0">⬆ Naikkan 120 Peserta ke Level 3 + Ucapan Personal</h3>'+
+  '<div class="small" style="margin-bottom:7px"><b>'+ready+'/120</b> peserta siap berdasarkan status aplikasi. Keputusan kelulusan tetap harus berlandaskan berita acara/dokumen resmi. Setiap nama otomatis dimasukkan ke komentar pribadi dan notifikasi akun.</div>'+
+  '<button type="button" class="btn primary" id="ksbKabidNaik120" '+(permitted?'':'disabled')+
+  ' onclick="ksbKabidNaikLevel120()">⬆ Tetapkan Lulus dan Kirim Ucapan ke 120 Akun</button>'+
+  (!permitted?'<div class="small" style="margin-top:6px;color:#92400e">Aksi agregat terkunci: tidak tepat 120 akun pada Level 2. Gunakan tombol per peserta.</div>':'')+
+  '<div class="small" style="margin-top:8px">Tidak ada perubahan data atau notifikasi sebelum Kabid melakukan konfirmasi. Setiap penetapan tersimpan pada jejak audit.</div>'+
+  '</div>';
+}
+window.ksbKabidNaikLevel120=async()=>{
+ if(!isKabid())return toast('Hanya Kabid yang berwenang.',true);
+ if(ksbKabidBatchBusy)return;
+ const input=prompt('Cantumkan nomor dan tanggal berita acara/keputusan resmi kelulusan 120 peserta (15–500 karakter).');
+ if(input===null)return;
+ const note=input.trim();
+ if(note.length<15||note.length>500)return toast('Isi dasar keputusan resmi sepanjang 15–500 karakter.',true);
+ const code=prompt('Tindakan ini akan menetapkan LULUS Seleksi Substansi dan mengirim 120 komentar personal.\\nUntuk melanjutkan, ketik tepat: 120 LULUS');
+ if(code!=='120 LULUS')return toast('Penetapan agregat tidak dijalankan.',true);
+ if(!confirm('Konfirmasi final: naikkan tepat 120 peserta resmi ke Level 3, kirim ucapan per nama, dan simpan jejak keputusan?'))return;
+ ksbKabidBatchBusy=true;
+ const btn=$('ksbKabidNaik120');
+ if(btn){btn.disabled=true;btn.textContent='Memproses keputusan Kabid…'}
+ try{
+  const {data,error}=await sb.rpc('ks_bcks_kabid_promote_all_120',{p_note:note});
+  if(error)throw error;
+  if(data?.ok!==true||data?.promoted!==120)throw new Error('Server tidak mengonfirmasi tepat 120 peserta. Periksa status sebelum mencoba lagi.');
+  toast('Berhasil: 120 peserta naik Level 3 dan menerima ucapan personal.');
+  await renderLeadershipDiklat();
+ }catch(e){toast(e.message||String(e),true);if(btn){btn.disabled=false;btn.textContent='⬆ Tetapkan Lulus dan Kirim Ucapan ke 120 Akun'}}
+ finally{ksbKabidBatchBusy=false}
 };
 
 window.ksbKabidApprove=async(id,approve)=>{
@@ -522,6 +566,7 @@ async function renderLeadershipDiklat(){
   </div>
   ${isKabidView?'<div class="card" id="ksbKabidSimulatorCard" style="margin-bottom:12px"><div class="label">SIMULASI SELEKSI SUBSTANSI</div><h3 style="margin:5px 0">🧠 Dashboard Simulasi dan Thinking Culture</h3><div class="small">Monitoring Basic, Premium One, Pro, Thinking Culture, AI Coach, serta kesiapan peserta. Akses uji Feronika bersifat khusus akun uji dan tidak membuka akses umum.</div><div id="ksbSimAccessState" class="small" style="margin-top:8px"><b>Status akses umum:</b> memeriksa…</div><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn primary" id="ksbOpenSimulatorDashboard" type="button">Buka Dashboard Simulasi</button><button class="btn soft" id="ksbToggleSimulatorAccess" type="button">Kontrol Akses Simulasi</button></div></div>':''}
   ${aggSummary}
+  ${kabidKsbBulkPanel(rows)}
   ${leaderKsbSummary(rows)}
   <div class="card">${rows.length?`<div class="tablewrap"><table><thead><tr><th>KS Pengusul</th><th>Unit Kerja</th><th>Jenjang</th><th>Jenis / Program</th><th>Kasi/Subkoor Pembagi</th><th>Status / Proses</th><th>Hasil AI</th>${isKabidView?'<th>Persetujuan Kabid</th><th>Level / Tindakan Kabid</th>':''}</tr></thead><tbody>${rows.map(s=>{const u=names.get(s.user_id)||{},coordinator=names.get(s.assigned_by)||{},aiAssignment=String(s.assignment_note||'').startsWith('AI Bagi Tugas');return `<tr><td><b>${esc(u.full_name||'-')}</b></td><td>${esc(u.unit||'-')}</td><td>${esc(leaderScopeLabel(s.scope_level))}</td><td>Diklat KS/BCKS</td><td>${esc(coordinator.full_name||'-')}${aiAssignment?'<div class="small">🤖 AI Bagi Tugas</div>':''}</td><td>${coordKsbPill(s.workflow_state)}</td><td>${aiCompactHtml(s.id,vis)}</td>${isKabidView?`<td>${kabidKsbAction(s,names)||'—'}</td><td>${kabidKsbLevelAction(s)}</td>`:''}</tr>`}).join('')}</tbody></table></div>`:'<div class="empty">Belum ada peserta Diklat KS/BCKS.</div>'}</div>`;
   await bindKabidSimulatorDirect();
@@ -790,5 +835,5 @@ window.showTab=async id=>{
  ensureSection();ensureNav();await priorShow(id);
  if(id==='diklatKsBcks')await render();
 };
-window.__simantabDiklatKsBcks={version:58,kabidPromoteLevel:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:59,kabidPromoteLevel:true,kabidPersonalGreetings120:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
