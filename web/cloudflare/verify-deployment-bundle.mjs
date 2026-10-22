@@ -45,7 +45,13 @@ ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonica
 ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
 ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
 const module=await read('diklat-ks-bcks-v32.js');
-ok(html.includes('./diklat-ks-bcks-v32.js?v=28'),'Cache versi Diklat KS manual bukan v28');
+ok(html.includes('./diklat-ks-bcks-v32.js?v=29'),'Cache versi Diklat KS manual bukan v29');
+ok(module.includes('KSB_SUBSTANSI_OUTCOME_SCOREBOARD_V1') &&
+   module.includes('KSB_HIDE_AGGREGATE_AFTER_CENTRAL_RESULTS_V1') &&
+   module.includes('Administrasi Selesai') &&
+   module.includes('kabidNoStaleBulkButton:true') &&
+   module.includes('version:63'),
+   'Ringkasan kelulusan 118/2 dan penanganan tombol agregat 120 belum lengkap.');
 ok(module.includes('kabidShowsFailedCentralResults:true') &&
    module.includes('❌ TIDAK LULUS · Seleksi Substansi') &&
    module.includes('ready===120&&failed===0') &&
