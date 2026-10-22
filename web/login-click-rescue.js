@@ -1,5 +1,6 @@
 /* SIMANTAB_LOGIN_CLICK_RESCUE_V2 */
 /* SIMANTAB_LOGIN_CLICK_RESCUE_V3 */
+/* SIMANTAB_LOGIN_NETWORK_DIAGNOSTIC_V1: browser-only public endpoint probe. Never transmit usernames, passwords or sessions. */
 (()=>{
 const $=id=>document.getElementById(id);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -8,6 +9,37 @@ const SUPABASE_KEY='sb_publishable_EfCKPSelNMo1X3whBFszJw_Ui6SuRIB';
 const GTK_ROLES=new Set(['GTK','KEPALA_SEKOLAH','PENGAWAS']);
 let busy=false;
 const show=(text,type='ok')=>{const m=$('authMsg');if(!m)return;m.className=type==='err'?'err':'okmsg';m.textContent=text};
+const isNetworkError=e=>/failed to fetch|networkerror|network request failed|load failed|fetch failed|koneksi login terlalu lama|komponen login gagal dimuat|err_network|err_internet|err_connection|timeout|timed out/i.test(String(e?.message||e||''));
+function diagnosticButton(){
+ const msg=$('authMsg');if(!msg)return null;
+ let b=$('simantabLoginConnectivityCheck');
+ if(b)return b;
+ b=document.createElement('button');b.type='button';b.id='simantabLoginConnectivityCheck';
+ b.textContent='🔎 Uji Koneksi Server';b.className='btn soft';
+ b.style.cssText='margin:8px 0 4px;display:none;max-width:100%;white-space:normal';
+ b.addEventListener('click',async()=>{
+  if(b.disabled)return;
+  b.disabled=true;show('Menguji koneksi browser ke layanan autentikasi…','ok');
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+  try{
+   const response=await fetch(SUPABASE_URL+'/auth/v1/health',{
+    method:'GET',headers:{apikey:SUPABASE_KEY},mode:'cors',credentials:'omit',
+    cache:'no-store',signal:controller.signal
+   });
+   if(response.status>=500)show('Server autentikasi merespons dengan HTTP '+response.status+'. Coba ulang setelah layanan pulih.','err');
+   else if(response.ok)show('Koneksi browser ke server autentikasi berhasil. Silakan coba Masuk kembali. Jika login ditolak, periksa kredensial akun.','ok');
+   else show('Server autentikasi dapat dijangkau (HTTP '+response.status+'), tetapi pemeriksaan ditolak. Periksa jaringan dan coba Masuk kembali.','err');
+  }catch(e){
+   show('Browser tidak berhasil menghubungi Supabase. Coba hotspot HP atau jaringan berbeda, nonaktifkan VPN/ekstensi pemblokir, lalu muat ulang. Tidak perlu membuat akun baru.','err');
+  }finally{clearTimeout(timer);b.disabled=false}
+ });
+ msg.insertAdjacentElement('afterend',b);return b;
+}
+function showNetworkHelp(error){
+ const b=diagnosticButton();if(b)b.style.display='inline-flex';
+ show('Koneksi login ke Supabase gagal atau terlalu lama. Ini belum berarti password salah. Klik Uji Koneksi Server, coba jaringan lain, lalu ulangi login.','err');
+}
+function clearNetworkHelp(){const b=$('simantabLoginConnectivityCheck');if(b)b.style.display='none'}
 const isSignup=()=>!($('nameWrap')?.classList.contains('hidden'));
 const selectedChannel=()=>{
  if($('tabDinas')?.classList.contains('active'))return 'DINAS';
@@ -56,7 +88,7 @@ async function runLogin(){
  const login=String($('email')?.value||'').trim();
  const password=String($('password')?.value||'');
  if(!login||password.length<8){show('Isi username/email dan password minimal 8 karakter.','err');return}
- busy=true;const btn=$('authBtn');if(btn)btn.disabled=true;show('Memeriksa akun…','ok');
+ busy=true;clearNetworkHelp();const btn=$('authBtn');if(btn)btn.disabled=true;show('Memeriksa akun…','ok');
  try{
   const sb=await getClient();
   const uid=await Promise.race([authenticate(sb,login,password),wait(15000).then(()=>{throw new Error('Koneksi login terlalu lama. Silakan coba lagi.')})]);
@@ -73,7 +105,11 @@ async function runLogin(){
   location.reload();
  }catch(e){
   let detail='';try{detail=(await e?.context?.clone?.().json())?.error||''}catch(_){}
-  show(detail||e?.message||'Username/email atau password tidak sesuai.','err');
+  const message=String(detail||e?.message||'Username/email atau password tidak sesuai.');
+  if(isNetworkError(message))showNetworkHelp(e);
+  else if(e?.code==='invalid_credentials'||/invalid login credentials/i.test(message)){
+   clearNetworkHelp();show('Username/email atau password tidak sesuai. Gunakan Lupa Password jika perlu.','err');
+  }else{clearNetworkHelp();show(message,'err');}
   busy=false;if(btn)btn.disabled=false;
  }
 }
@@ -91,5 +127,5 @@ function bind(){
 bind();
 const loginRoot=$('loginPage');
 if(loginRoot)new MutationObserver(bind).observe(loginRoot,{childList:true,subtree:true});
-window.__simantabLoginRescue={version:2,enabled:true};
+window.__simantabLoginRescue={version:4,enabled:true,networkDiagnostic:true};
 })();
