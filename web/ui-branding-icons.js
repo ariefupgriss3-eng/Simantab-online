@@ -1,7 +1,9 @@
 /* SIMANTAB_UI_BRANDING_ICONS_V1 */
+/* SIMANTAB_INSTITUTIONAL_CREDITS_V2 */
 (()=>{
-  const DEV_NAME='M. Arief Rohman, S.Pd.SD., M.Si., M.Pd., M.Pd';
-  const DEV_UNIT='Dinas Pendidikan dan Kebudayaan';
+  const DIRECTOR_NAME='Bambang Suryantoro Sudibyo, S.H., M.Si.';
+  const DEV_NAME='M. Arief Rohman, S.Pd., M.Si., M.Pd., M.Pd.';
+  const DEV_UNIT='Bidang Pembinaan Ketenagaan • Disdikbud Kabupaten Batang';
   const DEV_YEAR='2026';
 
   const baseSvg=(body)=>`<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
@@ -70,6 +72,11 @@
       .simantab-dev-footer .dev-mark{width:28px;height:28px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;background:#eaf4ff;color:#0f5f9f}
       .simantab-dev-footer .dev-mark svg{width:17px;height:17px}
       .simantab-dev-footer .dev-unit{margin-top:3px;font-weight:600}
+      .simantab-dev-footer .dev-heading{font-size:11px;letter-spacing:.09em;text-transform:uppercase;font-weight:800;color:#0f5f9f;margin-bottom:11px}
+      .simantab-dev-footer .dev-role{font-weight:800;font-size:11px;color:#52657c;margin-top:10px}
+      .simantab-dev-footer .dev-person{font-weight:800;color:#334155;margin-top:3px}
+      .simantab-dev-footer .dev-position{font-size:12px;color:#64748b;margin-top:2px}
+      .simantab-dev-footer .dev-divider{height:1px;max-width:180px;background:#dbe3ec;margin:12px auto 0}
       .simantab-dev-footer .dev-year{margin-top:1px;font-size:12px;letter-spacing:.08em;font-weight:800;color:#0f5f9f}
       @media(max-width:640px){.simantab-dev-footer{font-size:12px;padding:16px 10px;margin-top:18px}.sim-title-icon{width:28px;height:28px;margin-right:8px}}
     `;
@@ -77,7 +84,7 @@
   }
 
   function footerMarkup(){
-    return `<div class="dev-row"><span class="dev-mark">${ICON.generic}</span><span>Pengembang: ${DEV_NAME}</span></div><div class="dev-unit">${DEV_UNIT}</div><div class="dev-year">${DEV_YEAR}</div>`;
+    return `<div class="dev-heading">Tentang SIMANTAB Online</div><div class="dev-role">Pengarah dan Penanggung Jawab</div><div class="dev-person">${DIRECTOR_NAME}</div><div class="dev-position">Kepala Disdikbud Kabupaten Batang</div><div class="dev-divider" aria-hidden="true"></div><div class="dev-role">Penggagas dan Pengembang</div><div class="dev-row"><span class="dev-mark">${ICON.generic}</span><span>${DEV_NAME}</span></div><div class="dev-unit">${DEV_UNIT}</div><div class="dev-year">${DEV_YEAR}</div>`;
   }
 
   function decorateNav(){
@@ -109,8 +116,8 @@
     if(footers.length){
       fallback?.remove();
       footers.forEach(f=>{
-        if(f.dataset.devBranding==='v1')return;
-        f.dataset.devBranding='v1';
+        if(f.dataset.devBranding==='v2')return;
+        f.dataset.devBranding='v2';
         f.classList.add('simantab-dev-footer');
         f.innerHTML=footerMarkup();
       });
@@ -142,5 +149,5 @@
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refresh,{once:true});else refresh();
   const navRoot=document.getElementById('nav');
   if(navRoot)new MutationObserver(schedule).observe(navRoot,{childList:true,subtree:true});
-  window.__simantabUiBrandingIcons={version:3,observerScope:'nav-only'};
+  window.__simantabUiBrandingIcons={version:4,observerScope:'nav-only',institutionalCredits:true};
 })();
