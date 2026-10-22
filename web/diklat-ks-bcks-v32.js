@@ -443,18 +443,17 @@ function kabidKsbLevelAction(s){
  const button=target
   ?'<button type="button" class="btn primary" style="margin-top:7px;white-space:nowrap" onclick="ksbKabidNaikLevel(\''+esc(s.id)+'\',\''+target+'\')">⬆ Naikkan ke Level '+(target==='DIKLAT'?'3 + Ucapan':'4')+'</button>'
   :'';
- return '<div style="min-width:175px"><b>'+esc(label)+'</b>'+button+(target?'<div class="small" style="margin-top:4px">Wajib dasar keputusan/BA resmi</div>':'')+'</div>';
+ return '<div style="min-width:175px"><b>'+esc(label)+'</b>'+button+(target?'<div class="small" style="margin-top:4px">Sesuai keputusan pusat; tanpa isian BA</div>':'')+'</div>';
 }
 window.ksbKabidNaikLevel=async(id,target)=>{
  if(!isKabid())return toast('Hanya Kabid dapat menaikkan level peserta.',true);
  if(ksbKabidPendingPromotions.has(id))return;
  if(!['DIKLAT','SERTIFIKAT'].includes(target))return toast('Level tujuan tidak diizinkan.',true);
  const toLabel=target==='DIKLAT'?'Level 3 — Diklat':'Level 4 — Pencatatan Sertifikat';
- const evidence=prompt('Dasar keputusan resmi untuk '+toLabel+' (wajib, 15–500 karakter).\nTuliskan nomor/tanggal berita acara atau dokumen hasil resmi:');
- if(evidence===null)return;
- const note=evidence.trim();
- if(note.length<15||note.length>500)return toast('Isi dasar keputusan resmi sepanjang 15–500 karakter.',true);
- if(!confirm('Konfirmasi penetapan LULUS tahap sebelumnya dan kenaikan peserta ini ke '+toLabel+'?\n\nDasar keputusan: '+note+'\n\nTindakan dicatat pada audit dan dikirim ke peserta.'))return;
+ const note=target==='DIKLAT'
+  ?'Kelulusan Seleksi Substansi berdasarkan keputusan pusat.'
+  :'Kelulusan Diklat KS berdasarkan keputusan pusat.';
+ if(!confirm('Konfirmasi keputusan pusat untuk peserta ini: naik ke '+toLabel+'?\\n\\nPastikan nama peserta tercantum sebagai LULUS pada hasil resmi pusat.\\nNotifikasi dan catatan audit akan dibuat otomatis.'))return;
  ksbKabidPendingPromotions.add(id);
  try{
   const {data,error}=await sb.rpc('ks_bcks_kabid_promote_level',{p_submission_id:id,p_target_stage:target,p_note:note});
@@ -468,6 +467,7 @@ window.ksbKabidNaikLevel=async(id,target)=>{
 
 
 /* KSB_KABID_120_PERSONAL_GREETING_V1: permissions and 120-person count rechecked by SQL. */
+/* KSB_KABID_CENTRAL_DECISION_NO_INPUT_V1: Kabid confirmation only. Server audit note is automatic; never require BA number or typed validation. */
 let ksbKabidBatchBusy=false;
 function kabidKsbBulkPanel(rows){
  if(!isKabid())return '';
@@ -480,7 +480,7 @@ function kabidKsbBulkPanel(rows){
  return '<div class="card" style="margin-bottom:12px;border:1px solid #bfdbfe">'+
   '<div class="label">PENETAPAN KELULUSAN SELEKSI SUBSTANSI · KHUSUS KABID</div>'+
   '<h3 style="margin:7px 0">⬆ Naikkan 120 Peserta ke Level 3 + Ucapan Personal</h3>'+
-  '<div class="small" style="margin-bottom:7px"><b>'+ready+'/120</b> peserta siap berdasarkan status aplikasi. Keputusan kelulusan tetap harus berlandaskan berita acara/dokumen resmi. Setiap nama otomatis dimasukkan ke komentar pribadi dan notifikasi akun.</div>'+
+  '<div class="small" style="margin-bottom:7px"><b>'+ready+'/120</b> peserta siap berdasarkan status aplikasi. Penetapan mengikuti hasil kelulusan dari pusat. Pastikan seluruh 120 nama tercantum dalam keputusan pusat; status siap di aplikasi bukan bukti kelulusan. Tidak perlu mengisi nomor BA, catatan, atau kode. Ucapan dibuat otomatis per akun.</div>'+
   '<button type="button" class="btn primary" id="ksbKabidNaik120" '+(permitted?'':'disabled')+
   ' onclick="ksbKabidNaikLevel120()">⬆ Tetapkan Lulus dan Kirim Ucapan ke 120 Akun</button>'+
   (!permitted?'<div class="small" style="margin-top:6px;color:#92400e">Aksi agregat terkunci: tidak tepat 120 akun pada Level 2. Gunakan tombol per peserta.</div>':'')+
@@ -490,13 +490,8 @@ function kabidKsbBulkPanel(rows){
 window.ksbKabidNaikLevel120=async()=>{
  if(!isKabid())return toast('Hanya Kabid yang berwenang.',true);
  if(ksbKabidBatchBusy)return;
- const input=prompt('Cantumkan nomor dan tanggal berita acara/keputusan resmi kelulusan 120 peserta (15–500 karakter).');
- if(input===null)return;
- const note=input.trim();
- if(note.length<15||note.length>500)return toast('Isi dasar keputusan resmi sepanjang 15–500 karakter.',true);
- const code=prompt('Tindakan ini akan menetapkan LULUS Seleksi Substansi dan mengirim 120 komentar personal.\\nUntuk melanjutkan, ketik tepat: 120 LULUS');
- if(code!=='120 LULUS')return toast('Penetapan agregat tidak dijalankan.',true);
- if(!confirm('Konfirmasi final: naikkan tepat 120 peserta resmi ke Level 3, kirim ucapan per nama, dan simpan jejak keputusan?'))return;
+ const note='Kelulusan Seleksi Substansi berdasarkan keputusan pusat.';
+ if(!confirm('Konfirmasi keputusan pusat: tetapkan LULUS seluruh 120 peserta resmi dan kirim ucapan personal?\\n\\nPastikan semua 120 nama dinyatakan LULUS oleh pusat.\\nTidak diperlukan nomor berita acara, pengisian kode, atau catatan manual. Hasil keputusan akan dicatat secara otomatis.'))return;
  ksbKabidBatchBusy=true;
  const btn=$('ksbKabidNaik120');
  if(btn){btn.disabled=true;btn.textContent='Memproses keputusan Kabid…'}
@@ -835,5 +830,5 @@ window.showTab=async id=>{
  ensureSection();ensureNav();await priorShow(id);
  if(id==='diklatKsBcks')await render();
 };
-window.__simantabDiklatKsBcks={version:59,kabidPromoteLevel:true,kabidPersonalGreetings120:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
+window.__simantabDiklatKsBcks={version:60,kabidPromoteLevel:true,kabidPersonalGreetings120:true,kabidDecisionSource:'PUSAT',kabidNoManualBasisInput:true,ksMenuVisibleWhenInactive:true,archiveTms:true,totalPengusulAktifCard:true,adminFlow:'GTK_LOCAL_PRECHECK_MANUAL_REVIEW_COORDINATOR_KABID',superAdminResetDraft:true,multiRoleResetDraft:true,resetAfterLevelUp:true,participantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,applicantScope:'NEGERI_ONLY',privateSchoolHidden:true,privateNavLoopFix:true,privateNavObserver:false,stablePrivateGuard:true,documentPrecheck:true,legacyMetadataAiDisabled:true,aiPrimaryVerifier:true,autoAiVerifier:false,autoAssignAfterAi:false,autoDraftOnAiFail:false,aiWorkflowFunction:null,manualSubmitRpc:'ks_bcks_submit_local',manualReviewRpc:'ks_bcks_review_administrasi_local',levels:['ADMINISTRASI','SUBSTANSI','DIKLAT','SERTIFIKAT'],certificateFlow:'PESERTA_ISI_ADMIN_KSPS_APPROVE',fileLimit:FILE_LIMIT,coordinatorAggregateOnly:true,leaderAggregateOnly:true,kabidAggregateOnly:true,aiAggregateVerifier:true,aiResultsVisibleAllDinas:true,aiResultsVisibleOwner:true};
 })();
