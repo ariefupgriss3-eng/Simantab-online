@@ -72,7 +72,7 @@ jobs:
           test -s .vercel/output/static/jf-qualification-2030.js
           test -s .vercel/output/static/smartgtk-unified.js
           test -s .vercel/output/static/gtk-bulk-approval.js
-          grep -q './gtk-bulk-approval.js?v=3' .vercel/output/static/index.html
+          grep -q './gtk-bulk-approval.js?v=4' .vercel/output/static/index.html
           test -s .vercel/output/static/smartgtk-onboarding.js
           grep -q './smartgtk-unified.js?v=23' .vercel/output/static/index.html
           grep -q './smartgtk-onboarding.js?v=1' .vercel/output/static/index.html
