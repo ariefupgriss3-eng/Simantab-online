@@ -8,5 +8,5 @@ await fs.writeFile(`${dir}/${name}`, code);
 
 let html = await fs.readFile(`${dir}/index.html`, 'utf8');
 html = html.replace(/<script type="module" src="\.\/ks-needs-onboarding\.js\?v=\d+"><\/script>\s*/g, '');
-html = html.replace('</body>', `<script type="module" src="./${name}?v=1"></script>\n</body>`);
+html = html.replace('</body>', `<script type="module" src="./${name}?v=2"></script>\n</body>`);
 await fs.writeFile(`${dir}/index.html`, html);
