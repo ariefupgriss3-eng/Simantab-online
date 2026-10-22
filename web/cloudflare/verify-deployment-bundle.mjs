@@ -93,6 +93,16 @@ ok(jf2026.includes('SIMANTAB_JF_GURU_SURAT_0294_2026_V1') && jf2026.includes('jf
 const qualification2030=await read('jf-qualification-2030.js');
 ok(html.includes('./jf-qualification-2030.js?v=5') && html.split('./jf-qualification-2030.js?v=5').length===2,'Modul S1-DIV 2030 harus tepat sekali');
 ok(qualification2030.includes('SIMANTAB_JF2030_QUALIFICATION_V1')&&qualification2030.includes('jf2030_save_progress')&&qualification2030.includes('jf2030_review'),'Pemantauan S1-DIV 2030 belum dibundel');
+const bulkApproval=await read('gtk-bulk-approval.js');
+ok(html.includes('./gtk-bulk-approval.js?v=2') &&
+   html.split('./gtk-bulk-approval.js?v=2').length===2,
+   'Panel persetujuan agregat harus terpasang tepat sekali');
+ok(bulkApproval.includes('SIMANTAB_GTK_BULK_APPROVAL_UI_V2') &&
+   bulkApproval.includes('selected.size >= 50') &&
+   bulkApproval.includes('verified_identity_and_role:true') &&
+   bulkApproval.includes('APPROVE_SELECTED') &&
+   bulkApproval.includes('Rincian hasil persetujuan'),
+   'Perlindungan tombol agregat dan audit harus tersedia');
 const smart=await read('smartgtk-unified.js');
 ok(html.includes('./smartgtk-unified.js?v=23')&&html.split('./smartgtk-unified.js?v=23').length===2,'SMART-GTK unified script must load once');
 ok(smart.includes('SIMANTAB_SMARTGTK_UNIFIED_INTAKE_V1')&&smart.includes("sb.rpc('smartgtk_mass_save'")&&smart.includes("sb.rpc('smartgtk_mass_officer_list'")&&smart.includes("sb.rpc('smartgtk_mass_complete'"),'SMART-GTK mass routes missing');
