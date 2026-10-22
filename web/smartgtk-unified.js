@@ -499,8 +499,28 @@ function dashboard(){
  (items.length?items.map(x=>'<tr><td>'+esc(x.full_name)+'<div>'+esc(x.unit_work)+'</div></td><td>'+esc(x.profession)+' / '+esc(employmentLabel(x.employment))+'</td><td>'+esc(meanings[x.screening?.nomenklatur]||x.screening?.nomenklatur)+'</td><td>'+esc(meanings[x.screening?.pengangkatan]||x.screening?.pengangkatan)+'</td><td>'+esc(x.education)+' — '+esc(x.data_stage==='BERKAS_LENGKAP'?'Berkas Lengkap (belum diverifikasi Dinas)':x.data_stage)+' ('+esc(x.docs_present)+' berkas; '+esc(x.required_count)+' wajib)'+'</td></tr>').join(''):'<tr><td colspan="5">Belum ada GTK mengisi SMART-GTK.</td></tr>')+
  '</tbody></table></div><div class="sg-actions"><button data-action="prev" '+(pg===0?'disabled':'')+'>Sebelumnya</button><button data-action="next" '+(items.length<50?'disabled':'')+'>Berikutnya</button></div></div>';
 }
+/* SIMANTAB_SMARTGTK_KS_NEEDS_PRIORITY_V1: KS negeri must submit GTK needs before opening SMART-GTK. */
+async function ksRealNeedsPending(){
+ if(p().role!=='KEPALA_SEKOLAH')return false;
+ const npsn=String(p().school_npsn||'').trim();
+ if(!/^\d{8}$/.test(npsn))return true;
+ const school=await sb.from('school_master').select('school_status,is_active').eq('npsn',npsn).maybeSingle();
+ if(school.error||!school.data||school.data.is_active!==true)return true;
+ if(String(school.data.school_status||'').toUpperCase()!=='NEGERI')return false;
+ const workflow=await sb.from('school_gtk_needs_workflow').select('status').eq('school_npsn',npsn).maybeSingle();
+ if(workflow.error)return true;
+ return !['SUBMITTED','VERIFIED','APPROVED'].includes(String(workflow.data?.status||'').toUpperCase());
+}
 async function open(){
- if(!gtk()&&!dinas())return;modal.style.display='flex';info('Memuat data...');
+ if(!gtk()&&!dinas())return;
+ if(gtk()&&p().role==='KEPALA_SEKOLAH'){
+  const mustComplete=await ksRealNeedsPending();
+  if(mustComplete){
+   await window.showTab?.('needs');
+   return;
+  }
+ }
+ modal.style.display='flex';info('Memuat data...');
  try{
    if(dinas()){workflowPage=0;await loadDinasWorkflow();workflowDashboard()}
    else {
@@ -539,5 +559,5 @@ modal.addEventListener('click',async e=>{
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:18,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:19,ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
