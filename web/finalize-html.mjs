@@ -202,7 +202,7 @@ await fs.writeFile(path.join(staticDir,approvalFile),approvalCode);
 
 const registrationUiFile='registration-ui-final.js';
 const registrationUiCode=await fs.readFile(new URL(`./${registrationUiFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_REGISTRATION_UI_FINAL_V6/.test(registrationUiCode))throw new Error('Registration UI final v5 tidak valid.');
+if(!/SIMANTAB_REGISTRATION_UI_FINAL_V7_KS_PLT/.test(registrationUiCode))throw new Error('Registration UI final KS Plt tidak valid.');
 await fs.writeFile(path.join(staticDir,registrationUiFile),registrationUiCode);
 
 const leadershipFile='leadership-directions.js';
@@ -444,7 +444,7 @@ const modules=[
  ['activity-attendance-recap.js',2],
  ['login-channel-hardening.js',5],
  ['login-click-rescue.js',4],
- ['registration-ui-final.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 7 : 6],
+ ['registration-ui-final.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 8 : 6],
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',7],
  ['gtk-dapodik-breakdown.js',1],

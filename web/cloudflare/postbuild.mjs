@@ -165,7 +165,7 @@ for (const file of required) {
 const duplicateNipAudit=await fs.readFile(path.join(output,'duplicate-nip-audit.js'),'utf8');
 const registrationAntiDuplicate=await fs.readFile(path.join(output,'registration-ui-final.js'),'utf8');
 assert(html.includes('./duplicate-nip-audit.js?v=1') &&
- html.includes('./registration-ui-final.js?v=7') &&
+ html.includes('./registration-ui-final.js?v=8') &&
  duplicateNipAudit.includes('SIMANTAB_SUPER_ADMIN_DUPLICATE_NIP_AUDIT_V1_CLOUDFLARE') &&
  duplicateNipAudit.includes("sb.rpc('simantab_duplicate_nip_audit')") &&
  registrationAntiDuplicate.includes('NIP sudah terdaftar. Jangan daftar ulang.'),

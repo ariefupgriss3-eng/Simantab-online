@@ -48,7 +48,7 @@ function sandbox(config={}){
           if(calls.unitUpdates.length){
             return config.unitSaveFails
               ? {data:null,error:{message:'synthetic save failed'}}
-              : {data:{unit:calls.unitUpdates.at(-1).unit},error:null};
+              : {data:{...calls.unitUpdates.at(-1)},error:null};
           }
           return {data:{id:'fake-auth-uuid',full_name:'SIMANTAB QA'},error:null};
         }
@@ -88,7 +88,7 @@ assert.equal(blocked.data.code,'NIP_ALREADY_REGISTERED');
 assert.match(blocked.data.error,/Gunakan Masuk|Lupa Password/);
 assert.equal(blocked.calls.nipChecks,1);
 await check('Reject existing KS NIP before creating account',
- {...base,role:'KEPALA_SEKOLAH',unit:'SDN Pengujian',school_npsn:'12345678',employment_status:'PNS',nip:'123456789012345678'},
+ {...base,role:'KEPALA_SEKOLAH',unit:'SDN Pengujian',school_npsn:'12345678',employment_status:'PNS',nip:'123456789012345678',ks_assignment_status:'DEFINITIF'},
  {status:409,created:0,nipAlreadyRegistered:true});
 await check('Reject existing optional NIP used by non-ASN',
  {...base,unit:'SDN Pengujian',employment_status:'NON_ASN',nip:'123456789012345678'},
@@ -97,7 +97,12 @@ await check('Reject existing optional NIP used by non-ASN',
 await check('Pengawas always requires NIP',{...base,role:'PENGAWAS',unit:'Korwil Pengujian',employment_status:'NON_ASN'});
 await check('Reject unapproved website origin',{...base,unit:'SDN Pengujian',employment_status:'NON_ASN'},{status:403,origin:'https://malicious.example'});
 await check('Preserve legacy Vercel sign-up',{...base},{status:200,created:1,unitUpdates:0,origin:VC});
-let ks=await check('Keep KS authoritative school unit',{...base,role:'KEPALA_SEKOLAH',unit:'SDN Pengujian',employment_status:'PNS',nip:'123456789012345678',school_npsn:'12345678'},{status:200,created:1,unitUpdates:0});
+let ks=await check('Keep KS authoritative school unit',{...base,role:'KEPALA_SEKOLAH',unit:'SDN Pengujian',employment_status:'PNS',nip:'123456789012345678',school_npsn:'12345678',ks_assignment_status:'PLT'},{status:200,created:1,unitUpdates:1});
+assert.equal(ks.calls.unitUpdates[0].ks_registration_status,'PLT');
+await check('KS definitif status persisted',{...base,role:'KEPALA_SEKOLAH',unit:'SDN Pengujian',employment_status:'PPPK',nip:'123456789012345678',school_npsn:'12345678',ks_assignment_status:'DEFINITIF'},{status:200,created:1,unitUpdates:1});
+await check('KS Plt cannot register as PPPK',{...base,role:'KEPALA_SEKOLAH',unit:'SDN Pengujian',employment_status:'PPPK',nip:'123456789012345678',school_npsn:'12345678',ks_assignment_status:'PLT'});
+await check('KS Cloudflare signup must choose status',{...base,role:'KEPALA_SEKOLAH',unit:'SDN Pengujian',employment_status:'PNS',nip:'123456789012345678',school_npsn:'12345678'});
+await check('GTK cannot submit KS status',{...base,role:'GTK',unit:'SDN Pengujian',employment_status:'PNS',nip:'123456789012345678',ks_assignment_status:'PLT'});
 assert.equal(ks.calls.lookups,1);
 let failed=await check('Roll back signup when Unit Kerja saving fails',{...base,unit:'SDN Pengujian',employment_status:'NON_ASN'},{status:400,created:1,unitUpdates:1,unitSaveFails:true});
 assert.equal(failed.calls.deleted,1);
