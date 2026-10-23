@@ -91,7 +91,7 @@ async function runLogin(){
  busy=true;clearNetworkHelp();const btn=$('authBtn');if(btn)btn.disabled=true;show('Memeriksa akun…','ok');
  try{
   const sb=await getClient();
-  const uid=await Promise.race([authenticate(sb,login,password),wait(15000).then(()=>{throw new Error('Koneksi login terlalu lama. Silakan coba lagi.')})]);
+  const uid=await authenticate(sb,login,password);
   if(!uid)throw new Error('Sesi login tidak ditemukan.');
   const {data:prof,error}=await sb.from('profiles').select('role,is_active,approval_status,account_channel,full_name,position,school_npsn').eq('id',uid).maybeSingle();
   if(error)throw error;
