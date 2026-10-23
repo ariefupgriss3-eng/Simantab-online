@@ -667,7 +667,7 @@ function refreshBulkControls(){
  const pending=workflowItems.filter(row=>workflowBulkEligible(row)&&row.scope===scope);
  const quick=modal.querySelector('[data-action="wf-quick-assign"]');
  if(quick){
-  quick.disabled=pending.length===0||candidates.length===0||busy;
+  quick.disabled=pending.length===0||candidates.length===0;
   quick.textContent='⚡ Bagikan '+pending.length+' Tugas '+(scope==='TK_PAUD_PNF'?'TK/PAUD/PNF':scope||'')+' Otomatis (1 Klik)';
  }
  const quickCount=document.getElementById('sgQuickCount');
