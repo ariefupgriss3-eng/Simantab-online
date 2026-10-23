@@ -594,6 +594,9 @@ function workflowContractPanel(kind){
   '<button type="button" data-action="wf-contract-next" data-contract-kind="'+kind+'" '+((page+1)*50>=total?'disabled':'')+'>Berikutnya →</button></div></div>';
 }
 
+const sgBulkStyle=document.createElement('style');
+sgBulkStyle.textContent='#smartgtkModal input[type="checkbox"][data-sg-bulk-row]{box-sizing:border-box;width:20px!important;height:20px!important;padding:0!important;margin:0!important;accent-color:#b7651c;cursor:pointer}#sgBulkPanel .sg-actions button:disabled{opacity:.5;cursor:not-allowed}';
+document.head.append(sgBulkStyle);
 /* SIMANTAB_SMARTGTK_KABID_BULK_ASSIGN_V1
  * Agregat per jenjang, halaman maksimum 50; backend validates auth, scope,
  * document readiness, version and staff roster, and audits every assignment. */
