@@ -30,6 +30,8 @@ on:
       - 'web/tests/smartgtk-kabid-bulk.contract.test.mjs'
       - 'web/tests/smartgtk-kabid-bulk-mobile.behavior.test.mjs'
       - 'web/tests/smartgtk-oneclick.behavior.test.mjs'
+      - 'web/tests/smartgtk-bulk-rpc-timeout.contract.test.mjs'
+      - 'supabase/migrations/20261023190000_smartgtk_kabid_bulk_timeout_fastpath.sql'
       - 'supabase/migrations/20261023173000_smartgtk_kabid_bulk_assign.sql'
       - 'web/tests/smartgtk-integration.sql'
       - 'supabase/migrations/20261021150000_smartgtk_unified_intake.sql'
