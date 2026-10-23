@@ -503,7 +503,7 @@ async function loadDinasWorkflow(){
  const officer=['KABID','SUPER_ADMIN','KASI_SD','KASI_SMP','SUBKOOR_TK'].includes(p().role);
  const req=[
   sb.rpc('smartgtk_workflow_list',{p_page:workflowPage}),
-  flowCoordinator()?sb.rpc('smartgtk_workflow_staff'):Promise.resolve({data:[]}),
+  (flowCoordinator()||p().role==='KABID')?sb.rpc('smartgtk_workflow_staff'):Promise.resolve({data:[]}),
   officer?sb.rpc('smartgtk_workflow_drafts',{p_page:workflowDraftPage}):
    Promise.resolve({data:{items:[],total:0,read_only:true}}),
   officer?sb.rpc('smartgtk_contract_buffer_list',{p_jenis:'PPPK',p_page:contractPages.PPPK}):
@@ -526,19 +526,28 @@ async function loadDinasWorkflow(){
  }
 }
 
+/* SIMANTAB_KABID_DIRECT_SMARTGTK_STAFF_V1: case-specific assignment by jenjang.
+   The server rechecks Kabid/coordinator role, scope, assigned staff, and source status. */
+function staffAssignmentControl(item,make){
+ const matched=workflowStaff.filter(st=>st.scope===item.scope);
+ if(!matched.length)return '<span class="small">Belum ada staf aktif untuk jenjang ini.</span>';
+ return '<div class="sg-actions"><select data-staff-for="'+esc(item.owner_id)+'" aria-label="Pilih staf pemeriksa sesuai jenjang">'+
+  '<option value="">Pilih staf '+esc(item.scope)+'</option>'+
+  matched.map(st=>option(st.id,(st.name||'Staf')+' · '+st.role,st.id===item.assigned_staff?st.id:'')).join('')+
+  '</select>'+make('ASSIGN_STAFF',item.assigned_staff?'Alihkan ke Staf':'Tugaskan Staf')+'</div>';
+}
 function workflowActions(item){
  const status=item.status,role=p().role;
  const make=(action,title)=>'<button type="button" data-action="wf-act" data-owner="'+esc(item.owner_id)+'" data-operation="'+esc(action)+'">'+esc(title)+'</button>';
  if(role==='KABID'){
   if(item.scope==='BELUM_TERPETAKAN'&&status==='MENUNGGU_PENUGASAN')return make('SET_SCOPE','Tentukan Jenjang');
+  if(['MENUNGGU_PENUGASAN','MENUNGGU_STAF','PERBAIKAN_STAF'].includes(status))
+   return staffAssignmentControl(item,make);
   if(status==='MENUNGGU_KABID')return make('APPROVE','✓ Selesaikan Telaah')+make('RETURN_COORD','↶ Kembalikan ke Kasi/Subkoor')+make('RETURN_GTK','↶ Perbaikan GTK');
  }
  if(flowCoordinator()){
   if(['MENUNGGU_PENUGASAN','MENUNGGU_STAF','PERBAIKAN_STAF'].includes(status))
-   return '<div class="sg-actions"><select data-staff-for="'+esc(item.owner_id)+'" aria-label="Pilih staf pemeriksa">'+
-    '<option value="">Pilih staf pemeriksa</option>'+
-    workflowStaff.map(x=>option(x.id,(x.name||'Staf')+' · '+x.role,'')).join('')+
-    '</select>'+make('ASSIGN_STAFF','Tugaskan Staf')+'</div>';
+   return staffAssignmentControl(item,make);
   if(['MENUNGGU_KASI','PERBAIKAN_KASI'].includes(status))
    return make('FORWARD_KABID','✓ Teruskan ke Kabid')+(item.assigned_staff?make('RETURN_STAFF','↶ Perbaikan Staf'):'')+make('RETURN_GTK','↶ Perbaikan GTK');
  }
@@ -622,7 +631,7 @@ async function workflowAction(btn){
  }
  if(action==='ASSIGN_STAFF'){
   staff=document.querySelector('[data-staff-for="'+owner+'"]')?.value||'';
-  if(!staff)return info('Pilih staf pemeriksa yang aktif.',true);
+  if(!staff||!workflowStaff.some(x=>x.id===staff&&x.scope===row.scope))return info('Pilih staf aktif sesuai jenjang GTK.',true);
  }
  if(['RETURN_GTK','RETURN_STAFF','RETURN_COORD'].includes(action)){
   note=(prompt('Catatan perbaikan untuk '+row.full_name+' (minimal 10 karakter):')||'').trim();
@@ -631,7 +640,7 @@ async function workflowAction(btn){
   note='Verifikasi administratif SMART-GTK dilakukan sesuai tugas dan jenjang.';
  }
  if(!confirm('Proses '+row.full_name+'?\nTahap saat ini: '+(flowLabels[row.status]||row.status)+
-  '\nTindakan: '+action+'\nTindakan ini dicatat dalam audit.'))return;
+  '\nTindakan: '+action+(action==='ASSIGN_STAFF'?' ke '+(workflowStaff.find(x=>x.id===staff)?.name||'staf')+' ('+row.scope+')':'')+'\nTindakan ini dicatat dalam audit.'))return;
  const result=await sb.rpc('smartgtk_workflow_act',{
   p_owner:owner,p_action:action,p_note:note||null,p_staff:staff||null,p_scope:scope||null
  });
