@@ -31,6 +31,8 @@ on:
       - 'web/tests/smartgtk-kabid-bulk-mobile.behavior.test.mjs'
       - 'web/tests/smartgtk-oneclick.behavior.test.mjs'
       - 'web/tests/smartgtk-bulk-rpc-timeout.contract.test.mjs'
+      - 'web/tests/smartgtk-preserve-stage.contract.test.mjs'
+      - 'supabase/migrations/20261023210000_smartgtk_preserve_confirmation_on_nonmaterial_save.sql'
       - 'supabase/migrations/20261023190000_smartgtk_kabid_bulk_timeout_fastpath.sql'
       - 'supabase/migrations/20261023173000_smartgtk_kabid_bulk_assign.sql'
       - 'web/tests/smartgtk-integration.sql'
@@ -174,3 +176,5 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261021204000_smartgtk_pendamping_pb_pls.sql
       - name: Test PB/PLS document-free status and separate storage
         run: psql -X -v ON_ERROR_STOP=1 -f web/tests/smartgtk-pb-pls.integration.sql
+      - name: Preserve submitted SMART-GTK status on unchanged form saves (synthetic database)
+        run: psql -X -v ON_ERROR_STOP=1 -f supabase/migrations/20261023210000_smartgtk_preserve_confirmation_on_nonmaterial_save.sql
