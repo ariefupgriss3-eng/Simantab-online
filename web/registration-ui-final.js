@@ -1,4 +1,4 @@
-/* SIMANTAB_REGISTRATION_UI_FINAL_V6 */
+/* SIMANTAB_REGISTRATION_UI_FINAL_V7_KS_PLT */
 (()=>{
 'use strict';
 const $=id=>document.getElementById(id);
@@ -28,11 +28,26 @@ function ensureIdentityFields(){
   nipField.insertAdjacentElement('beforebegin',field);
   $('signupEmploymentStatus').addEventListener('change',refreshNipRule);
  }
+ if(!$('signupKsAssignment')){
+  const field=document.createElement('div');field.className='field';field.id='signupKsAssignmentField';
+  field.innerHTML='<label for="signupKsAssignment">Status penugasan Kepala Sekolah *</label><select id="signupKsAssignment"><option value="">Pilih status penugasan</option><option value="DEFINITIF">Kepala Sekolah Definitif</option><option value="PLT">Kepala Sekolah (Plt.) — PNS, JF definitif Guru</option></select><small>Plt. adalah penugasan, bukan jabatan fungsional definitif. Akun tetap berperan Kepala Sekolah.</small>';
+  nipField.insertAdjacentElement('beforebegin',field);
+ }
  if(!$('signupNip').dataset.asnRuleBound){
   nipInput.dataset.asnRuleBound='1';
   $('signupRole')?.addEventListener('change',refreshNipRule);
  }
  refreshNipRule();
+}
+function refreshKsAssignmentRule(){
+ const isKs=isSignup()&&String($('signupRole')?.value||'')==='KEPALA_SEKOLAH';
+ const field=$('signupKsAssignmentField'),input=$('signupKsAssignment');
+ if(field)field.hidden=!isKs;
+ if(input){
+  input.required=isKs;
+  input.disabled=!isKs;
+  if(!isKs)input.value='';
+ }
 }
 function refreshNipRule(){
  const employee=String($('signupEmploymentStatus')?.value||'');
@@ -47,6 +62,7 @@ function refreshNipRule(){
   input.placeholder=required?'Wajib 18 digit untuk ASN':'Opsional bagi non-ASN (18 digit jika diisi)';
  }
  if(label)label.textContent=required?'NIP * (18 digit)':'NIP (opsional untuk non-ASN)';
+ refreshKsAssignmentRule();
 }
 async function submitRegistration(){
  if(submitting||!isSignup())return;
@@ -56,6 +72,7 @@ async function submitRegistration(){
  const role=String($('signupRole')?.value||'');
  const unit=String($('signupUnit')?.value||'').trim();
  const employmentStatus=String($('signupEmploymentStatus')?.value||'');
+ const ksAssignmentStatus=String($('signupKsAssignment')?.value||'');
  const rawNip=String($('signupNip')?.value||'').trim();
  const nip=rawNip.replace(/\D/g,'');
  let npsn=String($('signupNpsn')?.value||'').trim();
@@ -68,6 +85,8 @@ async function submitRegistration(){
  if(rawNip&&(!/^\d{18}$/.test(rawNip)))return show('NIP hanya boleh berisi tepat 18 angka.','err');
  if((employmentStatus!=='NON_ASN'||role==='PENGAWAS')&&!/^\d{18}$/.test(nip))return show('NIP 18 digit wajib untuk seluruh ASN dan Pengawas.','err');
  if(role==='KEPALA_SEKOLAH'){
+  if(!['DEFINITIF','PLT'].includes(ksAssignmentStatus))return show('Pilih Kepala Sekolah Definitif atau Kepala Sekolah (Plt.).','err');
+  if(ksAssignmentStatus==='PLT'&&employmentStatus!=='PNS')return show('Kepala Sekolah (Plt.) pada pendataan ini harus berstatus PNS.','err');
   if(!/^\d{8}$/.test(npsn))return show('NPSN Kepala Sekolah wajib 8 digit.','err');
   try{const school=await validateSchool(npsn);if(!school)return show('NPSN tidak ditemukan pada Master Sekolah aktif.','err')}catch(error){return show(error?.message||'NPSN belum dapat diverifikasi.','err')}
  }else npsn='';
@@ -75,10 +94,10 @@ async function submitRegistration(){
  const btn=$('authBtn');if(btn)btn.disabled=true;
  show('Mendaftarkan akun…','ok');
  try{
-  const payload={email,password,full_name:fullName,role,unit,employment_status:employmentStatus,nip:nip||'',school_npsn:npsn||''};
+  const payload={email,password,full_name:fullName,role,unit,employment_status:employmentStatus,nip:nip||'',school_npsn:npsn||'',ks_assignment_status:role==='KEPALA_SEKOLAH'?ksAssignmentStatus:''};
   await registerAccount(payload);
   if(role==='KEPALA_SEKOLAH'||role==='PENGAWAS'){
-   show(`Pendaftaran berhasil. Akun ${role==='KEPALA_SEKOLAH'?'Kepala Sekolah':'Pengawas'} sudah tercatat dan menunggu persetujuan Super Admin. Tidak perlu menunggu email konfirmasi.`,'ok');
+   show(`Pendaftaran berhasil. Akun ${role==='KEPALA_SEKOLAH'?(ksAssignmentStatus==='PLT'?'Kepala Sekolah (Plt.)':'Kepala Sekolah Definitif'):'Pengawas'} sudah tercatat dan menunggu persetujuan Super Admin. Tidak perlu menunggu email konfirmasi.`,'ok');
   }else{
    show('Pendaftaran GTK berhasil. Akun siap digunakan tanpa menunggu email konfirmasi. Silakan pilih Masuk.','ok');
   }
@@ -91,6 +110,7 @@ function apply(){
  if($('signupUnit'))$('signupUnit').required=signup;
  if($('signupEmploymentStatus'))$('signupEmploymentStatus').required=signup;
  refreshNipRule();
+ refreshKsAssignmentRule();
  const d=$('tabDinas'),g=$('tabGtk'),box=document.querySelector('.loginbox'),sub=box?.querySelector(':scope > .small');
  if(signup){
   setText(d,'🏢 Akun Dinas oleh Admin');
@@ -106,10 +126,10 @@ function apply(){
  }
 }
 function intercept(event){if(!isSignup())return;const target=event.target;if(event.type==='click'&&target?.closest?.('#authBtn')){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void submitRegistration()}else if(event.type==='submit'){const form=target;if(form?.querySelector?.('#authBtn')){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void submitRegistration()}}else if(event.type==='keydown'&&event.key==='Enter'&&!target?.matches?.('textarea,select,button')){event.preventDefault();event.stopPropagation();event.stopImmediatePropagation();void submitRegistration()}}
-function bind(){const sw=$('switchLink');if(sw&&!sw.dataset.registrationUiFinal){sw.dataset.registrationUiFinal='6';sw.addEventListener('click',()=>{setTimeout(apply,0);setTimeout(apply,250)},false)}apply()}
+function bind(){const sw=$('switchLink');if(sw&&!sw.dataset.registrationUiFinal){sw.dataset.registrationUiFinal='7';sw.addEventListener('click',()=>{setTimeout(apply,0);setTimeout(apply,250)},false)}apply()}
 document.addEventListener('click',intercept,true);
 document.addEventListener('submit',intercept,true);
 document.addEventListener('keydown',intercept,true);
 document.readyState==='loading'?document.addEventListener('DOMContentLoaded',()=>{bind();setTimeout(apply,1000);setTimeout(apply,3000)}):(()=>{bind();setTimeout(apply,1000);setTimeout(apply,3000)})();
-window.__simantabRegistrationUiFinal={version:6,dinasSignupDisabled:true,dedicatedSignupGuard:true,allGtkServerRegistration:true};
+window.__simantabRegistrationUiFinal={version:7,ksPltSignup:true,dinasSignupDisabled:true,dedicatedSignupGuard:true,allGtkServerRegistration:true};
 })();
