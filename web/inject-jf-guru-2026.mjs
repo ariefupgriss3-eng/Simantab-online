@@ -28,7 +28,7 @@ html=html.replace(/\s*<script\s+src="\.\/smartgtk-onboarding\.js\?v=\d+"\s*><\/s
 html=html.replace('</body>','<script type="module" src="./jf-guru-2026.js?v=2"></script>\n<script type="module" src="./jf-qualification-2030.js?v=5"></script>\n<script type="module" src="./smartgtk-unified.js?v=24"></script>\n<script src="./smartgtk-onboarding.js?v=1"></script>\n</body>');
 if((html.match(/jf-guru-2026\.js\?v=2/g)||[]).length!==1)throw new Error('Duplikasi modul JF Guru 2026');
 if((html.match(/jf-qualification-2030\.js\?v=5/g)||[]).length!==1)throw new Error('Duplikasi modul pendidikan 2030');
-if((html.match(/smartgtk-unified\.js\?v=23/g)||[]).length!==1)throw new Error('SMART-GTK must load once');
+if((html.match(/smartgtk-unified\.js\?v=24/g)||[]).length!==1)throw new Error('SMART-GTK must load once');
 if((html.match(/smartgtk-onboarding\.js\?v=1/g)||[]).length!==1)throw new Error('GTK onboarding must load once');
 await fs.writeFile(output,html);
 console.log(JSON.stringify({jfGuru2026Injected:true,version:1,legacyEJabfungUntouched:true,backendMigrationRequired:true,productionUntouched:true}));
