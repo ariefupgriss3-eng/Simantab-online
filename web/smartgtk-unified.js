@@ -636,6 +636,7 @@ function workflowBulkPanel(){
   '</select></label>'+
   '<p id="sgQuickCount" class="sg-bulk-count" aria-live="polite">Memuat jumlah kasus siap tugas...</p>'+
   '<button type="button" id="sgQuickAssign" data-action="wf-quick-assign" class="primary" disabled>⚡ Bagikan Semua Otomatis (1 Klik)</button>'+
+  '<p id="sgQuickFeedback" role="status" aria-live="polite" hidden style="padding:12px;border-radius:9px;border:1px solid #d8af65;margin:10px 0;font-weight:700;line-height:1.5"></p>'+
   '<p class="small">Tombol ini langsung menugaskan seluruh kasus yang siap pada <b>halaman ini</b> (maksimal 50), tanpa centang nama dan tanpa pop-up konfirmasi tambahan. Pembagian berdasarkan beban kerja staf dan setiap penugasan tercatat.</p>'+
   '<details id="sgBulkManual"><summary>Pengaturan manual: pilih nama atau satu staf</summary>'+
   '<label>Staf penerima (mode satu staf) <select id="sgBulkStaff" aria-label="Staf pemeriksa untuk penugasan agregat"></select></label>'+
@@ -681,6 +682,16 @@ function refreshBulkControls(){
  if(one)one.disabled=n===0||!candidates.some(st=>st.id===staffSelect?.value);
  if(balanced)balanced.disabled=n===0||candidates.length===0;
 }
+/* SMARTGTK_BULK_VISIBLE_FEEDBACK_V1: progress and errors beside clicked button. */
+function quickAssignmentFeedback(message,isError=false){
+ const el=document.getElementById('sgQuickFeedback');
+ if(!el)return info(message,isError);
+ el.hidden=!message;
+ el.textContent=message;
+ el.style.background=isError?'#fff1ef':'#eff8f1';
+ el.style.color=isError?'#922a20':'#17623b';
+ el.style.borderColor=isError?'#e8a29b':'#9ccbaf';
+}
 async function workflowQuickAssign(){
  if(p().role!=='KABID')throw Error('Hanya Kabid aktif yang boleh melakukan penugasan otomatis.');
  const scope=String(document.getElementById('sgBulkScope')?.value||'');
@@ -703,7 +714,9 @@ async function workflowQuickAssign(){
   distribution[item.staff_name]=(distribution[item.staff_name]||0)+1;
  const summary=Object.entries(distribution).map(([name,count])=>name+': '+count).join(' · ');
  await loadDinasWorkflow();workflowDashboard();
- info('Berhasil membagikan '+rows.length+' kasus '+scope+' otomatis. '+summary+'. Setiap penugasan tercatat.');
+ const success='Berhasil membagikan '+rows.length+' kasus '+scope+' otomatis. '+summary+'. Setiap penugasan tercatat.';
+ quickAssignmentFeedback('✅ '+success);
+ info(success);
 }
 async function workflowBulkAssign(mode){
  if(p().role!=='KABID')throw Error('Hanya Kabid berwenang membagi tugas agregat.');
@@ -863,6 +876,10 @@ modal.addEventListener('click',async e=>{
  try{
   busy=true;
   if(act==='wf-quick-assign'){
+   b.disabled=true;
+   b.textContent='⏳ Sedang membagikan tugas...';
+   quickAssignmentFeedback('Sedang membagikan tugas. Jangan tekan berulang.');
+
    await workflowQuickAssign();
   }else if(act==='wf-bulk-all'||act==='wf-bulk-clear'){
    const scope=document.getElementById('sgBulkScope')?.value||'';
@@ -873,7 +890,16 @@ modal.addEventListener('click',async e=>{
   }else{
    await workflowBulkAssign(act==='wf-bulk-single'?'SINGLE':'BALANCED');
   }
- }catch(error){info(error.message||String(error),true)}finally{busy=false}
+ }catch(error){
+  const message=String(error?.message||error);
+  const advice=/antrean|berubah|version|data gtk|source/i.test(message)
+   ?' Segarkan antrean SMART GTK lalu coba kembali.':'';
+  quickAssignmentFeedback('❌ Pembagian tugas gagal: '+message+'.'+advice,true);
+  info(message,true);
+ }finally{
+  busy=false;
+  if(act==='wf-quick-assign'&&modal.querySelector('[data-action="wf-quick-assign"]'))refreshBulkControls();
+ }
 },true);
 modal.addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b||busy)return;
@@ -913,5 +939,5 @@ modal.addEventListener('click',async e=>{
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:26,bulkAssignment:true,mobileBulkSelection:true,oneClickAutoAssign:true,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:27,bulkAssignment:true,mobileBulkSelection:true,oneClickAutoAssign:true,bulkVisibleFeedback:true,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
