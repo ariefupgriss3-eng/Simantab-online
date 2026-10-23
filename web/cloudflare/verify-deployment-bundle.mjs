@@ -106,8 +106,8 @@ ok(bulkApproval.includes('SIMANTAB_GTK_BULK_APPROVAL_UI_V4') &&
    bulkApproval.includes('Akun PENDING Perlu Pemeriksaan Manual'),
    'Perlindungan tombol agregat dan audit harus tersedia');
 const smart=await read('smartgtk-unified.js');
- ok(smart.includes('SIMANTAB_SMARTGTK_KABID_BULK_ASSIGN_V1') && smart.includes('smartgtk_workflow_bulk_assign') && smart.includes('workflowBulkAssign') && smart.includes('Bagikan Merata ke Staf') && smart.includes('bulkAssignment:true'), 'Kabid bulk task assignment not bundled');
-ok(html.includes('./smartgtk-unified.js?v=24')&&html.split('./smartgtk-unified.js?v=24').length===2,'SMART-GTK unified script must load once');
+ ok(smart.includes('SIMANTAB_SMARTGTK_BULK_MOBILE_SELECT_V2') && smart.includes('mobileBulkSelection:true') && smart.includes('SIMANTAB_SMARTGTK_KABID_BULK_ASSIGN_V1') && smart.includes('smartgtk_workflow_bulk_assign') && smart.includes('workflowBulkAssign') && smart.includes('Bagikan Merata ke Staf') && smart.includes('bulkAssignment:true'), 'Kabid bulk task assignment not bundled');
+ok(html.includes('./smartgtk-unified.js?v=25')&&html.split('./smartgtk-unified.js?v=25').length===2,'SMART-GTK unified script must load once');
 ok(smart.includes('SIMANTAB_SMARTGTK_UNIFIED_INTAKE_V1')&&smart.includes("sb.rpc('smartgtk_mass_save'")&&smart.includes("sb.rpc('smartgtk_mass_officer_list'")&&smart.includes("sb.rpc('smartgtk_mass_complete'"),'SMART-GTK mass routes missing');
 ok(smart.includes('smartgtkDashboardPriority')&&smart.includes('smartgtkPrimaryNav')&&smart.includes('root.insertBefore(card,body)'), 'GTK dashboard priority link or main menu missing');
 ok(smart.includes('Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.')&&!smart.includes('SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS.'),'SMART-GTK deadline and concise copy missing');
