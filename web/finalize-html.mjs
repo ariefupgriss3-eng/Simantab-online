@@ -202,7 +202,7 @@ await fs.writeFile(path.join(staticDir,approvalFile),approvalCode);
 
 const registrationUiFile='registration-ui-final.js';
 const registrationUiCode=await fs.readFile(new URL(`./${registrationUiFile}`,import.meta.url),'utf8');
-if(!/SIMANTAB_REGISTRATION_UI_FINAL_V6/.test(registrationUiCode))throw new Error('Registration UI final v5 tidak valid.');
+if(!/SIMANTAB_REGISTRATION_UI_FINAL_V7_KS_PLT/.test(registrationUiCode))throw new Error('Registration UI final KS Plt tidak valid.');
 await fs.writeFile(path.join(staticDir,registrationUiFile),registrationUiCode);
 
 const leadershipFile='leadership-directions.js';
