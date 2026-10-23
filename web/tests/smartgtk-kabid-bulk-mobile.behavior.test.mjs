@@ -31,8 +31,8 @@ test('tap Pilih Semua selects 32 SD cases and activates both buttons immediately
   closest:()=>({hidden:false})
  }));
  let message='';
- const one={disabled:true},balanced={disabled:true},staffSelect={value:'staff1',innerHTML:''};
- const counter={textContent:''};
+ const one={disabled:true},balanced={disabled:true},quick={disabled:true,textContent:''},staffSelect={value:'staff1',innerHTML:''};
+ const counter={textContent:''},quickCount={textContent:''};
  const scope={value:'SD'};
  const handlers=[];
  const modal={
@@ -41,6 +41,7 @@ test('tap Pilih Semua selects 32 SD cases and activates both buttons immediately
    throw Error('unknown selector '+selector);
   },
   querySelector(selector){
+   if(selector==='[data-action="wf-quick-assign"]')return quick;
    if(selector==='[data-action="wf-bulk-single"]')return one;
    if(selector==='[data-action="wf-bulk-balanced"]')return balanced;
    throw Error('unknown query '+selector);
@@ -48,12 +49,13 @@ test('tap Pilih Semua selects 32 SD cases and activates both buttons immediately
   addEventListener(type,handler,capture){handlers.push({type,handler,capture});}
  };
  const doc={getElementById(id){
-  return {'sgBulkScope':scope,'sgBulkStaff':staffSelect,'sgBulkCounter':counter}[id]||null;
+  return {'sgBulkScope':scope,'sgBulkStaff':staffSelect,'sgBulkCounter':counter,'sgQuickCount':quickCount}[id]||null;
  }};
- const fn=new Function('modal','document','p','workflowStaff','workflowPage','esc','option','info','workflowBulkAssign',
+ const fn=new Function('modal','document','p','workflowStaff','workflowPage','workflowItems','workflowBulkEligible','esc','option','info','workflowBulkAssign',
   'let busy=false;\n'+refresh+'\n'+capture+'\nreturn {refreshBulkControls};');
  const harness=fn(modal,doc,()=>({role:'KABID'}),
   [{scope:'SD',id:'staff1',name:'Icha',role:'STAFF_SPJ_SIMTENDIK'}],0,
+  Array.from({length:32},(_,i)=>({scope:'SD',status:'MENUNGGU_PENUGASAN',owner_id:'case-'+i})),row=>row.scope==='SD',
   x=>String(x),(id,name)=>'<option value="'+id+'">'+name+'</option>',
   x=>{message=x},async()=>{throw Error('not called')});
  const handler=handlers.find(h=>h.capture===true&&h.type==='click')?.handler;
@@ -61,6 +63,8 @@ test('tap Pilih Semua selects 32 SD cases and activates both buttons immediately
  harness.refreshBulkControls();
  assert.equal(one.disabled,true);
  assert.equal(balanced.disabled,true);
+ assert.equal(quick.disabled,false);
+ assert.match(quick.textContent,/Bagikan 32 Tugas SD Otomatis/);
  const evt=action=>({target:{closest:()=>({dataset:{action}})},
   preventDefault(){},stopImmediatePropagation(){}});
  await handler(evt('wf-bulk-all'));
