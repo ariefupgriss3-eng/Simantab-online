@@ -247,3 +247,11 @@ test('PPPK and PPPK paruh waktu have separate private holding tables, not PNS ap
  assert.match(ui,/version:27,bulkAssignment:true,mobileBulkSelection:true,oneClickAutoAssign:true,bulkVisibleFeedback:true,pnsThreeGoals:true,contractBuffers:true/);
  assert.doesNotThrow(()=>new Function(ui));
 });
+
+// Integration guard: authenticated SMART GTK cannot be reached if login UI abandons a slow, valid Auth request.
+test('SMART GTK login handoff keeps an in-flight Supabase authentication request alive',()=>{
+ const login=read('../login-click-rescue.js');
+ assert.match(login,/SIMANTAB_LOGIN_SLOW_AUTH_PROGRESS_V1/);
+ assert.match(login,/const uid=await authenticate\(sb,login,password\)/);
+ assert.doesNotMatch(login,/Promise\.race\(\[authenticate/);
+});
