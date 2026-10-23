@@ -593,6 +593,90 @@ function workflowContractPanel(kind){
   '<button type="button" data-action="wf-contract-prev" data-contract-kind="'+kind+'" '+(page===0?'disabled':'')+'>← Sebelumnya</button>'+
   '<button type="button" data-action="wf-contract-next" data-contract-kind="'+kind+'" '+((page+1)*50>=total?'disabled':'')+'>Berikutnya →</button></div></div>';
 }
+
+/* SIMANTAB_SMARTGTK_KABID_BULK_ASSIGN_V1
+ * Agregat per jenjang, halaman maksimum 50; backend validates auth, scope,
+ * document readiness, version and staff roster, and audits every assignment. */
+function workflowBulkEligible(row){
+ return p().role==='KABID' && row.status==='MENUNGGU_PENUGASAN'
+  && !row.assigned_staff && ['TK_PAUD_PNF','SD','SMP'].includes(row.scope)
+  && row.employment==='PNS' && ['GURU','KEPALA_SEKOLAH'].includes(row.profession)
+  && ['DATA_TERCATAT','BERKAS_LENGKAP'].includes(row.data_stage);
+}
+function workflowBulkPanel(){
+ if(p().role!=='KABID')return '';
+ const eligible=workflowItems.filter(workflowBulkEligible),defaultScope=eligible[0]?.scope||'';
+ return '<section class="sg-box" id="sgBulkPanel" style="border:2px solid #bd8b3d;background:#fffaf1">'+
+  '<h3>📦 Pembagian Tugas Agregat · Khusus Kabid</h3>'+
+  '<p class="small">Pilih jenjang, tandai GTK pada halaman antrean ini, kemudian tugaskan semuanya kepada satu staf atau bagikan merata ke staf aktif pada jenjang tersebut. Hanya kasus PNS yang sudah menyerahkan data lengkap dan <b>belum ditugaskan</b>. Draf, PPPK, dan kasus berjenjang belum jelas tidak dapat diproses.</p>'+
+  '<div class="sg-grid"><label>Jenjang <select id="sgBulkScope" aria-label="Jenjang pembagian agregat">'+
+  '<option value="">Pilih jenjang</option>'+
+  [['TK_PAUD_PNF','TK/PAUD/PNF'],['SD','SD'],['SMP','SMP']].map(x=>option(x[0],x[1],defaultScope)).join('')+
+  '</select></label><label>Staf penerima (mode satu staf) <select id="sgBulkStaff" aria-label="Staf pemeriksa untuk penugasan agregat"></select></label></div>'+
+  '<p class="small" id="sgBulkCounter" aria-live="polite">0 dipilih dari '+eligible.length+' kasus layak pada halaman ini.</p>'+
+  '<div class="sg-actions"><button type="button" data-action="wf-bulk-all">✓ Pilih Semua (jenjang ini)</button>'+
+  '<button type="button" data-action="wf-bulk-clear">Bersihkan Pilihan</button>'+
+  '<button type="button" data-action="wf-bulk-single" class="primary" disabled>Bagikan ke Staf Terpilih</button>'+
+  '<button type="button" data-action="wf-bulk-balanced" class="primary" disabled>Bagikan Merata ke Staf</button></div>'+
+  '<div class="small">Maksimal 50 kasus per penyimpanan. Jumlah dan penerima diperlihatkan sebelum konfirmasi; perubahan dicatat per kasus dan tidak menerbitkan SK/JF.</div></section>';
+}
+function workflowBulkCheckbox(row){
+ if(!workflowBulkEligible(row))return '<td><span class="small">—</span></td>';
+ return '<td><input type="checkbox" data-sg-bulk-row="'+esc(row.owner_id)+'" data-scope="'+esc(row.scope)+'" aria-label="Pilih '+esc(row.full_name)+' untuk penugasan agregat"></td>';
+}
+function refreshBulkControls(){
+ if(p().role!=='KABID')return;
+ const scope=document.getElementById('sgBulkScope')?.value||'';
+ const staffSelect=document.getElementById('sgBulkStaff');
+ const candidates=workflowStaff.filter(x=>x.scope===scope);
+ if(staffSelect){
+  const current=staffSelect.value;
+  staffSelect.innerHTML='<option value="">Pilih staf '+esc(scope||'jenjang')+'</option>'+
+   candidates.map(st=>option(st.id,st.name||st.role,st.id===current?st.id:'')).join('');
+  if(candidates.some(st=>st.id===current))staffSelect.value=current;
+ }
+ const checks=[...modal.querySelectorAll('input[data-sg-bulk-row]')];
+ for(const el of checks){el.disabled=el.dataset.scope!==scope;if(el.disabled)el.checked=false}
+ const n=checks.filter(x=>x.checked&&!x.disabled).length;
+ const msg=document.getElementById('sgBulkCounter');
+ if(msg)msg.textContent=n+' dipilih dari '+checks.filter(x=>!x.disabled).length+
+  ' kasus siap tugas pada halaman '+(workflowPage+1)+'.';
+ const one=modal.querySelector('[data-action="wf-bulk-single"]');
+ const balanced=modal.querySelector('[data-action="wf-bulk-balanced"]');
+ if(one)one.disabled=n===0||!candidates.some(st=>st.id===staffSelect?.value);
+ if(balanced)balanced.disabled=n===0||candidates.length===0;
+}
+async function workflowBulkAssign(mode){
+ if(p().role!=='KABID')throw Error('Hanya Kabid berwenang membagi tugas agregat.');
+ const scope=String(document.getElementById('sgBulkScope')?.value||'');
+ const staff=String(document.getElementById('sgBulkStaff')?.value||'');
+ if(!['TK_PAUD_PNF','SD','SMP'].includes(scope))throw Error('Pilih jenjang resmi.');
+ const ids=[...modal.querySelectorAll('input[data-sg-bulk-row]:checked:not(:disabled)')].map(el=>el.dataset.sgBulkRow);
+ const rows=ids.map(id=>workflowItems.find(x=>x.owner_id===id));
+ if(!rows.length||rows.length>50||rows.some(x=>!x||!workflowBulkEligible(x)||x.scope!==scope))
+  throw Error('Pilih 1–50 kasus pada jenjang sama yang belum ditugaskan.');
+ if(mode==='SINGLE'&&!workflowStaff.some(x=>x.id===staff&&x.scope===scope))
+  throw Error('Pilih staf aktif pada jenjang yang sama.');
+ if(mode!=='SINGLE'&&mode!=='BALANCED')throw Error('Mode pembagian tidak dikenal.');
+ const staffName=workflowStaff.find(x=>x.id===staff)?.name||'';
+ const preview=rows.slice(0,7).map(x=>'• '+x.full_name).join('\n')+(rows.length>7?'\n… dan '+(rows.length-7)+' lainnya':'');
+ if(!confirm('Konfirmasi PEMBAGIAN TUGAS AGREGAT\n\n'+rows.length+' kasus PNS • jenjang '+scope+
+  '\nMode: '+(mode==='BALANCED'?'Merata berdasarkan beban kerja staf aktif':'Seluruhnya ke '+staffName)+
+  '\n\n'+preview+'\n\nSetiap penugasan dicatat dalam audit. Lanjutkan?'))return;
+ const result=await sb.rpc('smartgtk_workflow_bulk_assign',{
+  p_cases:rows.map(x=>({owner_id:x.owner_id,version:x.version})),
+  p_scope:scope,p_mode:mode,p_staff:mode==='SINGLE'?staff:null
+ });
+ if(result.error)throw result.error;
+ if(!result.data?.ok||Number(result.data?.count)!==rows.length)
+  throw Error('Server belum memastikan seluruh penugasan. Segarkan dan periksa antrean.');
+ const distribution={};
+ for(const rec of result.data.assignments||[])distribution[rec.staff_name]=(distribution[rec.staff_name]||0)+1;
+ const desc=Object.entries(distribution).map(([name,n])=>name+': '+n).join(' · ');
+ await loadDinasWorkflow();workflowDashboard();
+ info('Berhasil membagikan '+rows.length+' tugas ('+scope+'). '+desc+'. Riwayat tercatat per GTK.');
+}
+
 function workflowDashboard(){
  const role=flowRoles[p().role]||(flowStaff()?'Staf Ketenagaan':'Monitoring Dinas');
  const grouped={};for(const i of workflowItems)grouped[i.status]=(grouped[i.status]||0)+1;
@@ -600,10 +684,10 @@ function workflowDashboard(){
  body().innerHTML='<div class="sg-box"><h3>🧭 Workflow SMART-GTK · '+esc(role)+'</h3>'+
  '<p class="sg-note">Alur: staf memeriksa → Kasi/Subkoor memvalidasi menurut jenjang → Kabid menyelesaikan telaah. Kasus NPSN belum terpetakan menunggu penetapan jenjang oleh Kabid. Tidak mengubah isian awal GTK maupun menerbitkan SK/JF.</p>'+
  '<p><b>'+workflowTotal+'</b> kasus PNS siap diproses · <b>'+workflowDraftTotal+'</b> draf PNS · <b>'+contractTotals.PPPK+'</b> tampungan PPPK · <b>'+contractTotals.PPPK_PW+'</b> tampungan PPPK PW. Halaman antrean '+(workflowPage+1)+'.</p>'+
- '<div>'+counters+'</div>'+workflowDraftsPanel()+workflowContractPanel('PPPK')+workflowContractPanel('PPPK_PW')+
+ '<div>'+counters+'</div>'+workflowBulkPanel()+workflowDraftsPanel()+workflowContractPanel('PPPK')+workflowContractPanel('PPPK_PW')+
  (['KABID','SUPER_ADMIN','STAFF_USUL_SK'].includes(p().role)?'<button type="button" data-action="wf-legacy">Lihat Skrining Lama</button>':'')+
- '<div class="sg-scroll"><table><thead><tr><th>Nama dan Satuan Pendidikan</th><th>Data GTK</th><th>Jenjang/Tahap</th><th>Staf Pemeriksa</th><th>Keputusan/Tindakan</th></tr></thead><tbody>'+
- (workflowItems.length?workflowItems.map(x=>'<tr><td><b>'+esc(x.full_name||'-')+'</b><div class="small">'+esc(x.unit_work||'-')+'</div></td>'+
+ '<div class="sg-scroll"><table><thead><tr>'+(p().role==='KABID'?'<th>Agregat</th>':'')+'<th>Nama dan Satuan Pendidikan</th><th>Data GTK</th><th>Jenjang/Tahap</th><th>Staf Pemeriksa</th><th>Keputusan/Tindakan</th></tr></thead><tbody>'+
+ (workflowItems.length?workflowItems.map(x=>'<tr>'+(p().role==='KABID'?workflowBulkCheckbox(x):'')+'<td><b>'+esc(x.full_name||'-')+'</b><div class="small">'+esc(x.unit_work||'-')+'</div></td>'+
  '<td>'+esc(x.profession||'-')+' / '+esc(employmentLabel(x.employment)||'-')+'<div class="small">Status berkas: '+esc(x.data_stage||'-')+' · '+esc(x.document_records||0)+' dokumen tercatat</div></td>'+
  '<td><b>'+esc(x.scope||'-')+'</b><div class="small">'+esc(flowLabels[x.status]||x.status||'-')+'</div></td>'+
  '<td>'+esc(x.staff_name||'Belum ditugaskan')+'</td>'+
@@ -611,11 +695,12 @@ function workflowDashboard(){
  (x.staff_note?'<div class="small">Staf: '+esc(x.staff_note)+'</div>':'')+
  (x.coordinator_note?'<div class="small">Kasi/Subkoor: '+esc(x.coordinator_note)+'</div>':'')+
  (x.kabid_note?'<div class="small">Kabid: '+esc(x.kabid_note)+'</div>':'')+
- '</td></tr>').join(''):'<tr><td colspan="5">Tidak ada antrean dalam cakupan peran ini. Draf GTK belum masuk alur verifikasi.</td></tr>')+
+ '</td></tr>').join(''):'<tr><td colspan="'+(p().role==='KABID'?6:5)+'">Tidak ada antrean dalam cakupan peran ini. Draf GTK belum masuk alur verifikasi.</td></tr>')+
  '</tbody></table></div><div class="sg-actions" style="margin-top:10px">'+
  '<button type="button" data-action="wf-prev" '+(workflowPage===0?'disabled':'')+'>← Sebelumnya</button>'+
  '<button type="button" data-action="wf-next" '+((workflowPage+1)*50>=workflowTotal?'disabled':'')+'>Berikutnya →</button>'+
  '<button type="button" data-action="wf-refresh">↻ Segarkan</button></div></div>';
+ if(p().role==='KABID')refreshBulkControls();
 }
 async function workflowAction(btn){
  const owner=String(btn.dataset.owner||'');
@@ -703,6 +788,11 @@ async function open(){
   }
  catch(e){body().innerHTML='<p class="sg-note">SMART-GTK belum dapat dimuat. Segarkan halaman dan coba kembali. Jika kendala berlanjut, hubungi admin SIMANTAB.</p>';info(e.message||String(e),true)}
 }
+modal.addEventListener('change',e=>{
+ if(p().role!=='KABID')return;
+ if(e.target?.id==='sgBulkScope'||e.target?.id==='sgBulkStaff'||
+    e.target?.matches?.('input[data-sg-bulk-row]'))refreshBulkControls();
+});
 modal.addEventListener('click',async e=>{
  const b=e.target.closest('button[data-action]');if(!b||busy)return;
  const act=b.dataset.action;if(act==='close'){modal.style.display='none';return}
@@ -718,6 +808,15 @@ modal.addEventListener('click',async e=>{
   if(act==='prior'){const r=await sb.rpc('smartgtk_mass_get');if(r.error)throw r.error;results(r.data?.classification||{})}
   if(act==='next'||act==='prev'){pg=Math.max(0,pg+(act==='next'?1:-1));await listDinas();dashboard()}
   if(act==='wf-act')await workflowAction(b);
+  if(act==='wf-bulk-all'||act==='wf-bulk-clear'){
+   const scope=document.getElementById('sgBulkScope')?.value||'';
+   modal.querySelectorAll('input[data-sg-bulk-row]').forEach(el=>{
+    el.checked=act==='wf-bulk-all'&&el.dataset.scope===scope&&!el.disabled;
+   });
+   refreshBulkControls();
+  }
+  if(act==='wf-bulk-single'||act==='wf-bulk-balanced')
+   await workflowBulkAssign(act==='wf-bulk-single'?'SINGLE':'BALANCED');
   if(act==='wf-next'||act==='wf-prev'||act==='wf-refresh'){
    if(act==='wf-next')workflowPage++;
    if(act==='wf-prev')workflowPage=Math.max(0,workflowPage-1);
@@ -741,5 +840,5 @@ modal.addEventListener('click',async e=>{
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:23,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:24,bulkAssignment:true,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
