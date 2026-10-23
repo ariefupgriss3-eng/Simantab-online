@@ -25,6 +25,10 @@ on:
       - web/tests/cloudflare-jabfung-document-revisions.test.cjs
       - supabase/migrations/20261015162000_jabfung_document_revision_workflow.sql
       - web/tests/registration-contract.test.mjs
+      - web/tests/ks-plt-signup.contract.test.mjs
+      - web/gtk-needs-progress.js
+      - web/registration-approval.js
+      - supabase/migrations/20261023170000_ks_plt_signup_declaration.sql
       - supabase/functions/simantab-register-pending/index.ts
 jobs:
   test:
@@ -39,6 +43,7 @@ jobs:
       - name: Validate source syntax and registration rules
         run: |
           node web/tests/registration-contract.test.mjs
+          node --test web/tests/ks-plt-signup.contract.test.mjs
           node web/tests/registration-backend.test.mjs
           node --test web/tests/cloudflare-mandatory-personnel-profile.test.cjs
           node --test web/tests/cloudflare-jabfung-document-revisions.test.cjs
