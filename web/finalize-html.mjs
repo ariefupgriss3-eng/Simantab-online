@@ -444,7 +444,7 @@ const modules=[
  ['activity-attendance-recap.js',2],
  ['login-channel-hardening.js',5],
  ['login-click-rescue.js',4],
- ['registration-ui-final.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 7 : 6],
+ ['registration-ui-final.js',process.env.SIMANTAB_BUILD_TARGET === 'cloudflare' ? 8 : 6],
  ['leader-menu-cleanup.js',2],
  ['leader-dashboard-authoritative.js',7],
  ['gtk-dapodik-breakdown.js',1],
