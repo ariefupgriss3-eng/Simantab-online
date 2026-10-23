@@ -47,10 +47,13 @@ ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-l
 /* SIMANTAB_LOGIN_FETCH_DIAGNOSTIC_BUILD_QA_V1: check login transport errors are distinct from invalid passwords. */
 const loginClickRescue=await read('login-click-rescue.js');
 const loginChannelHardening=await read('login-channel-hardening.js');
-ok(html.includes('./login-click-rescue.js?v=4') &&
+ok(html.includes('./login-click-rescue.js?v=5') &&
    html.includes('./login-channel-hardening.js?v=5'),
    'Browser masih dapat menggunakan JS login lama dari cache.');
-ok(loginClickRescue.includes('SIMANTAB_LOGIN_NETWORK_DIAGNOSTIC_V1') &&
+ok(loginClickRescue.includes('SIMANTAB_LOGIN_SLOW_AUTH_PROGRESS_V1') &&
+   !loginClickRescue.includes('wait(15000)') &&
+   loginClickRescue.includes('noFalseTimeout:true') &&
+   loginClickRescue.includes('SIMANTAB_LOGIN_NETWORK_DIAGNOSTIC_V1') &&
    loginClickRescue.includes("'/auth/v1/health'") &&
    loginClickRescue.includes('simantabLoginConnectivityCheck') &&
    loginClickRescue.includes('networkDiagnostic:true'),
