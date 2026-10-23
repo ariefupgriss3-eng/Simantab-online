@@ -597,6 +597,9 @@ function workflowContractPanel(kind){
 const sgBulkStyle=document.createElement('style');
 sgBulkStyle.textContent='#smartgtkModal input[type="checkbox"][data-sg-bulk-row]{box-sizing:border-box;width:22px!important;height:22px!important;min-width:22px!important;padding:0!important;margin:0!important;accent-color:#b7651c;cursor:pointer}#sgBulkPanel .sg-actions button:disabled{opacity:.5;cursor:not-allowed}#sgBulkPanel .sg-bulk-label{display:flex!important;flex-direction:row!important;align-items:center!important;gap:12px!important;cursor:pointer;padding:6px 2px}#sgBulkPanel .sg-bulk-table{min-width:0;width:100%}#sgBulkPanel .sg-bulk-table tr[hidden]{display:none!important}#sgBulkPanel .sg-bulk-table td{padding:8px 4px}#sgBulkPanel .sg-bulk-list{max-height:310px;overflow:auto;border:1px solid #dfd3ba;border-radius:9px;margin:10px 0;background:#fff}#sgBulkPanel .sg-bulk-count{font-size:15px;font-weight:750;color:#6b3a0b}';
 document.head.append(sgBulkStyle);
+const sgQuickStyle=document.createElement('style');
+sgQuickStyle.textContent='#sgQuickAssign{display:block;width:100%;min-height:54px;margin:10px 0;background:#b95a0b!important;color:white!important;border:0!important;border-radius:12px;font-size:16px;font-weight:800}#sgQuickAssign:disabled{background:#bdc4cb!important;color:#38485b!important;cursor:not-allowed}#sgBulkPanel #sgBulkManual{border-top:1px solid #e4d6bc;margin-top:16px;padding-top:13px}#sgBulkPanel #sgBulkManual>summary{font-size:14px;color:#205983;font-weight:750;cursor:pointer;padding:9px 0}#sgBulkPanel #sgBulkManual[open]>summary{margin-bottom:12px}';
+document.head.append(sgQuickStyle);
 /* SIMANTAB_SMARTGTK_KABID_BULK_ASSIGN_V1
  * Agregat per jenjang, halaman maksimum 50; backend validates auth, scope,
  * document readiness, version and staff roster, and audits every assignment. */
@@ -620,22 +623,28 @@ function workflowBulkSelectionList(eligible){
    '<tr><td>Tidak ada kasus siap penugasan pada halaman ini.</td></tr>')+
   '</tbody></table></div>';
 }
+/* SIMANTAB_SMARTGTK_KABID_ONECLICK_V1: one tap, scoped by jenjang; server validates and audits. */
 function workflowBulkPanel(){
  if(p().role!=='KABID')return '';
  const eligible=workflowItems.filter(workflowBulkEligible),defaultScope=eligible[0]?.scope||'';
  return '<section class="sg-box" id="sgBulkPanel" style="border:2px solid #bd8b3d;background:#fffaf1">'+
   '<h3>📦 Pembagian Tugas Agregat · Khusus Kabid</h3>'+
-  '<p class="small">Pilih jenjang, tandai GTK pada halaman antrean ini, kemudian tugaskan semuanya kepada satu staf atau bagikan merata ke staf aktif pada jenjang tersebut. Hanya kasus PNS yang sudah menyerahkan data lengkap dan <b>belum ditugaskan</b>. Draf, PPPK, dan kasus berjenjang belum jelas tidak dapat diproses.</p>'+
-  '<div class="sg-grid"><label>Jenjang <select id="sgBulkScope" aria-label="Jenjang pembagian agregat">'+
+  '<p class="small">Kabid cukup memilih jenjang dan menekan <b>Bagikan Semua Otomatis</b> satu kali. Semua kasus PNS siap tugas pada halaman antrean ini langsung dibagi secara merata kepada staf aktif. Draf, PPPK, kasus belum terpetakan, dan tugas yang sudah dibagikan tidak ikut.</p>'+
+  '<label>Jenjang <select id="sgBulkScope" aria-label="Jenjang pembagian agregat">'+
   '<option value="">Pilih jenjang</option>'+
   [['TK_PAUD_PNF','TK/PAUD/PNF'],['SD','SD'],['SMP','SMP']].map(x=>option(x[0],x[1],defaultScope)).join('')+
-  '</select></label><label>Staf penerima (mode satu staf) <select id="sgBulkStaff" aria-label="Staf pemeriksa untuk penugasan agregat"></select></label></div>'+
+  '</select></label>'+
+  '<p id="sgQuickCount" class="sg-bulk-count" aria-live="polite">Memuat jumlah kasus siap tugas...</p>'+
+  '<button type="button" id="sgQuickAssign" data-action="wf-quick-assign" class="primary" disabled>⚡ Bagikan Semua Otomatis (1 Klik)</button>'+
+  '<p class="small">Tombol ini langsung menugaskan seluruh kasus yang siap pada <b>halaman ini</b> (maksimal 50), tanpa centang nama dan tanpa pop-up konfirmasi tambahan. Pembagian berdasarkan beban kerja staf dan setiap penugasan tercatat.</p>'+
+  '<details id="sgBulkManual"><summary>Pengaturan manual: pilih nama atau satu staf</summary>'+
+  '<label>Staf penerima (mode satu staf) <select id="sgBulkStaff" aria-label="Staf pemeriksa untuk penugasan agregat"></select></label>'+
   '<p class="sg-bulk-count" id="sgBulkCounter" aria-live="polite">0 dipilih dari '+eligible.length+' kasus layak pada halaman ini.</p>'+workflowBulkSelectionList(eligible)+
   '<div class="sg-actions"><button type="button" data-action="wf-bulk-all">✓ Pilih Semua (jenjang ini)</button>'+
   '<button type="button" data-action="wf-bulk-clear">Bersihkan Pilihan</button>'+
   '<button type="button" data-action="wf-bulk-single" class="primary" disabled>Bagikan ke Staf Terpilih</button>'+
-  '<button type="button" data-action="wf-bulk-balanced" class="primary" disabled>Bagikan Merata ke Staf</button></div>'+
-  '<div class="small">Maksimal 50 kasus per penyimpanan. Jumlah dan penerima diperlihatkan sebelum konfirmasi; perubahan dicatat per kasus dan tidak menerbitkan SK/JF.</div></section>';
+  '<button type="button" data-action="wf-bulk-balanced" class="primary" disabled>Bagikan Merata ke Staf</button></div></details>'+
+  '<div class="small">Penugasan tidak menerbitkan SK/JF dan tidak mengubah isian GTK.</div></section>';
 }
 function refreshBulkControls(){
  if(p().role!=='KABID')return;
@@ -655,6 +664,15 @@ function refreshBulkControls(){
   el.disabled=otherScope;if(otherScope)el.checked=false;
  }
  const n=checks.filter(x=>x.checked&&!x.disabled).length;
+ const pending=workflowItems.filter(row=>workflowBulkEligible(row)&&row.scope===scope);
+ const quick=modal.querySelector('[data-action="wf-quick-assign"]');
+ if(quick){
+  quick.disabled=pending.length===0||candidates.length===0||busy;
+  quick.textContent='⚡ Bagikan '+pending.length+' Tugas '+(scope==='TK_PAUD_PNF'?'TK/PAUD/PNF':scope||'')+' Otomatis (1 Klik)';
+ }
+ const quickCount=document.getElementById('sgQuickCount');
+ if(quickCount)quickCount.textContent=pending.length+' kasus '+(scope==='TK_PAUD_PNF'?'TK/PAUD/PNF':scope||'')+
+  ' siap dibagikan otomatis di halaman '+(workflowPage+1)+'.';
  const msg=document.getElementById('sgBulkCounter');
  if(msg)msg.textContent=n+' dipilih dari '+checks.filter(x=>!x.disabled).length+
   ' kasus siap tugas pada halaman '+(workflowPage+1)+'.';
@@ -662,6 +680,30 @@ function refreshBulkControls(){
  const balanced=modal.querySelector('[data-action="wf-bulk-balanced"]');
  if(one)one.disabled=n===0||!candidates.some(st=>st.id===staffSelect?.value);
  if(balanced)balanced.disabled=n===0||candidates.length===0;
+}
+async function workflowQuickAssign(){
+ if(p().role!=='KABID')throw Error('Hanya Kabid aktif yang boleh melakukan penugasan otomatis.');
+ const scope=String(document.getElementById('sgBulkScope')?.value||'');
+ if(!['TK_PAUD_PNF','SD','SMP'].includes(scope))throw Error('Pilih jenjang resmi.');
+ const rows=workflowItems.filter(row=>workflowBulkEligible(row)&&row.scope===scope);
+ const candidates=workflowStaff.filter(x=>x.scope===scope);
+ if(!rows.length){info('Tidak ada kasus siap tugas pada jenjang ini. Segarkan antrean jika perlu.');return}
+ if(rows.length>50)throw Error('Batas 50 kasus per batch; segarkan halaman.');
+ if(!candidates.length)throw Error('Staf pemeriksa aktif pada jenjang ini belum tersedia.');
+ // ONE click = immediate audited server call, no checkbox and no confirm().
+ const result=await sb.rpc('smartgtk_workflow_bulk_assign',{
+  p_cases:rows.map(x=>({owner_id:x.owner_id,version:x.version})),
+  p_scope:scope,p_mode:'BALANCED',p_staff:null
+ });
+ if(result.error)throw result.error;
+ if(result.data?.ok!==true||Number(result.data?.count)!==rows.length)
+  throw Error('Hasil penugasan belum terkonfirmasi; periksa riwayat sebelum mencoba ulang.');
+ const distribution={};
+ for(const item of result.data.assignments||[])
+  distribution[item.staff_name]=(distribution[item.staff_name]||0)+1;
+ const summary=Object.entries(distribution).map(([name,count])=>name+': '+count).join(' · ');
+ await loadDinasWorkflow();workflowDashboard();
+ info('Berhasil membagikan '+rows.length+' kasus '+scope+' otomatis. '+summary+'. Setiap penugasan tercatat.');
 }
 async function workflowBulkAssign(mode){
  if(p().role!=='KABID')throw Error('Hanya Kabid berwenang membagi tugas agregat.');
@@ -814,13 +856,15 @@ modal.addEventListener('change',e=>{
  * dispatcher must not intercept a tap on a mobile bulk control. */
 modal.addEventListener('click',async e=>{
  const b=e.target.closest?.('#sgBulkPanel button[data-action]');
- if(!b||!['wf-bulk-all','wf-bulk-clear','wf-bulk-single','wf-bulk-balanced'].includes(b.dataset.action))return;
+ if(!b||!['wf-quick-assign','wf-bulk-all','wf-bulk-clear','wf-bulk-single','wf-bulk-balanced'].includes(b.dataset.action))return;
  e.preventDefault();e.stopImmediatePropagation();
  if(busy)return;
  const act=b.dataset.action;
  try{
   busy=true;
-  if(act==='wf-bulk-all'||act==='wf-bulk-clear'){
+  if(act==='wf-quick-assign'){
+   await workflowQuickAssign();
+  }else if(act==='wf-bulk-all'||act==='wf-bulk-clear'){
    const scope=document.getElementById('sgBulkScope')?.value||'';
    modal.querySelectorAll('#sgBulkPanel input[data-sg-bulk-row]').forEach(el=>{
     el.checked=act==='wf-bulk-all'&&el.dataset.scope===scope&&!el.disabled;
@@ -869,5 +913,5 @@ modal.addEventListener('click',async e=>{
   if(act==='wf-return'){await loadDinasWorkflow();workflowDashboard();}
  }catch(error){info(error.message||String(error),true)}finally{busy=false}
 });
-window.__smartGtkUnified={open,version:25,bulkAssignment:true,mobileBulkSelection:true,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
+window.__smartGtkUnified={open,version:26,bulkAssignment:true,mobileBulkSelection:true,oneClickAutoAssign:true,pnsThreeGoals:true,contractBuffers:true,draftMonitoring:true,deadlineReminder:true,deadlineAt:'2026-10-26T23:59:00+07:00',ksNeedsPriority:true,backendRequired:true,dinasWorkflowNav:true,roleWorkflow:true,ownerWorkflowFeedback:true};
 })();
