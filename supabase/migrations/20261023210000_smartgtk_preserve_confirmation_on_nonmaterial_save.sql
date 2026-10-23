@@ -148,5 +148,4 @@ begin
  v_result:=public.smartgtk_mass_classify(p_profession,p_employment,p_jf_sk,p_nomenclature_updated,p_pns_jf_formation,p_education,p_old_position);
  return v_result;
 end;
-$function$
-
+$function$;
