@@ -10,7 +10,9 @@ test('Kabid one-click UI is prominent, with optional manual controls and a singl
  assert.match(source,/⚡ Bagikan Semua Otomatis \(1 Klik\)/);
  assert.match(source,/<details id="sgBulkManual">/);
  assert.match(source,/oneClickAutoAssign:true/);
- assert.match(source,/version:26/);
+ assert.match(source,/version:27/);
+ assert.match(source,/SMARTGTK_BULK_VISIBLE_FEEDBACK_V1/);
+ assert.match(source,/sgQuickFeedback/);
  assert.match(source,/quick\.disabled=pending\.length===0\|\|candidates\.length===0/);
  assert.doesNotMatch(source,/quick\.disabled=.*\|\|busy/);
  assert.match(source,/await workflowQuickAssign\(\)/);
@@ -34,10 +36,10 @@ test('one tap distributes all 32 eligible SD cases, without selecting names or c
   calls.push({name,args});
   return {data:{ok:true,count:32,assignments:cases.slice(0,32).map(x=>({owner_id:x.owner_id,staff_name:'Icha'}))}};
  };
- const factory=new Function('p','document','workflowItems','workflowStaff','workflowBulkEligible','sb','loadDinasWorkflow','workflowDashboard','info',fnBody+'return workflowQuickAssign;');
+ const factory=new Function('p','document','workflowItems','workflowStaff','workflowBulkEligible','sb','loadDinasWorkflow','workflowDashboard','info','quickAssignmentFeedback',fnBody+'return workflowQuickAssign;');
  const run=factory(()=>({role:'KABID'}),{getElementById:()=>({value:'SD'})},
   cases,[{scope:'SD',id:'staff1',name:'Icha'}],row=>row.ready,
-  {rpc},async()=>{loads++},()=>{renders++},(message)=>messages.push(message));
+  {rpc},async()=>{loads++},()=>{renders++},(message)=>messages.push(message),(message)=>messages.push(message));
  await run();
  assert.equal(calls.length,1);
  assert.equal(calls[0].name,'smartgtk_workflow_bulk_assign');
@@ -54,13 +56,13 @@ test('one-click Kabid only; no eligible cases does not call server',async()=>{
  const begin=source.indexOf('async function workflowQuickAssign(){');
  const end=source.indexOf('async function workflowBulkAssign(',begin);
  const fnBody=source.slice(begin,end);
- const factory=new Function('p','document','workflowItems','workflowStaff','workflowBulkEligible','sb','loadDinasWorkflow','workflowDashboard','info',fnBody+'return workflowQuickAssign;');
+ const factory=new Function('p','document','workflowItems','workflowStaff','workflowBulkEligible','sb','loadDinasWorkflow','workflowDashboard','info','quickAssignmentFeedback',fnBody+'return workflowQuickAssign;');
  let rpcCount=0,notice='';
  const base=[{scope:'SD',id:'staff1',name:'Icha'}],doc={getElementById:()=>({value:'SD'})};
  const client={rpc:async()=>{rpcCount++;return {data:{}}}};
- const unauthorized=factory(()=>({role:'GTK'}),doc,[],base,()=>true,client,async()=>{},()=>{},()=>{});
+ const unauthorized=factory(()=>({role:'GTK'}),doc,[],base,()=>true,client,async()=>{},()=>{},()=>{},()=>{});
  await assert.rejects(unauthorized(),/Hanya Kabid aktif/);
- const empty=factory(()=>({role:'KABID'}),doc,[],base,()=>true,client,async()=>{},()=>{},m=>notice=m);
+ const empty=factory(()=>({role:'KABID'}),doc,[],base,()=>true,client,async()=>{},()=>{},m=>notice=m,()=>{});
  await empty();
  assert.equal(rpcCount,0);
  assert.match(notice,/Tidak ada kasus siap tugas/);
