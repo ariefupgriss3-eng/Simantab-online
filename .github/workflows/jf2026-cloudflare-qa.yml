@@ -28,6 +28,7 @@ on:
       - 'supabase/migrations/20261021182000_smartgtk_mass_rollout_gate.sql'
       - 'web/tests/smartgtk.contract.test.mjs'
       - 'web/tests/smartgtk-kabid-bulk.contract.test.mjs'
+      - 'web/tests/smartgtk-kabid-bulk-mobile.behavior.test.mjs'
       - 'supabase/migrations/20261023173000_smartgtk_kabid_bulk_assign.sql'
       - 'web/tests/smartgtk-integration.sql'
       - 'supabase/migrations/20261021150000_smartgtk_unified_intake.sql'
@@ -76,7 +77,7 @@ jobs:
           test -s .vercel/output/static/gtk-bulk-approval.js
           grep -q './gtk-bulk-approval.js?v=4' .vercel/output/static/index.html
           test -s .vercel/output/static/smartgtk-onboarding.js
-          grep -q './smartgtk-unified.js?v=24' .vercel/output/static/index.html
+          grep -q './smartgtk-unified.js?v=25' .vercel/output/static/index.html
           grep -q './smartgtk-onboarding.js?v=1' .vercel/output/static/index.html
           grep -q './jf-qualification-2030.js?v=5' .vercel/output/static/index.html
           grep -q './jf-guru-2026.js?v=2' .vercel/output/static/index.html
