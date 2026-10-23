@@ -47,8 +47,8 @@ test('Server does not trust client; checks role, scope, staff, stage, version an
 });
 
 test('Cloudflare JS cache and bundle QA include the aggregate feature',()=>{
- assert.match(inject,/smartgtk-unified\.js\?v=26/);
- assert.match(qa,/smartgtk-unified\.js\?v=26/);
+ assert.match(inject,/smartgtk-unified\.js\?v=27/);
+ assert.match(qa,/smartgtk-unified\.js\?v=27/);
  assert.match(qa,/SIMANTAB_SMARTGTK_KABID_BULK_ASSIGN_V1/);
- assert.match(ui,/version:26/);
+ assert.match(ui,/version:27/);
 });
