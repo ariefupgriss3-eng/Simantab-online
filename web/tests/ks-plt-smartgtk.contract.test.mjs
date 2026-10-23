@@ -13,7 +13,7 @@ test('KS Plt PNS persists operational status distinct from definitive position',
  assert.match(needs,/ks_assignment_status:job_code==='KEPALA_SEKOLAH'/);
  assert.match(needs,/ksAssignment==='PLT'/);
  assert.match(migration,/ks_assignment_status text not null default 'BELUM_DITETAPKAN'/);
- assert.match(migration,/and \(pns=1 and pppk=0 and pppk_pw=0\)/);
+ assert.match(migration,/or \(pns=1 and pppk=0 and pppk_pw=0\)/);
 });
 
 test('SMART GTK keeps KS role and needs gate, but displays Guru for verified Plt entry',()=>{
