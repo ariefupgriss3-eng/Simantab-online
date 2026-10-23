@@ -1,6 +1,7 @@
 /* SIMANTAB_LOGIN_CLICK_RESCUE_V2 */
 /* SIMANTAB_LOGIN_CLICK_RESCUE_V3 */
 /* SIMANTAB_LOGIN_NETWORK_DIAGNOSTIC_V1: browser-only public endpoint probe. Never transmit usernames, passwords or sessions. */
+/* SIMANTAB_LOGIN_SLOW_AUTH_PROGRESS_V1: no artificial deadline for an in-flight Auth request. */
 (()=>{
 const $=id=>document.getElementById(id);
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
@@ -89,9 +90,14 @@ async function runLogin(){
  const password=String($('password')?.value||'');
  if(!login||password.length<8){show('Isi username/email dan password minimal 8 karakter.','err');return}
  busy=true;clearNetworkHelp();const btn=$('authBtn');if(btn)btn.disabled=true;show('Memeriksa akun…','ok');
+ const progressTimers=[
+  setTimeout(()=>{if(busy)show('Server autentikasi masih memproses login. Jangan menekan Masuk berulang kali.','ok')},12000),
+  setTimeout(()=>{if(busy)show('Autentikasi Supabase sedang lambat. Permintaan login tetap berlangsung; satu klik cukup.','ok')},45000),
+  setTimeout(()=>{if(busy)show('Permintaan login masih diproses. Jika sudah ada sesi berhasil, halaman akan terbuka otomatis.','ok')},100000)
+ ];
  try{
   const sb=await getClient();
-  const uid=await Promise.race([authenticate(sb,login,password),wait(15000).then(()=>{throw new Error('Koneksi login terlalu lama. Silakan coba lagi.')})]);
+  const uid=await authenticate(sb,login,password);
   if(!uid)throw new Error('Sesi login tidak ditemukan.');
   const {data:prof,error}=await sb.from('profiles').select('role,is_active,approval_status,account_channel,full_name,position,school_npsn').eq('id',uid).maybeSingle();
   if(error)throw error;
@@ -111,7 +117,7 @@ async function runLogin(){
    clearNetworkHelp();show('Username/email atau password tidak sesuai. Gunakan Lupa Password jika perlu.','err');
   }else{clearNetworkHelp();show(message,'err');}
   busy=false;if(btn)btn.disabled=false;
- }
+ }finally{progressTimers.forEach(clearTimeout)}
 }
 function bind(){
  const btn=$('authBtn');if(btn&&btn.dataset.loginRescue!=='2'){
@@ -127,5 +133,5 @@ function bind(){
 bind();
 const loginRoot=$('loginPage');
 if(loginRoot)new MutationObserver(bind).observe(loginRoot,{childList:true,subtree:true});
-window.__simantabLoginRescue={version:4,enabled:true,networkDiagnostic:true};
+window.__simantabLoginRescue={version:5,enabled:true,networkDiagnostic:true,noFalseTimeout:true,slowAuthProgress:true};
 })();
