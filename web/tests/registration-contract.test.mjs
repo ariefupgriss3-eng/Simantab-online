@@ -27,7 +27,7 @@ function element(id, value = '') {
     querySelector: () => ({ textContent: '' })
   };
 }
-async function runCase({status, nip = '', unit = 'SDN Sambong 02', role = 'GTK', npsn = '', login = false}) {
+async function runCase({status, nip = '', unit = 'SDN Sambong 02', role = 'GTK', npsn = '', ksAssignment = '', login = false}) {
   const ids = {
     nameWrap: element('nameWrap'),
     signupExtra: element('signupExtra'),
@@ -35,6 +35,8 @@ async function runCase({status, nip = '', unit = 'SDN Sambong 02', role = 'GTK',
     signupNip: element('signupNip', nip),
     signupUnit: element('signupUnit', unit),
     signupEmploymentStatus: element('signupEmploymentStatus', status),
+    signupKsAssignment: element('signupKsAssignment', ksAssignment),
+    signupKsAssignmentField: element('signupKsAssignmentField'),
     signupNpsn: element('signupNpsn', npsn),
     tabDinas: element('tabDinas'), tabGtk: element('tabGtk'),
     authMsg: element('authMsg'), authBtn: element('authBtn'), switchLink: element('switchLink'),
@@ -52,7 +54,7 @@ async function runCase({status, nip = '', unit = 'SDN Sambong 02', role = 'GTK',
   };
   const fetch = async (url,opts) => {
     requests.push({url,body:JSON.parse(opts.body)});
-    return {ok:true,text:async()=>JSON.stringify({ok:true})};
+    return {ok:true,text:async()=>JSON.stringify(url.includes('registration_school_lookup')?[{npsn:npsn||'12345678'}]:{ok:true})};
   };
   vm.runInNewContext(ui, {document,fetch,setTimeout:()=>0,console,window:{}}, {timeout:1500});
   if(!login){
@@ -84,8 +86,20 @@ result = await runCase({status:'NON_ASN',unit:''});
 assert.match(result.message,/Unit Kerja wajib/);assert.equal(result.requests.length,0);
 result = await runCase({status:'NON_ASN',role:'PENGAWAS'});
 assert.match(result.message,/NIP 18 digit wajib/);assert.equal(result.requests.length,0);
+result = await runCase({status:'PNS',role:'KEPALA_SEKOLAH',nip:'123456789012345678',npsn:'12345678',ksAssignment:'PLT'});
+assert.equal(result.requests.length,2);
+assert.equal(result.requests[1].body.role,'KEPALA_SEKOLAH');
+assert.equal(result.requests[1].body.ks_assignment_status,'PLT');
+assert.equal(result.requests[1].body.employment_status,'PNS');
+result = await runCase({status:'PPPK',role:'KEPALA_SEKOLAH',nip:'123456789012345678',npsn:'12345678',ksAssignment:'PLT'});
+assert.match(result.message,/berstatus PNS/);assert.equal(result.requests.length,0);
+result = await runCase({status:'PNS',role:'KEPALA_SEKOLAH',nip:'123456789012345678',npsn:'12345678'});
+assert.match(result.message,/Pilih Kepala Sekolah/);assert.equal(result.requests.length,0);
+result = await runCase({status:'PNS',role:'KEPALA_SEKOLAH',nip:'123456789012345678',npsn:'12345678',ksAssignment:'DEFINITIF'});
+assert.equal(result.requests[1].body.ks_assignment_status,'DEFINITIF');
 result = await runCase({status:'PNS',login:true});
 assert.equal(result.ids.signupNip.required,false);
 assert.equal(result.ids.signupUnit.required,false);
 assert.equal(result.ids.signupEmploymentStatus.required,false);
+assert.equal(result.ids.signupKsAssignment.required,false);
 console.log('PASS: ASN NIP, unit, non-ASN, payload, origin and login checks');
