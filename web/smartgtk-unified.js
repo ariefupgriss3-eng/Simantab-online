@@ -35,7 +35,7 @@ const meanings={
  TELAAH_KHUSUS:'SLTA/SPG: pemeriksaan khusus',
  DINYATAKAN_MEMENUHI_BELUM_VERIFIKASI:'Sudah memenuhi menurut pernyataan, ijazah belum diverifikasi'
 };
-let old=null,education=null,items=[],pg=0,busy=false,onboarding=null;const maxDocBytes=1572864;
+let old=null,education=null,items=[],pg=0,busy=false,onboarding=null,ksIsPlt=false;const maxDocBytes=1572864;
 let workflowPage=0,workflowItems=[],workflowTotal=0,workflowStaff=[];
 let workflowDraftPage=0,workflowDraftItems=[],workflowDraftTotal=0;
 let contractPages={PPPK:0,PPPK_PW:0},contractRecords={PPPK:[],PPPK_PW:[]},contractTotals={PPPK:0,PPPK_PW:0};
@@ -249,19 +249,26 @@ if(navRoot)new MutationObserver(()=>{
 window.addEventListener('simantab:profile-ready',placeSmartGtk);
 placeSmartGtk();
 async function loadGTK(){
- const [a,b]=await Promise.all([
+ const ksNpsn=String(p().school_npsn||'').trim();
+ const ksRow=(p().role==='KEPALA_SEKOLAH'&&/^\\d{8}$/.test(ksNpsn))?
+  sb.from('school_gtk_needs').select('ks_assignment_status,pns').eq('school_npsn',ksNpsn).eq('job_code','KEPALA_SEKOLAH').maybeSingle():
+  Promise.resolve({data:null,error:null});
+ const [a,b,c]=await Promise.all([
   sb.from('smartgtk_intake').select('*').eq('owner_id',p().id).maybeSingle(),
-  sb.from('jf2030_qualification').select('education_initial,study_status,university,study_program,start_year,target_graduation,graduation_date,review_status').eq('owner_id',p().id).maybeSingle()
+  sb.from('jf2030_qualification').select('education_initial,study_status,university,study_program,start_year,target_graduation,graduation_date,review_status').eq('owner_id',p().id).maybeSingle(),
+  ksRow
  ]);
- if(a.error)throw a.error;if(b.error)throw b.error;old=a.data||null;education=b.data||null;
+ if(a.error)throw a.error;if(b.error)throw b.error;if(c.error)throw c.error;
+ ksIsPlt=p().role==='KEPALA_SEKOLAH'&&String(c.data?.ks_assignment_status||'')==='PLT'&&Number(c.data?.pns)===1;
+ old=a.data||null;education=b.data||null;
 }
 function form(){
  const x=old||{},q=education||{},edu=x.education||q.education_initial||'',study=x.study_status||q.study_status||(qualified.includes(edu)?'SUDAH_MEMENUHI':'');
- const profession=x.profession||({'KEPALA_SEKOLAH':'KEPALA_SEKOLAH','PENGAWAS':'PENGAWAS'}[p().role]||'');
+ const profession=p().role==='KEPALA_SEKOLAH'?(ksIsPlt?'GURU':'KEPALA_SEKOLAH'):(x.profession||({'PENGAWAS':'PENGAWAS'}[p().role]||''));
  body().innerHTML='<p class="sg-note">Identitas dari Profil GTK. Tiga analisis (penyesuaian JF, pengangkatan JF, pemenuhan S-1/D-IV) KHUSUS PNS Guru/Kepala Sekolah. Data PPPK dan PPPK PW masuk tampungan masing-masing, bukan daftar analisis atau usulan PNS.</p>'+
  '<div class="sg-box"><b>'+esc(p().full_name||'GTK')+'</b><p>NIP '+esc(p().nip||'-')+' • '+esc(p().unit_gtk||p().unit||'')+'</p></div>'+
  '<form id="smartgtkForm"><div class="sg-box"><b>A. Tugas dan Status Kepegawaian</b><div class="sg-grid">'+
- select('profession','Tugas utama *',profession)+
+ select('profession','Tugas utama *',profession)+(ksIsPlt?'<div class="sg-note" style="grid-column:1/-1">Penugasan sekolah: <b>PNS (Plt.) Kepala Sekolah</b>. SMART-GTK mencatat tugas utama <b>Guru</b> sesuai jabatan fungsional definitif. Kewajiban Kebutuhan GTK Riil tetap berlaku.</div>':'')+
  select('employment','Kategori kepegawaian/pendamping *',x.employment)+
  '</div><div id="sgJFFields" class="sg-grid">'+
  select('jf_sk','Kepemilikan SK JF Guru *',x.jf_sk)+
@@ -292,7 +299,7 @@ function form(){
   f.elements.program.required=val==='SEDANG_KULIAH';
   f.elements.target_graduation.disabled=isDeg;
   if(isDeg)f.elements.target_graduation.value='';
-  if(p().role==='KEPALA_SEKOLAH')f.elements.profession.value='KEPALA_SEKOLAH';
+  if(p().role==='KEPALA_SEKOLAH')f.elements.profession.value=ksIsPlt?'GURU':'KEPALA_SEKOLAH';
   if(p().role==='PENGAWAS')f.elements.profession.value='PENGAWAS';
   const eligible=f.elements.employment.value==='PNS'&&['GURU','KEPALA_SEKOLAH'].includes(f.elements.profession.value);
   const fields=document.getElementById('sgJFFields');if(fields)fields.style.display=eligible?'grid':'none';
