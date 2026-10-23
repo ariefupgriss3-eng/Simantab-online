@@ -30,7 +30,7 @@
     card.style.marginBottom = '12px';
 
     const { data, error } = await sb.from('profiles')
-      .select('id,full_name,nip,username,role,requested_role,unit,position,school_npsn,approval_status,is_active,created_at')
+      .select('id,full_name,nip,username,role,requested_role,unit,position,ks_registration_status,school_npsn,approval_status,is_active,created_at')
       .eq('approval_status', 'PENDING')
       .order('created_at', { ascending: true })
       .limit(1000);
@@ -71,7 +71,7 @@
           other.id !== row.id && other.is_active);
         return `<tr>
           <td><b>${esc(row.full_name || '-')}</b><div class="small">${esc(row.username || '-')}</div></td>
-          <td>${esc(labelRole(row.requested_role))}</td>
+          <td>${esc(labelRole(row.requested_role))}${row.requested_role==='KEPALA_SEKOLAH'?'<div class="small">'+esc(row.ks_registration_status==='PLT'?'Plt. PNS (JF Guru)':row.ks_registration_status==='DEFINITIF'?'Definitif':'Status penugasan belum tercatat')+' — laporan pendaftar</div>':''}</td>
           <td>${esc(row.nip || '-')} ${dup ? '<div class="small" style="color:#b45309">NIP memiliki lebih dari satu akun PENDING</div>' : ''} ${nameConflict ? '<div class="small" style="color:#b91c1c">Nama berbeda untuk NIP yang sama: PERIKSA IDENTITAS</div>' : ''}</td>
           <td>${esc(row.unit || '-')}</td>
           <td><b>PENDING</b><div class="small">${row.is_active ? 'Aktif' : 'Nonaktif'}</div></td>
