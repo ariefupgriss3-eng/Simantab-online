@@ -118,9 +118,9 @@ ok(smart.includes('SIMANTAB_SMARTGTK_ROLE_WORKFLOW_V1') &&
    smart.includes('workflowActions(item)') &&
    smart.includes('roleWorkflow:true'),
    'Workflow SMART GTK 4 peran tidak terpasang pada paket Cloudflare.');
-ok(smart.includes('SIMANTAB_SMARTGTK_OWNER_FEEDBACK_V1') && smart.includes('smartgtk_workflow_my_status') && smart.includes('ownerWorkflowFeedback:true') && smart.includes('version:24'),
+ok(smart.includes('SIMANTAB_SMARTGTK_OWNER_FEEDBACK_V1') && smart.includes('smartgtk_workflow_my_status') && smart.includes('ownerWorkflowFeedback:true') && smart.includes('version:25'),
  'SMART-GTK tidak menampilkan status perbaikan untuk pemilik data.');
-ok(smart.includes('SIMANTAB_SMARTGTK_DINAS_NAV_V1') && smart.includes('ensureDinasWorkflowNav()') && smart.includes('dinasWorkflowNav:true') && smart.includes('version:24'),
+ok(smart.includes('SIMANTAB_SMARTGTK_DINAS_NAV_V1') && smart.includes('ensureDinasWorkflowNav()') && smart.includes('dinasWorkflowNav:true') && smart.includes('version:25'),
  'Menu khusus Workflow SMART GTK pada sidebar Dinas belum dimuat.');
 ok(smart.includes('SIMANTAB_SMARTGTK_KS_NEEDS_PRIORITY_V1') && smart.includes('ksNeedsPriority:true') &&
    smart.includes("window.showTab?.('needs')"),
@@ -130,7 +130,7 @@ ok(smart.includes('SIMANTAB_SMARTGTK_DEADLINE_REMINDER_V1') &&
    smart.includes('smartGtkTimeLeft') &&
    smart.includes('2026,9,26,16,59') &&
    smart.includes('deadlineReminder:true') &&
-   smart.includes('version:24') &&
+   smart.includes('version:25') &&
    smart.includes('data-smartgtk-reminder') &&
    smart.includes("sb.rpc('smartgtk_mass_status')"),
    'Pengingat deadline SMART GTK belum dibundel dengan status kelengkapan aktual.');
@@ -138,14 +138,14 @@ ok(smart.includes('SIMANTAB_SMARTGTK_KABID_DRAFT_MONITOR_V1') &&
    smart.includes('smartgtk_workflow_drafts') &&
    smart.includes('workflowDraftsPanel()') &&
    smart.includes('draftMonitoring:true') &&
-   smart.includes('version:24'),
+   smart.includes('version:25'),
    'Pemantauan read-only draf SMART GTK Kabid belum lengkap.');
 ok(smart.includes('SIMANTAB_SMARTGTK_PNS_THREE_GOAL_UI_V1') &&
    smart.includes('SIMANTAB_SMARTGTK_SEPARATE_CONTRACT_BUCKETS_UI_V1') &&
    smart.includes('smartgtk_contract_buffer_list') &&
    smart.includes("workflowContractPanel('PPPK')+workflowContractPanel('PPPK_PW')") &&
    smart.includes('pnsThreeGoals:true,contractBuffers:true') &&
-   smart.includes('version:24'),
+   smart.includes('version:25'),
    'Tiga tujuan PNS dan tampungan PPPK/PPPK PW belum dipisahkan pada bundle Cloudflare.');
 const ksNeedsOnboarding=await read('ks-needs-onboarding.js');
 ok(ksNeedsOnboarding.includes('SIMANTAB_KS_NEEDS_SMARTGTK_NAV_GUARD_V2') &&
