@@ -690,7 +690,7 @@ async function workflowQuickAssign(){
  if(!rows.length){info('Tidak ada kasus siap tugas pada jenjang ini. Segarkan antrean jika perlu.');return}
  if(rows.length>50)throw Error('Batas 50 kasus per batch; segarkan halaman.');
  if(!candidates.length)throw Error('Staf pemeriksa aktif pada jenjang ini belum tersedia.');
- // ONE click = immediate audited server call, no checkbox and no confirm().
+ // ONE click = immediate audited server call, without checkbox selection or a second confirmation.
  const result=await sb.rpc('smartgtk_workflow_bulk_assign',{
   p_cases:rows.map(x=>({owner_id:x.owner_id,version:x.version})),
   p_scope:scope,p_mode:'BALANCED',p_staff:null
