@@ -250,7 +250,7 @@ window.addEventListener('simantab:profile-ready',placeSmartGtk);
 placeSmartGtk();
 async function loadGTK(){
  const ksNpsn=String(p().school_npsn||'').trim();
- const ksRow=(p().role==='KEPALA_SEKOLAH'&&/^\\d{8}$/.test(ksNpsn))?
+ const ksRow=(p().role==='KEPALA_SEKOLAH'&&/^\d{8}$/.test(ksNpsn))?
   sb.from('school_gtk_needs').select('ks_assignment_status,pns').eq('school_npsn',ksNpsn).eq('job_code','KEPALA_SEKOLAH').maybeSingle():
   Promise.resolve({data:null,error:null});
  const [a,b,c]=await Promise.all([
