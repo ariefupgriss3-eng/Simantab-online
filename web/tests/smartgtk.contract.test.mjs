@@ -12,7 +12,7 @@ test('one responsive SMART-GTK form loads only after login and is bundled exactl
  assert.match(ui,/simantab:profile-ready/);
  assert.match(ui,/Simpan & Analisis Otomatis/);
  assert.match(ui,/smartgtkTile/);
- assert.match(injection,/smartgtk-unified\.js\?v=23/);
+ assert.match(injection,/smartgtk-unified\.js\?v=24/);
  assert.match(jf,/applicant\(\)&&window\.__simantabSmartGtkReady/);
  assert.match(ed,/gtk\(\)&&window\.__simantabSmartGtkReady/);
 });
@@ -244,6 +244,6 @@ test('PPPK and PPPK paruh waktu have separate private holding tables, not PNS ap
  assert.match(sql,/REVOKE ALL ON FUNCTION public\.smartgtk_contract_buffer_list\(text,integer\) FROM PUBLIC,anon/);
  assert.match(ui,/SIMANTAB_SMARTGTK_SEPARATE_CONTRACT_BUCKETS_UI_V1/);
  assert.match(ui,/workflowContractPanel\('PPPK'\)\+workflowContractPanel\('PPPK_PW'\)/);
- assert.match(ui,/version:23,pnsThreeGoals:true,contractBuffers:true/);
+ assert.match(ui,/version:24,bulkAssignment:true,pnsThreeGoals:true,contractBuffers:true/);
  assert.doesNotThrow(()=>new Function(ui));
 });

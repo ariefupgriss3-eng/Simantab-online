@@ -106,7 +106,8 @@ ok(bulkApproval.includes('SIMANTAB_GTK_BULK_APPROVAL_UI_V4') &&
    bulkApproval.includes('Akun PENDING Perlu Pemeriksaan Manual'),
    'Perlindungan tombol agregat dan audit harus tersedia');
 const smart=await read('smartgtk-unified.js');
-ok(html.includes('./smartgtk-unified.js?v=23')&&html.split('./smartgtk-unified.js?v=23').length===2,'SMART-GTK unified script must load once');
+ ok(smart.includes('SIMANTAB_SMARTGTK_KABID_BULK_ASSIGN_V1') && smart.includes('smartgtk_workflow_bulk_assign') && smart.includes('workflowBulkAssign') && smart.includes('Bagikan Merata ke Staf') && smart.includes('bulkAssignment:true'), 'Kabid bulk task assignment not bundled');
+ok(html.includes('./smartgtk-unified.js?v=24')&&html.split('./smartgtk-unified.js?v=24').length===2,'SMART-GTK unified script must load once');
 ok(smart.includes('SIMANTAB_SMARTGTK_UNIFIED_INTAKE_V1')&&smart.includes("sb.rpc('smartgtk_mass_save'")&&smart.includes("sb.rpc('smartgtk_mass_officer_list'")&&smart.includes("sb.rpc('smartgtk_mass_complete'"),'SMART-GTK mass routes missing');
 ok(smart.includes('smartgtkDashboardPriority')&&smart.includes('smartgtkPrimaryNav')&&smart.includes('root.insertBefore(card,body)'), 'GTK dashboard priority link or main menu missing');
 ok(smart.includes('Deadline input data paling lambat 26 Oktober 2026, pukul 23.59 WIB.')&&!smart.includes('SIMANTAB hanya menganalisis usulan JF Guru bagi guru dan KS PNS.'),'SMART-GTK deadline and concise copy missing');
@@ -117,9 +118,9 @@ ok(smart.includes('SIMANTAB_SMARTGTK_ROLE_WORKFLOW_V1') &&
    smart.includes('workflowActions(item)') &&
    smart.includes('roleWorkflow:true'),
    'Workflow SMART GTK 4 peran tidak terpasang pada paket Cloudflare.');
-ok(smart.includes('SIMANTAB_SMARTGTK_OWNER_FEEDBACK_V1') && smart.includes('smartgtk_workflow_my_status') && smart.includes('ownerWorkflowFeedback:true') && smart.includes('version:23'),
+ok(smart.includes('SIMANTAB_SMARTGTK_OWNER_FEEDBACK_V1') && smart.includes('smartgtk_workflow_my_status') && smart.includes('ownerWorkflowFeedback:true') && smart.includes('version:24'),
  'SMART-GTK tidak menampilkan status perbaikan untuk pemilik data.');
-ok(smart.includes('SIMANTAB_SMARTGTK_DINAS_NAV_V1') && smart.includes('ensureDinasWorkflowNav()') && smart.includes('dinasWorkflowNav:true') && smart.includes('version:23'),
+ok(smart.includes('SIMANTAB_SMARTGTK_DINAS_NAV_V1') && smart.includes('ensureDinasWorkflowNav()') && smart.includes('dinasWorkflowNav:true') && smart.includes('version:24'),
  'Menu khusus Workflow SMART GTK pada sidebar Dinas belum dimuat.');
 ok(smart.includes('SIMANTAB_SMARTGTK_KS_NEEDS_PRIORITY_V1') && smart.includes('ksNeedsPriority:true') &&
    smart.includes("window.showTab?.('needs')"),
@@ -129,7 +130,7 @@ ok(smart.includes('SIMANTAB_SMARTGTK_DEADLINE_REMINDER_V1') &&
    smart.includes('smartGtkTimeLeft') &&
    smart.includes('2026,9,26,16,59') &&
    smart.includes('deadlineReminder:true') &&
-   smart.includes('version:23') &&
+   smart.includes('version:24') &&
    smart.includes('data-smartgtk-reminder') &&
    smart.includes("sb.rpc('smartgtk_mass_status')"),
    'Pengingat deadline SMART GTK belum dibundel dengan status kelengkapan aktual.');
@@ -137,14 +138,14 @@ ok(smart.includes('SIMANTAB_SMARTGTK_KABID_DRAFT_MONITOR_V1') &&
    smart.includes('smartgtk_workflow_drafts') &&
    smart.includes('workflowDraftsPanel()') &&
    smart.includes('draftMonitoring:true') &&
-   smart.includes('version:23'),
+   smart.includes('version:24'),
    'Pemantauan read-only draf SMART GTK Kabid belum lengkap.');
 ok(smart.includes('SIMANTAB_SMARTGTK_PNS_THREE_GOAL_UI_V1') &&
    smart.includes('SIMANTAB_SMARTGTK_SEPARATE_CONTRACT_BUCKETS_UI_V1') &&
    smart.includes('smartgtk_contract_buffer_list') &&
    smart.includes("workflowContractPanel('PPPK')+workflowContractPanel('PPPK_PW')") &&
    smart.includes('pnsThreeGoals:true,contractBuffers:true') &&
-   smart.includes('version:23'),
+   smart.includes('version:24'),
    'Tiga tujuan PNS dan tampungan PPPK/PPPK PW belum dipisahkan pada bundle Cloudflare.');
 const ksNeedsOnboarding=await read('ks-needs-onboarding.js');
 ok(ksNeedsOnboarding.includes('SIMANTAB_KS_NEEDS_SMARTGTK_NAV_GUARD_V2') &&
