@@ -124,7 +124,7 @@ test('rate limits are handled without bypass or password disclosure', async () =
   assert.match(document.getElementById('simForgotFeedback').textContent, /Tautan belum dikirim/);
 });
 
-test('Supabase project email-send quota is distinguished from a user's invalid password', async () => {
+test('Supabase project email quota differs from invalid password', async () => {
   const { document } = fixture({ error: { code: 'over_email_send_rate_limit', message: 'email rate limit exceeded' } });
   await document.getElementById('simForgotLink').fire('click');
   document.getElementById('simForgotEmail').value = 'gtk@example.id';
