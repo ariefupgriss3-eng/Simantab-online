@@ -10,6 +10,8 @@ on:
       - supabase/migrations/20261015203500_unique_nip_registration_guard.sql
       - web/registration-ui-final.js
       - web/finalize-html.mjs
+      - web/login-forgot-password.js
+      - web/tests/forgot-password.test.cjs
       - web/mandatory-personnel-profile.js
       - web/ks-needs-onboarding.js
       - web/tests/cloudflare-mandatory-personnel-profile.test.cjs
@@ -44,6 +46,7 @@ jobs:
         run: |
           node web/tests/registration-contract.test.mjs
           node --test web/tests/ks-plt-signup.contract.test.mjs
+          node --test web/tests/forgot-password.test.cjs
           node web/tests/registration-backend.test.mjs
           node --test web/tests/cloudflare-mandatory-personnel-profile.test.cjs
           node --test web/tests/cloudflare-jabfung-document-revisions.test.cjs

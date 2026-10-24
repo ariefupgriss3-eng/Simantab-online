@@ -44,6 +44,9 @@ ok([PREVIEW_ORIGIN, SHORT_ORIGIN, OFFICIAL_ORIGIN].includes(requestedOrigin),'Al
 ok(html.includes('<link rel="canonical" href="'+requestedOrigin+'/">'),'Canonical site origin tidak cocok dengan konfigurasi domain');
 ok(html.includes('property="og:url" content="'+requestedOrigin+'/">'),'Pratinjau URL sosial tidak cocok dengan canonical');
 ok(html.includes('property="og:image" content="'+requestedOrigin+'/og-simantab-login.png'),'Pratinjau gambar sosial masih memakai origin berbeda');
+/* SIMANTAB_RECOVERY_EMAIL_QUOTA_BUILD_QA_V2 */
+const forgotPassword=await read('login-forgot-password.js');
+ok(html.includes('./login-forgot-password.js?v=2') && forgotPassword.includes('SIMANTAB_LOGIN_FORGOT_PASSWORD_V2_EMAIL_QUOTA_FEEDBACK') && forgotPassword.includes('over_email_send_rate_limit') && forgotPassword.includes('Tautan belum dikirim') && forgotPassword.includes('neutralAcceptance: true'), 'Cloudflare forgot password UX lacks accurate email quota diagnostics');
 /* SIMANTAB_LOGIN_FETCH_DIAGNOSTIC_BUILD_QA_V1: check login transport errors are distinct from invalid passwords. */
 const loginClickRescue=await read('login-click-rescue.js');
 const loginChannelHardening=await read('login-channel-hardening.js');

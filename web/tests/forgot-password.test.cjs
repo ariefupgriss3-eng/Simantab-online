@@ -100,7 +100,7 @@ test('registered email request sends reset only to current HTTPS origin', async 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].email, 'pegawai@example.id');
   assert.equal(calls[0].options.redirectTo, 'https://simantab-cf-preview.example.workers.dev/?simantab_recovery=1');
-  assert.match(document.getElementById('simForgotFeedback').textContent, /Jika email terdaftar/);
+  assert.match(document.getElementById('simForgotFeedback').textContent, /belum memastikan email terkirim/);
 });
 
 test('username cannot be used to request reset and invalid email does not call server', async () => {
@@ -120,5 +120,32 @@ test('rate limits are handled without bypass or password disclosure', async () =
   await document.getElementById('simForgotForm').fire('submit');
   assert.equal(calls.length, 1);
   assert.equal(document.getElementById('simForgotSend').disabled, false);
-  assert.match(document.getElementById('simForgotFeedback').textContent, /Terlalu banyak permintaan/);
+  assert.match(document.getElementById('simForgotFeedback').textContent, /kuota pengiriman email/);
+  assert.match(document.getElementById('simForgotFeedback').textContent, /Tautan belum dikirim/);
+});
+
+test('Supabase project email quota differs from invalid password', async () => {
+  const { document } = fixture({ error: { code: 'over_email_send_rate_limit', message: 'email rate limit exceeded' } });
+  await document.getElementById('simForgotLink').fire('click');
+  document.getElementById('simForgotEmail').value = 'gtk@example.id';
+  await document.getElementById('simForgotForm').fire('submit');
+  const msg = document.getElementById('simForgotFeedback').textContent;
+  assert.match(msg, /kuota pengiriman email/);
+  assert.match(msg, /Super Admin/);
+  assert.doesNotMatch(msg, /password salah/i);
+});
+test('pre-authorized email restriction requests SMTP setup and does not claim success', async () => {
+  const { document } = fixture({ error: { message: 'Email address not authorized' } });
+  await document.getElementById('simForgotLink').fire('click');
+  document.getElementById('simForgotEmail').value = 'gtk@example.id';
+  await document.getElementById('simForgotForm').fire('submit');
+  const msg = document.getElementById('simForgotFeedback').textContent;
+  assert.match(msg, /SMTP resmi/);
+  assert.match(msg, /Tautan belum dikirim/);
+});
+test('v2 messages do not make delivery guarantees or reveal account existence', () => {
+  assert.match(source, /SIMANTAB_LOGIN_FORGOT_PASSWORD_V2_EMAIL_QUOTA_FEEDBACK/);
+  assert.match(source, /konfirmasi permintaan tidak berarti pesan sudah diterima/);
+  assert.match(source, /Jika email terdaftar/);
+  assert.doesNotMatch(source, /service_role/);
 });
