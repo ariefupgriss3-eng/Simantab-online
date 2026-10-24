@@ -486,11 +486,11 @@ if(!/SIMANTAB_LOGIN_CLASSIC_RESCUE_V7_HANDOFF/.test(classicCode))throw new Error
 await fs.writeFile(path.join(staticDir,classicFile),classicCode);
 const forgotFile='login-forgot-password.js';
 const forgotCode=await fs.readFile(new URL(`./${forgotFile}`,import.meta.url),'utf8');
-if(!forgotCode.includes('SIMANTAB_LOGIN_FORGOT_PASSWORD_V1'))throw new Error('Lupa Password SIMANTAB V1 tidak valid.');
+if(!forgotCode.includes('SIMANTAB_LOGIN_FORGOT_PASSWORD_V2_EMAIL_QUOTA_FEEDBACK'))throw new Error('Lupa Password SIMANTAB V2 tidak valid.');
 await fs.writeFile(path.join(staticDir,forgotFile),forgotCode);
 const pdfTags='<script src="./jspdf.umd.min.js?v=1"></script>\n<script src="./jspdf.plugin.autotable.min.js?v=1"></script>';
 const classicTag=`<script src="./${classicFile}?v=7"></script>`;
-const forgotTag=`<script src="./${forgotFile}?v=1"></script>`;
+const forgotTag=`<script src="./${forgotFile}?v=2"></script>`;
 const moduleTags=modules.map(([file,v])=>`<script type="module" src="./${file}?v=${v}"></script>`).join('\n');
 html=`${headAndBody.trimEnd()}\n${pdfTags}\n${classicTag}\n${forgotTag}\n${moduleTags}\n</body>\n</html>\n`;
 const bodyMatches=html.match(/<\/body>/g)||[],htmlMatches=html.match(/<\/html>/g)||[],openScripts=(html.match(/<script\b/g)||[]).length,closeScripts=(html.match(/<\/script>/g)||[]).length;
@@ -500,6 +500,6 @@ if(openScripts!==closeScripts)throw new Error(`Tag script tidak seimbang: buka=$
 for(const [file,v] of modules){const ref=`./${file}?v=${v}`;if(html.split(ref).length-1!==1)throw new Error(`Referensi ${ref} harus tepat 1 kali.`)}
 for(const ref of ['./jspdf.umd.min.js?v=1','./jspdf.plugin.autotable.min.js?v=1'])if(html.split(ref).length-1!==1)throw new Error(`Library PDF ${ref} harus tepat 1 kali.`);
 if(html.split(`./${classicFile}?v=7`).length-1!==1)throw new Error('Classic login rescue v7 harus tepat 1 kali.');
-if(html.split(`./${forgotFile}?v=1`).length-1!==1)throw new Error('Lupa Password harus tepat 1 kali.');
+if(html.split(`./${forgotFile}?v=2`).length-1!==1)throw new Error('Lupa Password harus tepat 1 kali.');
 await fs.writeFile(outputPath,html);
 console.log(JSON.stringify({htmlFinalized:true,canonicalModuleCount:modules.length,removedInheritedTrailingBytes:Math.max(0,originalLength-html.length),scriptTags:openScripts,attendanceRecap:true,directPdfDownload:true,localPdfLibraries:true,gtkNeedsScopeV12:true,gtkNeedsCanonicalVersion:36,gtkNeedsAuthoritativeRenderer:true,gtkNeedsCoreGapData:true,gtkNeedsCoreVerification:true,gtkNeedsClickableGapBreakdowns:true,positiveShortageAggregation:true,verifiedOnlyDinasMetrics:true,legacyNeedsOverrideDisabled:true,negeriNeedsOnly:true,leadershipDirectionsV1:true,layeredServiceWorkflowV1:true,leaderAggregateDrilldown:true,leaderMenuCleanup:true,leaderDashboardAuthoritativeV6:true,leaderCoreImmediateDashboard:true,sessionBoundaryHardening:true,sekdinMonitoring:true,sekdinRoleDropdown:true,leadershipAuditTrail:true,teamDisplayVersion:2,privateSchoolServices:['TPG_KONSULTASI','PTK_BARU_SWASTA'],ptkBaruNegeriHidden:true,loginRescue:true,classicLoginRescueV7:true,loginNetworkRetry:true,passwordRecoveryFlow:true,loginObserverLoopFixed:true,selfRegistrationRoles:['KEPALA_SEKOLAH','GTK','PENGAWAS'],ksNpsnValidation:true,registrationApprovalV2:true,registrationUiFinalV5:true,allGtkServerRegistration:true,emailConfirmOnApproval:true,dinasRegistrationTabDisabled:true,roleFirstLoginChannelGuard:true,superAdminPasswordResetEmail:true,missingDinasAccountsButton:true,newDinasAccountsButton:true,newWartonoAccountButton:true,ksAdminDirectKabid:true,superAdminKsResetDraft:true,diklatParticipantSearch:true,paktaUploadFallback:true,fixedKabidComment:true,persistKabidApproval:true,personalKabidApprovalNote:true,hideInactiveParticipants:true,multiRoleResetDraft:true,resetAfterLevelUp:true,performanceAchievementV1:true,workflowHideInactiveRequesters:true,suciptoActivityAdmin:true,diklatAiVerifier:true,diklatAiDirectKabid:true,diklatAiKeepsAssignedVerifier:true,performanceDownloads:['PDF','CSV'],gtkRedistributionAnalysisV8:true,redistributionDownloads:['PDF','CSV'],verifyActionLabel:true,staffVerifyActionInDetail:true,globalRequesterSearch:true,eduUnitsBatang:true,gtkAiVerifierPilot:false,gtkAiVerifierDisabled:true,validClosingTags:true}));
